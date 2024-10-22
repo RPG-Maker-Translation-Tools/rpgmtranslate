@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import {
     animateProgressText,
     applyLocalization,
@@ -111,41 +112,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLanguage(settings.language);
 
     // Initialize the project
-    let nextBackupNumber: number;
-    await initializeProject(settings.projectPath);
-
-    // Load the font
-    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
-    await loadFont(settings.fontUrl);
-    // #endregion
-
-    let replaced: Record<string, Record<string, string>> = {};
-    const activeGhostLines: HTMLDivElement[] = [];
-
-    let selectedTextareas: Record<string, string> = {};
-    let replacedTextareas: Record<string, string> = {};
-
-    const bookmarks: string[] = await fetchBookmarks(join(settings.projectPath, programDataDir, "bookmarks.txt"));
-
-    let searchRegex = false;
-    let searchWhole = false;
-    let searchCase = false;
-    let searchTranslation = false;
-    let searchLocation = false;
-
     let state: State | null = null;
-
-    let saved = true;
-    let saving = false;
-    let currentFocusedElement: [string, string] | [] = [];
-
-    let shiftPressed = false;
-
-    let multipleTextAreasSelected = false;
-
-    let zoom = 1;
-
-    await appWindow.setZoom(zoom);
+    let nextBackupNumber: number;
 
     const observerMain = new IntersectionObserver(
         (entries) => {
@@ -175,6 +143,39 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         { root: searchPanelReplaced },
     );
+
+    await initializeProject(settings.projectPath);
+
+    // Load the font
+    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
+    await loadFont(settings.fontUrl);
+    // #endregion
+
+    let replaced: Record<string, Record<string, string>> = {};
+    const activeGhostLines: HTMLDivElement[] = [];
+
+    let selectedTextareas: Record<string, string> = {};
+    let replacedTextareas: Record<string, string> = {};
+
+    const bookmarks: string[] = await fetchBookmarks(join(settings.projectPath, programDataDir, "bookmarks.txt"));
+
+    let searchRegex = false;
+    let searchWhole = false;
+    let searchCase = false;
+    let searchTranslation = false;
+    let searchLocation = false;
+
+    let saved = true;
+    let saving = false;
+    let currentFocusedElement: [string, string] | [] = [];
+
+    let shiftPressed = false;
+
+    let multipleTextAreasSelected = false;
+
+    let zoom = 1;
+
+    await appWindow.setZoom(zoom);
 
     function addBookmark(bookmarkTitle: string) {
         const bookmarkElement = document.createElement("button");
@@ -457,12 +458,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         const askCreateSettings = await ask(windowLocalization.askCreateSettings);
 
         if (askCreateSettings) {
-            await writeTextFile(settingsPath, JSON.stringify(new Settings(language)), {
+            const newSettings = new Settings(language);
+            await writeTextFile(settingsPath, JSON.stringify(newSettings), {
                 baseDir: Resource,
             });
 
             alert(windowLocalization.createdSettings);
-            return JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings;
+            return newSettings;
         } else {
             await exit();
         }
@@ -1102,7 +1104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function changeState(newState: State | null, slide = false) {
-        if (state === newState) {
+        if (state && state === newState) {
             return;
         }
 
@@ -1335,6 +1337,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
+        if (event.code === "KeyQ") {
+            const translated = await invoke<string>("translate_text", {
+                text: document.getElementById("maps1-original-2")!.textContent!,
+                to: "ru",
+                from: "en",
+            });
+
+            (document.getElementById("maps1-translation-2") as HTMLTextAreaElement).value = translated;
+        }
         if (event.key === "Shift" && !event.repeat) {
             shiftPressed = true;
         }

@@ -7,6 +7,7 @@ mod write;
 use lazy_static::lazy_static;
 use read::*;
 use regex::{escape, Regex};
+use rustlate::Translator;
 use sonic_rs::{prelude::*, Object};
 use std::{
     fs::{create_dir_all, File},
@@ -531,6 +532,12 @@ fn read_last_line(file_path: PathBuf) -> String {
     unsafe { String::from_utf8_unchecked(buffer) }
 }
 
+#[command(async)]
+fn translate_text(text: &str, _from: String, _to: String) -> String {
+    let translator_struct: Translator = Translator { to: "ru", from: "en" };
+    translator_struct.translate(text).unwrap()
+}
+
 fn main() {
     Builder::default()
         .plugin(tauri_plugin_fs::init())
@@ -538,7 +545,13 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(generate_handler![escape_text, read, compile, read_last_line,])
+        .invoke_handler(generate_handler![
+            escape_text,
+            read,
+            compile,
+            read_last_line,
+            translate_text
+        ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]
             _app.get_webview_window("main").unwrap().open_devtools();
