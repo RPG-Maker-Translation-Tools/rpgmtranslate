@@ -28,13 +28,13 @@
     },
     "productName": "rpgmtranslate",
     "mainBinaryName": "rpgmtranslate",
-    "version": "4.0.0",
+    "version": "4.0.1",
     "identifier": "com.savannstm.rpgmtranslate",
     "plugins": {},
     "app": {
         "security": {
             "assetProtocol": {
-                "scope": ["**"],
+                "scope": ["$RESOURCE/**"],
                 "enable": true
             },
             "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; connect-src ipc: http://ipc.localhost"

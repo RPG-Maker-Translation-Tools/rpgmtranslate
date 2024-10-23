@@ -7,7 +7,7 @@
         "core:window:allow-close",
         "core:window:allow-destroy",
         "fs:allow-exists",
-        { "allow": ["**"], "identifier": "fs:scope" }
+        { "allow": ["$RESOURCE/**"], "identifier": "fs:scope" }
     ],
     "windows": ["read"]
 }

@@ -7,7 +7,6 @@ mod write;
 use lazy_static::lazy_static;
 use read::*;
 use regex::{escape, Regex};
-use rustlate::Translator;
 use sonic_rs::{prelude::*, Object};
 use std::{
     fs::{create_dir_all, File},
@@ -16,9 +15,9 @@ use std::{
     path::{Path, PathBuf},
     time::Instant,
 };
-#[cfg(debug_assertions)]
-use tauri::Manager;
-use tauri::{command, generate_context, generate_handler, App, Builder};
+use tauri::{command, generate_context, generate_handler, App, Builder, Manager, Runtime, Window};
+use tauri_plugin_fs::FsExt;
+use translators::{GoogleTranslator, Translator};
 use write::*;
 
 static NEW_LINE: &str = r"\#";
@@ -26,12 +25,17 @@ static LINES_SEPARATOR: &str = "<#>";
 static mut EXTENSION: &str = "";
 
 lazy_static! {
-    static ref STRING_IS_ONLY_SYMBOLS_RE: Regex = Regex::new(r#"^[.()+\-:;\[\]^~%&!№$@`*\/→×？?ｘ％▼|♥♪！：〜『』「」〽。…‥＝゠、，【】［］｛｝（）〔〕｟｠〘〙〈〉《》・\\#'"<>=_ー※▶ⅠⅰⅡⅱⅢⅲⅣⅳⅤⅴⅥⅵⅦⅶⅧⅷⅨⅸⅩⅹⅪⅺⅫⅻⅬⅼⅭⅽⅮⅾⅯⅿ\s0-9]+$"#).unwrap();
-    static ref ENDS_WITH_IF_RE: Regex = Regex::new(r" if\(.*\)$").unwrap();
-    static ref LISA_PREFIX_RE: Regex = Regex::new(r"^(\\et\[[0-9]+\]|\\nbt)").unwrap();
-    static ref INVALID_MULTILINE_VARIABLE_RE: Regex = Regex::new(r"^#? ?<.*>.?$|^[a-z][0-9]$").unwrap();
-    static ref INVALID_VARIABLE_RE: Regex = Regex::new(r"^[+-]?[0-9]+$|^///|---|restrict eval").unwrap();
-    static ref SELECT_WORDS_RE: Regex = Regex::new(r"\S+").unwrap();
+    static ref STRING_IS_ONLY_SYMBOLS_RE: Regex = unsafe {
+        Regex::new(r#"^[.()+\-:;\[\]^~%&!№$@`*\/→×？?ｘ％▼|♥♪！：〜『』「」〽。…‥＝゠、，【】［］｛｝（）〔〕｟｠〘〙〈〉《》・\\#'"<>=_ー※▶ⅠⅰⅡⅱⅢⅲⅣⅳⅤⅴⅥⅵⅦⅶⅧⅷⅨⅸⅩⅹⅪⅺⅫⅻⅬⅼⅭⅽⅮⅾⅯⅿ\s0-9]+$"#).unwrap_unchecked()
+    };
+    static ref ENDS_WITH_IF_RE: Regex = unsafe { Regex::new(r" if\(.*\)$").unwrap_unchecked() };
+    static ref LISA_PREFIX_RE: Regex = unsafe { Regex::new(r"^(\\et\[[0-9]+\]|\\nbt)").unwrap_unchecked() };
+    static ref INVALID_MULTILINE_VARIABLE_RE: Regex =
+        unsafe { Regex::new(r"^#? ?<.*>.?$|^[a-z][0-9]$").unwrap_unchecked() };
+    static ref INVALID_VARIABLE_RE: Regex =
+        unsafe { Regex::new(r"^[+-]?[0-9]+$|^///|---|restrict eval").unwrap_unchecked() };
+    static ref SELECT_WORDS_RE: Regex = unsafe { Regex::new(r"\S+").unwrap_unchecked() };
+    static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -40,8 +44,8 @@ enum GameType {
     LisaRPG,
 }
 
-#[repr(u8)]
 #[derive(PartialEq, Clone, Copy)]
+#[repr(u8)]
 #[allow(dead_code)]
 enum ProcessingMode {
     Force,
@@ -49,8 +53,8 @@ enum ProcessingMode {
     Default,
 }
 
-#[repr(u8)]
 #[derive(PartialEq, Clone, Copy)]
+#[repr(u8)]
 #[allow(dead_code)]
 enum EngineType {
     New,
@@ -326,7 +330,7 @@ fn compile(
 
     unsafe { EXTENSION = extension };
 
-    let data_dir: &Path = &PathBuf::from(".rpgm-translation-gui");
+    let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
     let original_path: &Path = &project_path.join(original_dir);
     let translation_path: &Path = &project_path.join(data_dir).join("translation");
     let (data_output_path, plugins_output_path) = if engine_type == EngineType::New {
@@ -450,7 +454,7 @@ fn read(
         get_game_type(game_title)
     };
 
-    let data_dir: &Path = &PathBuf::from(".rpgm-translation-gui");
+    let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
     let original_path: &Path = &project_path.join(original_dir);
     let translation_path: &Path = &project_path.join(data_dir).join("translation");
 
@@ -517,10 +521,10 @@ fn read_last_line(file_path: PathBuf) -> String {
         position -= 1;
         file.seek(SeekFrom::Start(position)).unwrap();
 
-        let mut byte = [0; 1];
+        let mut byte: [u8; 1] = [0; 1];
         file.read_exact(&mut byte).unwrap();
 
-        if byte == b"\n"[..] && !buffer.is_empty() {
+        if byte == *b"\n" && !buffer.is_empty() {
             break;
         }
 
@@ -528,14 +532,23 @@ fn read_last_line(file_path: PathBuf) -> String {
     }
 
     buffer.reverse();
-
     unsafe { String::from_utf8_unchecked(buffer) }
 }
 
-#[command(async)]
-fn translate_text(text: &str, _from: String, _to: String) -> String {
-    let translator_struct: Translator = Translator { to: "ru", from: "en" };
-    translator_struct.translate(text).unwrap()
+#[command]
+async fn translate_text(text: &str, from: &str, to: &str) -> Result<String, u8> {
+    Ok(GOOGLE_TRANS.translate_async(text, from, to).await.unwrap())
+}
+
+#[command]
+fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
+    let tauri_scope = window.state::<tauri::scope::Scopes>();
+
+    if let Some(s) = window.try_fs_scope() {
+        s.allow_directory(path, true);
+    }
+
+    tauri_scope.allow_directory(path, true).unwrap();
 }
 
 fn main() {
@@ -545,17 +558,23 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_persisted_scope::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
+            let window = app.get_webview_window("main").unwrap();
+            let _ = window.maximize();
+            let _ = window.set_focus();
+        }))
         .invoke_handler(generate_handler![
             escape_text,
             read,
             compile,
             read_last_line,
-            translate_text
+            translate_text,
+            add_to_scope
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]
             _app.get_webview_window("main").unwrap().open_devtools();
-
             Ok(())
         })
         .run(generate_context!())
