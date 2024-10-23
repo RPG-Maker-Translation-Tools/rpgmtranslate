@@ -1,7 +1,7 @@
 {
     "name": "rpgmtranslate",
     "private": true,
-    "version": "4.0.0",
+    "version": "4.0.1",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -13,7 +13,7 @@
     "dependencies": {
         "@tauri-apps/api": "2.0.3",
         "@tauri-apps/plugin-dialog": "2.0.1",
-        "@tauri-apps/plugin-fs": "2.0.0",
+        "@tauri-apps/plugin-fs": "2.0.1",
         "@tauri-apps/plugin-os": "2.0.0",
         "@tauri-apps/plugin-process": "2.0.0",
         "@tauri-apps/plugin-shell": "2.0.1",
