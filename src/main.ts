@@ -2002,6 +2002,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function initializeProject(pathToProject: string) {
+        await invoke("add_to_scope", { window: appWindow, path: pathToProject });
+
         projectStatus.innerHTML = windowLocalization.loadingProject;
         const interval = animateProgressText(projectStatus);
 
