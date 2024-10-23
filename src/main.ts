@@ -216,8 +216,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function determineLanguage(): Promise<Language> {
         const locale: string = (await getLocale()) ?? "en";
+        const mainPart: string = locale.split("-", 1)[0];
 
-        switch (locale) {
+        switch (mainPart) {
             case "ru":
             case "uk":
             case "be":
