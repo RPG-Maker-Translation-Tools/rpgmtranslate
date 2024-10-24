@@ -87,9 +87,9 @@ enum Variable {
 #[repr(u8)]
 #[allow(dead_code)]
 enum MapsProcessingMode {
-    Default = 0,
-    Separate = 1,
-    Preserve = 2,
+    Default,
+    Separate,
+    Preserve,
 }
 
 trait EachLine {

@@ -278,7 +278,8 @@ fn parse_list<'a>(
     map: &'a mut Xxh3IndexMap,
 ) {
     let mut in_sequence: bool = false;
-    let mut line: Vec<String> = Vec::with_capacity(8);
+    let mut line: Vec<String> = Vec::with_capacity(4);
+    let mut credits_lines: Vec<String> = Vec::new();
 
     let set_mut_ref: &mut Xxh3IndexSet = unsafe { &mut *set.get() };
     let set_ref: &Xxh3IndexSet = unsafe { &*set.get() };
@@ -287,6 +288,8 @@ fn parse_list<'a>(
         let code: u16 = item[code_label].as_u64().unwrap() as u16;
 
         if in_sequence && ![401, 405].contains(&code) {
+            let line: &mut Vec<String> = if code != 401 { &mut line } else { &mut credits_lines };
+
             if !line.is_empty() {
                 let mut joined: String = line.join("\n").trim().replace('\n', NEW_LINE);
 
@@ -318,7 +321,7 @@ fn parse_list<'a>(
         let parameters: &Array = item[parameters_label].as_array().unwrap();
 
         match code {
-            401 | 405 => {
+            401 => {
                 let parameter_string: String = parameters[0]
                     .as_str()
                     .map(str::to_owned)
@@ -333,6 +336,20 @@ fn parse_list<'a>(
                     in_sequence = true;
                     line.push(parameter_string);
                 }
+            }
+            405 => {
+                let parameter_string: String = parameters[0]
+                    .as_str()
+                    .map(str::to_owned)
+                    .unwrap_or(match parameters[0].as_object() {
+                        Some(obj) => get_object_data(obj),
+                        None => String::new(),
+                    })
+                    .trim()
+                    .to_owned();
+
+                credits_lines.push(parameter_string);
+                in_sequence = true;
             }
             102 => {
                 for i in 0..parameters[0].as_array().unwrap().len() {
@@ -726,15 +743,13 @@ pub fn read_map(
 
                 for page in event[pages_label].as_array().unwrap() {
                     let list: &Array = page[list_label].as_array().unwrap();
-                    let allowed_codes: &[u16] = &ALLOWED_CODES;
-                    let (code_label, parameters_label) = (code_label, parameters_label);
                     let mut in_sequence: bool = false;
-                    let mut line: Vec<String> = Vec::with_capacity(8);
+                    let mut line: Vec<String> = Vec::with_capacity(4);
 
                     for item in list {
                         let code: u16 = item[code_label].as_u64().unwrap() as u16;
 
-                        if in_sequence && ![401, 405].contains(&code) {
+                        if in_sequence && code != 401 {
                             if !line.is_empty() {
                                 let mut joined: String = line.join("\n").trim().replace('\n', NEW_LINE);
 
@@ -765,14 +780,14 @@ pub fn read_map(
                             in_sequence = false;
                         }
 
-                        if !allowed_codes.contains(&code) {
+                        if !ALLOWED_CODES.contains(&code) {
                             continue;
                         }
 
                         let parameters: &Array = item[parameters_label].as_array().unwrap();
 
                         match code {
-                            401 | 405 => {
+                            401 => {
                                 let parameter_string: String = parameters[0]
                                     .as_str()
                                     .map(str::to_owned)
@@ -1517,9 +1532,10 @@ pub fn read_scripts(scripts_file_path: &Path, other_path: &Path, romanize: bool,
         encoding_rs::GB18030,
     ];
 
-    let mut codes_content: Vec<String> = Vec::with_capacity(256);
+    let scripts_entries_array: &Array = scripts_entries.as_array().unwrap();
+    let mut codes_content: Vec<String> = Vec::with_capacity(scripts_entries_array.len());
 
-    for code in scripts_entries.as_array().unwrap() {
+    for code in scripts_entries_array {
         let bytes_stream: Vec<u8> = from_value(&code[2]["data"]).unwrap();
 
         let mut inflated: Vec<u8> = Vec::new();
