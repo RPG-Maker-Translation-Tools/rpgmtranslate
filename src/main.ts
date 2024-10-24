@@ -1088,7 +1088,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             saved = true;
         }
 
-        saveButton.firstElementChild!.classList.remove("animate-spin");
+        // Because we're saving only one file, it'll be extremely fast, and saveButton won't even be able to animate spin.
+        // So we're waiting for the end of its spin, and only then remove this class
+        setTimeout(() => {
+            saveButton.firstElementChild!.classList.remove("animate-spin");
+        }, 1000);
+
         saving = false;
     }
 
