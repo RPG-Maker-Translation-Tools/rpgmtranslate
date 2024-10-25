@@ -202,7 +202,6 @@ export const join = (...strings: string[]): string => strings.join("/");
 
 export class CompileSettings {
     initialized: boolean;
-    logging: boolean;
     romanize: boolean;
     mapsProcessingMode: number;
     disableCustomProcessing: boolean;
@@ -223,7 +222,6 @@ export class CompileSettings {
 
     constructor() {
         this.initialized = false;
-        this.logging = false;
         this.romanize = false;
         this.mapsProcessingMode = 0;
         this.disableCustomProcessing = false;
