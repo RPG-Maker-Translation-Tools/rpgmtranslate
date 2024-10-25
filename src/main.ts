@@ -2045,6 +2045,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
                 buttonElement.innerHTML = `maps${i + 1}`;
 
+                if (part.count("\n") + 1 <= 1) {
+                    buttonElement.classList.replace("backgroundPrimary", "bg-red-600");
+                }
+
                 leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
             }
 
