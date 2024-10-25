@@ -208,12 +208,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         return bookmarkTitles;
     }
 
-    async function createDataDir(path: string) {
-        if (!(await exists(path))) {
-            await mkdir(path);
-        }
-    }
-
     async function determineLanguage(): Promise<Language> {
         const locale: string = (await getLocale()) ?? "en";
         const mainPart: string = locale.split("-", 1)[0];
@@ -1933,18 +1927,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function createCompileSettings(path: string) {
-        if (!(await exists(path))) {
-            await writeTextFile(path, JSON.stringify(new CompileSettings()));
-        }
-    }
-
-    async function createLogFile(path: string) {
-        if (!(await exists(path))) {
-            await writeTextFile(path, "{}");
-        }
-    }
-
     function setTheme(newTheme: Theme) {
         if (newTheme.name === currentTheme) {
             return;
@@ -2056,12 +2038,37 @@ document.addEventListener("DOMContentLoaded", async () => {
                 leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
             }
 
-            // TODO: Maybe remove these functions and just inline the code
-            await createDataDir(join(settings.projectPath, programDataDir));
-            await createLogFile(join(settings.projectPath, programDataDir, logFile));
-            await createCompileSettings(join(settings.projectPath, programDataDir, "compile-settings.json"));
-            initializeThemes();
-            await mkdir(join(settings.projectPath, programDataDir, "backups"), { recursive: true });
+            // Create program data directory
+            const programDataDirPath = join(settings.projectPath, programDataDir);
+            if (!(await exists(programDataDirPath))) {
+                await mkdir(programDataDirPath);
+            }
+
+            // Create log file
+            const logFilePath = join(settings.projectPath, programDataDir, logFile);
+            if (!(await exists(logFilePath))) {
+                await writeTextFile(logFilePath, "{}");
+            }
+
+            // Create compile settings
+            const compileSettingsPath = join(settings.projectPath, programDataDir, "compile-settings.json");
+            if (!(await exists(compileSettingsPath))) {
+                await writeTextFile(compileSettingsPath, JSON.stringify(new CompileSettings()));
+            }
+
+            // Initialize themes
+            for (const themeName of Object.keys(themes)) {
+                const themeButton = document.createElement("button");
+                themeButton.id = themeButton.innerHTML = themeName;
+                themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
+
+                themeMenu.insertBefore(themeButton, createThemeMenuButton);
+            }
+
+            const backupPath = join(programDataDirPath, "backups");
+            if (!(await exists(backupPath))) {
+                await mkdir(backupPath);
+            }
 
             nextBackupNumber = (await readDir(join(settings.projectPath, programDataDir, "backups")))
                 .map((entry) => Number.parseInt(entry.name.slice(0, -2)))
@@ -2106,16 +2113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         clearInterval(interval);
-    }
-
-    function initializeThemes() {
-        for (const themeName of Object.keys(themes)) {
-            const themeButton = document.createElement("button");
-            themeButton.id = themeButton.innerHTML = themeName;
-            themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
-
-            themeMenu.insertBefore(themeButton, createThemeMenuButton);
-        }
     }
 
     async function createReadWindow() {
