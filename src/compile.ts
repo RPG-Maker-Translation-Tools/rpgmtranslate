@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     applyLocalization(new CompileWindowLocalization(language));
 
     const settingsContainer = document.getElementById("settings-container") as HTMLDivElement;
-    const loggingCheckbox = document.getElementById("logging-checkbox") as HTMLSpanElement;
     const romanizeCheckbox = document.getElementById("romanize-checkbox") as HTMLSpanElement;
     const customProcessingCheckbox = document.getElementById("custom-processing-checkbox") as HTMLSpanElement;
     const customOutputPathCheckbox = document.getElementById("custom-output-path-checkbox") as HTMLSpanElement;
@@ -53,7 +52,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         await readTextFile(join(projectPath, ".rpgmtranslate", "compile-settings.json")),
     ) as CompileSettings;
 
-    loggingCheckbox.innerHTML = compileSettings.logging ? "check" : "";
     romanizeCheckbox.innerHTML = compileSettings.romanize ? "check" : "";
     customProcessingCheckbox.innerHTML = compileSettings.disableCustomProcessing ? "check" : "";
 
@@ -98,15 +96,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case loggingCheckbox.id:
-                if (!loggingCheckbox.textContent) {
-                    loggingCheckbox.innerHTML = "check";
-                    compileSettings.logging = true;
-                } else {
-                    loggingCheckbox.innerHTML = "";
-                    compileSettings.logging = false;
-                }
-                break;
             case romanizeCheckbox.id:
                 if (!romanizeCheckbox.textContent) {
                     romanizeCheckbox.innerHTML = "check";
