@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import {
     animateProgressText,
     applyLocalization,
@@ -9,10 +8,17 @@ import {
     Settings,
 } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
-import { invokeCompile, invokeEscapeText, invokeRead, invokeReadLastLine } from "./extensions/invokes";
+import {
+    invokeAddToScope,
+    invokeCompile,
+    invokeEscapeText,
+    invokeRead,
+    invokeReadLastLine,
+    invokeTranslateText,
+} from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
-import { EngineType, Language, ProcessingMode, SaveMode, State } from "./types/enums";
+import { EngineType, Language, ProcessingMode, SaveMode, SearchMode, State } from "./types/enums";
 
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -64,10 +70,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const compileButton = document.getElementById("compile-button") as HTMLButtonElement;
     const themeButton = document.getElementById("theme-button") as HTMLButtonElement;
     const themeMenu = document.getElementById("theme-menu") as HTMLDivElement;
+    const toolsButton = document.getElementById("tools-button") as HTMLButtonElement;
+    const toolsMenu = document.getElementById("tools-menu") as HTMLDivElement;
     const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
     const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
     const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
-    const searchTranslationButton = document.getElementById("translation-button") as HTMLButtonElement;
+    const searchModeSelect = document.getElementById("search-mode") as HTMLSelectElement;
     const searchLocationButton = document.getElementById("location-button") as HTMLButtonElement;
     const goToRowInput = document.getElementById("goto-row-input") as HTMLInputElement;
     const menuBar = document.getElementById("menu-bar") as HTMLDivElement;
@@ -162,7 +170,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     let searchRegex = false;
     let searchWhole = false;
     let searchCase = false;
-    let searchTranslation = false;
     let searchLocation = false;
 
     let saved = true;
@@ -364,8 +371,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            const closeButton = themeWindow.firstElementChild?.firstElementChild as HTMLButtonElement;
-            const createThemeButton = themeWindow.lastElementChild?.lastElementChild as HTMLButtonElement;
+            const closeButton = themeWindow.firstElementChild!.firstElementChild as HTMLButtonElement;
+            const createThemeButton = themeWindow.lastElementChild!.lastElementChild as HTMLButtonElement;
             createThemeButton.addEventListener("click", createTheme);
 
             closeButton.addEventListener("click", () => {
@@ -574,6 +581,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const searchMode = Number.parseInt(searchModeSelect.value) as SearchMode;
         const results = isReplace ? new Map<HTMLTextAreaElement, string>() : null;
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
@@ -583,7 +591,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         for (const child of currentSearchArray ?? []) {
             const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
 
-            {
+            if (searchMode !== SearchMode.OnlyOriginal) {
                 const elementText = node[2].value.replaceAllMultiple({
                     "<": "&lt;",
                     ">": "&gt;",
@@ -596,7 +604,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            if (!searchTranslation) {
+            if (searchMode !== SearchMode.OnlyTranslation) {
                 const elementText = node[1].innerHTML.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
                 const matches = elementText.match(regexp);
 
@@ -645,17 +653,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .entries()) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
-                    const originalMatches = original.match(regexp);
-                    const translatedMatches = translated.match(regexp);
-
-                    if (originalMatches) {
-                        const result = createMatchesContainer(original, originalMatches);
-                        objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [result, translated]);
+                    if (searchMode !== SearchMode.OnlyTranslation) {
+                        const originalMatches = original.match(regexp);
+                        if (originalMatches) {
+                            const result = createMatchesContainer(original, originalMatches);
+                            objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [
+                                result,
+                                translated,
+                            ]);
+                        }
                     }
 
-                    if (translatedMatches) {
-                        const result = createMatchesContainer(translated, translatedMatches);
-                        objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [result, original]);
+                    if (searchMode !== SearchMode.OnlyOriginal) {
+                        const translatedMatches = translated.match(regexp);
+                        if (translatedMatches) {
+                            const result = createMatchesContainer(translated, translatedMatches);
+                            objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
+                                result,
+                                original,
+                            ]);
+                        }
                     }
 
                     if ((objectToWrite.size + 1) % 1000 === 0) {
@@ -1133,7 +1150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function goToRow() {
+    function showGoToRowInput() {
         goToRowInput.classList.remove("hidden");
         goToRowInput.focus();
 
@@ -1142,7 +1159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
     }
 
-    function jumpToRow(key: string) {
+    function jumpToRow(key: "alt" | "ctrl") {
         const focusedElement = document.activeElement as HTMLElement;
         if (!contentContainer.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
             return;
@@ -1226,7 +1243,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         event.preventDefault();
 
                         if (state && goToRowInput.classList.contains("hidden")) {
-                            goToRow();
+                            showGoToRowInput();
                             goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
                         } else if (!goToRowInput.classList.contains("hidden")) {
                             goToRowInput.classList.add("hidden");
@@ -1339,7 +1356,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const counterpart = selectedField.parentElement!.children[1];
 
                                 // Change hard-coded to and from values to user defined
-                                const translated = await invoke<string>("translate_text", {
+                                const translated = await invokeTranslateText({
                                     text: counterpart.textContent!,
                                     to: "ru",
                                     from: "en",
@@ -1385,19 +1402,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (event.altKey) {
             switch (event.code) {
                 case "KeyC":
-                    switchCase();
+                    searchCase = !searchCase;
+                    searchCaseButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyW":
-                    switchWhole();
+                    searchWhole = !searchWhole;
+                    searchWholeButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyR":
-                    switchRegExp();
-                    break;
-                case "KeyT":
-                    switchTranslation();
+                    searchRegex = !searchRegex;
+                    searchRegexButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyL":
-                    switchLocation();
+                    searchLocation = !searchLocation;
+                    searchLocationButton.classList.toggle("backgroundThird");
                     break;
             }
         }
@@ -1584,12 +1602,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: compileSettings.romanize,
                 disableCustomProcessing: compileSettings.disableCustomProcessing,
                 disableProcessing: Object.values(compileSettings.disableProcessing.of),
-                logging: compileSettings.logging,
                 engineType: settings.engineType!,
             });
 
-            alert(`${windowLocalization.compileSuccess} ${executionTime}`);
             compileButton.firstElementChild!.classList.remove("animate-spin");
+            alert(`${windowLocalization.compileSuccess} ${executionTime}`);
         }
     }
 
@@ -1716,31 +1733,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function switchCase() {
-        searchCase = !searchCase;
-        searchCaseButton.classList.toggle("backgroundThird");
-    }
-
-    function switchWhole() {
-        searchWhole = !searchWhole;
-        searchWholeButton.classList.toggle("backgroundThird");
-    }
-
-    function switchRegExp() {
-        searchRegex = !searchRegex;
-        searchRegexButton.classList.toggle("backgroundThird");
-    }
-
-    function switchTranslation() {
-        searchTranslation = !searchTranslation;
-        searchTranslationButton.classList.toggle("backgroundThird");
-    }
-
-    function switchLocation() {
-        searchLocation = !searchLocation;
-        searchLocationButton.classList.toggle("backgroundThird");
-    }
-
     async function loadFont(fontUrl: string) {
         if (fontUrl) {
             const font = await new FontFace("font", `url(${fontUrl})`).load();
@@ -1828,9 +1820,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function handleHelpMenuClick(event: Event) {
-        const target = event.target as HTMLElement;
+    function handleHelpMenuClick(event: MouseEvent) {
         helpMenu.classList.replace("flex", "hidden");
+        const target = event.target as HTMLElement;
 
         switch (target.id) {
             case "help-button":
@@ -1851,9 +1843,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function handleLanguageMenuClick(event: Event) {
-        const target = event.target as HTMLElement;
+    function handleLanguageMenuClick(event: MouseEvent) {
         languageMenu.classList.replace("flex", "hidden");
+        const target = event.target as HTMLElement;
 
         switch (target.id) {
             case "ru-button":
@@ -1869,7 +1861,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function handleMenuBarClick(event: Event) {
+    function handleMenuBarClick(event: MouseEvent) {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
@@ -1930,7 +1922,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // that's the dumbest function i've ever written
     async function waitForSave() {
         while (saving) {
             await new Promise((resolve) => setTimeout(resolve, 200));
@@ -1992,7 +1983,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: false,
                 disableCustomProcessing: false,
                 disableProcessing: [false, false, false, false],
-                logging: false,
                 processingMode: ProcessingMode.Default,
                 engineType: settings.engineType!,
             });
@@ -2000,7 +1990,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function initializeProject(pathToProject: string) {
-        await invoke("add_to_scope", { window: appWindow, path: pathToProject });
+        await invokeAddToScope({ window: appWindow, path: pathToProject });
 
         projectStatus.innerHTML = windowLocalization.loadingProject;
         const interval = animateProgressText(projectStatus);
@@ -2232,6 +2222,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                     searchMenu.classList.add("hidden");
                 }
                 break;
+            case toolsButton.id:
+                toolsMenu.toggleMultiple("hidden", "flex");
+
+                requestAnimationFrame(() => {
+                    toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
+                    toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
+
+                    toolsMenu.addEventListener("click", (event: MouseEvent) => {
+                        const target = event.target as HTMLButtonElement;
+
+                        if (!toolsMenu.contains(target)) {
+                            return;
+                        }
+
+                        // TODO: Each button should open the popup for user to configure the action.
+                        // For example, if user wants to trim the text in all files' fields, they should be able to select all fields.
+                        // And, for example, for trim, they should be able to select the trim mode (left, right, both).
+                        switch (target.id) {
+                            case "trim-tools-menu-button":
+                                break;
+                            case "translate-tools-menu-button":
+                                break;
+                            case "wrap-tools-menu-button":
+                                break;
+                        }
+                    });
+                });
+
+                break;
         }
     });
 
@@ -2386,19 +2405,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case "case-button":
-                switchCase();
+                searchCase = !searchCase;
+                searchCaseButton.classList.toggle("backgroundThird");
                 break;
             case "whole-button":
-                switchWhole();
+                searchWhole = !searchWhole;
+                searchWholeButton.classList.toggle("backgroundThird");
                 break;
             case "regex-button":
-                switchRegExp();
-                break;
-            case "translation-button":
-                switchTranslation();
+                searchRegex = !searchRegex;
+                searchRegexButton.classList.toggle("backgroundThird");
                 break;
             case "location-button":
-                switchLocation();
+                searchLocation = !searchLocation;
+                searchLocationButton.classList.toggle("backgroundThird");
                 break;
         }
     });
