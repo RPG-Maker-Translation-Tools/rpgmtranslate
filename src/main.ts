@@ -428,7 +428,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function openDirectory() {
-        const directory = (await openPath({ directory: true, multiple: false }))!;
+        const directory = await openPath({ directory: true, multiple: false });
 
         if (directory) {
             if (directory === settings.projectPath) {
