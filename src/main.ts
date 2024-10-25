@@ -1103,7 +1103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, settings.backup.period * 1000);
     }
 
-    async function changeState(newState: State | null, slide = false) {
+    async function changeState(newState: State | null) {
         if (state && state === newState) {
             return;
         }
@@ -1129,10 +1129,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             for (const child of contentContainer.firstElementChild!.children) {
                 observerMain.observe(child);
-            }
-
-            if (slide) {
-                leftPanel.toggleMultiple("-translate-x-full", "translate-x-0");
             }
         }
     }
@@ -2138,7 +2134,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     leftPanel.addEventListener("click", async (event) => {
-        await changeState(leftPanel.secondHighestParent(event.target as HTMLElement).textContent as State, true);
+        await changeState(leftPanel.secondHighestParent(event.target as HTMLElement).textContent as State);
     });
 
     topPanelButtonsContainer.addEventListener("click", async (event) => {
