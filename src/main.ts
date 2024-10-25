@@ -277,7 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
-                        for (let i = 0; i < rowsToSelect + 1; i++) {
+                        for (let i = 0; i <= rowsToSelect; i++) {
                             const line = focusedElementRow + i;
 
                             const nextElement = document.getElementById(
