@@ -71,6 +71,13 @@ export class MainWindowLocalization {
     readonly directoryAlreadyOpened: string;
     readonly errorOccurred: string;
     readonly originalTextFieldTitle: string;
+    readonly searchMode: string;
+    readonly searchAll: string;
+    readonly searchOnlyTranslation: string;
+    readonly searchOnlyOriginal: string;
+    readonly trimFields: string;
+    readonly translateFields: string;
+    readonly wrapFields: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -149,6 +156,13 @@ export class MainWindowLocalization {
                 this.directoryAlreadyOpened = "Выбранная директория уже открыта в программе.";
                 this.errorOccurred = "Произошла ошибка:";
                 this.originalTextFieldTitle = "Кликните, чтобы скопировать текст";
+                this.searchMode = "Режим поиска";
+                this.searchAll = "Искать везде";
+                this.searchOnlyOriginal = "Искать только в ориг. тексте";
+                this.searchOnlyTranslation = "Искать только в переводе";
+                this.trimFields = "Обрезать пробелы полей";
+                this.translateFields = "Перевести поля";
+                this.wrapFields = "Перенести строки в полях";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -225,6 +239,13 @@ export class MainWindowLocalization {
                 this.directoryAlreadyOpened = "Selected directory is already opened in the program.";
                 this.errorOccurred = "An error has occurred:";
                 this.originalTextFieldTitle = "Click to copy text";
+                this.searchMode = "Search mode";
+                this.searchAll = "Search everywhere";
+                this.searchOnlyOriginal = "Search only in original text";
+                this.searchOnlyTranslation = "Search only in translation";
+                this.trimFields = "Trim fields";
+                this.translateFields = "Translate fields";
+                this.wrapFields = "Wrap lines in fields";
                 break;
         }
     }
@@ -326,7 +347,6 @@ export class HelpWindowLocalization {
 
 export class CompileWindowLocalization {
     readonly options: string;
-    readonly enableLoggingOption: string;
     readonly romanizeOption: string;
     readonly shuffleOption: string;
     readonly shuffleLevel: string;
@@ -352,7 +372,6 @@ export class CompileWindowLocalization {
         switch (language) {
             case Language.Russian:
                 this.options = "Опции:";
-                this.enableLoggingOption = "Включить логирование (в текущий момент не имеет функционала)";
                 this.romanizeOption =
                     "Романизация игрового текста. Используйте эту опцию, лишь если вы прочитали текст с её использованием, чтобы корректно записать все файлы.";
                 this.shuffleOption = "Перемешивание";
@@ -379,7 +398,6 @@ export class CompileWindowLocalization {
                 break;
             default:
                 this.options = "Options:";
-                this.enableLoggingOption = "Enable logging (currently does nothing)";
                 this.romanizeOption =
                     "Whether to romanize text. Only use this option if you've read text with it, to correctly write all files.";
                 this.shuffleOption = "Shuffle";
@@ -417,7 +435,6 @@ export class ReadWindowLocalization {
     readonly appendModeDescription: string;
     readonly forceModeDescription: string;
     readonly options: string;
-    readonly enableLoggingOption: string;
     readonly romanizeOption: string;
     readonly disableCustomProcessing: string;
     readonly disableProcessing: string;
@@ -448,7 +465,6 @@ export class ReadWindowLocalization {
                 this.forceModeDescription =
                     "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
                 this.options = "Опции:";
-                this.enableLoggingOption = "Включить логирование (в текущий момент не имеет функционала)";
                 this.romanizeOption =
                     'Романизация текста. Если вы парсите текст из японской игры, содержащей символы вроде 「」,являющимися обычными японскими кавычками, они будут автоматически заменены на их европейские эквиваленты. (в данном случае, "")';
                 this.disableCustomProcessing =
@@ -480,7 +496,6 @@ export class ReadWindowLocalization {
                 this.forceModeDescription =
                     "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
                 this.options = "Options:";
-                this.enableLoggingOption = "Enable logging (currently does nothing)";
                 this.romanizeOption =
                     'Whether to romanize text. If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their roman equivalents. (in this case, "")';
                 this.disableCustomProcessing =
