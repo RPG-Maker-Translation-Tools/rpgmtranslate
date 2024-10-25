@@ -317,8 +317,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         async function createTheme() {
-            const themeNameInput = themeWindow.lastElementChild?.firstElementChild
-                ?.lastElementChild as HTMLInputElement;
+            const themeNameInput = themeWindow.lastElementChild!.firstElementChild!
+                .lastElementChild as HTMLInputElement;
             const themeName = themeNameInput.value;
 
             const newTheme = { name: themeName } as Theme;
