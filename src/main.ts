@@ -1330,18 +1330,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                         jumpToRow("ctrl");
                     }
                     break;
-            }
-        }
+                case "KeyT":
+                    if (event.ctrlKey) {
+                        const selectedField = event.target as HTMLTextAreaElement;
 
-        if (event.code === "KeyQ") {
+                        if (!selectedField.value) {
+                            if (!selectedField.placeholder) {
+                                const counterpart = selectedField.parentElement!.children[1];
+
+                                // Change hard-coded to and from values to user defined
             const translated = await invoke<string>("translate_text", {
-                text: document.getElementById("maps1-original-2")!.textContent!,
+                                    text: counterpart.textContent!,
                 to: "ru",
                 from: "en",
             });
 
-            (document.getElementById("maps1-translation-2") as HTMLTextAreaElement).value = translated;
+                                selectedField.placeholder = translated;
+                            } else {
+                                selectedField.value = selectedField.placeholder;
+                                selectedField.placeholder = "";
+                            }
+                        }
+                        break;
+                    }
+            }
         }
+
         if (event.key === "Shift" && !event.repeat) {
             shiftPressed = true;
         }
