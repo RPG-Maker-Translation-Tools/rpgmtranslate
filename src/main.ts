@@ -1339,11 +1339,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const counterpart = selectedField.parentElement!.children[1];
 
                                 // Change hard-coded to and from values to user defined
-            const translated = await invoke<string>("translate_text", {
+                                const translated = await invoke<string>("translate_text", {
                                     text: counterpart.textContent!,
-                to: "ru",
-                from: "en",
-            });
+                                    to: "ru",
+                                    from: "en",
+                                });
 
                                 selectedField.placeholder = translated;
                             } else {
@@ -1812,7 +1812,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function fileMenuClick(event: Event) {
+    async function handleFileMenuClick(event: Event) {
         const target = event.target as HTMLElement;
         fileMenu.classList.replace("flex", "hidden");
 
@@ -1828,7 +1828,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function helpMenuClick(event: Event) {
+    function handleHelpMenuClick(event: Event) {
         const target = event.target as HTMLElement;
         helpMenu.classList.replace("flex", "hidden");
 
@@ -1851,7 +1851,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function languageMenuClick(event: Event) {
+    function handleLanguageMenuClick(event: Event) {
         const target = event.target as HTMLElement;
         languageMenu.classList.replace("flex", "hidden");
 
@@ -1884,7 +1884,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fileMenu.addEventListener(
                     "click",
                     async (event) => {
-                        await fileMenuClick(event);
+                        await handleFileMenuClick(event);
                     },
                     {
                         once: true,
@@ -1902,7 +1902,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 helpMenu.addEventListener(
                     "click",
                     (event) => {
-                        helpMenuClick(event);
+                        handleHelpMenuClick(event);
                     },
                     {
                         once: true,
@@ -1920,7 +1920,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 languageMenu.addEventListener(
                     "click",
                     (event) => {
-                        languageMenuClick(event);
+                        handleLanguageMenuClick(event);
                     },
                     {
                         once: true,
@@ -2084,7 +2084,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await mkdir(backupPath);
             }
 
-            nextBackupNumber = (await readDir(join(settings.projectPath, programDataDir, "backups")))
+            nextBackupNumber = (await readDir(backupPath))
                 .map((entry) => Number.parseInt(entry.name.slice(0, -2)))
                 .sort((a, b) => a - b)[0];
 
