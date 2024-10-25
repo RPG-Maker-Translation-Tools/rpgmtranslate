@@ -13,7 +13,7 @@ tauri = { version = "2.0.6", features = ["protocol-asset"] }
 serde = { version = "1.0.213", features = ["derive"] }
 serde_json = "1.0.132"
 rayon = "1.10.0"
-regex = "1.11.0"
+regex = "1.11.1"
 indexmap = "2.6.0"
 xxhash-rust = { version = "0.8.12", features = ["xxh3"] }
 sonic-rs = "0.3.14"
@@ -21,7 +21,7 @@ fastrand = "2.1.1"
 lazy_static = "1.5.0"
 marshal-rs = { version = "0.3.1", features = ["sonic"] }
 flate2 = "1.0.34"
-encoding_rs = "0.8.34"
+encoding_rs = "0.8.35"
 tauri-plugin-process = "2.0.1"
 tauri-plugin-fs = "2.0.3"
 tauri-plugin-os = "2.0.1"
