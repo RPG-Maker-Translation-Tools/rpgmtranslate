@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .button {
-    @apply flex select-none items-center justify-center p-4;
+    @apply flex size-16 select-none items-center justify-center p-4;
 }
 
 .input {
