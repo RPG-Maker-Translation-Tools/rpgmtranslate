@@ -47,3 +47,7 @@ After the build, `target` directory will be created in the `gui/src-tauri` path,
 
 The repository is licensed under [WTFPL](http://www.wtfpl.net/).
 This means that you can use and modify the program in any way. You can do what the fuck you want to.
+
+The repository contains third-party software, that is licensed under other conditions:
+
+-   `Google Material Icons` - licensed under `Apache License Version 2.0`.
