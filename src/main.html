@@ -52,7 +52,7 @@
                         class="button backgroundPrimaryHovered textThird menuButtonTitle size-16 font-material outline-none"
                         id="menu-button"
                     >
-                        <div>menu</div>
+                        menu
                     </button>
                     <button
                         class="button backgroundPrimaryHovered textThird saveButtonTitle size-16 font-material outline-none"
@@ -64,37 +64,48 @@
                         class="button backgroundPrimaryHovered textThird compileButtonTitle size-16 font-material outline-none"
                         id="compile-button"
                     >
-                        <div>upload</div>
+                        <div>build</div>
                     </button>
                     <button
                         class="button backgroundPrimaryHovered textThird openButtonTitle size-16 font-material outline-none"
                         id="open-directory-button"
                     >
-                        <div>folder_open</div>
+                        folder_open
                     </button>
                     <button
                         class="button backgroundPrimaryHovered textThird settingsButtonTitle size-16 font-material outline-none"
                         id="settings-button"
                     >
-                        <div>settings</div>
+                        settings
                     </button>
+
+                    <!-- Theme button -->
                     <button
                         class="button backgroundPrimaryHovered textThird themeButtonTitle size-16 font-material outline-none"
                         id="theme-button"
                     >
-                        <div>palette</div>
+                        palette
                     </button>
+
+                    <div class="dropdown-menu backgroundSecond hidden w-16" id="theme-menu">
+                        <button
+                            class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
+                            id="create-theme-menu-button"
+                        ></button>
+                    </div>
+                    <!-- End -->
+
                     <button
                         class="button backgroundPrimaryHovered textThird bookmarksButtonTitle size-16 font-material outline-none"
                         id="bookmarks-button"
                     >
-                        <div>bookmarks</div>
+                        bookmarks
                     </button>
                     <button
                         class="button backgroundPrimaryHovered textThird readButtonTitle size-16 font-material outline-none"
                         id="read-button"
                     >
-                        <div>menu_book</div>
+                        menu_book
                     </button>
                     <button
                         class="button backgroundPrimaryHovered textThird searchButtonTitle size-16 font-material outline-none"
@@ -102,12 +113,30 @@
                     >
                         search
                     </button>
-                    <div class="dropdown-menu backgroundSecond hidden w-16" id="theme-menu">
+
+                    <!-- Tools button -->
+                    <button
+                        class="button backgroundPrimaryHovered textThird toolsButtonTitle size-16 font-material outline-none"
+                        id="tools-button"
+                    >
+                        construction
+                    </button>
+
+                    <div class="dropdown-menu backgroundSecond hidden w-16" id="tools-menu">
                         <button
-                            class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
-                            id="create-theme-menu-button"
+                            class="backgroundPrimary backgroundPrimaryHovered trimFields p-2 text-base"
+                            id="trim-tools-menu-button"
+                        ></button>
+                        <button
+                            class="backgroundPrimary backgroundPrimaryHovered translateFields p-2 text-base"
+                            id="translate-tools-menu-button"
+                        ></button>
+                        <button
+                            class="backgroundPrimary backgroundPrimaryHovered wrapFields p-2 text-base"
+                            id="wrap-tools-menu-button"
                         ></button>
                     </div>
+                    <!-- End -->
 
                     <div class="flex h-full w-full content-end justify-end pr-4">
                         <div class="flex min-w-32 items-center justify-center p-4 text-sm" id="current-state"></div>
@@ -307,17 +336,20 @@
                     regular_expression
                 </button>
                 <button
-                    class="button backgroundPrimaryHovered textThird translationButtonTitle font-material"
-                    id="translation-button"
-                >
-                    translate
-                </button>
-                <button
                     class="button backgroundPrimaryHovered textThird locationButtonTitle font-material"
                     id="location-button"
                 >
                     location_on
                 </button>
+            </div>
+
+            <div class="flex items-center justify-center p-2 text-base">
+                <span class="searchMode pr-2"></span>
+                <select class="backgroundSecond rounded-sm outline-none" id="search-mode">
+                    <option class="searchAll" value="0"></option>
+                    <option class="searchOnlyOriginal" value="1"></option>
+                    <option class="searchOnlyTranslation" value="2"></option>
+                </select>
             </div>
         </div>
 
