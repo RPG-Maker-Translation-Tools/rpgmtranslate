@@ -31,7 +31,6 @@ interface Settings {
 
 interface CompileSettings {
     initialized: boolean;
-    logging: boolean;
     romanize: boolean;
     mapsProcessingMode: number;
     disableCustomProcessing: boolean;
@@ -86,7 +85,6 @@ interface ReadCommandOptions extends Record<string, unknown> {
     romanize: boolean;
     disableCustomProcessing: boolean;
     disableProcessing: boolean[];
-    logging: boolean;
     processingMode: import("./enums").ProcessingMode;
     engineType: import("./enums").EngineType;
 }
@@ -100,7 +98,6 @@ interface CompileCommandOptions extends Record<string, unknown> {
     romanize: boolean;
     disableCustomProcessing: boolean;
     disableProcessing: boolean[];
-    logging: boolean;
     engineType: import("./enums").EngineType;
 }
 
