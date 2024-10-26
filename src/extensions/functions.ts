@@ -242,6 +242,8 @@ export class Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
+    from: Intl.UnicodeBCP47LocaleIdentifier;
+    to: Intl.UnicodeBCP47LocaleIdentifier;
     engineType: EngineType | null;
 
     constructor(language: Language) {
@@ -251,6 +253,8 @@ export class Settings {
         this.fontUrl = "";
         this.firstLaunch = true;
         this.projectPath = "";
+        this.from = "";
+        this.to = "";
         this.engineType = null;
     }
 }

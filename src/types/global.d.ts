@@ -26,6 +26,8 @@ interface Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
+    from: Intl.UnicodeBCP47LocaleIdentifier;
+    to: Intl.UnicodeBCP47LocaleIdentifier;
     engineType: import("./enums").EngineType | null;
 }
 
