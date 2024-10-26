@@ -1763,10 +1763,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             resizable: false,
         });
 
-        const settingsUnlisten = await settingsWindow.once<[boolean, number, number, string]>(
-            "get-settings",
-            async (data) => {
-                const [enabled, max, period, fontUrl] = data.payload;
+        const settingsUnlisten = await settingsWindow.once<
+            [boolean, number, number, Intl.UnicodeBCP47LocaleIdentifier, Intl.UnicodeBCP47LocaleIdentifier, string]
+        >("get-settings", async (data) => {
+            const [enabled, max, period, from, to, fontUrl] = data.payload;
 
                 if (enabled && !backupIsActive) {
                     backup();
@@ -1775,11 +1775,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 settings.backup.enabled = enabled;
                 settings.backup.max = max;
                 settings.backup.period = period;
+            settings.from = from;
+            settings.to = to;
                 settings.fontUrl = fontUrl;
 
                 await loadFont(fontUrl);
-            },
-        );
+        });
 
         await settingsWindow.once("tauri://destroyed", settingsUnlisten);
     }
