@@ -78,6 +78,7 @@ export class MainWindowLocalization {
     readonly trimFields: string;
     readonly translateFields: string;
     readonly wrapFields: string;
+    readonly translationLanguagesNotSelected: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -163,6 +164,7 @@ export class MainWindowLocalization {
                 this.trimFields = "Обрезать пробелы полей";
                 this.translateFields = "Перевести поля";
                 this.wrapFields = "Перенести строки в полях";
+                this.translationLanguagesNotSelected = "Языки перевода не выбраны. Настройте их в настройках.";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -246,6 +248,8 @@ export class MainWindowLocalization {
                 this.trimFields = "Trim fields";
                 this.translateFields = "Translate fields";
                 this.wrapFields = "Wrap lines in fields";
+                this.translationLanguagesNotSelected =
+                    "Translation languages are not selected. Set them in the settings.";
                 break;
         }
     }
@@ -259,6 +263,10 @@ export class SettingsWindowLocalization {
     readonly backup: string;
     readonly font: string;
     readonly defaultFont: string;
+    readonly translationLanguages: string;
+    readonly fromLanguage: string;
+    readonly toLanguage: string;
+    readonly incorrectLanguageTag: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -270,6 +278,10 @@ export class SettingsWindowLocalization {
                 this.backup = "Резервное копирование";
                 this.font = "Шрифт";
                 this.defaultFont = "Стандартный";
+                this.translationLanguages = "Языки перевода (для машинного перевода)";
+                this.fromLanguage = "Исходный язык (тег BCP-47, например, en или en-US)";
+                this.toLanguage = "Язык перевода (тег BCP-47, например, ru или ru-RU)";
+                this.incorrectLanguageTag = "Некорректный тег языка";
                 break;
             default:
                 this.backupPeriodLabel = "Create backup every:";
@@ -279,6 +291,10 @@ export class SettingsWindowLocalization {
                 this.backup = "Backup";
                 this.font = "Font";
                 this.defaultFont = "Default";
+                this.translationLanguages = "Translation languages (for machine translation)";
+                this.fromLanguage = "From language (BCP-47 tag, e.g. jp or jp-JP)";
+                this.toLanguage = "To language (BCP-47 tag, e.g. en or en-US)";
+                this.incorrectLanguageTag = "Incorrect language tag";
                 break;
         }
     }
