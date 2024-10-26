@@ -313,7 +313,6 @@ fn compile(
     romanize: bool,
     disable_custom_processing: bool,
     disable_processing: [bool; 4],
-    logging: bool,
     engine_type: u8,
 ) -> f64 {
     let start_time: Instant = Instant::now();
@@ -360,7 +359,7 @@ fn compile(
             data_output_path,
             maps_processing_mode,
             romanize,
-            logging,
+            false,
             game_type,
             engine_type,
             "",
@@ -373,7 +372,7 @@ fn compile(
             original_path,
             data_output_path,
             romanize,
-            logging,
+            false,
             game_type,
             engine_type,
             "",
@@ -386,7 +385,7 @@ fn compile(
             translation_path,
             data_output_path,
             romanize,
-            logging,
+            false,
             engine_type,
             "",
         );
@@ -400,7 +399,7 @@ fn compile(
                 plugins_file_path,
                 translation_path,
                 &unsafe { plugins_output_path.unwrap_unchecked() },
-                logging,
+                false,
                 "",
             );
         }
@@ -413,7 +412,7 @@ fn compile(
                 translation_path,
                 data_output_path,
                 romanize,
-                logging,
+                false,
                 "",
             );
         }
@@ -431,7 +430,6 @@ fn read(
     romanize: bool,
     disable_custom_processing: bool,
     disable_processing: [bool; 4],
-    logging: bool,
     processing_mode: u8,
     engine_type: u8,
 ) {
@@ -466,7 +464,7 @@ fn read(
             translation_path,
             maps_processing_mode,
             romanize,
-            logging,
+            false,
             game_type,
             engine_type,
             processing_mode,
@@ -479,7 +477,7 @@ fn read(
             original_path,
             translation_path,
             romanize,
-            logging,
+            false,
             game_type,
             processing_mode,
             engine_type,
@@ -492,7 +490,7 @@ fn read(
             &original_path.join(String::from("System") + extension),
             translation_path,
             romanize,
-            logging,
+            false,
             processing_mode,
             engine_type,
             ("", "", ""),
@@ -504,7 +502,7 @@ fn read(
             &original_path.join(String::from("Scripts") + extension),
             translation_path,
             romanize,
-            logging,
+            false,
             "",
         );
     }
