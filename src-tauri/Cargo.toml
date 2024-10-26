@@ -19,7 +19,7 @@ xxhash-rust = { version = "0.8.12", features = ["xxh3"] }
 sonic-rs = "0.3.14"
 fastrand = "2.1.1"
 lazy_static = "1.5.0"
-marshal-rs = { version = "0.3.1", features = ["sonic"] }
+marshal-rs = { version = "0.3.2", features = ["sonic"] }
 flate2 = "1.0.34"
 encoding_rs = "0.8.35"
 tauri-plugin-process = "2.0.1"
