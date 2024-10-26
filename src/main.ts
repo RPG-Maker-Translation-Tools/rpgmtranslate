@@ -2147,6 +2147,37 @@ document.addEventListener("DOMContentLoaded", async () => {
         await changeState(leftPanel.secondHighestParent(event.target as HTMLElement).textContent as State);
     });
 
+    function wrapText(text: string, width: number): string {
+        const lines = text.split("\n");
+        const remainder: string[] = [];
+        const wrappedLines: string[] = [];
+
+        for (let line of lines) {
+            if (remainder.length) {
+                line = `${remainder.join(" ")} ${line}`;
+                remainder.length = 0;
+            }
+
+            if (line.length > width) {
+                const words = line.split(" ");
+
+                while (words.join(" ").length > width) {
+                    remainder.unshift(words.pop()!);
+                }
+
+                wrappedLines.push(words.join(" "));
+            } else {
+                wrappedLines.push(line);
+            }
+        }
+
+        if (remainder.length) {
+            wrappedLines.push(remainder.join(" "));
+        }
+
+        return wrappedLines.join("\n");
+    }
+
     topPanelButtonsContainer.addEventListener("click", async (event) => {
         const target = topPanelButtonsContainer.secondHighestParent(event.target as HTMLElement);
 
