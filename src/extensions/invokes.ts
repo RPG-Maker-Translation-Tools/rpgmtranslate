@@ -21,6 +21,10 @@ export async function invokeAddToScope(args: { window: WebviewWindow; path: stri
     await invoke("add_to_scope", args);
 }
 
-export async function invokeTranslateText(args: { text: string; to: "ru"; from: "en" }): Promise<string> {
+export async function invokeTranslateText(args: {
+    text: string;
+    to: Intl.UnicodeBCP47LocaleIdentifier;
+    from: Intl.UnicodeBCP47LocaleIdentifier;
+}): Promise<string> {
     return await invoke<string>("translate_text", args);
 }
