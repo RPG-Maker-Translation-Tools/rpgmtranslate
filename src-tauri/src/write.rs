@@ -1671,7 +1671,14 @@ pub fn write_scripts(
                 let translated: Option<&String> = lines_map.get(&string);
 
                 if let Some(translated) = translated {
-                    code.replace_range(index..index + string.len(), translated);
+                    let before: Option<&str> = code.get(..index);
+                    let after: Option<&str> = code.get(index + string.len()..);
+
+                    if before.is_some() && after.is_some() {
+                        code.replace_range(index..index + string.len(), translated);
+                    } else {
+                        return;
+                    }
                 }
             }
 
