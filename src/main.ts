@@ -1544,9 +1544,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             originalTextElement.classList.add("text-lg");
             document.body.appendChild(originalTextElement);
 
+            const { lineHeight, paddingTop } = window.getComputedStyle(originalTextElement);
             const minHeight =
-                (originalTextElement.innerHTML.count("\n") + 1) *
-                Number.parseInt(window.getComputedStyle(originalTextElement).lineHeight);
+                (originalTextElement.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) +
+                Number.parseInt(paddingTop) * 2;
 
             document.body.removeChild(originalTextElement);
             originalTextElement.classList.remove("text-lg");
