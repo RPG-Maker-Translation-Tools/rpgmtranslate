@@ -1219,7 +1219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
         }
 
-        if (document.activeElement?.id === document.body.id) {
+        if (document.activeElement === document.body) {
             if (event.ctrlKey) {
                 switch (event.code) {
                     case "KeyZ":
