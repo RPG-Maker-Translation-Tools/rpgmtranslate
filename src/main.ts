@@ -2225,13 +2225,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case toolsButton.id:
+                if (!state) {
+                    return;
+                }
+
                 toolsMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
                     toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
 
-                    toolsMenu.addEventListener("click", (event: MouseEvent) => {
+                    toolsMenu.addEventListener("click", async (event: MouseEvent) => {
                         const target = event.target as HTMLButtonElement;
 
                         if (!toolsMenu.contains(target)) {
@@ -2243,10 +2247,63 @@ document.addEventListener("DOMContentLoaded", async () => {
                         // And, for example, for trim, they should be able to select the trim mode (left, right, both).
                         switch (target.id) {
                             case "trim-tools-menu-button":
+                                for (const element of contentContainer.firstElementChild!.children) {
+                                    const translationField = element.firstElementChild!
+                                        .lastElementChild as HTMLTextAreaElement;
+                                    translationField.value = translationField.value.trim();
+                                }
                                 break;
                             case "translate-tools-menu-button":
+                                for (const element of contentContainer.firstElementChild!.children) {
+                                    const children = element.children;
+                                    const originalField = children[1] as HTMLDivElement;
+                                    const translationField = children[2] as HTMLTextAreaElement;
+
+                                    if (!settings.from || !settings.to) {
+                                        alert(windowLocalization.translationLanguagesNotSelected);
+                                        return;
+                                    }
+
+                                    const translated = await invokeTranslateText({
+                                        text: originalField.textContent!,
+                                        from: settings.from,
+                                        to: settings.to,
+                                    });
+
+                                    translationField.value = translated;
+                                }
                                 break;
                             case "wrap-tools-menu-button":
+                                {
+                                    const wrapNumberInput = document.createElement("input");
+                                    wrapNumberInput.className = tw`input backgroundPrimary textPrimary h-10 w-48 text-base`;
+                                    wrapNumberInput.placeholder = "Number of characters";
+                                    wrapNumberInput.style.position = "fixed";
+
+                                    const { x, y } = toolsMenu.lastElementChild!.getBoundingClientRect();
+                                    wrapNumberInput.style.left = `${x + toolsMenu.lastElementChild!.clientWidth}px`;
+                                    wrapNumberInput.style.top = `${y}px`;
+                                    wrapNumberInput.style.zIndex = "50";
+                                    wrapNumberInput.onkeydown = (event) => {
+                                        if (event.key === "Enter") {
+                                            for (const element of contentContainer.firstElementChild!.children) {
+                                                const translation = element.firstElementChild!
+                                                    .lastElementChild as HTMLTextAreaElement;
+
+                                                translation.value = wrapText(
+                                                    translation.value,
+                                                    Number.parseInt(wrapNumberInput.value),
+                                                );
+
+                                                translation.calculateHeight();
+                                            }
+
+                                            wrapNumberInput.remove();
+                                        }
+                                    };
+
+                                    document.body.appendChild(wrapNumberInput);
+                                }
                                 break;
                         }
                     });
