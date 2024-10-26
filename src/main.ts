@@ -1131,6 +1131,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (state) {
             await save(SaveMode.SingleFile);
+
+            let totalFields = contentContainer.firstElementChild?.children.length;
+
+            if (totalFields) {
+                let translatedFields = 0;
+
+                for (const child of contentContainer.firstElementChild!.children) {
+                    const original = child.firstElementChild!.children[1] as HTMLDivElement;
+                    const translation = child.firstElementChild!.children[2] as HTMLTextAreaElement;
+
+                    if (original.textContent!.startsWith("<!--")) {
+                        totalFields--;
+                    } else if (translation.value) {
+                        translatedFields++;
+                    }
+                }
+
+                const percentage = Math.round((translatedFields / totalFields) * 100);
+
+                for (const child of leftPanel.children) {
+                    if (child.textContent!.startsWith(state)) {
+                        const progressBar = child.lastElementChild?.firstElementChild as HTMLSpanElement | null;
+
+                        if (progressBar) {
+                            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         contentContainer.firstElementChild?.remove();
@@ -1768,18 +1798,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         >("get-settings", async (data) => {
             const [enabled, max, period, from, to, fontUrl] = data.payload;
 
-                if (enabled && !backupIsActive) {
-                    backup();
-                }
+            if (enabled && !backupIsActive) {
+                backup();
+            }
 
-                settings.backup.enabled = enabled;
-                settings.backup.max = max;
-                settings.backup.period = period;
+            settings.backup.enabled = enabled;
+            settings.backup.max = max;
+            settings.backup.period = period;
             settings.from = from;
             settings.to = to;
-                settings.fontUrl = fontUrl;
+            settings.fontUrl = fontUrl;
 
-                await loadFont(fontUrl);
+            await loadFont(fontUrl);
         });
 
         await settingsWindow.once("tauri://destroyed", settingsUnlisten);
@@ -2007,49 +2037,132 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             settings.projectPath = pathToProject;
 
-            await loadProject();
-
-            const lines = (
-                await readTextFile(join(settings.projectPath, programDataDir, translationDir, "maps.txt"))
-            ).split("\n");
-            const parts: string[] = [];
-            const result: string[] = [];
-            let currentFile;
-
-            for (const line of lines) {
-                if (line.startsWith("<!-- Map")) {
-                    if (currentFile && line !== currentFile) {
-                        parts.push(result.join("\n"));
-                        result.length = 0;
-                    }
-
-                    currentFile = line;
-                }
-
-                result.push(line);
-            }
-
-            parts.push(result.join("\n"));
-            await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-
-            for (const [i, part] of parts.entries()) {
-                await writeTextFile(join(settings.projectPath, programDataDir, "temp-maps", `maps${i + 1}.txt`), part);
-
-                const buttonElement = document.createElement("button");
-                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
-                buttonElement.innerHTML = `maps${i + 1}`;
-
-                if (part.count("\n") + 1 <= 1) {
-                    buttonElement.classList.replace("backgroundPrimary", "bg-red-600");
-                }
-
-                leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
-            }
-
             // Create program data directory
             const programDataDirPath = join(settings.projectPath, programDataDir);
             if (!(await exists(programDataDirPath))) {
                 await mkdir(programDataDirPath);
+            }
+
+            await loadProject();
+
+            const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
+
+            for (const entry of translationFiles) {
+                const name = entry.name;
+                if (!name.endsWith(".txt")) {
+                    continue;
+                }
+
+                if (name.startsWith("maps")) {
+                    const mapsLines = (
+                        await readTextFile(join(settings.projectPath, programDataDir, translationDir, name))
+                    ).split("\n");
+
+                    const result: string[] = [];
+                    let i = 1;
+
+                    await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
+
+                    for (let l = 0; l <= mapsLines.length; l++) {
+                        const line = mapsLines[l];
+
+                        if (l === mapsLines.length || line.startsWith("<!-- Map")) {
+                            if (!result.length) {
+                                result.push(line);
+                                continue;
+                            }
+
+                            const joined = result.join("\n");
+                            await writeTextFile(
+                                join(settings.projectPath, programDataDir, "temp-maps", `maps${i}.txt`),
+                                joined,
+                            );
+
+                            const buttonElement = document.createElement("button");
+                            buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+
+                            const mapsNumberSpan = document.createElement("span");
+                            mapsNumberSpan.innerHTML = `maps${i}`;
+                            mapsNumberSpan.className = "pr-1";
+                            buttonElement.appendChild(mapsNumberSpan);
+
+                            if (result.length <= 1) {
+                                buttonElement.classList.replace("backgroundPrimary", "bg-red-600");
+                            }
+
+                            let totalLines = result.length;
+                            let translatedLines = 0;
+
+                            for (const line of result) {
+                                if (line.startsWith("<!--")) {
+                                    totalLines--;
+                                } else if (!line.endsWith(LINES_SEPARATOR)) {
+                                    translatedLines++;
+                                }
+                            }
+
+                            if (totalLines > 0) {
+                                const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                                const progressBar = document.createElement("div");
+                                const progressMeter = document.createElement("div");
+
+                                progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                                progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                                progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                                progressBar.appendChild(progressMeter);
+                                buttonElement.appendChild(progressBar);
+                            }
+
+                            leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
+
+                            result.length = 0;
+                            result.push(line);
+                            i++;
+                        } else {
+                            result.push(line);
+                        }
+                    }
+                } else {
+                    const content = await readTextFile(
+                        join(settings.projectPath, programDataDir, translationDir, entry.name),
+                    );
+                    const split = content.split("\n");
+
+                    const buttonElement = document.createElement("button");
+                    buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+
+                    const stateSpan = document.createElement("span");
+                    stateSpan.innerHTML = entry.name.slice(0, -4);
+                    stateSpan.className = "pr-1";
+                    buttonElement.appendChild(stateSpan);
+
+                    let totalLines = split.length;
+                    let translatedLines = 0;
+
+                    for (const line of split) {
+                        if (line.startsWith("<!--")) {
+                            totalLines--;
+                        } else if (!line.endsWith(LINES_SEPARATOR)) {
+                            translatedLines++;
+                        }
+                    }
+
+                    if (totalLines > 0) {
+                        const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                        const progressBar = document.createElement("div");
+                        const progressMeter = document.createElement("div");
+
+                        progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                        progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                        progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                        progressBar.appendChild(progressMeter);
+                        buttonElement.appendChild(progressBar);
+                    }
+
+                    leftPanel.appendChild(buttonElement);
+                }
             }
 
             // Create log file
