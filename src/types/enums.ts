@@ -37,3 +37,9 @@ export const enum SaveMode {
     SingleFile,
     Maps,
 }
+
+export const enum SearchMode {
+    All,
+    OnlyOriginal,
+    OnlyTranslation,
+}

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 .button {
-    @apply flex select-none items-center justify-center p-4;
+    @apply flex size-16 select-none items-center justify-center p-4;
 }
 
 .input {
@@ -11,7 +11,7 @@
 }
 
 .menu-button {
-    @apply flex h-8 w-full flex-col items-center justify-center p-2;
+    @apply flex h-8 w-full flex-row justify-center px-2 py-1;
 }
 
 .dropdown-menu {

@@ -7,7 +7,7 @@ use encoding_rs::Encoding;
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use marshal_rs::{dump, load, StringMode};
 use rayon::prelude::*;
-use sonic_rs::{from_str, from_value, json, prelude::*, to_string, Array, Object, Value};
+use sonic_rs::{from_str, from_value, json, prelude::*, to_string, to_vec, Array, Object, Value};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     ffi::OsString,
@@ -343,8 +343,9 @@ fn write_list(
     let list_length: usize = list.len();
 
     let mut in_sequence: bool = false;
-    let mut line: Vec<String> = Vec::with_capacity(8);
-    let mut item_indices: Vec<usize> = Vec::with_capacity(8);
+    let mut line: Vec<String> = Vec::with_capacity(4);
+    let mut item_indices: Vec<usize> = Vec::with_capacity(4);
+    let mut credits_lines: Vec<String> = Vec::new();
 
     for it in 0..list_length {
         let code: u16 = list[it][code_label].as_u64().unwrap() as u16;
@@ -361,6 +362,8 @@ fn write_list(
         };
 
         if in_sequence && ![401, 405].contains(&code) {
+            let line: &mut Vec<String> = if code != 401 { &mut line } else { &mut credits_lines };
+
             if !line.is_empty() {
                 let mut joined: String = line.join("\n").trim().to_owned();
 
@@ -410,7 +413,7 @@ fn write_list(
         }
 
         match code {
-            401 | 405 => {
+            401 => {
                 let parameter_string: String = list[it][parameters_label][0]
                     .as_str()
                     .map(str::to_owned)
@@ -426,6 +429,20 @@ fn write_list(
                     item_indices.push(it);
                     in_sequence = true;
                 }
+            }
+            405 => {
+                let parameter_string: String = list[it][parameters_label][0]
+                    .as_str()
+                    .map(str::to_owned)
+                    .unwrap_or(match list[it][parameters_label][0].as_object() {
+                        Some(obj) => get_object_data(obj),
+                        None => String::new(),
+                    })
+                    .trim()
+                    .to_owned();
+
+                credits_lines.push(parameter_string);
+                in_sequence = true;
             }
             102 => {
                 for i in 0..list[it][parameters_label][0].as_array().unwrap().len() {
@@ -648,6 +665,10 @@ pub fn write_maps(
                 }
             }
 
+            if hashmap.is_empty() {
+                return;
+            }
+
             // Skipping first element in array as it is null
             let mut events_arr: Vec<&mut Value> = if engine_type == EngineType::New {
                 obj[events_label]
@@ -689,7 +710,7 @@ pub fn write_maps(
             });
 
             let output_data: Vec<u8> = if engine_type == EngineType::New {
-                to_string(&obj).unwrap().into_bytes()
+                to_vec(&obj).unwrap()
             } else {
                 dump(obj, Some(""))
             };
@@ -814,22 +835,19 @@ pub fn write_maps(
                     .unwrap()
                     .iter_mut()
                     .for_each(|page: &mut Value| {
-
                             let list: &mut Array = page[list_label].as_array_mut().unwrap();
-                            let allowed_codes: &[u16] = &ALLOWED_CODES;
-                            let (code_label, parameters_label) = (code_label, parameters_label);
                             let list_length: usize = list.len();
 
                             let mut in_sequence: bool = false;
-                            let mut line: Vec<String> = Vec::with_capacity(8);
-                            let mut item_indices: Vec<usize> = Vec::with_capacity(8);
+                            let mut line: Vec<String> = Vec::with_capacity(4);
+                            let mut item_indices: Vec<usize> = Vec::with_capacity(4);
 
                             for it in 0..list_length {
                                 let code: u16 = list[it][code_label].as_u64().unwrap() as u16;
 
                                 let write_string_literally: bool = if engine_type != EngineType::New {
                                     !match code {
-                                        320 | 324 | 356 | 401 | 405 => list[it][parameters_label][0].is_object(),
+                                        320 | 324 | 356 | 401 => list[it][parameters_label][0].is_object(),
                                         102 => list[it][parameters_label][0][0].is_object(),
                                         402 => list[it][parameters_label][1].is_object(),
                                         _ => false,
@@ -838,7 +856,7 @@ pub fn write_maps(
                                     true
                                 };
 
-                                if in_sequence && ![401, 405].contains(&code) {
+                                if in_sequence && code != 401 {
                                     if !line.is_empty() {
                                         let mut joined: String = line.join("\n").trim().to_owned();
 
@@ -883,12 +901,12 @@ pub fn write_maps(
                                     in_sequence = false
                                 }
 
-                                if !allowed_codes.contains(&code) {
+                                if !ALLOWED_CODES.contains(&code) {
                                     continue;
                                 }
 
                                 match code {
-                                    401 | 405 => {
+                                    401 => {
                                         let parameter_string: String = list[it][parameters_label][0]
                                             .as_str()
                                             .map(str::to_owned)
@@ -995,7 +1013,7 @@ pub fn write_maps(
             });
 
             let output_data: Vec<u8> = if engine_type == EngineType::New {
-                to_string(&obj).unwrap().into_bytes()
+                to_vec(&obj).unwrap()
             } else {
                 dump(obj, Some(""))
             };
@@ -1192,7 +1210,7 @@ pub fn write_other(
                 .skip(1) // Skipping first element in array as it is null
                 .for_each(|obj: &mut Value| {
                     // CommonEvents doesn't have pages, so we can just check if it's Troops
-                    let pages_length: usize = if filename.starts_with("Troops") {
+                    let pages_length: usize = if filename.starts_with("Tr") {
                         obj[pages_label].as_array().unwrap().len()
                     } else {
                         1
@@ -1223,7 +1241,7 @@ pub fn write_other(
         }
 
         let output_data: Vec<u8> = if engine_type == EngineType::New {
-            to_string(&obj_arr).unwrap().into_bytes()
+            to_vec(&obj_arr).unwrap()
         } else {
             dump(obj_arr, Some(""))
         };
@@ -1472,7 +1490,7 @@ pub fn write_system(
     obj[game_title_label] = Value::from(&game_title);
 
     let output_data: Vec<u8> = if engine_type == EngineType::New {
-        to_string(&obj).unwrap().into_bytes()
+        to_vec(&obj).unwrap()
     } else {
         dump(obj, Some(""))
     };
@@ -1628,7 +1646,7 @@ pub fn write_scripts(
             let mut inflated: Vec<u8> = Vec::new();
             ZlibDecoder::new(&*data).read_to_end(&mut inflated).unwrap();
 
-            let mut code: String = String::with_capacity(4);
+            let mut code: String = String::new();
 
             for encoding in encodings {
                 let (cow, _, had_errors) = encoding.decode(&inflated);
@@ -1653,7 +1671,14 @@ pub fn write_scripts(
                 let translated: Option<&String> = lines_map.get(&string);
 
                 if let Some(translated) = translated {
-                    code.replace_range(index..index + string.len(), translated);
+                    let before: Option<&str> = code.get(..index);
+                    let after: Option<&str> = code.get(index + string.len()..);
+
+                    if before.is_some() && after.is_some() {
+                        code.replace_range(index..index + string.len(), translated);
+                    } else {
+                        return;
+                    }
                 }
             }
 

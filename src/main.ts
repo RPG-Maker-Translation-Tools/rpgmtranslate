@@ -8,10 +8,17 @@ import {
     Settings,
 } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
-import { invokeCompile, invokeEscapeText, invokeRead, invokeReadLastLine } from "./extensions/invokes";
+import {
+    invokeAddToScope,
+    invokeCompile,
+    invokeEscapeText,
+    invokeRead,
+    invokeReadLastLine,
+    invokeTranslateText,
+} from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
-import { EngineType, Language, ProcessingMode, SaveMode, State } from "./types/enums";
+import { EngineType, Language, ProcessingMode, SaveMode, SearchMode, State } from "./types/enums";
 
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -63,10 +70,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const compileButton = document.getElementById("compile-button") as HTMLButtonElement;
     const themeButton = document.getElementById("theme-button") as HTMLButtonElement;
     const themeMenu = document.getElementById("theme-menu") as HTMLDivElement;
+    const toolsButton = document.getElementById("tools-button") as HTMLButtonElement;
+    const toolsMenu = document.getElementById("tools-menu") as HTMLDivElement;
     const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
     const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
     const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
-    const searchTranslationButton = document.getElementById("translation-button") as HTMLButtonElement;
+    const searchModeSelect = document.getElementById("search-mode") as HTMLSelectElement;
     const searchLocationButton = document.getElementById("location-button") as HTMLButtonElement;
     const goToRowInput = document.getElementById("goto-row-input") as HTMLInputElement;
     const menuBar = document.getElementById("menu-bar") as HTMLDivElement;
@@ -111,41 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLanguage(settings.language);
 
     // Initialize the project
-    let nextBackupNumber: number;
-    await initializeProject(settings.projectPath);
-
-    // Load the font
-    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
-    await loadFont(settings.fontUrl);
-    // #endregion
-
-    let replaced: Record<string, Record<string, string>> = {};
-    const activeGhostLines: HTMLDivElement[] = [];
-
-    let selectedTextareas: Record<string, string> = {};
-    let replacedTextareas: Record<string, string> = {};
-
-    const bookmarks: string[] = await fetchBookmarks(join(settings.projectPath, programDataDir, "bookmarks.txt"));
-
-    let searchRegex = false;
-    let searchWhole = false;
-    let searchCase = false;
-    let searchTranslation = false;
-    let searchLocation = false;
-
     let state: State | null = null;
-
-    let saved = true;
-    let saving = false;
-    let currentFocusedElement: [string, string] | [] = [];
-
-    let shiftPressed = false;
-
-    let multipleTextAreasSelected = false;
-
-    let zoom = 1;
-
-    await appWindow.setZoom(zoom);
+    let nextBackupNumber: number;
 
     const observerMain = new IntersectionObserver(
         (entries) => {
@@ -175,6 +151,38 @@ document.addEventListener("DOMContentLoaded", async () => {
         },
         { root: searchPanelReplaced },
     );
+
+    await initializeProject(settings.projectPath);
+
+    // Load the font
+    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
+    await loadFont(settings.fontUrl);
+    // #endregion
+
+    let replaced: Record<string, Record<string, string>> = {};
+    const activeGhostLines: HTMLDivElement[] = [];
+
+    let selectedTextareas: Record<string, string> = {};
+    let replacedTextareas: Record<string, string> = {};
+
+    const bookmarks: string[] = await fetchBookmarks(join(settings.projectPath, programDataDir, "bookmarks.txt"));
+
+    let searchRegex = false;
+    let searchWhole = false;
+    let searchCase = false;
+    let searchLocation = false;
+
+    let saved = true;
+    let saving = false;
+    let currentFocusedElement: [string, string] | [] = [];
+
+    let shiftPressed = false;
+
+    let multipleTextAreasSelected = false;
+
+    let zoom = 1;
+
+    await appWindow.setZoom(zoom);
 
     function addBookmark(bookmarkTitle: string) {
         const bookmarkElement = document.createElement("button");
@@ -207,16 +215,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         return bookmarkTitles;
     }
 
-    async function createDataDir(path: string) {
-        if (!(await exists(path))) {
-            await mkdir(path);
-        }
-    }
-
     async function determineLanguage(): Promise<Language> {
         const locale: string = (await getLocale()) ?? "en";
+        const mainPart: string = locale.split("-", 1)[0];
 
-        switch (locale) {
+        switch (mainPart) {
             case "ru":
             case "uk":
             case "be":
@@ -275,7 +278,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
-                        for (let i = 0; i < rowsToSelect + 1; i++) {
+                        for (let i = 0; i <= rowsToSelect; i++) {
                             const line = focusedElementRow + i;
 
                             const nextElement = document.getElementById(
@@ -321,8 +324,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         async function createTheme() {
-            const themeNameInput = themeWindow.lastElementChild?.firstElementChild
-                ?.lastElementChild as HTMLInputElement;
+            const themeNameInput = themeWindow.lastElementChild!.firstElementChild!
+                .lastElementChild as HTMLInputElement;
             const themeName = themeNameInput.value;
 
             const newTheme = { name: themeName } as Theme;
@@ -368,8 +371,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            const closeButton = themeWindow.firstElementChild?.firstElementChild as HTMLButtonElement;
-            const createThemeButton = themeWindow.lastElementChild?.lastElementChild as HTMLButtonElement;
+            const closeButton = themeWindow.firstElementChild!.firstElementChild as HTMLButtonElement;
+            const createThemeButton = themeWindow.lastElementChild!.lastElementChild as HTMLButtonElement;
             createThemeButton.addEventListener("click", createTheme);
 
             closeButton.addEventListener("click", () => {
@@ -432,7 +435,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function openDirectory() {
-        const directory = (await openPath({ directory: true, multiple: false }))!;
+        const directory = await openPath({ directory: true, multiple: false });
 
         if (directory) {
             if (directory === settings.projectPath) {
@@ -457,12 +460,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const askCreateSettings = await ask(windowLocalization.askCreateSettings);
 
         if (askCreateSettings) {
-            await writeTextFile(settingsPath, JSON.stringify(new Settings(language)), {
+            const newSettings = new Settings(language);
+
+            await invokeAddToScope({ window: appWindow, path: settingsPath });
+            await writeTextFile(settingsPath, JSON.stringify(newSettings), {
                 baseDir: Resource,
             });
 
             alert(windowLocalization.createdSettings);
-            return JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings;
+            return newSettings;
         } else {
             await exit();
         }
@@ -577,6 +583,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const searchMode = Number.parseInt(searchModeSelect.value) as SearchMode;
         const results = isReplace ? new Map<HTMLTextAreaElement, string>() : null;
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
@@ -586,7 +593,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         for (const child of currentSearchArray ?? []) {
             const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
 
-            {
+            if (searchMode !== SearchMode.OnlyOriginal) {
                 const elementText = node[2].value.replaceAllMultiple({
                     "<": "&lt;",
                     ">": "&gt;",
@@ -599,7 +606,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            if (!searchTranslation) {
+            if (searchMode !== SearchMode.OnlyTranslation) {
                 const elementText = node[1].innerHTML.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
                 const matches = elementText.match(regexp);
 
@@ -648,17 +655,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .entries()) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
-                    const originalMatches = original.match(regexp);
-                    const translatedMatches = translated.match(regexp);
-
-                    if (originalMatches) {
-                        const result = createMatchesContainer(original, originalMatches);
-                        objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [result, translated]);
+                    if (searchMode !== SearchMode.OnlyTranslation) {
+                        const originalMatches = original.match(regexp);
+                        if (originalMatches) {
+                            const result = createMatchesContainer(original, originalMatches);
+                            objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [
+                                result,
+                                translated,
+                            ]);
+                        }
                     }
 
-                    if (translatedMatches) {
-                        const result = createMatchesContainer(translated, translatedMatches);
-                        objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [result, original]);
+                    if (searchMode !== SearchMode.OnlyOriginal) {
+                        const translatedMatches = translated.match(regexp);
+                        if (translatedMatches) {
+                            const result = createMatchesContainer(translated, translatedMatches);
+                            objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
+                                result,
+                                original,
+                            ]);
+                        }
                     }
 
                     if ((objectToWrite.size + 1) % 1000 === 0) {
@@ -1085,7 +1101,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             saved = true;
         }
 
-        saveButton.firstElementChild!.classList.remove("animate-spin");
+        // Because we're saving only one file, it'll be extremely fast, and saveButton won't even be able to animate spin.
+        // So we're waiting for the end of its spin, and only then remove this class
+        setTimeout(() => {
+            saveButton.firstElementChild!.classList.remove("animate-spin");
+        }, 1000);
+
         saving = false;
     }
 
@@ -1101,8 +1122,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, settings.backup.period * 1000);
     }
 
-    async function changeState(newState: State | null, slide = false) {
-        if (state === newState) {
+    async function changeState(newState: State | null) {
+        if (state && state === newState) {
             return;
         }
 
@@ -1110,6 +1131,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (state) {
             await save(SaveMode.SingleFile);
+
+            let totalFields = contentContainer.firstElementChild?.children.length;
+
+            if (totalFields) {
+                let translatedFields = 0;
+
+                for (const child of contentContainer.firstElementChild!.children) {
+                    const original = child.firstElementChild!.children[1] as HTMLDivElement;
+                    const translation = child.firstElementChild!.children[2] as HTMLTextAreaElement;
+
+                    if (original.textContent!.startsWith("<!--")) {
+                        totalFields--;
+                    } else if (translation.value) {
+                        translatedFields++;
+                    }
+                }
+
+                const percentage = Math.round((translatedFields / totalFields) * 100);
+
+                for (const child of leftPanel.children) {
+                    if (child.textContent!.startsWith(state)) {
+                        const progressBar = child.lastElementChild?.firstElementChild as HTMLSpanElement | null;
+
+                        if (progressBar) {
+                            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         contentContainer.firstElementChild?.remove();
@@ -1128,14 +1179,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             for (const child of contentContainer.firstElementChild!.children) {
                 observerMain.observe(child);
             }
-
-            if (slide) {
-                leftPanel.toggleMultiple("-translate-x-full", "translate-x-0");
-            }
         }
     }
 
-    function goToRow() {
+    function showGoToRowInput() {
         goToRowInput.classList.remove("hidden");
         goToRowInput.focus();
 
@@ -1144,7 +1191,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
     }
 
-    function jumpToRow(key: string) {
+    function jumpToRow(key: "alt" | "ctrl") {
         const focusedElement = document.activeElement as HTMLElement;
         if (!contentContainer.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
             return;
@@ -1202,7 +1249,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
         }
 
-        if (document.activeElement?.id === document.body.id) {
+        if (document.activeElement === document.body) {
             if (event.ctrlKey) {
                 switch (event.code) {
                     case "KeyZ":
@@ -1228,7 +1275,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         event.preventDefault();
 
                         if (state && goToRowInput.classList.contains("hidden")) {
-                            goToRow();
+                            showGoToRowInput();
                             goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
                         } else if (!goToRowInput.classList.contains("hidden")) {
                             goToRowInput.classList.add("hidden");
@@ -1332,6 +1379,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                         jumpToRow("ctrl");
                     }
                     break;
+                case "KeyT":
+                    if (event.ctrlKey) {
+                        const selectedField = event.target as HTMLTextAreaElement;
+
+                        if (!selectedField.value) {
+                            if (!selectedField.placeholder) {
+                                const counterpart = selectedField.parentElement!.children[1];
+
+                                // Change hard-coded to and from values to user defined
+                                const translated = await invokeTranslateText({
+                                    text: counterpart.textContent!,
+                                    to: "ru",
+                                    from: "en",
+                                });
+
+                                selectedField.placeholder = translated;
+                            } else {
+                                selectedField.value = selectedField.placeholder;
+                                selectedField.placeholder = "";
+                            }
+                        }
+                        break;
+                    }
             }
         }
 
@@ -1364,19 +1434,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (event.altKey) {
             switch (event.code) {
                 case "KeyC":
-                    switchCase();
+                    searchCase = !searchCase;
+                    searchCaseButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyW":
-                    switchWhole();
+                    searchWhole = !searchWhole;
+                    searchWholeButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyR":
-                    switchRegExp();
-                    break;
-                case "KeyT":
-                    switchTranslation();
+                    searchRegex = !searchRegex;
+                    searchRegexButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyL":
-                    switchLocation();
+                    searchLocation = !searchLocation;
+                    searchLocationButton.classList.toggle("backgroundThird");
                     break;
             }
         }
@@ -1503,9 +1574,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             originalTextElement.classList.add("text-lg");
             document.body.appendChild(originalTextElement);
 
+            const { lineHeight, paddingTop } = window.getComputedStyle(originalTextElement);
             const minHeight =
-                (originalTextElement.innerHTML.count("\n") + 1) *
-                Number.parseInt(window.getComputedStyle(originalTextElement).lineHeight);
+                (originalTextElement.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) +
+                Number.parseInt(paddingTop) * 2;
 
             document.body.removeChild(originalTextElement);
             originalTextElement.classList.remove("text-lg");
@@ -1563,12 +1635,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: compileSettings.romanize,
                 disableCustomProcessing: compileSettings.disableCustomProcessing,
                 disableProcessing: Object.values(compileSettings.disableProcessing.of),
-                logging: compileSettings.logging,
                 engineType: settings.engineType!,
             });
 
-            alert(`${windowLocalization.compileSuccess} ${executionTime}`);
             compileButton.firstElementChild!.classList.remove("animate-spin");
+            alert(`${windowLocalization.compileSuccess} ${executionTime}`);
         }
     }
 
@@ -1695,31 +1766,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function switchCase() {
-        searchCase = !searchCase;
-        searchCaseButton.classList.toggle("backgroundThird");
-    }
-
-    function switchWhole() {
-        searchWhole = !searchWhole;
-        searchWholeButton.classList.toggle("backgroundThird");
-    }
-
-    function switchRegExp() {
-        searchRegex = !searchRegex;
-        searchRegexButton.classList.toggle("backgroundThird");
-    }
-
-    function switchTranslation() {
-        searchTranslation = !searchTranslation;
-        searchTranslationButton.classList.toggle("backgroundThird");
-    }
-
-    function switchLocation() {
-        searchLocation = !searchLocation;
-        searchLocationButton.classList.toggle("backgroundThird");
-    }
-
     async function loadFont(fontUrl: string) {
         if (fontUrl) {
             const font = await new FontFace("font", `url(${fontUrl})`).load();
@@ -1747,23 +1793,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             resizable: false,
         });
 
-        const settingsUnlisten = await settingsWindow.once<[boolean, number, number, string]>(
-            "get-settings",
-            async (data) => {
-                const [enabled, max, period, fontUrl] = data.payload;
+        const settingsUnlisten = await settingsWindow.once<
+            [boolean, number, number, Intl.UnicodeBCP47LocaleIdentifier, Intl.UnicodeBCP47LocaleIdentifier, string]
+        >("get-settings", async (data) => {
+            const [enabled, max, period, from, to, fontUrl] = data.payload;
 
-                if (enabled && !backupIsActive) {
-                    backup();
-                }
+            if (enabled && !backupIsActive) {
+                backup();
+            }
 
-                settings.backup.enabled = enabled;
-                settings.backup.max = max;
-                settings.backup.period = period;
-                settings.fontUrl = fontUrl;
+            settings.backup.enabled = enabled;
+            settings.backup.max = max;
+            settings.backup.period = period;
+            settings.from = from;
+            settings.to = to;
+            settings.fontUrl = fontUrl;
 
-                await loadFont(fontUrl);
-            },
-        );
+            await loadFont(fontUrl);
+        });
 
         await settingsWindow.once("tauri://destroyed", settingsUnlisten);
     }
@@ -1791,7 +1838,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function fileMenuClick(event: Event) {
+    async function handleFileMenuClick(event: Event) {
         const target = event.target as HTMLElement;
         fileMenu.classList.replace("flex", "hidden");
 
@@ -1807,9 +1854,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function helpMenuClick(event: Event) {
-        const target = event.target as HTMLElement;
+    function handleHelpMenuClick(event: MouseEvent) {
         helpMenu.classList.replace("flex", "hidden");
+        const target = event.target as HTMLElement;
 
         switch (target.id) {
             case "help-button":
@@ -1830,9 +1877,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function languageMenuClick(event: Event) {
-        const target = event.target as HTMLElement;
+    function handleLanguageMenuClick(event: MouseEvent) {
         languageMenu.classList.replace("flex", "hidden");
+        const target = event.target as HTMLElement;
 
         switch (target.id) {
             case "ru-button":
@@ -1848,7 +1895,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function handleMenuBarClick(event: Event) {
+    function handleMenuBarClick(event: MouseEvent) {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
@@ -1863,7 +1910,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fileMenu.addEventListener(
                     "click",
                     async (event) => {
-                        await fileMenuClick(event);
+                        await handleFileMenuClick(event);
                     },
                     {
                         once: true,
@@ -1881,7 +1928,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 helpMenu.addEventListener(
                     "click",
                     (event) => {
-                        helpMenuClick(event);
+                        handleHelpMenuClick(event);
                     },
                     {
                         once: true,
@@ -1899,7 +1946,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 languageMenu.addEventListener(
                     "click",
                     (event) => {
-                        languageMenuClick(event);
+                        handleLanguageMenuClick(event);
                     },
                     {
                         once: true,
@@ -1909,22 +1956,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // that's the dumbest function i've ever written
     async function waitForSave() {
         while (saving) {
             await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-    }
-
-    async function createCompileSettings(path: string) {
-        if (!(await exists(path))) {
-            await writeTextFile(path, JSON.stringify(new CompileSettings()));
-        }
-    }
-
-    async function createLogFile(path: string) {
-        if (!(await exists(path))) {
-            await writeTextFile(path, "{}");
         }
     }
 
@@ -1983,7 +2017,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: false,
                 disableCustomProcessing: false,
                 disableProcessing: [false, false, false, false],
-                logging: false,
                 processingMode: ProcessingMode.Default,
                 engineType: settings.engineType!,
             });
@@ -1991,6 +2024,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function initializeProject(pathToProject: string) {
+        await invokeAddToScope({ window: appWindow, path: pathToProject });
+
         projectStatus.innerHTML = windowLocalization.loadingProject;
         const interval = animateProgressText(projectStatus);
 
@@ -2002,49 +2037,161 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             settings.projectPath = pathToProject;
 
+            // Create program data directory
+            const programDataDirPath = join(settings.projectPath, programDataDir);
+            if (!(await exists(programDataDirPath))) {
+                await mkdir(programDataDirPath);
+            }
+
             await loadProject();
 
-            const lines = (
-                await readTextFile(join(settings.projectPath, programDataDir, translationDir, "maps.txt"))
-            ).split("\n");
-            const parts: string[] = [];
-            const result: string[] = [];
-            let currentFile;
+            const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
 
-            for (const line of lines) {
-                if (line.startsWith("<!-- Map")) {
-                    if (currentFile && line !== currentFile) {
-                        parts.push(result.join("\n"));
-                        result.length = 0;
-                    }
-
-                    currentFile = line;
+            for (const entry of translationFiles) {
+                const name = entry.name;
+                if (!name.endsWith(".txt")) {
+                    continue;
                 }
 
-                result.push(line);
+                if (name.startsWith("maps")) {
+                    const mapsLines = (
+                        await readTextFile(join(settings.projectPath, programDataDir, translationDir, name))
+                    ).split("\n");
+
+                    const result: string[] = [];
+                    let i = 1;
+
+                    await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
+
+                    for (let l = 0; l <= mapsLines.length; l++) {
+                        const line = mapsLines[l];
+
+                        if (l === mapsLines.length || line.startsWith("<!-- Map")) {
+                            if (!result.length) {
+                                result.push(line);
+                                continue;
+                            }
+
+                            const joined = result.join("\n");
+                            await writeTextFile(
+                                join(settings.projectPath, programDataDir, "temp-maps", `maps${i}.txt`),
+                                joined,
+                            );
+
+                            const buttonElement = document.createElement("button");
+                            buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+
+                            const mapsNumberSpan = document.createElement("span");
+                            mapsNumberSpan.innerHTML = `maps${i}`;
+                            mapsNumberSpan.className = "pr-1";
+                            buttonElement.appendChild(mapsNumberSpan);
+
+                            if (result.length <= 1) {
+                                buttonElement.classList.replace("backgroundPrimary", "bg-red-600");
+                            }
+
+                            let totalLines = result.length;
+                            let translatedLines = 0;
+
+                            for (const line of result) {
+                                if (line.startsWith("<!--")) {
+                                    totalLines--;
+                                } else if (!line.endsWith(LINES_SEPARATOR)) {
+                                    translatedLines++;
+                                }
+                            }
+
+                            if (totalLines > 0) {
+                                const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                                const progressBar = document.createElement("div");
+                                const progressMeter = document.createElement("div");
+
+                                progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                                progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                                progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                                progressBar.appendChild(progressMeter);
+                                buttonElement.appendChild(progressBar);
+                            }
+
+                            leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
+
+                            result.length = 0;
+                            result.push(line);
+                            i++;
+                        } else {
+                            result.push(line);
+                        }
+                    }
+                } else {
+                    const content = await readTextFile(
+                        join(settings.projectPath, programDataDir, translationDir, entry.name),
+                    );
+                    const split = content.split("\n");
+
+                    const buttonElement = document.createElement("button");
+                    buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+
+                    const stateSpan = document.createElement("span");
+                    stateSpan.innerHTML = entry.name.slice(0, -4);
+                    stateSpan.className = "pr-1";
+                    buttonElement.appendChild(stateSpan);
+
+                    let totalLines = split.length;
+                    let translatedLines = 0;
+
+                    for (const line of split) {
+                        if (line.startsWith("<!--")) {
+                            totalLines--;
+                        } else if (!line.endsWith(LINES_SEPARATOR)) {
+                            translatedLines++;
+                        }
+                    }
+
+                    if (totalLines > 0) {
+                        const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                        const progressBar = document.createElement("div");
+                        const progressMeter = document.createElement("div");
+
+                        progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                        progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                        progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                        progressBar.appendChild(progressMeter);
+                        buttonElement.appendChild(progressBar);
+                    }
+
+                    leftPanel.appendChild(buttonElement);
+                }
             }
 
-            parts.push(result.join("\n"));
-            await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-
-            for (const [i, part] of parts.entries()) {
-                await writeTextFile(join(settings.projectPath, programDataDir, "temp-maps", `maps${i + 1}.txt`), part);
-
-                const buttonElement = document.createElement("button");
-                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
-                buttonElement.innerHTML = `maps${i + 1}`;
-
-                leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
+            // Create log file
+            const logFilePath = join(settings.projectPath, programDataDir, logFile);
+            if (!(await exists(logFilePath))) {
+                await writeTextFile(logFilePath, "{}");
             }
 
-            // TODO: Maybe remove these functions and just inline the code
-            await createDataDir(join(settings.projectPath, programDataDir));
-            await createLogFile(join(settings.projectPath, programDataDir, logFile));
-            await createCompileSettings(join(settings.projectPath, programDataDir, "compile-settings.json"));
-            initializeThemes();
-            await mkdir(join(settings.projectPath, programDataDir, "backups"), { recursive: true });
+            // Create compile settings
+            const compileSettingsPath = join(settings.projectPath, programDataDir, "compile-settings.json");
+            if (!(await exists(compileSettingsPath))) {
+                await writeTextFile(compileSettingsPath, JSON.stringify(new CompileSettings()));
+            }
 
-            nextBackupNumber = (await readDir(join(settings.projectPath, programDataDir, "backups")))
+            // Initialize themes
+            for (const themeName of Object.keys(themes)) {
+                const themeButton = document.createElement("button");
+                themeButton.id = themeButton.innerHTML = themeName;
+                themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
+
+                themeMenu.insertBefore(themeButton, createThemeMenuButton);
+            }
+
+            const backupPath = join(programDataDirPath, "backups");
+            if (!(await exists(backupPath))) {
+                await mkdir(backupPath);
+            }
+
+            nextBackupNumber = (await readDir(backupPath))
                 .map((entry) => Number.parseInt(entry.name.slice(0, -2)))
                 .sort((a, b) => a - b)[0];
 
@@ -2089,16 +2236,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearInterval(interval);
     }
 
-    function initializeThemes() {
-        for (const themeName of Object.keys(themes)) {
-            const themeButton = document.createElement("button");
-            themeButton.id = themeButton.innerHTML = themeName;
-            themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
-
-            themeMenu.insertBefore(themeButton, createThemeMenuButton);
-        }
-    }
-
     async function createReadWindow() {
         const readWindow = new WebviewWindow("read", {
             title: windowLocalization.readWindowTitle,
@@ -2122,8 +2259,41 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     leftPanel.addEventListener("click", async (event) => {
-        await changeState(leftPanel.secondHighestParent(event.target as HTMLElement).textContent as State, true);
+        await changeState(
+            leftPanel.secondHighestParent(event.target as HTMLElement).firstElementChild!.textContent as State,
+        );
     });
+
+    function wrapText(text: string, width: number): string {
+        const lines = text.split("\n");
+        const remainder: string[] = [];
+        const wrappedLines: string[] = [];
+
+        for (let line of lines) {
+            if (remainder.length) {
+                line = `${remainder.join(" ")} ${line}`;
+                remainder.length = 0;
+            }
+
+            if (line.length > width) {
+                const words = line.split(" ");
+
+                while (words.join(" ").length > width) {
+                    remainder.unshift(words.pop()!);
+                }
+
+                wrappedLines.push(words.join(" "));
+            } else {
+                wrappedLines.push(line);
+            }
+        }
+
+        if (remainder.length) {
+            wrappedLines.push(remainder.join(" "));
+        }
+
+        return wrappedLines.join("\n");
+    }
 
     topPanelButtonsContainer.addEventListener("click", async (event) => {
         const target = topPanelButtonsContainer.secondHighestParent(event.target as HTMLElement);
@@ -2201,6 +2371,92 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } else {
                     searchMenu.classList.add("hidden");
                 }
+                break;
+            case toolsButton.id:
+                if (!state) {
+                    return;
+                }
+
+                toolsMenu.toggleMultiple("hidden", "flex");
+
+                requestAnimationFrame(() => {
+                    toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
+                    toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
+
+                    toolsMenu.addEventListener("click", async (event: MouseEvent) => {
+                        const target = event.target as HTMLButtonElement;
+
+                        if (!toolsMenu.contains(target)) {
+                            return;
+                        }
+
+                        // TODO: Each button should open the popup for user to configure the action.
+                        // For example, if user wants to trim the text in all files' fields, they should be able to select all fields.
+                        // And, for example, for trim, they should be able to select the trim mode (left, right, both).
+                        switch (target.id) {
+                            case "trim-tools-menu-button":
+                                for (const element of contentContainer.firstElementChild!.children) {
+                                    const translationField = element.firstElementChild!
+                                        .lastElementChild as HTMLTextAreaElement;
+                                    translationField.value = translationField.value.trim();
+                                }
+                                break;
+                            case "translate-tools-menu-button":
+                                for (const element of contentContainer.firstElementChild!.children) {
+                                    const children = element.children;
+                                    const originalField = children[1] as HTMLDivElement;
+                                    const translationField = children[2] as HTMLTextAreaElement;
+
+                                    if (!settings.from || !settings.to) {
+                                        alert(windowLocalization.translationLanguagesNotSelected);
+                                        return;
+                                    }
+
+                                    const translated = await invokeTranslateText({
+                                        text: originalField.textContent!,
+                                        from: settings.from,
+                                        to: settings.to,
+                                    });
+
+                                    translationField.value = translated;
+                                }
+                                break;
+                            case "wrap-tools-menu-button":
+                                {
+                                    const wrapNumberInput = document.createElement("input");
+                                    wrapNumberInput.className = tw`input backgroundPrimary textPrimary h-10 w-48 text-base`;
+                                    wrapNumberInput.placeholder = "Number of characters";
+                                    wrapNumberInput.style.position = "fixed";
+
+                                    const { x, y } = toolsMenu.lastElementChild!.getBoundingClientRect();
+                                    wrapNumberInput.style.left = `${x + toolsMenu.lastElementChild!.clientWidth}px`;
+                                    wrapNumberInput.style.top = `${y}px`;
+                                    wrapNumberInput.style.zIndex = "50";
+                                    wrapNumberInput.onkeydown = (event) => {
+                                        if (event.key === "Enter") {
+                                            for (const element of contentContainer.firstElementChild!.children) {
+                                                const translation = element.firstElementChild!
+                                                    .lastElementChild as HTMLTextAreaElement;
+
+                                                translation.value = wrapText(
+                                                    translation.value,
+                                                    Number.parseInt(wrapNumberInput.value),
+                                                );
+
+                                                translation.calculateHeight();
+                                            }
+
+                                            wrapNumberInput.remove();
+                                        }
+                                    };
+
+                                    document.body.appendChild(wrapNumberInput);
+                                }
+                                break;
+                        }
+                    });
+                });
+
                 break;
         }
     });
@@ -2356,19 +2612,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case "case-button":
-                switchCase();
+                searchCase = !searchCase;
+                searchCaseButton.classList.toggle("backgroundThird");
                 break;
             case "whole-button":
-                switchWhole();
+                searchWhole = !searchWhole;
+                searchWholeButton.classList.toggle("backgroundThird");
                 break;
             case "regex-button":
-                switchRegExp();
-                break;
-            case "translation-button":
-                switchTranslation();
+                searchRegex = !searchRegex;
+                searchRegexButton.classList.toggle("backgroundThird");
                 break;
             case "location-button":
-                switchLocation();
+                searchLocation = !searchLocation;
+                searchLocationButton.classList.toggle("backgroundThird");
                 break;
         }
     });

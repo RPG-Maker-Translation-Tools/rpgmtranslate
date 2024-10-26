@@ -202,7 +202,6 @@ export const join = (...strings: string[]): string => strings.join("/");
 
 export class CompileSettings {
     initialized: boolean;
-    logging: boolean;
     romanize: boolean;
     mapsProcessingMode: number;
     disableCustomProcessing: boolean;
@@ -223,7 +222,6 @@ export class CompileSettings {
 
     constructor() {
         this.initialized = false;
-        this.logging = false;
         this.romanize = false;
         this.mapsProcessingMode = 0;
         this.disableCustomProcessing = false;
@@ -244,6 +242,8 @@ export class Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
+    from: Intl.UnicodeBCP47LocaleIdentifier;
+    to: Intl.UnicodeBCP47LocaleIdentifier;
     engineType: EngineType | null;
 
     constructor(language: Language) {
@@ -253,6 +253,8 @@ export class Settings {
         this.fontUrl = "";
         this.firstLaunch = true;
         this.projectPath = "";
+        this.from = "";
+        this.to = "";
         this.engineType = null;
     }
 }

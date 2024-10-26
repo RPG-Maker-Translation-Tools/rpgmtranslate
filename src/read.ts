@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settingsContainer = document.getElementById("settings-container") as HTMLDivElement;
     const readingModeSelect = document.getElementById("reading-mode-select") as HTMLSelectElement;
     const modeDescription = document.getElementById("mode-description") as HTMLDivElement;
-    const loggingCheckbox = document.getElementById("logging-checkbox") as HTMLSpanElement;
     const romanizeCheckbox = document.getElementById("romanize-checkbox") as HTMLSpanElement;
     const customProcessingCheckbox = document.getElementById("custom-processing-checkbox") as HTMLSpanElement;
     const disableProcessingCheckbox = document.getElementById("disable-processing-checkbox") as HTMLSpanElement;
@@ -65,13 +64,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case loggingCheckbox.id:
-                if (!loggingCheckbox.textContent) {
-                    loggingCheckbox.innerHTML = "check";
-                } else {
-                    loggingCheckbox.innerHTML = "";
-                }
-                break;
             case romanizeCheckbox.id:
                 if (!romanizeCheckbox.textContent) {
                     romanizeCheckbox.innerHTML = "check";
@@ -200,7 +192,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: Boolean(romanizeCheckbox.textContent),
                 disableCustomProcessing: Boolean(customProcessingCheckbox.textContent),
                 disableProcessing: Object.values(disableProcessings),
-                logging: false,
                 processingMode:
                     readingModeSelect.value === "append"
                         ? ProcessingMode.Append

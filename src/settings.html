@@ -10,35 +10,48 @@
     </head>
     <body class="backgroundDark textPrimary text-lg">
         <div class="flex flex-col p-8" id="options-menu">
-            <div class="backgroundDark z-50 flex flex-row items-center gap-2 py-4">
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
                 <span class="checkbox borderPrimary size-8 text-xl" id="backup-check">check</span>
                 <span class="backup" id="backup"></span>
             </div>
 
             <div class="overflow-hidden">
                 <div class="z-30 flex-col transition-all duration-300" id="backup-settings">
-                    <div class="flex flex-row items-center py-4" id="backup-period">
+                    <div class="flex flex-row py-4" id="backup-period">
                         <span class="backupPeriodLabel mr-2" id="backup-period-label"></span>
                         <input
-                            class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-none"
                             id="backup-period-input"
-                            type="number"
                         />
                         <span class="backupPeriodNote" id="backup-period-note"></span>
                     </div>
-                    <div class="flex flex-row items-center py-4" id="backup-max">
+
+                    <div class="flex flex-row py-4" id="backup-max">
                         <span class="backupMaxLabel mr-2" id="backup-max-label"></span>
                         <input
-                            class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-none"
                             id="backup-max-input"
-                            type="number"
                         />
                         <span class="backupMaxNote" id="backup-max-note"></span>
                     </div>
                 </div>
             </div>
 
-            <div class="backgroundDark z-50 flex flex-row items-center gap-2 py-4">
+            <div class="backgroundDark z-50 flex flex-col gap-2 py-4">
+                <div class="translationLanguages"></div>
+                <div class="fromLanguage"></div>
+                <input
+                    class="backgroundSecond mr-2 h-8 w-16 rounded-md p-2 text-xl outline-none"
+                    id="from-language-input"
+                />
+                <div class="toLanguage"></div>
+                <input
+                    class="backgroundSecond mr-2 h-8 w-16 rounded-md p-2 text-xl outline-none"
+                    id="to-language-input"
+                />
+            </div>
+
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
                 <span class="font"></span>
                 <select class="backgroundSecond rounded-sm outline-none" id="font-select">
                     <option class="defaultFont" value=""></option>
