@@ -461,6 +461,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (askCreateSettings) {
             const newSettings = new Settings(language);
+
+            await invokeAddToScope({ window: appWindow, path: settingsPath });
             await writeTextFile(settingsPath, JSON.stringify(newSettings), {
                 baseDir: Resource,
             });
