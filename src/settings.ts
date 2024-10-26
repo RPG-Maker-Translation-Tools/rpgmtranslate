@@ -27,12 +27,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     applyTheme(getThemeStyleSheet()!, theme);
-    applyLocalization(new SettingsWindowLocalization(settings.language));
+
+    const windowLocalization = new SettingsWindowLocalization(settings.language);
+    applyLocalization(windowLocalization);
 
     const backupCheck = document.getElementById("backup-check") as HTMLSpanElement;
     const backupSettings = document.getElementById("backup-settings") as HTMLDivElement;
     const backupMaxInput = document.getElementById("backup-max-input") as HTMLInputElement;
     const backupPeriodInput = document.getElementById("backup-period-input") as HTMLInputElement;
+    const fromLanguageInput = document.getElementById("from-language-input") as HTMLInputElement;
+    const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
     const fontSelect = document.getElementById("font-select") as HTMLSelectElement;
 
     let fontUrl = "";
@@ -56,6 +60,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
     backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
+    if (!settings.from) {
+        settings.from = "";
+    }
+
+    if (!settings.to) {
+        settings.to = "";
+    }
+
+    fromLanguageInput.value = settings.from;
+    toLanguageInput.value = settings.to;
 
     if (!backupCheck.textContent) {
         backupSettings.classList.add("hidden");
@@ -110,11 +124,35 @@ document.addEventListener("DOMContentLoaded", async () => {
         backupPeriodInput.value = Math.clamp(Number.parseInt(backupPeriodInput.value), 60, 3600).toString();
     });
 
+    fromLanguageInput.addEventListener("blur", () => {
+        try {
+            new Intl.Locale(fromLanguageInput.value);
+        } catch {
+            alert(windowLocalization.incorrectLanguageTag);
+            fromLanguageInput.value = settings.from;
+        }
+    });
+
+    toLanguageInput.addEventListener("blur", () => {
+        try {
+            new Intl.Locale(toLanguageInput.value);
+        } catch {
+            alert(windowLocalization.incorrectLanguageTag);
+            toLanguageInput.value = settings.to;
+        }
+    });
+
+    toLanguageInput.addEventListener("input", () => {
+        toLanguageInput.value = toLanguageInput.value.replaceAll(/[^a-z]/g, "");
+    });
+
     await appWindow.onCloseRequested(async () => {
         await emit("get-settings", [
             Boolean(backupCheck.textContent),
             Number.parseInt(backupMaxInput.value),
             Number.parseInt(backupPeriodInput.value),
+            fromLanguageInput.value,
+            toLanguageInput.value,
             fontUrl,
         ]);
     });
