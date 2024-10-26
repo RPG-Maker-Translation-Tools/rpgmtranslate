@@ -2146,7 +2146,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     leftPanel.addEventListener("click", async (event) => {
-        await changeState(leftPanel.secondHighestParent(event.target as HTMLElement).textContent as State);
+        await changeState(
+            leftPanel.secondHighestParent(event.target as HTMLElement).firstElementChild!.textContent as State,
+        );
     });
 
     function wrapText(text: string, width: number): string {
