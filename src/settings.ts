@@ -60,11 +60,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
     backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
-    if (!settings.from) {
+
+    if ([null, undefined].includes(settings.from)) {
         settings.from = "";
     }
 
-    if (!settings.to) {
+    if ([null, undefined].includes(settings.to)) {
         settings.to = "";
     }
 

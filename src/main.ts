@@ -1626,6 +1626,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             compileButton.firstElementChild!.classList.add("animate-spin");
 
+            let incorrectCompileSettings = false;
+
+            if ([null, undefined].includes(compileSettings.mapsProcessingMode)) {
+                compileSettings.mapsProcessingMode = 0;
+                incorrectCompileSettings = true;
+            }
+
+            if ([null, undefined].includes(compileSettings.romanize)) {
+                compileSettings.romanize = false;
+                incorrectCompileSettings = true;
+            }
+
+            if ([null, undefined].includes(compileSettings.disableCustomProcessing)) {
+                compileSettings.disableCustomProcessing = false;
+                incorrectCompileSettings = true;
+            }
+
+            if (incorrectCompileSettings) {
+                await writeTextFile(
+                    join(settings.projectPath, programDataDir, "compile-settings.json"),
+                    JSON.stringify(compileSettings),
+                );
+            }
+
             const executionTime = await invokeCompile({
                 projectPath: settings.projectPath,
                 originalDir,

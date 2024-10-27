@@ -52,6 +52,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         await readTextFile(join(projectPath, ".rpgmtranslate", "compile-settings.json")),
     ) as CompileSettings;
 
+    if ([null, undefined].includes(compileSettings.mapsProcessingMode)) {
+        compileSettings.mapsProcessingMode = 0;
+    }
+
+    if ([null, undefined].includes(compileSettings.romanize)) {
+        compileSettings.romanize = false;
+    }
+
+    if ([null, undefined].includes(compileSettings.disableCustomProcessing)) {
+        compileSettings.disableCustomProcessing = false;
+    }
+
     romanizeCheckbox.innerHTML = compileSettings.romanize ? "check" : "";
     customProcessingCheckbox.innerHTML = compileSettings.disableCustomProcessing ? "check" : "";
 
