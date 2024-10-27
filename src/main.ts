@@ -2072,6 +2072,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await loadProject();
 
             const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
+            leftPanel.innerHTML = "";
 
             for (const entry of translationFiles) {
                 const name = entry.name;
