@@ -2063,6 +2063,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Create program data directory
             const programDataDirPath = join(settings.projectPath, programDataDir);
+            await invokeAddToScope({ window: appWindow, path: programDataDirPath });
+
             if (!(await exists(programDataDirPath))) {
                 await mkdir(programDataDirPath);
             }
