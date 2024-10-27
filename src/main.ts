@@ -1387,11 +1387,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                             if (!selectedField.placeholder) {
                                 const counterpart = selectedField.parentElement!.children[1];
 
-                                // Change hard-coded to and from values to user defined
+                                if (!settings.from || !settings.to) {
+                                    alert(windowLocalization.translationLanguagesNotSelected);
+                                    return;
+                                }
+
                                 const translated = await invokeTranslateText({
                                     text: counterpart.textContent!,
-                                    to: "ru",
-                                    from: "en",
+                                    to: settings.to,
+                                    from: settings.from,
                                 });
 
                                 selectedField.placeholder = translated;
