@@ -1628,17 +1628,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let incorrectCompileSettings = false;
 
-            if ([null, undefined].includes(compileSettings.mapsProcessingMode)) {
+            if (typeof compileSettings.mapsProcessingMode !== "number") {
                 compileSettings.mapsProcessingMode = 0;
                 incorrectCompileSettings = true;
             }
 
-            if ([null, undefined].includes(compileSettings.romanize)) {
+            if (typeof compileSettings.romanize !== "boolean") {
                 compileSettings.romanize = false;
                 incorrectCompileSettings = true;
             }
 
-            if ([null, undefined].includes(compileSettings.disableCustomProcessing)) {
+            if (typeof compileSettings.disableCustomProcessing !== "boolean") {
                 compileSettings.disableCustomProcessing = false;
                 incorrectCompileSettings = true;
             }

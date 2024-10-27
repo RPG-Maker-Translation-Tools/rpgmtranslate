@@ -61,11 +61,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     backupPeriodInput.value = settings.backup.period.toString();
     backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
 
-    if ([null, undefined].includes(settings.from)) {
+    if (typeof settings.from !== "string") {
         settings.from = "";
     }
 
-    if ([null, undefined].includes(settings.to)) {
+    if (typeof settings.to !== "string") {
         settings.to = "";
     }
 
