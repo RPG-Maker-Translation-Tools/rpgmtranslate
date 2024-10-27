@@ -1127,7 +1127,7 @@ pub fn write_other(
 
     other_obj_arr_vec.into_par_iter().for_each(|(filename, mut obj_arr)| {
         let content_path: &Path =
-            &other_path.join(filename[..filename.len() - unsafe { EXTENSION.len() }].to_owned() + ".txt");
+            &other_path.join(filename[..filename.len() - unsafe { EXTENSION.len() }].to_lowercase() + ".txt");
 
         let original_content: String = read_to_string(content_path).unwrap();
 
