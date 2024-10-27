@@ -2430,7 +2430,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 break;
                             case "translate-tools-menu-button":
                                 for (const element of contentContainer.firstElementChild!.children) {
-                                    const children = element.children;
+                                    const children = element.firstElementChild!.children;
                                     const originalField = children[1] as HTMLDivElement;
                                     const translationField = children[2] as HTMLTextAreaElement;
 
