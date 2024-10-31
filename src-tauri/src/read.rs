@@ -1,6 +1,5 @@
 #![allow(clippy::too_many_arguments)]
 use crate::{
-    eprintln,
     functions::{extract_strings, get_object_data, romanize_string},
     println,
     statics::{
