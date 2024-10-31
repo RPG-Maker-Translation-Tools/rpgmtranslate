@@ -2577,7 +2577,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 if (translation.trim() && !/^<!--(?! Map)/.exec(original)) {
                                     const wrapped = wrapText(
-                                        translation,
+                                        translation.replaceAll(NEW_LINE, "\n"),
                                         Number.parseInt(
                                             (
                                                 settingsWindowFooter.firstElementChild!
@@ -2586,7 +2586,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                         ),
                                     );
 
-                                    return `${original}${LINES_SEPARATOR}${wrapped}`;
+                                    return `${original}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
                                 } else {
                                     return line;
                                 }
@@ -2599,6 +2599,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     saved = false;
+
+                    for (const element of settingsWindowBody.children) {
+                        if (element.lastElementChild!.textContent === filename) {
+                            element.firstElementChild!.classList.add("text-green-500");
+                        }
+                    }
+
+                    console.log(`Processed ${filename}`);
                 }
             }
 
