@@ -1,3 +1,4 @@
+import "./extensions/array-extensions";
 import {
     animateProgressText,
     applyLocalization,
@@ -8,17 +9,19 @@ import {
     Settings,
 } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
-import {
-    invokeAddToScope,
-    invokeCompile,
-    invokeEscapeText,
-    invokeRead,
-    invokeReadLastLine,
-    invokeTranslateText,
-} from "./extensions/invokes";
+import { addToScope, compile, escapeText, read, readLastLine, translateText } from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
-import { EngineType, Language, ProcessingMode, SaveMode, SearchMode, State } from "./types/enums";
+import {
+    EngineType,
+    FilesAction,
+    JumpDirection,
+    Language,
+    ProcessingMode,
+    SaveMode,
+    SearchMode,
+    State,
+} from "./types/enums";
 
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -33,6 +36,7 @@ import {
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
+import { attachConsole } from "@tauri-apps/plugin-log";
 import { locale as getLocale } from "@tauri-apps/plugin-os";
 import { exit } from "@tauri-apps/plugin-process";
 const { Resource } = BaseDirectory;
@@ -41,6 +45,7 @@ const appWindow = getCurrentWebviewWindow();
 import XRegExp from "xregexp";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await attachConsole();
     const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
     // #region Static constants
@@ -121,6 +126,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Initialize the project
     let state: State | null = null;
+    let stateIndex: number | null = null;
     let nextBackupNumber: number;
 
     const observerMain = new IntersectionObserver(
@@ -462,7 +468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (askCreateSettings) {
             const newSettings = new Settings(language);
 
-            await invokeAddToScope({ window: appWindow, path: settingsPath });
+            await addToScope({ path: settingsPath });
             await writeTextFile(settingsPath, JSON.stringify(newSettings), {
                 baseDir: Resource,
             });
@@ -486,7 +492,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        let regexp = searchRegex ? text : await invokeEscapeText({ text });
+        let regexp = searchRegex ? text : await escapeText({ text });
         regexp = searchWhole ? `(?<!\\p{L})${regexp}(?!\\p{L})` : regexp;
 
         const attr = searchCase ? "g" : "gi";
@@ -1009,7 +1015,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function save(mode: SaveMode) {
-        if (saved || saving || !state || !settings.projectPath) {
+        if (!settings.projectPath) {
+            return;
+        }
+
+        if (mode === SaveMode.SingleFile && !state) {
+            return;
+        }
+
+        if (mode !== SaveMode.Backup && (saved || saving)) {
             return;
         }
 
@@ -1017,53 +1031,69 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveButton.firstElementChild!.classList.add("animate-spin");
 
         const translationPath = join(settings.projectPath, programDataDir, translationDir);
+        const tempMapsPath = join(settings.projectPath, programDataDir, "temp-maps");
         const outputArray: string[] = [];
 
-        for (const child of contentContainer.firstElementChild!.children) {
-            const originalTextElement = child.firstElementChild!.children[1] as HTMLDivElement;
-            const translatedTextElement = child.firstElementChild!.children[2] as HTMLTextAreaElement;
+        if (mode !== SaveMode.Backup) {
+            if (state) {
+                for (const child of contentContainer.firstElementChild!.children) {
+                    const originalTextElement = child.firstElementChild!.children[1] as HTMLDivElement;
+                    const translatedTextElement = child.firstElementChild!.children[2] as HTMLTextAreaElement;
 
-            outputArray.push(
-                originalTextElement.textContent!.replaceAll("\n", NEW_LINE) +
-                    LINES_SEPARATOR +
-                    translatedTextElement.value.replaceAll("\n", NEW_LINE),
-            );
-        }
-
-        if (state === State.System) {
-            const originalTitle = currentGameTitle.getAttribute("original-title")!;
-            const output =
-                originalTitle +
-                LINES_SEPARATOR +
-                (originalTitle === currentGameTitle.value ? "" : currentGameTitle.value);
-
-            outputArray.push(output);
-        }
-
-        const filePath = `${state}.txt`;
-
-        await writeTextFile(
-            state.startsWith("maps")
-                ? join(settings.projectPath, programDataDir, "temp-maps", filePath)
-                : join(translationPath, filePath),
-            outputArray.join("\n"),
-        );
-
-        outputArray.length = 0;
-
-        if (mode === SaveMode.Maps && state.startsWith("maps")) {
-            const tempPath = join(settings.projectPath, programDataDir, "temp-maps");
-            const entries = await readDir(tempPath);
-            outputArray.length = entries.length;
-
-            for (const entry of entries) {
-                outputArray[Number.parseInt(entry.name.slice(4)) - 1] = await readTextFile(join(tempPath, entry.name));
+                    outputArray.push(
+                        originalTextElement.textContent!.replaceAll("\n", NEW_LINE) +
+                            LINES_SEPARATOR +
+                            translatedTextElement.value.replaceAll("\n", NEW_LINE),
+                    );
+                }
             }
 
-            await writeTextFile(join(translationPath, "maps.txt"), outputArray.join("\n"));
+            if (state === State.System) {
+                const originalTitle = currentGameTitle.getAttribute("original-title")!;
+                const output =
+                    originalTitle +
+                    LINES_SEPARATOR +
+                    (originalTitle === currentGameTitle.value ? "" : currentGameTitle.value);
+
+                outputArray.push(output);
+            }
+
+            if (state) {
+                const filePath = `${state}.txt`;
+                const savePath = state.startsWith("maps")
+                    ? join(tempMapsPath, filePath)
+                    : join(translationPath, filePath);
+
+                await writeTextFile(savePath, outputArray.join("\n"));
+            }
+
+            outputArray.length = 0;
+
+            if (mode === SaveMode.Maps) {
+                const entries = await readDir(tempMapsPath);
+                outputArray.length = entries.length;
+
+                for (const entry of entries) {
+                    outputArray[Number.parseInt(entry.name.slice(4)) - 1] = await readTextFile(
+                        join(tempMapsPath, entry.name),
+                    );
+                }
+
+                await writeTextFile(join(translationPath, "maps.txt"), outputArray.join("\n"));
+            }
+
+            saved = true;
         }
 
         if (mode === SaveMode.Backup) {
+            const backupFolderEntries = await readDir(join(settings.projectPath, programDataDir, "backups"));
+
+            if (backupFolderEntries.length >= settings.backup.max) {
+                await removePath(join(settings.projectPath, programDataDir, "backups", backupFolderEntries[0].name), {
+                    recursive: true,
+                });
+            }
+
             const date = new Date();
             const formattedDate = [
                 date.getFullYear(),
@@ -1091,18 +1121,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await copyFile(join(translationPath, entry.name), join(backupFolderName, translationDir, entry.name));
             }
 
-            const tempMapsPath = join(settings.projectPath, programDataDir, "temp-maps");
             for (const entry of await readDir(tempMapsPath)) {
                 await copyFile(join(tempMapsPath, entry.name), join(backupFolderName, "temp-maps", entry.name));
             }
         }
 
-        if (mode !== SaveMode.Backup) {
-            saved = true;
-        }
-
-        // Because we're saving only one file, it'll be extremely fast, and saveButton won't even be able to animate spin.
-        // So we're waiting for the end of its spin, and only then remove this class
         setTimeout(() => {
             saveButton.firstElementChild!.classList.remove("animate-spin");
         }, 1000);
@@ -1122,7 +1145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, settings.backup.period * 1000);
     }
 
-    async function changeState(newState: State | null) {
+    async function changeState(newState: State | null, newStateIndex?: number) {
         if (state && state === newState) {
             return;
         }
@@ -1132,7 +1155,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (state) {
             await save(SaveMode.SingleFile);
 
-            let totalFields = contentContainer.firstElementChild?.children.length;
+            let totalFields = contentContainer.firstElementChild!.children.length;
 
             if (totalFields) {
                 let translatedFields = 0;
@@ -1150,20 +1173,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const percentage = Math.round((translatedFields / totalFields) * 100);
 
-                for (const child of leftPanel.children) {
-                    if (child.textContent!.startsWith(state)) {
-                        const progressBar = child.lastElementChild?.firstElementChild as HTMLSpanElement | null;
+                const selectedTab = leftPanel.children[stateIndex!];
+                const progressBar = selectedTab.lastElementChild?.firstElementChild as HTMLSpanElement | null;
 
-                        if (progressBar) {
-                            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
-                        }
-                        break;
-                    }
+                if (progressBar) {
+                    progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
                 }
             }
         }
 
         contentContainer.firstElementChild?.remove();
+
+        if (state) {
+            const selectedTab = leftPanel.children[stateIndex!];
+            selectedTab.classList.replace("backgroundThird", "backgroundPrimary");
+        }
 
         if (!newState) {
             state = null;
@@ -1171,7 +1195,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             state = newState;
 
-            // Have to recreate content each time
+            if (!newStateIndex) {
+                let i = 0;
+                for (const element of leftPanel.children) {
+                    if (element.firstElementChild!.textContent === newState) {
+                        newStateIndex = i;
+                        break;
+                    }
+
+                    i++;
+                }
+            }
+
+            stateIndex = newStateIndex!;
+
+            const selectedTab = leftPanel.children[newStateIndex!];
+            selectedTab.classList.replace("backgroundPrimary", "backgroundThird");
+
             await createContentForState(newState);
 
             currentState.innerHTML = newState;
@@ -1191,7 +1231,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
     }
 
-    function jumpToRow(key: "alt" | "ctrl") {
+    function jumpToRow(direction: JumpDirection) {
         const focusedElement = document.activeElement as HTMLElement;
         if (!contentContainer.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
             return;
@@ -1204,7 +1244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const step = key === "alt" ? 1 : -1;
+        const step = direction === JumpDirection.Next ? 1 : -1;
         const nextElement = document.getElementById(
             `${idParts.join("-")}-${index + step}`,
         ) as HTMLTextAreaElement | null;
@@ -1310,7 +1350,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             } else if (event.altKey) {
                 switch (event.code) {
                     case "KeyC":
-                        await compile(false);
+                        await startCompilation(false);
                         break;
                     case "KeyR":
                         await createReadWindow();
@@ -1330,38 +1370,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                     case "KeyR":
                         await displaySearchResults();
                         break;
-                    case "Digit1":
-                        await changeState(State.Actors);
+                    case "ArrowDown":
+                        if (stateIndex !== null) {
+                            const newStateIndex = (stateIndex + 1) % leftPanel.children.length;
+
+                            await changeState(
+                                leftPanel.children[newStateIndex].firstElementChild!.textContent! as State,
+                                newStateIndex,
+                            );
+                        }
                         break;
-                    case "Digit2":
-                        await changeState(State.Armors);
-                        break;
-                    case "Digit3":
-                        await changeState(State.Classes);
-                        break;
-                    case "Digit4":
-                        await changeState(State.CommonEvents);
-                        break;
-                    case "Digit5":
-                        await changeState(State.Enemies);
-                        break;
-                    case "Digit6":
-                        await changeState(State.Items);
-                        break;
-                    case "Digit7":
-                        await changeState(State.Skills);
-                        break;
-                    case "Digit8":
-                        await changeState(State.States);
-                        break;
-                    case "Digit9":
-                        await changeState(State.System);
-                        break;
-                    case "Digit0":
-                        await changeState(State.Troops);
-                        break;
-                    case "Minus":
-                        await changeState(State.Weapons);
+                    case "ArrowUp":
+                        if (stateIndex !== null) {
+                            const newStateIndex =
+                                (stateIndex - 1 + leftPanel.children.length) % leftPanel.children.length;
+                            await changeState(
+                                leftPanel.children[newStateIndex].firstElementChild!.textContent! as State,
+                                newStateIndex,
+                            );
+                        }
                         break;
                 }
             }
@@ -1374,9 +1401,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
                 case "Enter":
                     if (event.altKey) {
-                        jumpToRow("alt");
+                        jumpToRow(JumpDirection.Next);
                     } else if (event.ctrlKey) {
-                        jumpToRow("ctrl");
+                        jumpToRow(JumpDirection.Previous);
                     }
                     break;
                 case "KeyT":
@@ -1392,7 +1419,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     return;
                                 }
 
-                                const translated = await invokeTranslateText({
+                                const translated = await translateText({
                                     text: counterpart.textContent!,
                                     to: settings.to,
                                     from: settings.from,
@@ -1490,17 +1517,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function createContentForState(state: State) {
+        const programDataDirPath = join(settings.projectPath, programDataDir);
+        const translationPath = join(programDataDirPath, translationDir);
+
         let contentName = state.toString();
-        let pathToContent = join(settings.projectPath, programDataDir, translationDir, contentName + ".txt");
+        const formattedFilename = `${contentName}.txt`;
+
+        let pathToContent = join(translationPath, formattedFilename);
 
         if (contentName.startsWith("maps")) {
-            pathToContent = join(settings.projectPath, programDataDir, "temp-maps", `${contentName}.txt`);
+            pathToContent = join(programDataDirPath, "temp-maps", formattedFilename);
         }
 
         if (contentName.startsWith("plugins") && !(await exists(pathToContent))) {
-            if (await exists(join(settings.projectPath, programDataDir, translationDir, "scripts.txt"))) {
+            if (await exists(join(translationPath, "scripts.txt"))) {
                 contentName = "scripts";
-                pathToContent = join(settings.projectPath, programDataDir, translationDir, contentName + ".txt");
+                pathToContent = join(translationPath, formattedFilename);
                 (leftPanel.lastElementChild as HTMLElement).innerHTML = State.Scripts;
             }
         }
@@ -1532,7 +1564,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             textContainer.className = tw`flex h-full flex-row justify-around py-[1px]`;
 
             const originalTextElement = document.createElement("div");
-            originalTextElement.title = windowLocalization.originalTextFieldTitle;
             originalTextElement.id = `${contentName}-original-${added}`;
             originalTextElement.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer whitespace-pre-wrap p-1 outline outline-2`;
 
@@ -1562,7 +1593,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             rowElement.className = tw`outlinePrimary backgroundPrimary flex w-48 flex-row p-1 outline outline-2`;
 
             const spanElement = document.createElement("span");
-            spanElement.textContent = (i + 1).toString();
+            spanElement.textContent = added.toString();
 
             const innerDiv = document.createElement("div");
             innerDiv.className = tw`flex w-full items-start justify-end p-0.5`;
@@ -1592,9 +1623,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 textParent.style.minHeight =
                     `${minHeight}px`;
 
-            // This 4 subtraction - is some kind of element size trickery and is required to truncate the contentDivHeight to the right height
-            // Otherwise it overflows
-            contentDivHeight += minHeight - 4;
+            contentDivHeight += minHeight;
 
             textContainer.appendChild(rowElement);
             textContainer.appendChild(originalTextElement);
@@ -1607,7 +1636,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         contentContainer.appendChild(contentDiv);
     }
 
-    async function compile(silent: boolean) {
+    async function startCompilation(silent: boolean) {
         if (!settings.projectPath) {
             return;
         }
@@ -1624,7 +1653,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
             const compileUnlisten = await compileWindow.once("compile", async () => {
-                await compile(true);
+                await startCompilation(true);
             });
             await compileWindow.once("tauri://destroyed", compileUnlisten);
         } else {
@@ -1654,7 +1683,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 );
             }
 
-            const executionTime = await invokeCompile({
+            const executionTime = await compile({
                 projectPath: settings.projectPath,
                 originalDir,
                 outputPath: compileSettings.customOutputPath.path,
@@ -1664,6 +1693,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 disableCustomProcessing: compileSettings.disableCustomProcessing,
                 disableProcessing: Object.values(compileSettings.disableProcessing.of),
                 engineType: settings.engineType!,
+                logging: compileSettings.logging,
+                language: settings.language,
             });
 
             compileButton.firstElementChild!.classList.remove("animate-spin");
@@ -1775,6 +1806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function handleBlur(event: FocusEvent) {
         const target = event.target as HTMLTextAreaElement;
+        target.placeholder = "";
 
         for (const ghost of activeGhostLines) {
             ghost.remove();
@@ -2037,7 +2069,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            await invokeRead({
+            await read({
                 projectPath: settings.projectPath,
                 originalDir,
                 gameTitle,
@@ -2047,12 +2079,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 disableProcessing: [false, false, false, false],
                 processingMode: ProcessingMode.Default,
                 engineType: settings.engineType!,
+                logging: true,
+                language: settings.language,
             });
         }
     }
 
     async function initializeProject(pathToProject: string) {
-        await invokeAddToScope({ window: appWindow, path: pathToProject });
+        await addToScope({ path: pathToProject });
 
         projectStatus.innerHTML = windowLocalization.loadingProject;
         const interval = animateProgressText(projectStatus);
@@ -2067,7 +2101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Create program data directory
             const programDataDirPath = join(settings.projectPath, programDataDir);
-            await invokeAddToScope({ window: appWindow, path: programDataDirPath });
+            await addToScope({ path: programDataDirPath });
 
             if (!(await exists(programDataDirPath))) {
                 await mkdir(programDataDirPath);
@@ -2077,6 +2111,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
             leftPanel.innerHTML = "";
+
+            let i = 1;
 
             for (const entry of translationFiles) {
                 const name = entry.name;
@@ -2090,30 +2126,37 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ).split("\n");
 
                     const result: string[] = [];
-                    let i = 1;
 
                     await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
+
+                    const mapsNumbers = [];
 
                     for (let l = 0; l <= mapsLines.length; l++) {
                         const line = mapsLines[l];
 
                         if (l === mapsLines.length || line.startsWith("<!-- Map")) {
+                            if (l !== mapsLines.length) {
+                                mapsNumbers.push(Number.parseInt(line.slice(8)));
+                            }
+
                             if (!result.length) {
                                 result.push(line);
                                 continue;
                             }
 
+                            const mapsNumber = mapsNumbers.shift();
                             const joined = result.join("\n");
                             await writeTextFile(
-                                join(settings.projectPath, programDataDir, "temp-maps", `maps${i}.txt`),
+                                join(settings.projectPath, programDataDir, "temp-maps", `maps${mapsNumber}.txt`),
                                 joined,
                             );
 
                             const buttonElement = document.createElement("button");
                             buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+                            buttonElement.id = (i - 1).toString();
 
                             const mapsNumberSpan = document.createElement("span");
-                            mapsNumberSpan.innerHTML = `maps${i}`;
+                            mapsNumberSpan.innerHTML = `maps${mapsNumber}`;
                             mapsNumberSpan.className = "pr-1";
                             buttonElement.appendChild(mapsNumberSpan);
 
@@ -2145,7 +2188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 buttonElement.appendChild(progressBar);
                             }
 
-                            leftPanel.insertBefore(buttonElement, leftPanel.children[i]);
+                            leftPanel.appendChild(buttonElement);
 
                             result.length = 0;
                             result.push(line);
@@ -2162,6 +2205,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     const buttonElement = document.createElement("button");
                     buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+                    buttonElement.id = (i - 1).toString();
 
                     const stateSpan = document.createElement("span");
                     stateSpan.innerHTML = entry.name.slice(0, -4);
@@ -2193,6 +2237,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     leftPanel.appendChild(buttonElement);
+                    i++;
                 }
             }
 
@@ -2246,7 +2291,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const [originalTitle, translatedTitle] = (
-                await invokeReadLastLine({
+                await readLastLine({
                     filePath: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
                 })
             ).split(LINES_SEPARATOR);
@@ -2290,9 +2335,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     leftPanel.addEventListener("click", async (event) => {
-        await changeState(
-            leftPanel.secondHighestParent(event.target as HTMLElement).firstElementChild!.textContent as State,
-        );
+        let target = event.target as HTMLElement;
+        const leftPanelChildren = Array.from(leftPanel.children);
+
+        if (leftPanel.contains(target)) {
+            while (!leftPanelChildren.includes(target)) {
+                target = target.parentElement!;
+            }
+
+            await changeState(target.firstElementChild!.textContent as State, Number.parseInt(target.id));
+        }
     });
 
     function wrapText(text: string, width: number): string {
@@ -2309,8 +2361,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (line.length > width) {
                 const words = line.split(" ");
 
-                while (words.join(" ").length > width) {
+                while (line.length > width && words.length > 0) {
                     remainder.unshift(words.pop()!);
+                    line = words.join(" ");
                 }
 
                 wrappedLines.push(words.join(" "));
@@ -2324,6 +2377,278 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         return wrappedLines.join("\n");
+    }
+
+    function showSelectFilesWindow(rootElement: HTMLElement, action: FilesAction) {
+        const settingsWindow = document.createElement("div");
+        settingsWindow.id = "select-files-window";
+        settingsWindow.className = tw`backgroundPrimary textPrimary outlinePrimary fixed flex h-4/6 w-7/12 flex-col gap-1 p-2 text-base`;
+
+        const { x, y } = rootElement.getBoundingClientRect();
+        settingsWindow.style.left = `${x + rootElement.clientWidth}px`;
+        settingsWindow.style.top = `${y}px`;
+        settingsWindow.style.zIndex = "50";
+
+        const settingsWindowHeader = document.createElement("div");
+        settingsWindowHeader.className = tw`flex h-8 flex-row items-center justify-center text-lg`;
+        settingsWindowHeader.innerHTML = windowLocalization.selectFiles;
+
+        const settingsWindowBody = document.createElement("div");
+        settingsWindowBody.className = tw`h-fit columns-8 columns-[128px] gap-2 overflow-y-scroll`;
+
+        for (const child of leftPanel.children) {
+            const checkboxDiv = document.createElement("div");
+            checkboxDiv.className = tw`flex flex-row items-center gap-1 p-0.5`;
+
+            const checkbox = document.createElement("span");
+            checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 min-w-6 max-w-6`;
+
+            const checkboxLabel = document.createElement("label");
+            checkboxLabel.className = tw`text-base`;
+            checkboxLabel.innerHTML = child.firstElementChild!.textContent!;
+
+            checkboxDiv.appendChild(checkbox);
+            checkboxDiv.appendChild(checkboxLabel);
+            settingsWindowBody.appendChild(checkboxDiv);
+        }
+
+        const settingsWindowFooter = document.createElement("div");
+        settingsWindowFooter.className = tw`flex flex-col items-center justify-center gap-2`;
+
+        if (action === FilesAction.Wrap) {
+            const wrapSettingsDiv = document.createElement("div");
+            wrapSettingsDiv.className = tw`flex flex-row items-center justify-center gap-2`;
+
+            const wrapInputLabel = document.createElement("label");
+            wrapInputLabel.className = tw`text-base`;
+            wrapInputLabel.innerHTML = windowLocalization.wrapNumber;
+
+            const wrapNumberInput = document.createElement("input");
+            wrapNumberInput.className = tw`input backgroundSecond h-8`;
+
+            wrapSettingsDiv.appendChild(wrapInputLabel);
+            wrapSettingsDiv.appendChild(wrapNumberInput);
+
+            settingsWindowFooter.appendChild(wrapSettingsDiv);
+        }
+
+        const controlButtonsDiv = document.createElement("div");
+        controlButtonsDiv.className = tw`flex w-auto flex-row items-center justify-center gap-4`;
+
+        const selectAllButton = document.createElement("button");
+        selectAllButton.className = tw`button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1`;
+        selectAllButton.innerHTML = "Select all";
+
+        const deselectAllButton = document.createElement("button");
+        deselectAllButton.className = tw`button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1`;
+        deselectAllButton.innerHTML = "Deselect all";
+
+        const confirmButtonDiv = document.createElement("div");
+        confirmButtonDiv.className = tw`flex flex-row items-center justify-center gap-4`;
+
+        const applyButton = document.createElement("button");
+        applyButton.className = tw`backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1`;
+        applyButton.innerHTML = "Apply";
+
+        const cancelButton = document.createElement("button");
+        cancelButton.className = tw`backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1`;
+        cancelButton.innerHTML = "Cancel";
+
+        selectAllButton.onclick = () => {
+            for (const element of settingsWindowBody.children) {
+                element.firstElementChild!.textContent = "check";
+            }
+        };
+
+        deselectAllButton.onclick = () => {
+            for (const element of settingsWindowBody.children) {
+                element.firstElementChild!.textContent = "";
+            }
+        };
+
+        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        applyButton.onclick = async (event) => {
+            const filenames = Array.from(settingsWindowBody.children).filterMap((element) =>
+                element.firstElementChild!.textContent! ? element.lastElementChild!.textContent! : undefined,
+            );
+
+            for (const filename of filenames) {
+                await sleep(1000);
+
+                if (filename === (state as string)) {
+                    const children = contentContainer.firstElementChild!.children;
+
+                    for (const element of children) {
+                        const originalField = element.firstElementChild!.children[1] as HTMLDivElement;
+                        const translationField = element.firstElementChild!.children[2] as HTMLTextAreaElement;
+
+                        switch (action) {
+                            case FilesAction.Trim:
+                                translationField.value = translationField.value.trim();
+                                break;
+                            case FilesAction.Translate:
+                                if (
+                                    !translationField.value.trim() &&
+                                    !/^<!--(?! Map)/.exec(originalField.textContent!)
+                                ) {
+                                    void translateText({
+                                        text: originalField.textContent!,
+                                        from: settings.from,
+                                        to: settings.to,
+                                    }).then((translated) => (translationField.value = translated));
+
+                                    await sleep(5);
+                                }
+                                break;
+                            case FilesAction.Wrap:
+                                if (translationField.value.trim()) {
+                                    translationField.value = wrapText(
+                                        translationField.value,
+                                        Number.parseInt(
+                                            (
+                                                settingsWindowFooter.firstElementChild!
+                                                    .lastElementChild! as HTMLInputElement
+                                            ).value,
+                                        ),
+                                    );
+
+                                    calculateHeight(event);
+                                }
+                                break;
+                        }
+                    }
+                } else {
+                    const contentPath = filename.startsWith("maps")
+                        ? join(settings.projectPath, programDataDir, "temp-maps", filename + ".txt")
+                        : join(settings.projectPath, programDataDir, translationDir, filename + ".txt");
+                    const content = await readTextFile(contentPath);
+
+                    const lines = content.split("\n");
+                    let newLines: string[] | undefined;
+
+                    switch (action) {
+                        case FilesAction.Trim:
+                            newLines = lines.map((line) => {
+                                const [original, translation] = line.split(LINES_SEPARATOR);
+                                return translation ? `${original}${LINES_SEPARATOR}${translation.trim()}` : line;
+                            });
+                            break;
+                        case FilesAction.Translate:
+                            try {
+                                newLines = (
+                                    await Promise.all(
+                                        lines.map(async (line) => {
+                                            const [original, translation] = line.split(LINES_SEPARATOR);
+
+                                            if (!translation.trim() && !/^<!--(?! Map)/.exec(original)) {
+                                                return `${original}${LINES_SEPARATOR}${await translateText({
+                                                    text: original,
+                                                    from: settings.from,
+                                                    to: settings.to,
+                                                })}`;
+                                            } else {
+                                                return line;
+                                            }
+                                        }),
+                                    )
+                                ).map((line) => line.replaceAll("\n", NEW_LINE));
+                            } catch (e) {
+                                console.error(e);
+                            }
+
+                            for (const child of leftPanel.children) {
+                                if (child.firstElementChild!.textContent === filename) {
+                                    const progressBar = child.lastElementChild
+                                        ?.firstElementChild as HTMLDivElement | null;
+
+                                    if (progressBar) {
+                                        progressBar.style.width = progressBar.textContent = `100%`;
+                                    }
+                                }
+                            }
+                            break;
+                        case FilesAction.Wrap:
+                            newLines = lines.map((line) => {
+                                const [original, translation] = line.split(LINES_SEPARATOR);
+
+                                if (translation.trim() && !/^<!--(?! Map)/.exec(original)) {
+                                    const wrapped = wrapText(
+                                        translation,
+                                        Number.parseInt(
+                                            (
+                                                settingsWindowFooter.firstElementChild!
+                                                    .lastElementChild! as HTMLInputElement
+                                            ).value,
+                                        ),
+                                    );
+
+                                    return `${original}${LINES_SEPARATOR}${wrapped}`;
+                                } else {
+                                    return line;
+                                }
+                            });
+                            break;
+                    }
+
+                    if (newLines) {
+                        await writeTextFile(contentPath, newLines.join("\n"));
+                    }
+
+                    saved = false;
+                }
+            }
+
+            if (action === FilesAction.Translate) {
+                await save(SaveMode.Maps);
+            }
+
+            settingsWindow.remove();
+        };
+
+        cancelButton.onclick = () => {
+            settingsWindow.remove();
+        };
+
+        controlButtonsDiv.appendChild(selectAllButton);
+        controlButtonsDiv.appendChild(deselectAllButton);
+        settingsWindowFooter.appendChild(controlButtonsDiv);
+
+        confirmButtonDiv.appendChild(applyButton);
+        confirmButtonDiv.appendChild(cancelButton);
+        settingsWindowFooter.appendChild(confirmButtonDiv);
+
+        settingsWindow.appendChild(settingsWindowHeader);
+        settingsWindow.appendChild(settingsWindowBody);
+        settingsWindow.appendChild(settingsWindowFooter);
+
+        const toggledBoxes = new Set<HTMLElement>();
+
+        settingsWindow.onmousemove = (event) => {
+            if (event.buttons === 1) {
+                const target = event.target as HTMLElement;
+
+                if (target.classList.contains("checkbox") && !toggledBoxes.has(target)) {
+                    target.textContent = target.textContent ? "" : "check";
+                    toggledBoxes.add(target);
+                }
+            }
+        };
+
+        settingsWindow.onmouseup = () => {
+            toggledBoxes.clear();
+        };
+
+        settingsWindow.onclick = (event) => {
+            const target = event.target as HTMLElement;
+
+            if (target.classList.contains("checkbox") && !toggledBoxes.has(target)) {
+                target.textContent = target.textContent ? "" : "check";
+                toggledBoxes.add(target);
+            }
+        };
+
+        document.body.appendChild(settingsWindow);
     }
 
     topPanelButtonsContainer.addEventListener("click", async (event) => {
@@ -2344,12 +2669,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (clickTimer === null) {
                     clickTimer = setTimeout(async () => {
                         clickTimer = null;
-                        await compile(true);
+                        await startCompilation(true);
                     }, 250);
                 } else {
                     clearTimeout(clickTimer);
                     clickTimer = null;
-                    await compile(false);
+                    await startCompilation(false);
                 }
                 break;
             case "open-directory-button":
@@ -2404,86 +2729,58 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case toolsButton.id:
-                if (!state) {
-                    return;
-                }
-
                 toolsMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
                     toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
 
-                    toolsMenu.addEventListener("click", async (event: MouseEvent) => {
+                    toolsMenu.addEventListener("click", (event: MouseEvent) => {
                         const target = event.target as HTMLButtonElement;
 
                         if (!toolsMenu.contains(target)) {
                             return;
                         }
 
-                        // TODO: Each button should open the popup for user to configure the action.
-                        // For example, if user wants to trim the text in all files' fields, they should be able to select all fields.
-                        // And, for example, for trim, they should be able to select the trim mode (left, right, both).
                         switch (target.id) {
-                            case "trim-tools-menu-button":
-                                for (const element of contentContainer.firstElementChild!.children) {
-                                    const translationField = element.firstElementChild!
-                                        .lastElementChild as HTMLTextAreaElement;
-                                    translationField.value = translationField.value.trim();
+                            case "trim-tools-menu-button": {
+                                const selectFilesWindow = document.querySelector("#select-files-window");
+
+                                if (selectFilesWindow) {
+                                    selectFilesWindow.remove();
+                                    return;
+                                } else {
+                                    showSelectFilesWindow(target, FilesAction.Trim);
                                 }
                                 break;
-                            case "translate-tools-menu-button":
-                                for (const element of contentContainer.firstElementChild!.children) {
-                                    const children = element.firstElementChild!.children;
-                                    const originalField = children[1] as HTMLDivElement;
-                                    const translationField = children[2] as HTMLTextAreaElement;
+                            }
+                            case "translate-tools-menu-button": {
+                                if (!settings.from || !settings.to) {
+                                    alert(windowLocalization.translationLanguagesNotSelected);
+                                    return;
+                                }
 
-                                    if (!settings.from || !settings.to) {
-                                        alert(windowLocalization.translationLanguagesNotSelected);
-                                        return;
-                                    }
+                                const selectFilesWindow = document.querySelector("#select-files-window");
 
-                                    const translated = await invokeTranslateText({
-                                        text: originalField.textContent!,
-                                        from: settings.from,
-                                        to: settings.to,
-                                    });
-
-                                    translationField.value = translated;
+                                if (selectFilesWindow) {
+                                    selectFilesWindow.remove();
+                                    return;
+                                } else {
+                                    showSelectFilesWindow(target, FilesAction.Translate);
                                 }
                                 break;
-                            case "wrap-tools-menu-button":
-                                {
-                                    const wrapNumberInput = document.createElement("input");
-                                    wrapNumberInput.className = tw`input backgroundPrimary textPrimary h-10 w-48 text-base`;
-                                    wrapNumberInput.placeholder = "Number of characters";
-                                    wrapNumberInput.style.position = "fixed";
+                            }
+                            case "wrap-tools-menu-button": {
+                                const selectFilesWindow = document.querySelector("#select-files-window");
 
-                                    const { x, y } = toolsMenu.lastElementChild!.getBoundingClientRect();
-                                    wrapNumberInput.style.left = `${x + toolsMenu.lastElementChild!.clientWidth}px`;
-                                    wrapNumberInput.style.top = `${y}px`;
-                                    wrapNumberInput.style.zIndex = "50";
-                                    wrapNumberInput.onkeydown = (event) => {
-                                        if (event.key === "Enter") {
-                                            for (const element of contentContainer.firstElementChild!.children) {
-                                                const translation = element.firstElementChild!
-                                                    .lastElementChild as HTMLTextAreaElement;
-
-                                                translation.value = wrapText(
-                                                    translation.value,
-                                                    Number.parseInt(wrapNumberInput.value),
-                                                );
-
-                                                translation.calculateHeight();
-                                            }
-
-                                            wrapNumberInput.remove();
-                                        }
-                                    };
-
-                                    document.body.appendChild(wrapNumberInput);
+                                if (selectFilesWindow) {
+                                    selectFilesWindow.remove();
+                                    return;
+                                } else {
+                                    showSelectFilesWindow(target, FilesAction.Wrap);
                                 }
                                 break;
+                            }
                         }
                     });
                 });
@@ -2748,6 +3045,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     async function cleanup() {
+        if (!settings.projectPath) {
+            return;
+        }
+
         const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
 
         for (const entry of dataDirEntries) {
@@ -2763,9 +3064,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await appWindow.onCloseRequested(async (event) => {
         await waitForSave();
-        await cleanup();
 
         if (await exitConfirmation()) {
+            await cleanup();
             await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
             await exit();
         } else {
