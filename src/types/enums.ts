@@ -43,3 +43,14 @@ export const enum SearchMode {
     OnlyOriginal,
     OnlyTranslation,
 }
+
+export const enum FilesAction {
+    Trim,
+    Translate,
+    Wrap,
+}
+
+export const enum JumpDirection {
+    Next,
+    Previous,
+}

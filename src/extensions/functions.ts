@@ -219,6 +219,7 @@ export class CompileSettings {
         };
     };
     doNotAskAgain: boolean;
+    logging: boolean;
 
     constructor() {
         this.initialized = false;
@@ -228,6 +229,7 @@ export class CompileSettings {
         this.customOutputPath = { enabled: false, path: "" };
         this.disableProcessing = { enabled: false, of: { maps: false, other: false, system: false, plugins: false } };
         this.doNotAskAgain = true;
+        this.logging = false;
     }
 }
 

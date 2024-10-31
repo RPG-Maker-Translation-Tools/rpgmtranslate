@@ -12,6 +12,10 @@ interface HTMLTextAreaElement {
     calculateHeight(): void;
 }
 
+interface Array<T> {
+    filterMap<U>(callback: (value: T, index: number) => U | undefined): U[];
+}
+
 interface Math {
     clamp(value: number, min: number, max: number): number;
 }
@@ -50,6 +54,7 @@ interface CompileSettings {
         };
     };
     doNotAskAgain: boolean;
+    logging: boolean;
 }
 
 type ThemeObject = Record<string, Theme>;
@@ -79,7 +84,7 @@ interface CSSRule {
     selectorText: string;
 }
 
-interface ReadCommandOptions extends Record<string, unknown> {
+interface ReadArgs extends Record<string, unknown> {
     projectPath: string;
     originalDir: string;
     gameTitle: string;
@@ -89,9 +94,11 @@ interface ReadCommandOptions extends Record<string, unknown> {
     disableProcessing: boolean[];
     processingMode: import("./enums").ProcessingMode;
     engineType: import("./enums").EngineType;
+    logging: boolean;
+    language: import("./enums").Language;
 }
 
-interface CompileCommandOptions extends Record<string, unknown> {
+interface CompileArgs extends Record<string, unknown> {
     projectPath: string;
     originalDir: string;
     outputPath: string;
@@ -101,6 +108,8 @@ interface CompileCommandOptions extends Record<string, unknown> {
     disableCustomProcessing: boolean;
     disableProcessing: boolean[];
     engineType: import("./enums").EngineType;
+    logging: boolean;
+    language: import("./enums").Language;
 }
 
 interface TextAreaPropertiesMemo extends Record<string, string | number> {

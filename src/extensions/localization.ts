@@ -70,7 +70,6 @@ export class MainWindowLocalization {
     readonly readButtonTitle: string;
     readonly directoryAlreadyOpened: string;
     readonly errorOccurred: string;
-    readonly originalTextFieldTitle: string;
     readonly searchMode: string;
     readonly searchAll: string;
     readonly searchOnlyTranslation: string;
@@ -79,6 +78,8 @@ export class MainWindowLocalization {
     readonly translateFields: string;
     readonly wrapFields: string;
     readonly translationLanguagesNotSelected: string;
+    readonly selectFiles: string;
+    readonly wrapNumber: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -156,7 +157,6 @@ export class MainWindowLocalization {
                 this.readButtonTitle = "Перечитать файлы (Alt + R)";
                 this.directoryAlreadyOpened = "Выбранная директория уже открыта в программе.";
                 this.errorOccurred = "Произошла ошибка:";
-                this.originalTextFieldTitle = "Кликните, чтобы скопировать текст";
                 this.searchMode = "Режим поиска";
                 this.searchAll = "Искать везде";
                 this.searchOnlyOriginal = "Искать только в ориг. тексте";
@@ -165,6 +165,8 @@ export class MainWindowLocalization {
                 this.translateFields = "Перевести поля";
                 this.wrapFields = "Перенести строки в полях";
                 this.translationLanguagesNotSelected = "Языки перевода не выбраны. Настройте их в настройках.";
+                this.selectFiles = "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)";
+                this.wrapNumber = "Длина строки для переноса";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -240,7 +242,6 @@ export class MainWindowLocalization {
                 this.readButtonTitle = "Re-read files (Alt + R)";
                 this.directoryAlreadyOpened = "Selected directory is already opened in the program.";
                 this.errorOccurred = "An error has occurred:";
-                this.originalTextFieldTitle = "Click to copy text";
                 this.searchMode = "Search mode";
                 this.searchAll = "Search everywhere";
                 this.searchOnlyOriginal = "Search only in original text";
@@ -250,6 +251,8 @@ export class MainWindowLocalization {
                 this.wrapFields = "Wrap lines in fields";
                 this.translationLanguagesNotSelected =
                     "Translation languages are not selected. Set them in the settings.";
+                this.selectFiles = "Select files (You can hold LMB and drag to select multiple files)";
+                this.wrapNumber = "Line length for wrapping";
                 break;
         }
     }
@@ -292,7 +295,7 @@ export class SettingsWindowLocalization {
                 this.font = "Font";
                 this.defaultFont = "Default";
                 this.translationLanguages = "Translation languages (for machine translation)";
-                this.fromLanguage = "From language (BCP-47 tag, e.g. jp or jp-JP)";
+                this.fromLanguage = "From language (BCP-47 tag, e.g. ja or ja-JP)";
                 this.toLanguage = "To language (BCP-47 tag, e.g. en or en-US)";
                 this.incorrectLanguageTag = "Incorrect language tag";
                 break;
@@ -347,7 +350,7 @@ export class HelpWindowLocalization {
                     'Чтобы запустить проект и начать перевод, используйте кнопку "Открыть папку" в левом верхнем углу. Открываемая папка должна содержать в себе папку "data" с оригинальными файлами игры. Если текст игры не был распарсен ранее с использованием CLI-инструментов, прогрмма автоматически распарсит его. По умолчанию, программа поддерживает чтение и запись файлов движков RPG Maker XP/VX/VXAce/MV/MZ.<br>Программа регулярно создает резервные копии файлов переводов по пути "папка_проекта/.rpgmtranslate/backups", период резервного копирования и максимальное количество резервных копий можно регулировать в настройках. По умолчанию программа создает резервные копии каждые 60 секунд.<br>При сохранении перевода в программе, все файлы перевода будут сохранятся по пути "папка_проекта/.rpgmtranslate/translation".<br>Чтобы сохранить изменения в проекте, нажмите кнопку сохранить или используйте сочетание клавиш Ctrl + S. Программа автоматически сохранит ваш проект, и когда вы снова запустите программу, вы сможете продолжить с того места, на котором остановились.<br>Чтобы скомпилировать ваш перевод в рабочие файлы игры, нажмите кнопку компиляции или используйте сочетание клавиш Alt + C. Обязательно сохраните перевод перед компиляцией. Программа создаст полностью функциональные файлы игры с применённым переводом в папке "папка_проекта/.rpgmtranslate/output".<br>Вы можете еще раз прочитать это руководство или получить справку о горячих клавишах программы, выбрав пункты верхнего меню "Помощь" > "Помощь".';
                 this.hotkeys = "Горячие клавиши";
                 this.hotkeysText =
-                    "Цифры от 1 до + - Редактирование разных файлов<br>Tab - Открыть панель выбора файлов<br>Ctrl + S - Сохранить файлы перевода<br>Ctrl + F - Навестись на строку поиска<br>R - Открыть панель поиска<br>Alt + Enter - Перепрыгнуть на нижнее текстовое поле<br>Ctrl + Enter - Перепрыгнуть на верхнее текстовое поле<br>Esc - Если курсор сфокусирован на текстовом поле, убрать фокусировку на текстовом поле; иначе, выйти из состояния редактирования файлов<br>Alt + C, пока вы НЕ наведены на поле ввода текста - Скомпилировать<br>Alt + C, Alt + W, Alt + R, Alt + L, Alt + T, пока вы наведены на поле ввода текста для поиска - переключить поиск по регистру, по словам целиком, по регулярным выражением, по текущему файлу, и только по переводу соответственно<br>ЛКМ на результате поиска - перейти к найденному элементу<br>ПКМ на результате поиска - заменить текст этого элемента на тот, что в данный момент введён в поле<br>ЛКМ на результате журнала - перейти к изменённому ранее элементу<br>ПКМ на результате журнала - вернуть изменённый элемент в предыдущее состояние<br>Ctrl + G - открыть поле для ввода числа линии, на которую вы хотите перейти<br>Ctrl + B - открыть окно закладок<br>Ctrl + R - открыть окно чтения файлов";
+                    "Tab - Открыть панель выбора файлов<br>Стрелки вниз/Вверх - Перейти к следующему/предыдущему файлу<br>Ctrl + S - Сохранить файлы перевода<br>Ctrl + F - Открыть окно поиска текста<br>R - Открыть панель результатов поиска<br>Alt/Ctrl + Enter - Переход к текстовому полю ниже/выше выделенного соответственно<br>ЛКМ на оригинальном текстовом поле - скопировать текст из него<br>Ctrl + T, пока текстовая область выделена: при первой активации показать предварительный просмотр машинного перевода оригинального текста. При второй, вставить машинный перевод в поле<br>Esc - Если сфокусированным элементом является текстовая область, убрать фокусировку, в противном случае закрыть открытый файл<br>Alt + C, если вы НЕ сфокусированы на текстовой области - скомпилировать перевод<br>Alt + C, Alt + W, Alt + R, Alt + T, пока вы сфокусированы на поле поиска - переключить поиск по регистру, целым словам, регулярным выражениям и поиск только по переводу<br>ЛКМ на результате поиска - открыть выбранное поле<br>ПКМ на результате поиска - заменить текст этого элемента на тот, который в данный момент введен в поле замены текста<br>ЛКМ на результате журнала - открыть ранее изменённый элемент<br>ПКМ на результате журнала - вернуть изменённый элемент в исходное состояние<br>Ctrl + G - открыть поле перехода к строке<br>Ctrl + B - открыть окно закладок<br>Ctrl + R - открыть окно чтения файлов";
                 break;
             default:
                 this.help = "How to use; what to do; where to click?";
@@ -355,7 +358,7 @@ export class HelpWindowLocalization {
                     "To start the project and start the translation, use the 'Open Folder' button in the upper left corner. The folder must contain the 'data' folder with the original game files. If the text of the game has not been parsed previously using CLI tools, the program will automatically parse it. By default, the program supports reading and writing RPG Maker XP/VX/VXAce/MV/MZ engine files.<br>The program regularly creates backups of translation files in the path 'project_folder/.rpgmtranslate/backups', the backup period and the maximum number of backups can be adjusted in the settings. By default, the program creates backups every 60 seconds.<br>When saving a translation in the program, all translation files will be saved in the path 'project_folder/.rpgmtranslate/translation'. To save the changes in the project, click save or use the keyboard shortcut Ctrl + S. The program will automatically save your project, and when you run the program again, you can pick up where you left off. To compile your translation into working game files, click the compile button or use the Alt + C keyboard shortcut. Be sure to save the translation before compiling. The program will create fully functional game files with the applied translation in the folder 'project_folder/.rpgmtranslate/output'.<br>You can read this manual again or get help about the program's hotkeys by selecting the 'Help' > 'Help' item in the top menu.";
                 this.hotkeys = "Hotkeys";
                 this.hotkeysText =
-                    'Digits from "1" to "+" - Open different files to edit<br>Tab - Open the panel for selecting files<br>Ctrl + S - Save the translation files<br>Ctrl + F - Focus on the search field<br>R - Open the search panel<br>Alt + Enter - Jump to the textarea below the focused<br>Ctrl + Enter - Jump to the textarea above the focused<br>Esc - If focused element is the textarea, remove the focus, else exit from editing mode<br>Alt + C, if you are NOT focused on the textarea - Compile translation<br>Alt + C, Alt + W, Alt + R, Alt + L, Alt + T, while you are focused on the search field - toggle case, whole text, regular expressions, only current file, and only translation text search respectively<br>LMB on the search result - scroll into the view of the result element<br>RMB on the search result - replace matching text of this element with the one that\'s currently entered into the replace field<br>LMB on the log result - scroll into the view of the earlier changed element<br>RMB on the log result - revert changed element to the original state<br>Ctrl + G - open the input field for jumping to specific row<br>Ctrl + B - open the bookmarks window<br>Ctrl + R - open the files reading window';
+                    "Tab - Open the panel for selecting files<br>Arrow Down/Up - Jump to the next/previous file<br>Ctrl + S - Save the translation files<br>Ctrl + F - Open the search window<br>R - Open the search results panel<br>Alt/Ctrl + Enter - Jump to the textarea below/above the focused respectively<br>LMB on the original text field - copy the text from the original field<br>Ctrl + T, while the textarea is selected: for the first activation, show the preview of machine translation of the original text. For the second, insert the machine translation into the field<br>Esc - If focused element is the textarea, remove the focus, else close the opened file<br>Alt + C, if you are NOT focused on the textarea - Compile translation<br>Alt + C, Alt + W, Alt + R, Alt + T, while you are focused on the search field - toggle case, whole text, regular expressions, and only translation text search respectively<br>LMB on the search result - scroll into the view of the result element<br>RMB on the search result - replace matching text of this element with the one that's currently entered into the replace field<br>LMB on the log result - scroll into the view of the previously changed element<br>RMB on the log result - revert changed element to the original state<br>Ctrl + G - open the 'jump to row' field<br>Ctrl + B - open the bookmarks window<br>Ctrl + R - open the files reading window";
                 break;
         }
     }
@@ -383,6 +386,7 @@ export class CompileWindowLocalization {
     readonly defaultMapsMode: string;
     readonly separateMapsMode: string;
     readonly preserveMapsMode: string;
+    readonly loggingOption: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -411,6 +415,8 @@ export class CompileWindowLocalization {
                 this.defaultMapsMode = "Стандартный";
                 this.separateMapsMode = "Раздельный текст карт";
                 this.preserveMapsMode = "Сохранять дубликаты";
+                this.loggingOption =
+                    "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
                 break;
             default:
                 this.options = "Options:";
@@ -437,6 +443,7 @@ export class CompileWindowLocalization {
                 this.defaultMapsMode = "Default";
                 this.separateMapsMode = "Separate maps text";
                 this.preserveMapsMode = "Preserve duplicates";
+                this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
                 break;
         }
     }
@@ -467,6 +474,7 @@ export class ReadWindowLocalization {
     readonly defaultMapsMode: string;
     readonly separateMapsMode: string;
     readonly preserveMapsMode: string;
+    readonly loggingOption: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -500,6 +508,8 @@ export class ReadWindowLocalization {
                 this.defaultMapsMode = "Стандартный";
                 this.separateMapsMode = "Раздельный текст карт";
                 this.preserveMapsMode = "Сохранять дубликаты";
+                this.loggingOption =
+                    "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
                 break;
             default:
                 this.mode = "Reading mode:";
@@ -531,6 +541,7 @@ export class ReadWindowLocalization {
                 this.defaultMapsMode = "Default";
                 this.separateMapsMode = "Separate maps text";
                 this.preserveMapsMode = "Preserve duplicates";
+                this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
                 break;
         }
     }
