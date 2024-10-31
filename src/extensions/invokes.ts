@@ -1,11 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 
 export async function read(args: ReadArgs) {
-    await invoke("read", args);
+    await invoke("read", { settings: args });
 }
 
 export async function compile(args: CompileArgs): Promise<string> {
-    return await invoke<string>("compile", args);
+    return await invoke<string>("compile", { settings: args });
 }
 
 export async function escapeText(args: { text: string }): Promise<string> {

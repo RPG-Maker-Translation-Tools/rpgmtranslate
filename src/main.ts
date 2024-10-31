@@ -1661,6 +1661,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let incorrectCompileSettings = false;
 
+            if (typeof compileSettings.logging !== "boolean") {
+                compileSettings.logging = false;
+                incorrectCompileSettings = true;
+            }
+
             if (typeof compileSettings.mapsProcessingMode !== "number") {
                 compileSettings.mapsProcessingMode = 0;
                 incorrectCompileSettings = true;
@@ -2497,8 +2502,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                                         from: settings.from,
                                         to: settings.to,
                                     }).then((translated) => (translationField.value = translated));
-
-                                    await sleep(5);
                                 }
                                 break;
                             case FilesAction.Wrap:

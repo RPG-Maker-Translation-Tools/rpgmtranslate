@@ -123,7 +123,8 @@ enum Variable {
     Note,
 }
 
-#[derive(Deserialize)]
+#[repr(u8)]
+#[allow(dead_code)]
 enum Language {
     English,
     Russian,

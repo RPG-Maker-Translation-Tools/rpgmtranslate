@@ -6,7 +6,7 @@ use crate::{
     EngineType, GameType, Language, Localization, MapsProcessingMode, ProcessingMode, ResultExt,
 };
 use regex::escape;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::{
     fs::{create_dir_all, File},
     io::{Read, Seek, SeekFrom},
@@ -18,32 +18,74 @@ use tauri::{command, Manager, Runtime, Scopes, Window};
 use tauri_plugin_fs::FsExt;
 use translators::Translator;
 
+impl<'de> Deserialize<'de> for MapsProcessingMode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value: u8 = Deserialize::deserialize(deserializer)?;
+        Ok(unsafe { transmute::<u8, MapsProcessingMode>(value) })
+    }
+}
+
+impl<'de> Deserialize<'de> for EngineType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value: u8 = Deserialize::deserialize(deserializer)?;
+        Ok(unsafe { transmute::<u8, EngineType>(value) })
+    }
+}
+
+impl<'de> Deserialize<'de> for ProcessingMode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value: u8 = Deserialize::deserialize(deserializer)?;
+        Ok(unsafe { transmute::<u8, ProcessingMode>(value) })
+    }
+}
+
+impl<'de> Deserialize<'de> for Language {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value: u8 = Deserialize::deserialize(deserializer)?;
+        Ok(unsafe { transmute::<u8, Language>(value) })
+    }
+}
+
 #[derive(Deserialize)]
+#[allow(non_snake_case)]
 pub struct CompileSettings {
-    project_path: PathBuf,
-    original_dir: PathBuf,
-    output_path: PathBuf,
-    game_title: String,
-    maps_processing_mode: u8,
+    projectPath: PathBuf,
+    originalDir: PathBuf,
+    outputPath: PathBuf,
+    gameTitle: String,
+    mapsProcessingMode: MapsProcessingMode,
     romanize: bool,
-    disable_custom_processing: bool,
-    disable_processing: [bool; 4],
-    engine_type: u8,
+    disableCustomProcessing: bool,
+    disableProcessing: [bool; 4],
+    engineType: EngineType,
     logging: bool,
     language: Language,
 }
 
 #[derive(Deserialize)]
+#[allow(non_snake_case)]
 pub struct ReadSettings {
-    project_path: PathBuf,
-    original_dir: PathBuf,
-    game_title: String,
-    maps_processing_mode: u8,
+    projectPath: PathBuf,
+    originalDir: PathBuf,
+    gameTitle: String,
+    mapsProcessingMode: MapsProcessingMode,
     romanize: bool,
-    disable_custom_processing: bool,
-    disable_processing: [bool; 4],
-    processing_mode: u8,
-    engine_type: u8,
+    disableCustomProcessing: bool,
+    disableProcessing: [bool; 4],
+    processingMode: ProcessingMode,
+    engineType: EngineType,
     logging: bool,
     language: Language,
 }
@@ -54,20 +96,20 @@ pub fn escape_text(text: &str) -> String {
 }
 
 #[command(async)]
-pub fn compile(options: CompileSettings) -> f64 {
+pub fn compile(settings: CompileSettings) -> f64 {
     let CompileSettings {
-        project_path,
-        original_dir,
-        output_path,
-        game_title,
-        maps_processing_mode,
+        projectPath: project_path,
+        originalDir: original_dir,
+        outputPath: output_path,
+        gameTitle: game_title,
+        mapsProcessingMode: maps_processing_mode,
         romanize,
-        disable_custom_processing,
-        disable_processing,
-        engine_type,
+        disableCustomProcessing: disable_custom_processing,
+        disableProcessing: disable_processing,
+        engineType: engine_type,
         language,
         logging,
-    } = options;
+    } = settings;
 
     if unsafe { LOCALIZATION.is_none() } {
         unsafe { LOCALIZATION = Some(Localization::new(language)) };
@@ -75,8 +117,8 @@ pub fn compile(options: CompileSettings) -> f64 {
 
     let start_time: Instant = Instant::now();
 
-    let maps_processing_mode: MapsProcessingMode = unsafe { transmute(maps_processing_mode) };
-    let engine_type: EngineType = unsafe { transmute(engine_type) };
+    let maps_processing_mode: MapsProcessingMode = maps_processing_mode;
+    let engine_type: EngineType = engine_type;
 
     let extension: &str = match engine_type {
         EngineType::New => ".json",
@@ -182,15 +224,15 @@ pub fn compile(options: CompileSettings) -> f64 {
 #[command(async)]
 pub fn read(settings: ReadSettings) {
     let ReadSettings {
-        project_path,
-        original_dir,
-        game_title,
-        maps_processing_mode,
+        projectPath: project_path,
+        originalDir: original_dir,
+        gameTitle: game_title,
+        mapsProcessingMode: maps_processing_mode,
         romanize,
-        disable_custom_processing,
-        disable_processing,
-        processing_mode,
-        engine_type,
+        disableCustomProcessing: disable_custom_processing,
+        disableProcessing: disable_processing,
+        processingMode: processing_mode,
+        engineType: engine_type,
         language,
         logging,
     } = settings;
@@ -199,9 +241,9 @@ pub fn read(settings: ReadSettings) {
         unsafe { LOCALIZATION = Some(Localization::new(language)) };
     }
 
-    let processing_mode: ProcessingMode = unsafe { transmute(processing_mode) };
-    let engine_type: EngineType = unsafe { transmute(engine_type) };
-    let maps_processing_mode: MapsProcessingMode = unsafe { transmute(maps_processing_mode) };
+    let processing_mode: ProcessingMode = processing_mode;
+    let engine_type: EngineType = engine_type;
+    let maps_processing_mode: MapsProcessingMode = maps_processing_mode;
 
     let extension: &str = match engine_type {
         EngineType::New => ".json",
