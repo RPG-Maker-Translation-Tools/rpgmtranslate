@@ -8,7 +8,6 @@ pub mod write;
 
 use commands::*;
 use log::error;
-use serde::Deserialize;
 use std::fmt::Debug;
 use tauri::{generate_context, generate_handler, App, Builder, Manager};
 
