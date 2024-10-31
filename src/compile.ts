@@ -5,9 +5,11 @@ import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open as openPath } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { attachConsole } from "@tauri-apps/plugin-log";
 const appWindow = getCurrentWebviewWindow();
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await attachConsole();
     let settings!: Settings;
     let theme!: Theme;
 

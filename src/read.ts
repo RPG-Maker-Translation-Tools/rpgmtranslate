@@ -6,9 +6,11 @@ import { EngineType, ProcessingMode } from "./types/enums";
 import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { exists } from "@tauri-apps/plugin-fs";
+import { attachConsole } from "@tauri-apps/plugin-log";
 const appWindow = getCurrentWebviewWindow();
 
 document.addEventListener("DOMContentLoaded", async () => {
+    await attachConsole();
     let settings!: Settings;
     let theme!: Theme;
 
