@@ -1069,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             outputArray.length = 0;
 
-            if (mode === SaveMode.Maps) {
+            if (mode === SaveMode.AllFiles) {
                 const entries = await readDir(tempMapsPath);
                 outputArray.length = entries.length;
 
@@ -1309,7 +1309,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         replacedTextareas = {};
                         break;
                     case "KeyS":
-                        await save(SaveMode.Maps);
+                        await save(SaveMode.AllFiles);
                         break;
                     case "KeyG":
                         event.preventDefault();
@@ -1892,7 +1892,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!askExitUnsaved) {
             askExit = await ask(windowLocalization.exit);
         } else {
-            await save(SaveMode.Maps);
+            await save(SaveMode.AllFiles);
             return true;
         }
 
@@ -2605,13 +2605,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                             element.firstElementChild!.classList.add("text-green-500");
                         }
                     }
-
-                    console.log(`Processed ${filename}`);
                 }
             }
 
             if (action === FilesAction.Translate) {
-                await save(SaveMode.Maps);
+                await save(SaveMode.AllFiles);
             }
 
             settingsWindow.remove();
@@ -2674,7 +2672,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 leftPanel.toggleMultiple("translate-x-0", "-translate-x-full");
                 break;
             case saveButton.id:
-                await save(SaveMode.Maps);
+                await save(SaveMode.AllFiles);
                 break;
             case "compile-button":
                 if (clickTimer === null) {

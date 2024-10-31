@@ -35,11 +35,11 @@ export const enum State {
 export const enum SaveMode {
     Backup,
     SingleFile,
-    Maps,
+    AllFiles,
 }
 
 export const enum SearchMode {
-    All,
+    AllText,
     OnlyOriginal,
     OnlyTranslation,
 }
