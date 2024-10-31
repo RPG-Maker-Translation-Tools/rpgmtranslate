@@ -301,6 +301,8 @@ pub fn read_last_line(file_path: PathBuf) -> String {
 
 #[command]
 pub async fn translate_text(text: String, from: String, to: String) -> String {
+    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+
     GOOGLE_TRANS
         .translate_async(&text, &from, &to)
         .await
