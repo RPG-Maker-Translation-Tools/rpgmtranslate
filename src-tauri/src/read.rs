@@ -1,8 +1,13 @@
 #![allow(clippy::too_many_arguments)]
 use crate::{
-    extract_strings, get_object_data, romanize_string, Code, EngineType, GameType, MapsProcessingMode, ProcessingMode,
-    Variable, ENDS_WITH_IF_RE, EXTENSION, INVALID_MULTILINE_VARIABLE_RE, INVALID_VARIABLE_RE, LINES_SEPARATOR,
-    LISA_PREFIX_RE, NEW_LINE, STRING_IS_ONLY_SYMBOLS_RE,
+    eprintln,
+    functions::{extract_strings, get_object_data, romanize_string},
+    println,
+    statics::{
+        ENDS_WITH_IF_RE, EXTENSION, INVALID_MULTILINE_VARIABLE_RE, INVALID_VARIABLE_RE, LINES_SEPARATOR,
+        LISA_PREFIX_RE, NEW_LINE, STRING_IS_ONLY_SYMBOLS_RE,
+    },
+    Code, EngineType, GameType, Localization, MapsProcessingMode, OptionExt, ProcessingMode, ResultExt, Variable,
 };
 use encoding_rs::Encoding;
 use flate2::read::ZlibDecoder;
@@ -285,7 +290,7 @@ fn parse_list<'a>(
     let set_ref: &Xxh3IndexSet = unsafe { &*set.get() };
 
     for item in list {
-        let code: u16 = item[code_label].as_u64().unwrap() as u16;
+        let code: u16 = item[code_label].as_u64().unwrap_log(file!(), line!()) as u16;
 
         if in_sequence && ![401, 405].contains(&code) {
             let line: &mut Vec<String> = if code != 401 { &mut line } else { &mut credits_lines };
@@ -318,7 +323,7 @@ fn parse_list<'a>(
             continue;
         }
 
-        let parameters: &Array = item[parameters_label].as_array().unwrap();
+        let parameters: &Array = item[parameters_label].as_array().unwrap_log(file!(), line!());
 
         match code {
             401 => {
@@ -352,7 +357,7 @@ fn parse_list<'a>(
                 in_sequence = true;
             }
             102 => {
-                for i in 0..parameters[0].as_array().unwrap().len() {
+                for i in 0..parameters[0].as_array().unwrap_log(file!(), line!()).len() {
                     let subparameter_string: String = parameters[0][i]
                         .as_str()
                         .map(str::to_owned)
@@ -466,18 +471,18 @@ pub fn read_map(
     game_type: Option<GameType>,
     engine_type: EngineType,
     mut processing_mode: ProcessingMode,
-    (file_parsed_msg, file_already_parsed_msg, file_is_not_parsed_msg): (&str, &str, &str),
+    localization: &Localization,
 ) {
     let output_path: &Path = &output_path.join("maps.txt");
 
     if processing_mode == ProcessingMode::Default && output_path.exists() {
-        println!("maps_trans.txt {file_already_parsed_msg}");
+        println!("maps_trans.txt {}", localization.file_already_parsed_msg);
         return;
     }
 
     let obj_vec_iter =
         read_dir(original_path)
-            .unwrap()
+            .unwrap_log(file!(), line!())
             .filter_map(|entry: Result<DirEntry, std::io::Error>| match entry {
                 Ok(entry) => {
                     let filename: OsString = entry.file_name();
@@ -488,9 +493,11 @@ pub fn read_map(
                         && filename_str.ends_with(unsafe { EXTENSION })
                     {
                         let json: Value = if engine_type == EngineType::New {
-                            from_str(&read_to_string(entry.path()).unwrap()).unwrap()
+                            from_str(&read_to_string(entry.path()).unwrap_log(file!(), line!()))
+                                .unwrap_log(file!(), line!())
                         } else {
-                            load(&read(entry.path()).unwrap(), None, Some("")).unwrap()
+                            load(&read(entry.path()).unwrap_log(file!(), line!()), None, Some(""))
+                                .unwrap_log(file!(), line!())
                         };
 
                         Some((filename_str.to_owned(), json))
@@ -511,7 +518,7 @@ pub fn read_map(
         let mut lines_map: Xxh3IndexMap = IndexMap::default();
 
         let original_content: String = if processing_mode == ProcessingMode::Append {
-            read_to_string(output_path).unwrap()
+            read_to_string(output_path).unwrap_log(file!(), line!())
         } else {
             String::new()
         };
@@ -519,11 +526,11 @@ pub fn read_map(
         if processing_mode == ProcessingMode::Append {
             if output_path.exists() {
                 for line in original_content.split('\n') {
-                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap();
+                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap_log(file!(), line!());
                     lines_map.insert(original, translated);
                 }
             } else {
-                println!("{file_is_not_parsed_msg}");
+                println!("{}", localization.file_is_not_parsed_msg);
                 processing_mode = ProcessingMode::Default;
             }
         };
@@ -584,11 +591,16 @@ pub fn read_map(
             }
 
             let events_arr: Vec<&Value> = if engine_type == EngineType::New {
-                obj[events_label].as_array().unwrap().iter().skip(1).collect()
+                obj[events_label]
+                    .as_array()
+                    .unwrap_log(file!(), line!())
+                    .iter()
+                    .skip(1)
+                    .collect()
             } else {
                 obj[events_label]
                     .as_object()
-                    .unwrap()
+                    .unwrap_log(file!(), line!())
                     .iter()
                     .map(|(_, value)| value)
                     .collect()
@@ -599,9 +611,9 @@ pub fn read_map(
                     continue;
                 }
 
-                for page in event[pages_label].as_array().unwrap() {
+                for page in event[pages_label].as_array().unwrap_log(file!(), line!()) {
                     parse_list(
-                        page[list_label].as_array().unwrap(),
+                        page[list_label].as_array().unwrap_log(file!(), line!()),
                         &ALLOWED_CODES,
                         romanize,
                         game_type,
@@ -615,7 +627,7 @@ pub fn read_map(
             }
 
             if logging {
-                println!("{file_parsed_msg} {filename}");
+                println!("{} {filename}", localization.file_parsed_msg);
             }
         }
 
@@ -642,14 +654,14 @@ pub fn read_map(
 
         output_content.pop();
 
-        write(output_path, output_content).unwrap();
+        write(output_path, output_content).unwrap_log(file!(), line!());
     } else {
         let mut names_lines_vec: VecDeque<String> = VecDeque::new();
         let mut lines_vec: Vec<(String, String)> = Vec::new();
         let mut lines_pos: usize = 0;
 
         let original_content: String = if processing_mode == ProcessingMode::Append {
-            read_to_string(output_path).unwrap()
+            read_to_string(output_path).unwrap_log(file!(), line!())
         } else {
             String::new()
         };
@@ -657,7 +669,7 @@ pub fn read_map(
         if processing_mode == ProcessingMode::Append {
             if output_path.exists() {
                 for line in original_content.split('\n') {
-                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap();
+                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap_log(file!(), line!());
 
                     if original.starts_with("<!-- Map") {
                         if original.len() > 20 {
@@ -670,7 +682,7 @@ pub fn read_map(
                     lines_vec.push((original.to_owned(), translated.to_owned()));
                 }
             } else {
-                println!("{file_is_not_parsed_msg}");
+                println!("{}", localization.file_is_not_parsed_msg);
                 processing_mode = ProcessingMode::Default;
             }
         };
@@ -717,7 +729,7 @@ pub fn read_map(
                 (
                     filename_comment,
                     if filename_comment_len > 20 && names_lines_vec.front().is_some() {
-                        names_lines_vec.pop_front().unwrap()
+                        names_lines_vec.pop_front().unwrap_log(file!(), line!())
                     } else {
                         String::new()
                     },
@@ -726,11 +738,16 @@ pub fn read_map(
             lines_pos += 1;
 
             let events_arr: Vec<&Value> = if engine_type == EngineType::New {
-                obj[events_label].as_array().unwrap().iter().skip(1).collect()
+                obj[events_label]
+                    .as_array()
+                    .unwrap_log(file!(), line!())
+                    .iter()
+                    .skip(1)
+                    .collect()
             } else {
                 obj[events_label]
                     .as_object()
-                    .unwrap()
+                    .unwrap_log(file!(), line!())
                     .iter()
                     .map(|(_, value)| value)
                     .collect()
@@ -741,13 +758,13 @@ pub fn read_map(
                     continue;
                 }
 
-                for page in event[pages_label].as_array().unwrap() {
-                    let list: &Array = page[list_label].as_array().unwrap();
+                for page in event[pages_label].as_array().unwrap_log(file!(), line!()) {
+                    let list: &Array = page[list_label].as_array().unwrap_log(file!(), line!());
                     let mut in_sequence: bool = false;
                     let mut line: Vec<String> = Vec::with_capacity(4);
 
                     for item in list {
-                        let code: u16 = item[code_label].as_u64().unwrap() as u16;
+                        let code: u16 = item[code_label].as_u64().unwrap_log(file!(), line!()) as u16;
 
                         if in_sequence && code != 401 {
                             if !line.is_empty() {
@@ -784,7 +801,7 @@ pub fn read_map(
                             continue;
                         }
 
-                        let parameters: &Array = item[parameters_label].as_array().unwrap();
+                        let parameters: &Array = item[parameters_label].as_array().unwrap_log(file!(), line!());
 
                         match code {
                             401 => {
@@ -804,7 +821,7 @@ pub fn read_map(
                                 }
                             }
                             102 => {
-                                for i in 0..parameters[0].as_array().unwrap().len() {
+                                for i in 0..parameters[0].as_array().unwrap_log(file!(), line!()).len() {
                                     let subparameter_string: String = parameters[0][i]
                                         .as_str()
                                         .map(str::to_owned)
@@ -914,7 +931,7 @@ pub fn read_map(
             }
 
             if logging {
-                println!("{file_parsed_msg} {filename}");
+                println!("{} {filename}", localization.file_parsed_msg);
             }
         }
 
@@ -923,7 +940,7 @@ pub fn read_map(
 
         output_content.pop();
 
-        write(output_path, output_content).unwrap();
+        write(output_path, output_content).unwrap_log(file!(), line!());
     }
 }
 
@@ -947,16 +964,16 @@ pub fn read_other(
     game_type: Option<GameType>,
     processing_mode: ProcessingMode,
     engine_type: EngineType,
-    (file_parsed_msg, file_already_parsed_msg, file_is_not_parsed_msg): (&str, &str, &str),
+    localization: &Localization,
 ) {
     let obj_arr_iter =
         read_dir(original_path)
-            .unwrap()
+            .unwrap_log(file!(), line!())
             .filter_map(|entry: Result<DirEntry, std::io::Error>| match entry {
                 Ok(entry) => {
                     let filename_os_string: OsString = entry.file_name();
                     let filename: &str = unsafe { from_utf8_unchecked(filename_os_string.as_encoded_bytes()) };
-                    let (name, _) = filename.split_once('.').unwrap();
+                    let (name, _) = filename.split_once('.').unwrap_log(file!(), line!());
 
                     if !name.starts_with("Map")
                         && !matches!(name, "Tilesets" | "Animations" | "System" | "Scripts")
@@ -969,9 +986,11 @@ pub fn read_other(
                         }
 
                         let json: Value = if engine_type == EngineType::New {
-                            from_str(&read_to_string(entry.path()).unwrap()).unwrap()
+                            from_str(&read_to_string(entry.path()).unwrap_log(file!(), line!()))
+                                .unwrap_log(file!(), line!())
                         } else {
-                            load(&read(entry.path()).unwrap(), None, Some("")).unwrap()
+                            load(&read(entry.path()).unwrap_log(file!(), line!()), None, Some(""))
+                                .unwrap_log(file!(), line!())
                         };
 
                         Some((filename.to_owned(), json))
@@ -1037,10 +1056,11 @@ pub fn read_other(
     };
 
     for (filename, obj_arr) in obj_arr_iter {
-        let output_path: &Path = &output_path.join(filename[0..filename.rfind('.').unwrap()].to_lowercase() + ".txt");
+        let output_path: &Path =
+            &output_path.join(filename[0..filename.rfind('.').unwrap_log(file!(), line!())].to_lowercase() + ".txt");
 
         if processing_mode == ProcessingMode::Default && output_path.exists() {
-            println!("{} {file_already_parsed_msg}", output_path.display());
+            println!("{} {}", localization.file_already_parsed_msg, output_path.display());
             continue;
         }
 
@@ -1051,7 +1071,7 @@ pub fn read_other(
         let mut lines_map: Xxh3IndexMap = IndexMap::default();
 
         let original_content: String = if processing_mode == ProcessingMode::Append {
-            read_to_string(output_path).unwrap()
+            read_to_string(output_path).unwrap_log(file!(), line!())
         } else {
             String::new()
         };
@@ -1059,11 +1079,11 @@ pub fn read_other(
         if processing_mode == ProcessingMode::Append {
             if output_path.exists() {
                 for line in original_content.par_split('\n').collect::<Vec<_>>() {
-                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap();
+                    let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap_log(file!(), line!());
                     lines_map.insert(original, translated);
                 }
             } else {
-                println!("{file_is_not_parsed_msg}");
+                println!("{}", localization.file_is_not_parsed_msg);
                 inner_processing_mode = ProcessingMode::Default;
             }
         }
@@ -1083,7 +1103,7 @@ pub fn read_other(
                 }
             }
 
-            'obj: for obj in obj_arr.as_array().unwrap() {
+            'obj: for obj in obj_arr.as_array().unwrap_log(file!(), line!()) {
                 let mut prev_variable_type: Option<Variable> = None;
 
                 for (variable_text, variable_type) in [
@@ -1120,7 +1140,8 @@ pub fn read_other(
 
                                         // TODO: this shit rewrites the translation line but inserts RIGHT original line
                                         if inner_processing_mode == ProcessingMode::Append {
-                                            let (idx, _, value) = lines_map.shift_remove_full(last.as_str()).unwrap();
+                                            let (idx, _, value) =
+                                                lines_map.shift_remove_full(last.as_str()).unwrap_log(file!(), line!());
                                             lines_map.shift_insert(idx, string_ref, value);
                                         }
                                     }
@@ -1160,10 +1181,10 @@ pub fn read_other(
         // Other files have the structure somewhat similar to Maps files
         else {
             // Skipping first element in array as it is null
-            for obj in obj_arr.as_array().unwrap().iter().skip(1) {
+            for obj in obj_arr.as_array().unwrap_log(file!(), line!()).iter().skip(1) {
                 // CommonEvents doesn't have pages, so we can just check if it's Troops
                 let pages_length: usize = if filename.starts_with("Tr") {
-                    obj[pages_label].as_array().unwrap().len()
+                    obj[pages_label].as_array().unwrap_log(file!(), line!()).len()
                 } else {
                     1
                 };
@@ -1180,7 +1201,7 @@ pub fn read_other(
                     }
 
                     parse_list(
-                        list.as_array().unwrap(),
+                        list.as_array().unwrap_log(file!(), line!()),
                         &ALLOWED_CODES,
                         romanize,
                         game_type,
@@ -1211,10 +1232,10 @@ pub fn read_other(
 
         output_content.pop();
 
-        write(output_path, output_content).unwrap();
+        write(output_path, output_content).unwrap_log(file!(), line!());
 
         if logging {
-            println!("{file_parsed_msg} {filename}");
+            println!("{} {filename}", localization.file_parsed_msg);
         }
     }
 }
@@ -1237,19 +1258,19 @@ pub fn read_system(
     logging: bool,
     mut processing_mode: ProcessingMode,
     engine_type: EngineType,
-    (file_parsed_msg, file_already_parsed_msg, file_is_not_parsed_msg): (&str, &str, &str),
+    localization: &Localization,
 ) {
     let output_path: &Path = &output_path.join("system.txt");
 
     if processing_mode == ProcessingMode::Default && output_path.exists() {
-        println!("system.txt {file_already_parsed_msg}");
+        println!("system.txt {}", localization.file_already_parsed_msg);
         return;
     }
 
     let obj: Value = if engine_type == EngineType::New {
-        from_str(&read_to_string(system_file_path).unwrap()).unwrap()
+        from_str(&read_to_string(system_file_path).unwrap_log(file!(), line!())).unwrap_log(file!(), line!())
     } else {
-        load(&read(system_file_path).unwrap(), None, Some("")).unwrap()
+        load(&read(system_file_path).unwrap_log(file!(), line!()), None, Some("")).unwrap_log(file!(), line!())
     };
 
     let lines: UnsafeCell<Xxh3IndexSet> = UnsafeCell::new(IndexSet::default());
@@ -1259,7 +1280,7 @@ pub fn read_system(
     let mut lines_map: Xxh3IndexMap = IndexMap::default();
 
     let original_content: String = if processing_mode == ProcessingMode::Append {
-        read_to_string(output_path).unwrap()
+        read_to_string(output_path).unwrap_log(file!(), line!())
     } else {
         String::new()
     };
@@ -1267,17 +1288,20 @@ pub fn read_system(
     if processing_mode == ProcessingMode::Append {
         if output_path.exists() {
             for line in original_content.par_split('\n').collect::<Vec<_>>() {
-                let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap();
+                let (original, translated) = line.split_once(LINES_SEPARATOR).unwrap_log(file!(), line!());
                 lines_map.insert(original, translated);
             }
         } else {
-            println!("{file_is_not_parsed_msg}");
+            println!("{}", localization.file_is_not_parsed_msg);
             processing_mode = ProcessingMode::Default;
         }
     }
 
     if engine_type != EngineType::New {
-        let str: &str = obj["__symbol__currency_unit"].as_str().unwrap().trim();
+        let str: &str = obj["__symbol__currency_unit"]
+            .as_str()
+            .unwrap_log(file!(), line!())
+            .trim();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1322,8 +1346,8 @@ pub fn read_system(
 
     // Armor types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[armor_types_label].as_array().unwrap() {
-        let str: &str = string.as_str().unwrap().trim();
+    for string in obj[armor_types_label].as_array().unwrap_log(file!(), line!()) {
+        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1343,8 +1367,8 @@ pub fn read_system(
 
     // Element types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[elements_label].as_array().unwrap() {
-        let str: &str = string.as_str().unwrap().trim();
+    for string in obj[elements_label].as_array().unwrap_log(file!(), line!()) {
+        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1364,8 +1388,8 @@ pub fn read_system(
 
     // Names of equipment slots
     if engine_type == EngineType::New {
-        for string in obj["equipTypes"].as_array().unwrap() {
-            let str: &str = string.as_str().unwrap().trim();
+        for string in obj["equipTypes"].as_array().unwrap_log(file!(), line!()) {
+            let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
 
             if !str.is_empty() {
                 let mut string: String = str.to_owned();
@@ -1385,8 +1409,8 @@ pub fn read_system(
     }
 
     // Names of battle options
-    for string in obj[skill_types_label].as_array().unwrap() {
-        let str: &str = string.as_str().unwrap().trim();
+    for string in obj[skill_types_label].as_array().unwrap_log(file!(), line!()) {
+        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1405,13 +1429,13 @@ pub fn read_system(
     }
 
     // Game terms vocabulary
-    for (key, value) in obj[terms_label].as_object().unwrap() {
+    for (key, value) in obj[terms_label].as_object().unwrap_log(file!(), line!()) {
         if !key.starts_with("__symbol__") {
             continue;
         }
 
         if key != "messages" {
-            for string in value.as_array().unwrap() {
+            for string in value.as_array().unwrap_log(file!(), line!()) {
                 if let Some(mut str) = string.as_str() {
                     str = str.trim();
 
@@ -1436,8 +1460,8 @@ pub fn read_system(
                 continue;
             }
 
-            for (_, message_string) in value.as_object().unwrap().iter() {
-                let str: &str = message_string.as_str().unwrap().trim();
+            for (_, message_string) in value.as_object().unwrap_log(file!(), line!()).iter() {
+                let str: &str = message_string.as_str().unwrap_log(file!(), line!()).trim();
 
                 if !str.is_empty() {
                     let mut string: String = str.to_owned();
@@ -1459,8 +1483,8 @@ pub fn read_system(
 
     // Weapon types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[weapon_types_label].as_array().unwrap() {
-        let str: &str = string.as_str().unwrap().trim();
+    for string in obj[weapon_types_label].as_array().unwrap_log(file!(), line!()) {
+        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1481,7 +1505,11 @@ pub fn read_system(
     // Game title, parsed just for fun
     // Translators may add something like "ELFISH TRANSLATION v1.0.0" to the title
     {
-        let mut game_title_string: String = obj[game_title_label].as_str().unwrap().trim().to_owned();
+        let mut game_title_string: String = obj[game_title_label]
+            .as_str()
+            .unwrap_log(file!(), line!())
+            .trim()
+            .to_owned();
 
         if romanize {
             game_title_string = romanize_string(game_title_string)
@@ -1512,17 +1540,28 @@ pub fn read_system(
 
     output_content.pop();
 
-    write(output_path, output_content).unwrap();
+    write(output_path, output_content).unwrap_log(file!(), line!());
 
     if logging {
-        println!("{file_parsed_msg} {}", system_file_path.display());
+        println!("{} {}", localization.file_parsed_msg, system_file_path.display());
     }
 }
 
-pub fn read_scripts(scripts_file_path: &Path, other_path: &Path, romanize: bool, logging: bool, file_parsed_msg: &str) {
+pub fn read_scripts(
+    scripts_file_path: &Path,
+    other_path: &Path,
+    romanize: bool,
+    logging: bool,
+    localization: &Localization,
+) {
     let mut strings: Vec<String> = Vec::new();
 
-    let scripts_entries: Value = load(&read(scripts_file_path).unwrap(), Some(StringMode::Binary), None).unwrap();
+    let scripts_entries: Value = load(
+        &read(scripts_file_path).unwrap_log(file!(), line!()),
+        Some(StringMode::Binary),
+        None,
+    )
+    .unwrap_log(file!(), line!());
 
     let encodings: [&Encoding; 5] = [
         encoding_rs::UTF_8,
@@ -1532,14 +1571,16 @@ pub fn read_scripts(scripts_file_path: &Path, other_path: &Path, romanize: bool,
         encoding_rs::GB18030,
     ];
 
-    let scripts_entries_array: &Array = scripts_entries.as_array().unwrap();
+    let scripts_entries_array: &Array = scripts_entries.as_array().unwrap_log(file!(), line!());
     let mut codes_content: Vec<String> = Vec::with_capacity(scripts_entries_array.len());
 
     for code in scripts_entries_array {
-        let bytes_stream: Vec<u8> = from_value(&code[2]["data"]).unwrap();
+        let bytes_stream: Vec<u8> = from_value(&code[2]["data"]).unwrap_log(file!(), line!());
 
         let mut inflated: Vec<u8> = Vec::new();
-        ZlibDecoder::new(&*bytes_stream).read_to_end(&mut inflated).unwrap();
+        ZlibDecoder::new(&*bytes_stream)
+            .read_to_end(&mut inflated)
+            .unwrap_log(file!(), line!());
 
         let mut code: String = String::new();
 
@@ -1591,17 +1632,14 @@ pub fn read_scripts(scripts_file_path: &Path, other_path: &Path, romanize: bool,
         strings.push(extracted);
     }
 
-    if logging {
-        println!("{file_parsed_msg} {}", scripts_file_path.display());
-    }
-
     let mut output_content: String =
         String::from_iter(strings.into_iter().map(|line: String| line + LINES_SEPARATOR + "\n"));
 
     output_content.pop();
 
-    write(other_path.join("scripts.txt"), output_content).unwrap();
-}
+    write(other_path.join("scripts.txt"), output_content).unwrap_log(file!(), line!());
 
-// read_plugins is not implemented and will NEVER be, as plugins can differ from each other incredibly.
-// Change plugins.js with your own hands.
+    if logging {
+        println!("{} {}", localization.file_parsed_msg, scripts_file_path.display());
+    }
+}
