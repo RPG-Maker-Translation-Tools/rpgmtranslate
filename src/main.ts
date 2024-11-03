@@ -849,13 +849,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             if (mode === SaveMode.AllFiles) {
-                const entries = await readDir(tempMapsPath);
-                outputArray.length = entries.length;
+                const entries = (await readDir(tempMapsPath)).sort(
+                    (a, b) => Number.parseInt(a.name.slice(4)) - Number.parseInt(b.name.slice(4)),
+                );
 
                 for (const entry of entries) {
-                    outputArray[Number.parseInt(entry.name.slice(4)) - 1] = await readTextFile(
-                        join(tempMapsPath, entry.name),
-                    );
+                    outputArray.push(await readTextFile(join(tempMapsPath, entry.name)));
                 }
 
                 await writeTextFile(join(translationPath, "maps.txt"), outputArray.join("\n"));
