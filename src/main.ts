@@ -272,10 +272,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function createRegExp(text: string): Promise<RegExp | undefined> {
+    async function createRegExp(text: string): Promise<RegExp | null> {
         text = text.trim();
         if (!text) {
-            return;
+            return null;
         }
 
         let regexp = searchRegex ? text : await escapeText({ text });
@@ -287,7 +287,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return XRegExp(regexp, attr);
         } catch (err) {
             await message(`${windowLocalization.invalidRegexp} (${text}), ${err}`);
-            return;
+            return null;
         }
     }
 
@@ -366,14 +366,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         return result.join("");
     }
 
-    async function searchText(
-        text: string,
-        isReplace: boolean,
-    ): Promise<null | undefined | Map<HTMLTextAreaElement, string>> {
-        const regexp: RegExp | undefined = await createRegExp(text);
+    async function searchText(text: string, isReplace: boolean): Promise<Map<HTMLTextAreaElement, string> | null> {
+        const regexp: RegExp | null = await createRegExp(text);
         if (!regexp) {
-            return;
+            return null;
         }
+
+        const programDataDirPath = join(settings.projectPath, programDataDir);
 
         const searchMode = Number.parseInt(searchModeSelect.value) as SearchMode;
         const results = isReplace ? new Map<HTMLTextAreaElement, string>() : null;
@@ -381,6 +380,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         let file = 0;
 
         const currentSearchArray = contentContainer.firstElementChild?.children;
+
+        for (const file of await readDir(programDataDirPath)) {
+            if (file.name.startsWith("matches-")) {
+                await removePath(join(programDataDirPath, file.name));
+            }
+        }
 
         for (const child of currentSearchArray ?? []) {
             const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
@@ -410,7 +415,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if ((objectToWrite.size + 1) % 1000 === 0) {
                 await writeTextFile(
-                    join(settings.projectPath, programDataDir, `matches-${file}.json`),
+                    join(programDataDirPath, `matches-${file}.json`),
                     JSON.stringify(Object.fromEntries(objectToWrite)),
                 );
 
@@ -420,8 +425,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (!searchLocation) {
-            const translationEntries = await readDir(join(settings.projectPath, programDataDir, translationDir));
-            const mapsEntries = await readDir(join(settings.projectPath, programDataDir, "temp-maps"));
+            const translationEntries = await readDir(join(programDataDirPath, translationDir));
+            const mapsEntries = await readDir(join(programDataDirPath, "temp-maps"));
 
             for (const [i, entry] of [
                 mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4)) - Number.parseInt(b.name.slice(4))),
@@ -439,8 +444,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (const [lineNumber, line] of (
                     await readTextFile(
                         i < mapsEntries.length
-                            ? join(settings.projectPath, programDataDir, "temp-maps", name)
-                            : join(settings.projectPath, programDataDir, translationDir, name),
+                            ? join(programDataDirPath, "temp-maps", name)
+                            : join(programDataDirPath, translationDir, name),
                     )
                 )
                     .split("\n")
@@ -460,6 +465,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (searchMode !== SearchMode.OnlyOriginal) {
                         const translatedMatches = translated.match(regexp);
+
                         if (translatedMatches) {
                             const result = createMatchesContainer(translated, translatedMatches);
                             objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
@@ -471,7 +477,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if ((objectToWrite.size + 1) % 1000 === 0) {
                         await writeTextFile(
-                            join(settings.projectPath, programDataDir, `matches-${file}.json`),
+                            join(programDataDirPath, `matches-${file}.json`),
                             JSON.stringify(Object.fromEntries(objectToWrite)),
                         );
 
@@ -482,26 +488,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        if (objectToWrite.size > 0) {
-            await writeTextFile(
-                join(settings.projectPath, programDataDir, `matches-${file}.json`),
-                JSON.stringify(Object.fromEntries(objectToWrite)),
-            );
-        }
-
         searchTotalPages.textContent = file.toString();
         searchCurrentPage.textContent = "0";
 
-        const matches = JSON.parse(
-            await readTextFile(join(settings.projectPath, programDataDir, "matches-0.json")),
-        ) as object;
+        if (objectToWrite.size > 0) {
+            await writeTextFile(
+                join(programDataDirPath, `matches-${file}.json`),
+                JSON.stringify(Object.fromEntries(objectToWrite)),
+            );
+            file++;
+        }
 
-        for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-            if (typeof result === "object") {
-                appendMatch(id, result[0] as string, result[1] as string);
-            } else {
-                appendMatch(id, result);
+        if (file) {
+            const matches = JSON.parse(await readTextFile(join(programDataDirPath, "matches-0.json"))) as object;
+
+            for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
+                if (typeof result === "object") {
+                    appendMatch(id, result[0] as string, result[1] as string);
+                } else {
+                    appendMatch(id, result);
+                }
             }
+        } else {
+            searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${windowLocalization.noMatches}</div>`;
+            showSearchPanel(false);
         }
 
         return results;
@@ -617,13 +627,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const noMatches: null | undefined | Map<HTMLTextAreaElement, string> = await searchText(text, false);
-
-        if (noMatches) {
-            searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${windowLocalization.noMatches}</div>`;
-            showSearchPanel(false);
-            return;
-        }
+        await searchText(text, false);
 
         async function handleResultSelecting(event: MouseEvent) {
             const target = event.target as HTMLDivElement;
@@ -663,7 +667,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         if (elementToReplace) {
                             newText = (await replaceText(elementToReplace as HTMLTextAreaElement))!;
                         } else {
-                            const regexp: RegExp | undefined = await createRegExp(searchInput.value);
+                            const regexp: RegExp | null = await createRegExp(searchInput.value);
                             if (!regexp) {
                                 return;
                             }
@@ -743,7 +747,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (text instanceof HTMLTextAreaElement) {
-            const regexp: RegExp | undefined = await createRegExp(searchInput.value);
+            const regexp: RegExp | null = await createRegExp(searchInput.value);
             if (!regexp) {
                 return;
             }
@@ -770,12 +774,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const results: null | undefined | Map<HTMLTextAreaElement, string> = await searchText(text, true);
-            if (!results) {
+            const results: Map<HTMLTextAreaElement, string> = (await searchText(text, true))!;
+            if (!results.size) {
                 return;
             }
 
-            const regexp: RegExp | undefined = await createRegExp(text);
+            const regexp: RegExp | null = await createRegExp(text);
             if (!regexp) {
                 return;
             }
