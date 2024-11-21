@@ -305,8 +305,7 @@ export class SettingsWindowLocalization {
 
 export class AboutWindowLocalization {
     readonly version: string;
-    readonly about: string;
-    readonly socials: string;
+    readonly contacts: string;
     readonly vkLink: string;
     readonly tgLink: string;
     readonly repoLink: string;
@@ -316,8 +315,7 @@ export class AboutWindowLocalization {
         switch (language) {
             case Language.Russian:
                 this.version = "Версия";
-                this.about = "Программа написана собственноручно мной.";
-                this.socials = "Мои соцсети:";
+                this.contacts = "Контакты:";
                 this.vkLink = "ВК";
                 this.tgLink = "Телеграм";
                 this.repoLink = "Репозиторий программы";
@@ -325,8 +323,7 @@ export class AboutWindowLocalization {
                 break;
             default:
                 this.version = "Version";
-                this.about = "Program is written all by myself.";
-                this.socials = "My socials:";
+                this.contacts = "Contacts:";
                 this.vkLink = "VK";
                 this.tgLink = "Telegram";
                 this.repoLink = "Program's repository";
