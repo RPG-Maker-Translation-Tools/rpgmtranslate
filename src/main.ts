@@ -1301,6 +1301,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const content = (await readTextFile(pathToContent)).split("\n");
 
+        // TODO: probably remove this contentDiv because everything can be just put
+        //       to contentContainer directly
         const contentDiv = document.createElement("div");
         contentDiv.id = contentName;
         contentDiv.className = tw`flex-col`;
@@ -1617,7 +1619,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function exitConfirmation(): Promise<boolean> {
         let askExitUnsaved: boolean;
         if (saved) {
-            askExitUnsaved = true;
+            return true;
         } else {
             askExitUnsaved = await ask(windowLocalization.unsavedChanges);
         }
@@ -2478,17 +2480,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             await writeTextFile(contentPath, newLines.join("\n"));
                                         }
 
-                                        saved = false;
                                         settingsWindowBody.children[i].firstElementChild!.classList.add(
                                             "text-green-500",
                                         );
                                     }
                                 }
 
-                                if (action === FilesAction.Translate) {
-                                    await save(SaveMode.AllFiles);
-                                }
-
+                                saved = false;
                                 settingsWindow.remove();
                             };
 
@@ -2579,7 +2577,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                     });
                 });
-
                 break;
         }
     });
