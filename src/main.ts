@@ -2845,13 +2845,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     contentContainer.addEventListener("mousedown", async (event) => {
         const target = event.target as HTMLElement;
 
-        if (target.classList.contains("bookmarkButton")) {
-            const row = target.closest("[id]")!;
+        if (target.textContent === "bookmark") {
+            const row = target.parentElement!.parentElement!;
             const parts = row.id.split("-", 3);
-            const bookmarkText = `${parts[0]}-${parts.at(-1)!}`;
+            const bookmarkText = `${parts[0]}-${parts[2]}`;
 
             const bookmarkId = bookmarks.findIndex((string) => string === bookmarkText);
-            if (bookmarkId) {
+
+            if (bookmarkId !== -1) {
                 bookmarks.splice(bookmarkId, 1);
 
                 for (const bookmark of bookmarksMenu.children) {
@@ -2868,6 +2869,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 join(settings.projectPath, programDataDir, "bookmarks.txt"),
                 Array.from(bookmarks).join(","),
             );
+
             target.classList.toggle("backgroundThird");
         } else if (event.button === 0) {
             if (shiftPressed) {
