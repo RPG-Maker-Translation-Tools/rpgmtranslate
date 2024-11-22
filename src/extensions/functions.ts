@@ -1,96 +1,6 @@
 import { EngineType, Language } from "../types/enums";
 import { Localization } from "./localization";
 
-export function romanizeString(string: string): string {
-    const replacements = {
-        "。": ".",
-        "、": ",",
-        "，": ",",
-        "・": "·",
-        "゠": "–",
-        "＝": "—",
-        ー: "—",
-        "…": "...",
-        "‥": "...",
-        "「": "'",
-        "」": "'",
-        "〈": "'",
-        "〉": "'",
-        "『": '"',
-        "』": '"',
-        "《": '"',
-        "》": '"',
-        "（": "(",
-        "〔": "(",
-        "｟": "(",
-        "〘": "(",
-        "）": ")",
-        "〕": ")",
-        "｠": ")",
-        "〙": ")",
-        "｛": "{",
-        "｝": "}",
-        "［": "[",
-        "【": "[",
-        "〖": "[",
-        "〚": "[",
-        "］": "]",
-        "】": "]",
-        "〗": "]",
-        "〛": "]",
-        "〜": "~",
-        "？": "?",
-        "：": ":",
-        "！": "!",
-        "※": "·",
-        "　": " ",
-        Ⅰ: "I",
-        ⅰ: "i",
-        Ⅱ: "II",
-        ⅱ: "ii",
-        Ⅲ: "III",
-        ⅲ: "iii",
-        Ⅳ: "IV",
-        ⅳ: "iv",
-        Ⅴ: "V",
-        ⅴ: "v",
-        Ⅵ: "VI",
-        ⅵ: "vi",
-        Ⅶ: "VII",
-        ⅶ: "vii",
-        Ⅷ: "VIII",
-        ⅷ: "viii",
-        Ⅸ: "IX",
-        ⅸ: "ix",
-        Ⅹ: "X",
-        ⅹ: "x",
-        Ⅺ: "XI",
-        ⅺ: "xi",
-        Ⅻ: "XII",
-        ⅻ: "xii",
-        Ⅼ: "L",
-        ⅼ: "l",
-        Ⅽ: "C",
-        ⅽ: "c",
-        Ⅾ: "D",
-        ⅾ: "d",
-        Ⅿ: "M",
-        ⅿ: "m",
-    } as Record<string, string>;
-
-    const result = [];
-
-    for (const char of string) {
-        if (char in replacements) {
-            result.push(replacements[char]);
-        } else {
-            result.push(char);
-        }
-    }
-
-    return result.join("");
-}
-
 export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]) {
     if (Array.isArray(theme)) {
         const [id, value] = theme;
@@ -151,7 +61,7 @@ export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]
     }
 }
 
-export function applyLocalization(localization: Localization, theme: Theme | null = null) {
+export function applyLocalization(localization: Localization, theme?: Theme) {
     for (const [key, value] of Object.entries(localization) as string[][]) {
         if (theme) {
             if (key in theme) {

@@ -12,13 +12,10 @@ interface HTMLTextAreaElement {
     calculateHeight(): void;
 }
 
-interface Array<T> {
-    filterMap<U>(callback: (value: T, index: number) => U | undefined): U[];
-}
-
 interface Math {
     clamp(value: number, min: number, max: number): number;
 }
+
 interface Settings {
     language: import("./enums").Language;
     backup: {

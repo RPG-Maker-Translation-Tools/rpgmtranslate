@@ -1,4 +1,3 @@
-import "./extensions/array-extensions";
 import {
     animateProgressText,
     applyLocalization,
@@ -12,16 +11,7 @@ import "./extensions/htmlelement-extensions";
 import { addToScope, compile, escapeText, read, readLastLine, translateText } from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
-import {
-    EngineType,
-    FilesAction,
-    JumpDirection,
-    Language,
-    ProcessingMode,
-    SaveMode,
-    SearchMode,
-    State,
-} from "./types/enums";
+import { EngineType, FilesAction, JumpDirection, Language, ProcessingMode, SaveMode, SearchMode } from "./types/enums";
 
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -125,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLanguage(settings.language);
 
     // Initialize the project
-    let state: State | null = null;
+    let state: string | null = null;
     let stateIndex: number | null = null;
     let nextBackupNumber: number;
 
@@ -530,7 +520,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const secondParent = element.parentElement!.parentElement!;
 
         if (event.button === 0) {
-            await changeState(secondParent.parentElement!.id as State);
+            await changeState(secondParent.parentElement!.id);
 
             secondParent.scrollIntoView({
                 block: "center",
@@ -648,7 +638,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const [file, type, row] = elementId.split("-");
 
             if (event.button === 0) {
-                await changeState(file as State);
+                await changeState(file);
 
                 document.getElementById(elementId)!.parentElement?.parentElement?.scrollIntoView({
                     block: "center",
@@ -829,7 +819,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
                 }
 
-                if (state === State.System) {
+                if (state === "system") {
                     const originalTitle = currentGameTitle.getAttribute("original-title")!;
                     const output =
                         originalTitle +
@@ -920,7 +910,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, settings.backup.period * 1000);
     }
 
-    async function changeState(newState: State | null, newStateIndex?: number) {
+    async function changeState(newState: string | null, newStateIndex?: number) {
         if (state && state === newState) {
             return;
         }
@@ -1118,7 +1108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const newStateIndex = (stateIndex + 1) % leftPanel.children.length;
 
                             await changeState(
-                                leftPanel.children[newStateIndex].firstElementChild!.textContent! as State,
+                                leftPanel.children[newStateIndex].firstElementChild!.textContent,
                                 newStateIndex,
                             );
                         }
@@ -1128,7 +1118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const newStateIndex =
                                 (stateIndex - 1 + leftPanel.children.length) % leftPanel.children.length;
                             await changeState(
-                                leftPanel.children[newStateIndex].firstElementChild!.textContent! as State,
+                                leftPanel.children[newStateIndex].firstElementChild!.textContent,
                                 newStateIndex,
                             );
                         }
@@ -1278,7 +1268,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function createContentForState(state: State) {
+    async function createContentForState(state: string) {
         const programDataDirPath = join(settings.projectPath, programDataDir);
         const translationPath = join(programDataDirPath, translationDir);
 
@@ -1295,7 +1285,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (await exists(join(translationPath, "scripts.txt"))) {
                 contentName = "scripts";
                 pathToContent = join(translationPath, formattedFilename);
-                (leftPanel.lastElementChild as HTMLElement).innerHTML = State.Scripts;
+                (leftPanel.lastElementChild as HTMLElement).innerHTML = "scripts";
             }
         }
 
@@ -1973,7 +1963,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 target = target.parentElement!;
             }
 
-            await changeState(target.firstElementChild!.textContent as State, Number.parseInt(target.id));
+            await changeState(target.firstElementChild!.textContent, Number.parseInt(target.id));
         }
     });
 
@@ -2350,7 +2340,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 for (const [filename, i] of filenames) {
                                     await sleep(1000);
 
-                                    if (filename === (state as string)) {
+                                    if (filename === state!) {
                                         const children = contentContainer.firstElementChild!.children;
 
                                         for (const element of children) {
@@ -2988,10 +2978,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const parts = target.textContent!.split("-", 2);
-        const rowId = `${parts[0]}-row-${parts[1]}`;
+        const state = parts[0];
 
-        await changeState(parts[0] as State);
-        (document.getElementById(rowId) as HTMLDivElement).scrollIntoView({
+        await changeState(state);
+        contentContainer.firstElementChild!.children[Number.parseInt(parts[1])].scrollIntoView({
             inline: "center",
             block: "center",
         });
