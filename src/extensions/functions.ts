@@ -1,5 +1,24 @@
+import { readDir } from "@tauri-apps/plugin-fs";
 import { EngineType, Language } from "../types/enums";
 import { Localization } from "./localization";
+
+export async function walkDir(path: string): Promise<string[]> {
+    const entries: string[] = [];
+
+    for (const entry of await readDir(path)) {
+        const name = entry.name;
+
+        if (entry.isDirectory) {
+            for (const entry of await walkDir(join(path, name))) {
+                entries.push(entry);
+            }
+        } else {
+            entries.push(join(path, entry.name));
+        }
+    }
+
+    return entries.sort();
+}
 
 export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]) {
     if (Array.isArray(theme)) {

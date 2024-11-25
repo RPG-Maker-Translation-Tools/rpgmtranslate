@@ -1,12 +1,12 @@
-import { applyLocalization, applyTheme, getThemeStyleSheet, join } from "./extensions/functions";
+import { applyLocalization, applyTheme, getThemeStyleSheet, walkDir } from "./extensions/functions";
 import { SettingsWindowLocalization } from "./extensions/localization";
 import "./extensions/math-extensions";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { readDir } from "@tauri-apps/plugin-fs";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
+import { addToScope } from "./extensions/invokes";
 const appWindow = getCurrentWebviewWindow();
 
 interface FontObject extends Record<string, string> {
@@ -45,12 +45,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fontsObject = {} as FontObject;
         const fontPath = getPlatform() === "windows" ? "C:/Windows/Fonts" : "/usr/share/fonts";
 
-        for (const entry of await readDir(fontPath)) {
-            const name = entry.name;
-            const extension = name.slice(-3);
+        await addToScope({ path: fontPath });
+
+        const entries: string[] = await walkDir(fontPath);
+
+        for (const path of entries) {
+            const extension = path.slice(-3);
 
             if (["ttf", "otf"].includes(extension)) {
-                fontsObject[join(fontPath, name)] = name;
+                fontsObject[path] = path.slice(path.replaceAll("\\", "/").lastIndexOf("/"));
             }
         }
 
@@ -89,10 +92,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         fontSelect.appendChild(optionElement);
     }
 
-    fontSelect.addEventListener("change", () => {
+    fontSelect.addEventListener("change", async () => {
         for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
             if (element.value === fontSelect.value) {
-                fontUrl = convertFileSrc(element.id);
+                fontUrl = element.id;
+
+                const font = await new FontFace("font", `url(${convertFileSrc(fontUrl)})`).load();
+                document.fonts.add(font);
+                document.body.style.fontFamily = "font";
             }
         }
     });

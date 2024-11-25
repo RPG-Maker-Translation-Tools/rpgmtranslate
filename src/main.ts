@@ -13,6 +13,7 @@ import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
 import { EngineType, FilesAction, JumpDirection, Language, ProcessingMode, SaveMode, SearchMode } from "./types/enums";
 
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { ask, message, open as openPath } from "@tauri-apps/plugin-dialog";
@@ -165,6 +166,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     {
         const bookmarksFilePath = join(settings.projectPath, programDataDir, "bookmarks.txt");
+        await addToScope({ path: bookmarksFilePath });
 
         if (await exists(bookmarksFilePath)) {
             const bookmarksFileContent = await readTextFile(bookmarksFilePath);
@@ -1589,19 +1591,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadFont(fontUrl: string) {
         if (fontUrl) {
-            const font = await new FontFace("font", `url(${fontUrl})`).load();
+            await addToScope({ path: fontUrl });
+
+            const font = await new FontFace("font", `url(${convertFileSrc(fontUrl)})`).load();
             document.fonts.add(font);
 
             textAreaPropertiesMemo.fontFamily = "font";
 
             for (const element of document.querySelectorAll(".font")) {
-                (element as HTMLTextAreaElement).style.fontFamily = "font";
+                (element as HTMLElement).style.fontFamily = "font";
             }
         } else {
             textAreaPropertiesMemo.fontFamily = document.body.style.fontFamily;
 
             for (const element of document.querySelectorAll(".font")) {
-                (element as HTMLTextAreaElement).style.fontFamily = "";
+                (element as HTMLElement).style.fontFamily = "";
             }
         }
     }
