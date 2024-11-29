@@ -80,6 +80,8 @@ export class MainWindowLocalization {
     readonly translationLanguagesNotSelected: string;
     readonly selectFiles: string;
     readonly wrapNumber: string;
+    readonly deletingDisabled: string;
+    readonly deletingConfirmation: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -167,6 +169,8 @@ export class MainWindowLocalization {
                 this.translationLanguagesNotSelected = "Языки перевода не выбраны. Настройте их в настройках.";
                 this.selectFiles = "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)";
                 this.wrapNumber = "Длина строки для переноса";
+                this.deletingDisabled = "Удаление рядов выключено.";
+                this.deletingConfirmation = "Вы действительно хотите удалить этот ряд? Это действие необратимо!";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -253,6 +257,8 @@ export class MainWindowLocalization {
                     "Translation languages are not selected. Set them in the settings.";
                 this.selectFiles = "Select files (You can hold LMB and drag to select multiple files)";
                 this.wrapNumber = "Line length for wrapping";
+                this.deletingDisabled = "Deleting is disabled in settings.";
+                this.deletingConfirmation = "Do you really want to delete this row? This action is irreversible!";
                 break;
         }
     }
@@ -270,6 +276,10 @@ export class SettingsWindowLocalization {
     readonly fromLanguage: string;
     readonly toLanguage: string;
     readonly incorrectLanguageTag: string;
+    readonly confirmation: string;
+    readonly disabled: string;
+    readonly allowed: string;
+    readonly delete: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -285,6 +295,10 @@ export class SettingsWindowLocalization {
                 this.fromLanguage = "Исходный язык (тег BCP-47, например, en или en-US)";
                 this.toLanguage = "Язык перевода (тег BCP-47, например, ru или ru-RU)";
                 this.incorrectLanguageTag = "Некорректный тег языка";
+                this.delete = "Режим удаления рядов";
+                this.disabled = "Выключить";
+                this.confirmation = "Спрашивать";
+                this.allowed = "Разрешить";
                 break;
             default:
                 this.backupPeriodLabel = "Create backup every:";
@@ -298,6 +312,10 @@ export class SettingsWindowLocalization {
                 this.fromLanguage = "From language (BCP-47 tag, e.g. ja or ja-JP)";
                 this.toLanguage = "To language (BCP-47 tag, e.g. en or en-US)";
                 this.incorrectLanguageTag = "Incorrect language tag";
+                this.delete = "Row delete mode";
+                this.disabled = "Disabled";
+                this.confirmation = "Ask for confirmation";
+                this.allowed = "Allowed";
                 break;
         }
     }
@@ -472,6 +490,7 @@ export class ReadWindowLocalization {
     readonly separateMapsMode: string;
     readonly preserveMapsMode: string;
     readonly loggingOption: string;
+    readonly generateJSONCheckbox: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -507,6 +526,7 @@ export class ReadWindowLocalization {
                 this.preserveMapsMode = "Сохранять дубликаты";
                 this.loggingOption =
                     "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
+                this.generateJSONCheckbox = "Сгенерировать JSON репрезентации файлов старых движков";
                 break;
             default:
                 this.mode = "Reading mode:";
@@ -539,6 +559,7 @@ export class ReadWindowLocalization {
                 this.separateMapsMode = "Separate maps text";
                 this.preserveMapsMode = "Preserve duplicates";
                 this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
+                this.generateJSONCheckbox = "Generate JSON representations of older engines' files";
                 break;
         }
     }
