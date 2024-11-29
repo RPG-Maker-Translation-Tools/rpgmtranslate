@@ -1,9 +1,9 @@
 use crate::{
     functions::get_game_type,
-    read::{read_map, read_other, read_scripts, read_system},
+    read::*,
     statics::{EXTENSION, GOOGLE_TRANS, LOCALIZATION},
-    write::{write_maps, write_other, write_plugins, write_scripts, write_system},
-    EngineType, GameType, Language, Localization, MapsProcessingMode, ProcessingMode, ResultExt,
+    types::{EngineType, GameType, Language, Localization, MapsProcessingMode, ProcessingMode, ResultExt},
+    write::*,
 };
 use regex::escape;
 use serde::{Deserialize, Deserializer};
@@ -88,6 +88,7 @@ pub struct ReadSettings {
     engineType: EngineType,
     logging: bool,
     language: Language,
+    generateJson: bool,
 }
 
 #[command]
@@ -235,6 +236,7 @@ pub fn read(settings: ReadSettings) {
         engineType: engine_type,
         language,
         logging,
+        generateJson: mut generate_json,
     } = settings;
 
     if unsafe { LOCALIZATION.is_none() } {
@@ -266,6 +268,10 @@ pub fn read(settings: ReadSettings) {
 
     create_dir_all(translation_path).unwrap_log(file!(), line!());
 
+    if engine_type == EngineType::New {
+        generate_json = false;
+    }
+
     if !disable_processing[0] {
         read_map(
             original_path,
@@ -277,6 +283,7 @@ pub fn read(settings: ReadSettings) {
             engine_type,
             processing_mode,
             unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -290,6 +297,7 @@ pub fn read(settings: ReadSettings) {
             processing_mode,
             engine_type,
             unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -302,6 +310,7 @@ pub fn read(settings: ReadSettings) {
             processing_mode,
             engine_type,
             unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -312,6 +321,7 @@ pub fn read(settings: ReadSettings) {
             romanize,
             logging,
             unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 }

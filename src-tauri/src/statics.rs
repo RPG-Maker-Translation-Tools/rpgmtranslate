@@ -1,4 +1,4 @@
-use crate::Localization;
+use crate::types::Localization;
 use lazy_static::lazy_static;
 use regex::Regex;
 use translators::GoogleTranslator;

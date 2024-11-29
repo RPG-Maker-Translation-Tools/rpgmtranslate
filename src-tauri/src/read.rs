@@ -6,7 +6,9 @@ use crate::{
         ENDS_WITH_IF_RE, EXTENSION, INVALID_MULTILINE_VARIABLE_RE, INVALID_VARIABLE_RE, LINES_SEPARATOR,
         LISA_PREFIX_RE, NEW_LINE, STRING_IS_ONLY_SYMBOLS_RE,
     },
-    Code, EngineType, GameType, Localization, MapsProcessingMode, OptionExt, ProcessingMode, ResultExt, Variable,
+    types::{
+        Code, EngineType, GameType, Localization, MapsProcessingMode, OptionExt, ProcessingMode, ResultExt, Variable,
+    },
 };
 use encoding_rs::Encoding;
 use flate2::read::ZlibDecoder;
@@ -14,7 +16,7 @@ use indexmap::{IndexMap, IndexSet};
 use marshal_rs::{load, StringMode};
 use rayon::prelude::*;
 use regex::Regex;
-use sonic_rs::{from_str, from_value, prelude::*, Array, Value};
+use sonic_rs::{from_str, from_value, prelude::*, to_string, Array, Value};
 use std::{
     cell::UnsafeCell,
     collections::VecDeque,
@@ -471,6 +473,7 @@ pub fn read_map(
     engine_type: EngineType,
     mut processing_mode: ProcessingMode,
     localization: &Localization,
+    generate_json: bool,
 ) {
     let output_path: &Path = &output_path.join("maps.txt");
 
@@ -627,6 +630,22 @@ pub fn read_map(
 
             if logging {
                 println!("{} {filename}", localization.file_parsed_msg);
+            }
+
+            if generate_json {
+                write(
+                    output_path
+                        .parent()
+                        .unwrap_log(file!(), line!())
+                        .parent()
+                        .unwrap_log(file!(), line!())
+                        .join(format!(
+                            "json/{}.json",
+                            &filename[..filename.rfind('.').unwrap_log(file!(), line!())]
+                        )),
+                    to_string(&obj).unwrap_log(file!(), line!()),
+                )
+                .unwrap_log(file!(), line!());
             }
         }
 
@@ -932,6 +951,22 @@ pub fn read_map(
             if logging {
                 println!("{} {filename}", localization.file_parsed_msg);
             }
+
+            if generate_json {
+                write(
+                    output_path
+                        .parent()
+                        .unwrap_log(file!(), line!())
+                        .parent()
+                        .unwrap_log(file!(), line!())
+                        .join(format!(
+                            "json/{}.json",
+                            &filename[..filename.rfind('.').unwrap_log(file!(), line!())]
+                        )),
+                    to_string(&obj).unwrap_log(file!(), line!()),
+                )
+                .unwrap_log(file!(), line!());
+            }
         }
 
         let mut output_content: String =
@@ -964,6 +999,7 @@ pub fn read_other(
     processing_mode: ProcessingMode,
     engine_type: EngineType,
     localization: &Localization,
+    generate_json: bool,
 ) {
     let obj_arr_iter =
         read_dir(original_path)
@@ -1059,7 +1095,7 @@ pub fn read_other(
             &output_path.join(filename[0..filename.rfind('.').unwrap_log(file!(), line!())].to_lowercase() + ".txt");
 
         if processing_mode == ProcessingMode::Default && output_path.exists() {
-            println!("{} {}", localization.file_already_parsed_msg, output_path.display());
+            println!("{} {}", output_path.display(), localization.file_already_parsed_msg);
             continue;
         }
 
@@ -1106,72 +1142,88 @@ pub fn read_other(
                 let mut prev_variable_type: Option<Variable> = None;
 
                 for (variable_text, variable_type) in [
-                    (obj[name_label].as_str(), Variable::Name),
-                    (obj[nickname_label].as_str(), Variable::Nickname),
-                    (obj[description_label].as_str(), Variable::Description),
-                    (obj[message1_label].as_str(), Variable::Message1),
-                    (obj[message2_label].as_str(), Variable::Message2),
-                    (obj[message3_label].as_str(), Variable::Message3),
-                    (obj[message4_label].as_str(), Variable::Message4),
-                    (obj[note_label].as_str(), Variable::Note),
+                    (obj.get(name_label), Variable::Name),
+                    (obj.get(nickname_label), Variable::Nickname),
+                    (obj.get(description_label), Variable::Description),
+                    (obj.get(message1_label), Variable::Message1),
+                    (obj.get(message2_label), Variable::Message2),
+                    (obj.get(message3_label), Variable::Message3),
+                    (obj.get(message4_label), Variable::Message4),
+                    (obj.get(note_label), Variable::Note),
                 ] {
-                    if let Some(mut variable_str) = variable_text {
-                        variable_str = variable_str.trim();
+                    let variable_str: String = if let Some(str) = variable_text.as_str() {
+                        str.to_string()
+                    } else if let Some(obj) = variable_text.as_object() {
+                        if obj
+                            .get(&"__type")
+                            .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                        {
+                            let str: String = unsafe {
+                                String::from_utf8_unchecked(
+                                    from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()),
+                                )
+                            };
+                            str
+                        } else {
+                            unreachable!()
+                        }
+                    } else {
+                        continue;
+                    }
+                    .trim()
+                    .to_string();
 
-                        if !variable_str.is_empty() {
-                            let parsed: Option<(String, bool)> = parse_variable(
-                                variable_str.to_owned(),
-                                &variable_type,
-                                &filename,
-                                game_type,
-                                engine_type,
-                            );
+                    if !variable_str.is_empty() {
+                        let parsed: Option<(String, bool)> = parse_variable(
+                            variable_str.to_owned(),
+                            &variable_type,
+                            &filename,
+                            game_type,
+                            engine_type,
+                        );
 
-                            if let Some((mut parsed, is_continuation_of_description)) = parsed {
-                                if is_continuation_of_description {
-                                    if prev_variable_type != Some(Variable::Description) {
-                                        continue;
-                                    }
-
-                                    if let Some(last) = lines_mut_ref.pop() {
-                                        lines_mut_ref.insert(last.trim().to_owned() + &parsed);
-                                        let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
-
-                                        // TODO: this shit rewrites the translation line but inserts RIGHT original line
-                                        if inner_processing_mode == ProcessingMode::Append {
-                                            let (idx, _, value) =
-                                                lines_map.shift_remove_full(last.as_str()).unwrap_log(file!(), line!());
-                                            lines_map.shift_insert(idx, string_ref, value);
-                                        }
-                                    }
+                        if let Some((mut parsed, is_continuation_of_description)) = parsed {
+                            if is_continuation_of_description {
+                                if prev_variable_type != Some(Variable::Description) {
                                     continue;
                                 }
 
-                                prev_variable_type = Some(variable_type);
+                                if let Some(last) = lines_mut_ref.pop() {
+                                    lines_mut_ref.insert(last.trim().to_owned() + &parsed);
+                                    let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
 
-                                if romanize {
-                                    parsed = romanize_string(parsed);
+                                    // TODO: this shit rewrites the translation line but inserts RIGHT original line
+                                    if inner_processing_mode == ProcessingMode::Append {
+                                        let (idx, _, value) =
+                                            lines_map.shift_remove_full(last.as_str()).unwrap_log(file!(), line!());
+                                        lines_map.shift_insert(idx, string_ref, value);
+                                    }
                                 }
-
-                                let replaced: String = parsed
-                                    .split('\n')
-                                    .map(str::trim)
-                                    .collect::<Vec<_>>()
-                                    .join(NEW_LINE)
-                                    .trim()
-                                    .to_owned();
-
-                                lines_mut_ref.insert(replaced);
-                                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
-
-                                if inner_processing_mode == ProcessingMode::Append
-                                    && !lines_map.contains_key(string_ref)
-                                {
-                                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
-                                }
-                            } else if variable_type == Variable::Name {
-                                continue 'obj;
+                                continue;
                             }
+
+                            prev_variable_type = Some(variable_type);
+
+                            if romanize {
+                                parsed = romanize_string(parsed);
+                            }
+
+                            let replaced: String = parsed
+                                .split('\n')
+                                .map(str::trim)
+                                .collect::<Vec<_>>()
+                                .join(NEW_LINE)
+                                .trim()
+                                .to_owned();
+
+                            lines_mut_ref.insert(replaced);
+                            let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+
+                            if inner_processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                                lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                            }
+                        } else if variable_type == Variable::Name {
+                            continue 'obj;
                         }
                     }
                 }
@@ -1236,6 +1288,22 @@ pub fn read_other(
         if logging {
             println!("{} {filename}", localization.file_parsed_msg);
         }
+
+        if generate_json {
+            write(
+                output_path
+                    .parent()
+                    .unwrap_log(file!(), line!())
+                    .parent()
+                    .unwrap_log(file!(), line!())
+                    .join(format!(
+                        "json/{}.json",
+                        &filename[..filename.rfind('.').unwrap_log(file!(), line!())]
+                    )),
+                to_string(&obj_arr).unwrap_log(file!(), line!()),
+            )
+            .unwrap_log(file!(), line!());
+        }
     }
 }
 
@@ -1258,6 +1326,7 @@ pub fn read_system(
     mut processing_mode: ProcessingMode,
     engine_type: EngineType,
     localization: &Localization,
+    generate_json: bool,
 ) {
     let output_path: &Path = &output_path.join("system.txt");
 
@@ -1297,23 +1366,22 @@ pub fn read_system(
     }
 
     if engine_type != EngineType::New {
-        let str: &str = obj["__symbol__currency_unit"]
-            .as_str()
-            .unwrap_log(file!(), line!())
-            .trim();
+        if let Some(mut str) = obj["__symbol__currency_unit"].as_str() {
+            str = str.trim();
 
-        if !str.is_empty() {
-            let mut string: String = str.to_owned();
+            if !str.is_empty() {
+                let mut string: String = str.to_owned();
 
-            if romanize {
-                string = romanize_string(string)
-            }
+                if romanize {
+                    string = romanize_string(string)
+                }
 
-            lines_mut_ref.insert(string);
-            let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+                lines_mut_ref.insert(string);
+                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
 
-            if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
-                lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                }
             }
         }
     }
@@ -1345,29 +1413,63 @@ pub fn read_system(
 
     // Armor types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[armor_types_label].as_array().unwrap_log(file!(), line!()) {
-        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
-
-        if !str.is_empty() {
-            let mut string: String = str.to_owned();
-
-            if romanize {
-                string = romanize_string(string)
+    if let Some(armor_types) = obj[armor_types_label].as_array() {
+        for element in armor_types {
+            let str: String = if let Some(str) = element.as_str() {
+                str.to_string()
+            } else if let Some(obj) = element.as_object() {
+                if obj
+                    .get(&"__type")
+                    .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                {
+                    unsafe {
+                        String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()))
+                    }
+                } else {
+                    unreachable!()
+                }
+            } else {
+                continue;
             }
+            .trim()
+            .to_string();
 
-            lines_mut_ref.insert(string);
-            let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+            if !str.is_empty() {
+                let mut string: String = str.to_owned();
 
-            if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
-                lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                if romanize {
+                    string = romanize_string(string)
+                }
+
+                lines_mut_ref.insert(string);
+                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+
+                if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                }
             }
         }
     }
 
     // Element types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[elements_label].as_array().unwrap_log(file!(), line!()) {
-        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
+    for element in obj[elements_label].as_array().unwrap_log(file!(), line!()) {
+        let str: String = if let Some(str) = element.as_str() {
+            str.to_string()
+        } else if let Some(obj) = element.as_object() {
+            if obj
+                .get(&"__type")
+                .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+            {
+                unsafe { String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!())) }
+            } else {
+                unreachable!()
+            }
+        } else {
+            continue;
+        }
+        .trim()
+        .to_string();
 
         if !str.is_empty() {
             let mut string: String = str.to_owned();
@@ -1387,8 +1489,25 @@ pub fn read_system(
 
     // Names of equipment slots
     if engine_type == EngineType::New {
-        for string in obj["equipTypes"].as_array().unwrap_log(file!(), line!()) {
-            let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
+        for element in obj["equipTypes"].as_array().unwrap_log(file!(), line!()) {
+            let str: String = if let Some(str) = element.as_str() {
+                str.to_string()
+            } else if let Some(obj) = element.as_object() {
+                if obj
+                    .get(&"__type")
+                    .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                {
+                    unsafe {
+                        String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()))
+                    }
+                } else {
+                    unreachable!()
+                }
+            } else {
+                continue;
+            }
+            .trim()
+            .to_string();
 
             if !str.is_empty() {
                 let mut string: String = str.to_owned();
@@ -1408,21 +1527,40 @@ pub fn read_system(
     }
 
     // Names of battle options
-    for string in obj[skill_types_label].as_array().unwrap_log(file!(), line!()) {
-        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
-
-        if !str.is_empty() {
-            let mut string: String = str.to_owned();
-
-            if romanize {
-                string = romanize_string(string)
+    if let Some(skill_types) = obj[skill_types_label].as_array() {
+        for element in skill_types {
+            let str: String = if let Some(str) = element.as_str() {
+                str.to_string()
+            } else if let Some(obj) = element.as_object() {
+                if obj
+                    .get(&"__type")
+                    .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                {
+                    unsafe {
+                        String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()))
+                    }
+                } else {
+                    unreachable!()
+                }
+            } else {
+                continue;
             }
+            .trim()
+            .to_string();
 
-            lines_mut_ref.insert(string);
-            let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+            if !str.is_empty() {
+                let mut string: String = str.to_owned();
 
-            if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
-                lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                if romanize {
+                    string = romanize_string(string)
+                }
+
+                lines_mut_ref.insert(string);
+                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+
+                if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                }
             }
         }
     }
@@ -1433,10 +1571,42 @@ pub fn read_system(
             continue;
         }
 
-        if key != "messages" {
-            for string in value.as_array().unwrap_log(file!(), line!()) {
-                if let Some(mut str) = string.as_str() {
-                    str = str.trim();
+        if engine_type != EngineType::New {
+            let str: String = if let Some(obj) = value.as_object() {
+                if obj
+                    .get(&"__type")
+                    .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                {
+                    unsafe {
+                        String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()))
+                    }
+                } else {
+                    unreachable!()
+                }
+            } else {
+                continue;
+            }
+            .trim()
+            .to_string();
+
+            if !str.is_empty() {
+                let mut string: String = str.to_owned();
+
+                if romanize {
+                    string = romanize_string(string)
+                }
+
+                lines_mut_ref.insert(string);
+                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+
+                if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                }
+            }
+        } else if key != "messages" {
+            if let Some(arr) = value.as_array() {
+                for element in arr {
+                    let str: &str = element.as_str().unwrap_log(file!(), line!()).trim();
 
                     if !str.is_empty() {
                         let mut string: String = str.to_owned();
@@ -1482,21 +1652,40 @@ pub fn read_system(
 
     // Weapon types names
     // Normally it's system strings, but might be needed for some purposes
-    for string in obj[weapon_types_label].as_array().unwrap_log(file!(), line!()) {
-        let str: &str = string.as_str().unwrap_log(file!(), line!()).trim();
-
-        if !str.is_empty() {
-            let mut string: String = str.to_owned();
-
-            if romanize {
-                string = romanize_string(string)
+    if let Some(weapon_types) = obj[weapon_types_label].as_array() {
+        for element in weapon_types {
+            let str: String = if let Some(str) = element.as_str() {
+                str.to_string()
+            } else if let Some(obj) = element.as_object() {
+                if obj
+                    .get(&"__type")
+                    .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+                {
+                    unsafe {
+                        String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!()))
+                    }
+                } else {
+                    unreachable!()
+                }
+            } else {
+                continue;
             }
+            .trim()
+            .to_string();
 
-            lines_mut_ref.insert(string);
-            let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+            if !str.is_empty() {
+                let mut string: String = str.to_owned();
 
-            if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
-                lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                if romanize {
+                    string = romanize_string(string)
+                }
+
+                lines_mut_ref.insert(string);
+                let string_ref: &str = unsafe { lines_ref.last().unwrap_unchecked() }.as_str();
+
+                if processing_mode == ProcessingMode::Append && !lines_map.contains_key(string_ref) {
+                    lines_map.shift_insert(lines_ref.len() - 1, string_ref, "");
+                }
             }
         }
     }
@@ -1504,11 +1693,22 @@ pub fn read_system(
     // Game title, parsed just for fun
     // Translators may add something like "ELFISH TRANSLATION v1.0.0" to the title
     {
-        let mut game_title_string: String = obj[game_title_label]
-            .as_str()
-            .unwrap_log(file!(), line!())
-            .trim()
-            .to_owned();
+        let mut game_title_string: String = if let Some(str) = obj[game_title_label].as_str() {
+            str.to_string()
+        } else if let Some(obj) = obj[game_title_label].as_object() {
+            if obj
+                .get(&"__type")
+                .is_some_and(|t| t.as_str().unwrap_log(file!(), line!()) == "bytes")
+            {
+                unsafe { String::from_utf8_unchecked(from_value::<Vec<u8>>(&obj["data"]).unwrap_log(file!(), line!())) }
+            } else {
+                unreachable!()
+            }
+        } else {
+            String::new()
+        }
+        .trim()
+        .to_string();
 
         if romanize {
             game_title_string = romanize_string(game_title_string)
@@ -1542,7 +1742,27 @@ pub fn read_system(
     write(output_path, output_content).unwrap_log(file!(), line!());
 
     if logging {
-        println!("{} {}", localization.file_parsed_msg, system_file_path.display());
+        println!(
+            "{} {}",
+            localization.file_parsed_msg,
+            system_file_path
+                .file_name()
+                .unwrap_log(file!(), line!())
+                .to_string_lossy()
+        );
+    }
+
+    if generate_json {
+        write(
+            output_path
+                .parent()
+                .unwrap_log(file!(), line!())
+                .parent()
+                .unwrap_log(file!(), line!())
+                .join("json/System.json"),
+            to_string(&obj).unwrap_log(file!(), line!()),
+        )
+        .unwrap_log(file!(), line!());
     }
 }
 
@@ -1552,6 +1772,7 @@ pub fn read_scripts(
     romanize: bool,
     logging: bool,
     localization: &Localization,
+    generate_json: bool,
 ) {
     let mut strings: Vec<String> = Vec::new();
 
@@ -1597,21 +1818,21 @@ pub fn read_scripts(
 
     let extracted_strings: Xxh3IndexSet = extract_strings(&codes_content.join(""), false).0;
 
-    let regexes: [Regex; 11] = [
-        unsafe { Regex::new(r"(Graphics|Data|Audio|Movies|System)\/.*\/?").unwrap_unchecked() },
-        unsafe { Regex::new(r"r[xv]data2?$").unwrap_unchecked() },
-        STRING_IS_ONLY_SYMBOLS_RE.to_owned(),
-        unsafe { Regex::new(r"@window").unwrap_unchecked() },
-        unsafe { Regex::new(r"\$game").unwrap_unchecked() },
-        unsafe { Regex::new(r"_").unwrap_unchecked() },
-        unsafe { Regex::new(r"^\\e").unwrap_unchecked() },
-        unsafe { Regex::new(r".*\(").unwrap_unchecked() },
-        unsafe { Regex::new(r"^([d\d\p{P}+-]*|[d\p{P}+-]&*)$").unwrap_unchecked() },
-        unsafe { Regex::new(r"ALPHAC").unwrap_unchecked() },
-        unsafe {
-            Regex::new(r"^(Actor<id>|ExtraDropItem|EquipLearnSkill|GameOver|Iconset|Window|true|false|MActor%d|[wr]b|\\f|\\n|\[[A-Z]*\])$").unwrap_unchecked()
-        },
-    ];
+    let regexes: [Regex; 11] = unsafe {
+        [
+            Regex::new(r"(Graphics|Data|Audio|Movies|System)\/.*\/?").unwrap_unchecked(),
+            Regex::new(r"r[xv]data2?$").unwrap_unchecked(),
+            STRING_IS_ONLY_SYMBOLS_RE.to_owned(),
+            Regex::new(r"@window").unwrap_unchecked(),
+            Regex::new(r"\$game").unwrap_unchecked(),
+            Regex::new(r"_").unwrap_unchecked(),
+            Regex::new(r"^\\e").unwrap_unchecked(),
+            Regex::new(r".*\(").unwrap_unchecked(),
+            Regex::new(r"^([d\d\p{P}+-]*|[d\p{P}+-]&*)$").unwrap_unchecked() ,
+            Regex::new(r"ALPHAC").unwrap_unchecked(),
+            Regex::new(r"^(Actor<id>|ExtraDropItem|EquipLearnSkill|GameOver|Iconset|Window|true|false|MActor%d|[wr]b|\\f|\\n|\[[A-Z]*\])$").unwrap_unchecked(),
+        ]
+    };
 
     'extracted: for mut extracted in extracted_strings {
         if extracted.is_empty() {
@@ -1639,6 +1860,26 @@ pub fn read_scripts(
     write(other_path.join("scripts.txt"), output_content).unwrap_log(file!(), line!());
 
     if logging {
-        println!("{} {}", localization.file_parsed_msg, scripts_file_path.display());
+        println!(
+            "{} {}",
+            localization.file_parsed_msg,
+            scripts_file_path
+                .file_name()
+                .unwrap_log(file!(), line!())
+                .to_string_lossy()
+        );
+    }
+
+    if generate_json {
+        write(
+            scripts_file_path
+                .parent()
+                .unwrap_log(file!(), line!())
+                .parent()
+                .unwrap_log(file!(), line!())
+                .join("json/Scripts.json"),
+            to_string(&scripts_entries).unwrap_log(file!(), line!()),
+        )
+        .unwrap_log(file!(), line!());
     }
 }

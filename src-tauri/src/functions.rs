@@ -1,4 +1,7 @@
-use crate::{statics::NEW_LINE, GameType, ResultExt};
+use crate::{
+    statics::NEW_LINE,
+    types::{GameType, ResultExt},
+};
 use regex::Regex;
 use sonic_rs::{prelude::*, Object};
 
