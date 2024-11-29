@@ -7,11 +7,31 @@ import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
 import { addToScope } from "./extensions/invokes";
+import { RowDeleteMode } from "./types/enums";
 const appWindow = getCurrentWebviewWindow();
 
 interface FontObject extends Record<string, string> {
     font: string;
     name: string;
+}
+
+async function fetchFonts(): Promise<FontObject> {
+    const fontsObject = {} as FontObject;
+    const fontPath = getPlatform() === "windows" ? "C:/Windows/Fonts" : "/usr/share/fonts";
+
+    await addToScope({ path: fontPath });
+
+    const entries: string[] = await walkDir(fontPath);
+
+    for (const path of entries) {
+        const extension = path.slice(-3);
+
+        if (["ttf", "otf"].includes(extension)) {
+            fontsObject[path] = path.slice(path.replaceAll("\\", "/").lastIndexOf("/"));
+        }
+    }
+
+    return fontsObject;
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -38,42 +58,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fromLanguageInput = document.getElementById("from-language-input") as HTMLInputElement;
     const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
     const fontSelect = document.getElementById("font-select") as HTMLSelectElement;
-
-    let fontUrl = "";
-
-    async function fetchFonts(): Promise<FontObject> {
-        const fontsObject = {} as FontObject;
-        const fontPath = getPlatform() === "windows" ? "C:/Windows/Fonts" : "/usr/share/fonts";
-
-        await addToScope({ path: fontPath });
-
-        const entries: string[] = await walkDir(fontPath);
-
-        for (const path of entries) {
-            const extension = path.slice(-3);
-
-            if (["ttf", "otf"].includes(extension)) {
-                fontsObject[path] = path.slice(path.replaceAll("\\", "/").lastIndexOf("/"));
-            }
-        }
-
-        return fontsObject;
-    }
+    const rowDeleteModeSelect = document.getElementById("row-delete-mode-select") as HTMLSelectElement;
 
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
     backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
 
-    if (typeof settings.from !== "string") {
-        settings.from = "";
+    if (typeof settings.translation !== "object") {
+        settings.translation = { from: "", to: "" };
     }
 
-    if (typeof settings.to !== "string") {
-        settings.to = "";
+    if (typeof settings.rowDeleteMode !== "number") {
+        settings.rowDeleteMode = RowDeleteMode.Disabled;
     }
 
-    fromLanguageInput.value = settings.from;
-    toLanguageInput.value = settings.to;
+    rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
+    fromLanguageInput.value = settings.translation.from;
+    toLanguageInput.value = settings.translation.to;
 
     if (!backupCheck.textContent) {
         backupSettings.classList.add("hidden");
@@ -95,9 +96,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     fontSelect.addEventListener("change", async () => {
         for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
             if (element.value === fontSelect.value) {
-                fontUrl = element.id;
+                settings.fontUrl = element.id;
 
-                const font = await new FontFace("font", `url(${convertFileSrc(fontUrl)})`).load();
+                const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
                 document.fonts.add(font);
                 document.body.style.fontFamily = "font";
             }
@@ -111,6 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             requestAnimationFrame(() => backupSettings.classList.replace("-translate-y-full", "translate-y-0"));
 
             backupCheck.innerHTML = "check";
+            settings.backup.enabled = true;
         } else {
             backupSettings.classList.replace("translate-y-0", "-translate-y-full");
 
@@ -119,49 +121,63 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
             backupCheck.innerHTML = "";
+            settings.backup.enabled = false;
         }
     });
 
     backupMaxInput.addEventListener("input", () => {
         backupMaxInput.value = backupMaxInput.value.replaceAll(/[^0-9]/g, "");
-        backupMaxInput.value = Math.clamp(Number.parseInt(backupMaxInput.value), 1, 99).toString();
+
+        const newBackupMax = Math.clamp(Number.parseInt(backupMaxInput.value), 1, 99);
+        backupMaxInput.value = newBackupMax.toString();
+        settings.backup.max = newBackupMax;
     });
 
     backupPeriodInput.addEventListener("input", () => {
         backupPeriodInput.value = backupPeriodInput.value.replaceAll(/[^0-9]/g, "");
-        backupPeriodInput.value = Math.clamp(Number.parseInt(backupPeriodInput.value), 60, 3600).toString();
+
+        const newBackupPeriod = Math.clamp(Number.parseInt(backupPeriodInput.value), 60, 3600);
+        backupPeriodInput.value = newBackupPeriod.toString();
+        settings.backup.period = newBackupPeriod;
     });
 
     fromLanguageInput.addEventListener("blur", () => {
         try {
             new Intl.Locale(fromLanguageInput.value);
+            settings.translation.from = fromLanguageInput.value;
         } catch {
             alert(windowLocalization.incorrectLanguageTag);
-            fromLanguageInput.value = settings.from;
+            fromLanguageInput.value = settings.translation.from;
         }
     });
 
     toLanguageInput.addEventListener("blur", () => {
         try {
             new Intl.Locale(toLanguageInput.value);
+            settings.translation.to = toLanguageInput.value;
         } catch {
             alert(windowLocalization.incorrectLanguageTag);
-            toLanguageInput.value = settings.to;
+            toLanguageInput.value = settings.translation.to;
         }
+    });
+
+    fromLanguageInput.addEventListener("input", () => {
+        fromLanguageInput.value = toLanguageInput.value.replaceAll(/[^a-z]/g, "");
     });
 
     toLanguageInput.addEventListener("input", () => {
         toLanguageInput.value = toLanguageInput.value.replaceAll(/[^a-z]/g, "");
     });
 
+    rowDeleteModeSelect.addEventListener("change", () => {
+        for (const element of rowDeleteModeSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+            if (element.value === rowDeleteModeSelect.value) {
+                settings.rowDeleteMode = Number.parseInt(element.value);
+            }
+        }
+    });
+
     await appWindow.onCloseRequested(async () => {
-        await emit("get-settings", [
-            Boolean(backupCheck.textContent),
-            Number.parseInt(backupMaxInput.value),
-            Number.parseInt(backupPeriodInput.value),
-            fromLanguageInput.value,
-            toLanguageInput.value,
-            fontUrl,
-        ]);
+        await emit("get-settings", settings);
     });
 });
