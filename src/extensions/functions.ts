@@ -1,5 +1,5 @@
 import { readDir } from "@tauri-apps/plugin-fs";
-import { EngineType, Language } from "../types/enums";
+import { EngineType, Language, RowDeleteMode } from "../types/enums";
 import { Localization } from "./localization";
 
 export async function walkDir(path: string): Promise<string[]> {
@@ -173,9 +173,9 @@ export class Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
-    from: Intl.UnicodeBCP47LocaleIdentifier;
-    to: Intl.UnicodeBCP47LocaleIdentifier;
+    translation: { from: Intl.UnicodeBCP47LocaleIdentifier; to: Intl.UnicodeBCP47LocaleIdentifier };
     engineType: EngineType | null;
+    rowDeleteMode: RowDeleteMode;
 
     constructor(language: Language) {
         this.language = language;
@@ -184,8 +184,8 @@ export class Settings {
         this.fontUrl = "";
         this.firstLaunch = true;
         this.projectPath = "";
-        this.from = "";
-        this.to = "";
+        this.translation = { from: "", to: "" };
         this.engineType = null;
+        this.rowDeleteMode = RowDeleteMode.Disabled;
     }
 }

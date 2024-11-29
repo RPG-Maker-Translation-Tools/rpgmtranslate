@@ -27,9 +27,12 @@ interface Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
-    from: Intl.UnicodeBCP47LocaleIdentifier;
-    to: Intl.UnicodeBCP47LocaleIdentifier;
+    translation: {
+        from: Intl.UnicodeBCP47LocaleIdentifier;
+        to: Intl.UnicodeBCP47LocaleIdentifier;
+    };
     engineType: import("./enums").EngineType | null;
+    rowDeleteMode: import("./enums").RowDeleteMode;
 }
 
 interface CompileSettings {
@@ -93,6 +96,7 @@ interface ReadArgs extends Record<string, unknown> {
     engineType: import("./enums").EngineType;
     logging: boolean;
     language: import("./enums").Language;
+    generateJson: boolean;
 }
 
 interface CompileArgs extends Record<string, unknown> {
