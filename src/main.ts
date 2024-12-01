@@ -3042,7 +3042,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (name === "temp-maps") {
                         await removePath(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-                    } else if (entry.isFile && !["compile-settings.json", "replacement-log.json"].includes(name)) {
+                    } else if (
+                        entry.isFile &&
+                        !["compile-settings.json", "replacement-log.json", "bookmarks.txt"].includes(name)
+                    ) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
                 }
