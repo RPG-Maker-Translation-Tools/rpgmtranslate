@@ -1059,9 +1059,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             goToRowInput.classList.remove("hidden");
                             goToRowInput.focus();
 
-                            const lastRow = contentContainer
-                                .firstElementChild!.lastElementChild!.id.split("-", 3)
-                                .at(-1)!;
+                            const lastRow = contentContainer.lastElementChild!.id.split("-", 2)[1];
 
                             goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
 
@@ -1153,8 +1151,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 return;
                             }
 
-                            const idParts = focusedElement.id.split("-", 3);
-                            const index = Number.parseInt(idParts.pop()!);
+                            const idParts = focusedElement.id.split("-", 2);
+                            const index = Number.parseInt(idParts[1]);
 
                             if (Number.isNaN(index)) {
                                 return;
@@ -1162,7 +1160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                             const step = direction === JumpDirection.Next ? 1 : -1;
                             const nextElement = document.getElementById(
-                                `${idParts.join("-")}-${index + step}`,
+                                `${idParts[0]}-${index + step}`,
                             ) as HTMLTextAreaElement | null;
 
                             if (!nextElement) {
@@ -2835,9 +2833,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
-            const row = target.parentElement!.parentElement!;
-            const parts = row.id.split("-", 3);
-            const bookmarkText = `${parts[0]}-${parts[2]}`;
+            const row = target.parentElement!.parentElement!.parentElement!.parentElement!;
+            const parts = row.id.split("-", 2);
+            const bookmarkText = `${parts[0]}-${parts[1]}`;
 
             const bookmarkId = bookmarks.findIndex((string) => string === bookmarkText);
 
