@@ -1,14 +1,36 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
-mod functions;
-mod read;
-mod statics;
-mod types;
-mod write;
 
-use crate::{commands::*, types::OptionExt};
+use crate::commands::*;
+use lazy_static::lazy_static;
+use regex::Regex;
+use rvpacker_lib::types::OptionExt;
+use rvpacker_lib::types::{GameType, ResultExt};
 use tauri::{generate_context, generate_handler, App, Builder, Manager};
+use translators::GoogleTranslator;
+
+lazy_static! {
+    pub static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
+}
+
+pub fn get_game_type(game_title: &str) -> Option<GameType> {
+    let lowercased: String = game_title.to_lowercase();
+
+    if Regex::new(r"\btermina\b")
+        .unwrap_log(file!(), line!())
+        .is_match(&lowercased)
+    {
+        Some(GameType::Termina)
+    } else if Regex::new(r"\blisa\b")
+        .unwrap_log(file!(), line!())
+        .is_match(&lowercased)
+    {
+        Some(GameType::LisaRPG)
+    } else {
+        None
+    }
+}
 
 fn main() {
     Builder::default()
@@ -34,7 +56,8 @@ fn main() {
             compile,
             read_last_line,
             translate_text,
-            add_to_scope
+            add_to_scope,
+            extract_archive
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]
