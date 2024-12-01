@@ -8,7 +8,16 @@ import {
     Settings,
 } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
-import { addToScope, compile, escapeText, read, readLastLine, translateText } from "./extensions/invokes";
+import {
+    addToScope,
+    appendToEnd,
+    compile,
+    escapeText,
+    extractArchive,
+    read,
+    readLastLine,
+    translateText,
+} from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
 import {
@@ -33,6 +42,7 @@ import {
     mkdir,
     readDir,
     readTextFile,
+    readTextFileLines,
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
@@ -98,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bookmarksButton = document.getElementById("bookmarks-button") as HTMLButtonElement;
     const bookmarksMenu = document.getElementById("bookmarks-menu") as HTMLDivElement;
     const projectStatus = document.getElementById("project-status") as HTMLDivElement;
+    const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
     const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
     const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
     // #endregion
@@ -132,18 +143,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const observerMain = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
-        {
-            root: document,
-        },
+        { root: document },
     );
 
     const observerFound = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
         { root: searchPanelFound },
@@ -152,11 +161,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const observerReplaced = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
         { root: searchPanelReplaced },
     );
+
+    let totalAllLines = 0;
+    const translatedLinesArray: number[] = [];
 
     await initializeProject(settings.projectPath);
 
@@ -213,9 +225,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await appWindow.setZoom(zoom);
 
+    function updateProgressMeter(total: number, translated: number) {
+        currentProgressMeter.style.width = `${Math.round((translated / total) * 100)}%`;
+        currentProgressMeter.innerHTML = `${translated} / ${total}`;
+    }
+
     function addBookmark(bookmarkTitle: string) {
         const bookmarkElement = document.createElement("button");
-        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex flex-row items-center justify-center p-2`;
+        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex h-4 flex-row items-center justify-center p-1`;
         bookmarkElement.innerHTML = bookmarkTitle;
 
         bookmarksMenu.appendChild(bookmarkElement);
@@ -287,7 +304,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             return XRegExp(regexp, attr);
         } catch (err) {
-            await message(`${windowLocalization.invalidRegexp} (${text}), ${err}`);
+            await message(`${windowLocalization.invalidRegexp} (${text}), ${err})`);
             return null;
         }
     }
@@ -444,15 +461,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     continue;
                 }
 
-                for (const [lineNumber, line] of (
-                    await readTextFile(
-                        i < mapsEntries.length
-                            ? join(programDataDirPath, "temp-maps", name)
-                            : join(programDataDirPath, translationDir, name),
-                    )
-                )
-                    .split("\n")
-                    .entries()) {
+                let lineNumber = 0;
+
+                for await (const line of await readTextFileLines(
+                    i < mapsEntries.length
+                        ? join(programDataDirPath, "temp-maps", name)
+                        : join(programDataDirPath, translationDir, name),
+                )) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
                     if (searchMode !== SearchMode.OnlyTranslation) {
@@ -487,6 +502,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                         objectToWrite.clear();
                         file++;
                     }
+
+                    lineNumber++;
                 }
             }
         }
@@ -834,6 +851,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (state === "system") {
                     const originalTitle = currentGameTitle.getAttribute("original-title")!;
+
                     const output =
                         originalTitle +
                         LINES_SEPARATOR +
@@ -955,6 +973,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const progressBar = selectedTab.lastElementChild?.firstElementChild as HTMLSpanElement | null;
 
                 if (progressBar) {
+                    translatedLinesArray[stateIndex!] = translatedFields;
+                    updateProgressMeter(
+                        totalAllLines,
+                        translatedLinesArray.reduce((a, b) => a + b, 0),
+                    );
+
                     progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
                 }
             }
@@ -1302,9 +1326,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const content = (await readTextFile(pathToContent)).split("\n");
 
+        if (!content[0]) {
+            alert("This file has no lines.");
+            return;
+        }
+
         if (contentName === "system") {
             content.pop();
         }
+
+        const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < content.length; i++) {
             const [originalText, translationText] = content[i].split(LINES_SEPARATOR, 2);
@@ -1356,6 +1387,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
             bookmarkButton.textContent = "bookmark";
 
+            if (bookmarks.includes(textParent.id)) {
+                bookmarkButton.classList.add("backgroundThird");
+            }
+
             const deleteButton = document.createElement("button");
             deleteButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
             deleteButton.textContent = "close";
@@ -1386,8 +1421,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             textContainer.appendChild(originalTextElement);
             textContainer.appendChild(translationTextElement);
             textParent.appendChild(textContainer);
-            contentContainer.appendChild(textParent);
+            fragment.appendChild(textParent);
         }
+
+        contentContainer.appendChild(fragment);
     }
 
     async function startCompilation(silent: boolean) {
@@ -1659,6 +1696,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return false;
             }
 
+            originalDir = "";
+
             if (await exists(join(pathToProject, "Data"))) {
                 originalDir = "Data";
             } else if (await exists(join(pathToProject, "data"))) {
@@ -1667,6 +1706,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (await exists(join(pathToProject, "original"))) {
                 originalDir = "original";
+            }
+
+            if (!originalDir) {
+                for (const archiveName of ["Game.rgssad", "Game.rgss2a", "Game.rgss3a"]) {
+                    const archivePath = join(pathToProject, archiveName);
+
+                    if (await exists(archivePath)) {
+                        await extractArchive({
+                            inputPath: archivePath,
+                            outputPath: pathToProject,
+                            processingMode: ProcessingMode.Default,
+                        });
+                        break;
+                    }
+                }
+
+                originalDir = "Data";
             }
 
             if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
@@ -1729,9 +1785,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                     ).gameTitle;
                 } else {
-                    const iniFileContent = (await readTextFile(join(settings.projectPath, "Game.ini"))).split("\n");
-
-                    for (const line of iniFileContent) {
+                    for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
                         if (line.toLowerCase().startsWith("title")) {
                             gameTitle = line.split("=", 2)[1].trim();
                         }
@@ -1752,6 +1806,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     language: settings.language,
                     generateJson: false,
                 });
+
+                await appendToEnd({
+                    path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
+                    text: `${gameTitle}${LINES_SEPARATOR}`,
+                });
             }
 
             const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
@@ -1769,6 +1828,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const mapsLines = (
                         await readTextFile(join(settings.projectPath, programDataDir, translationDir, name))
                     ).split("\n");
+
+                    if (mapsLines.length === 1) {
+                        continue;
+                    }
 
                     const result: string[] = [];
 
@@ -1821,6 +1884,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
 
                             if (totalLines > 0) {
+                                totalAllLines += totalLines;
+                                translatedLinesArray.push(translatedLines);
+
                                 const translatedRatio = Math.round((translatedLines / totalLines) * 100);
                                 const progressBar = document.createElement("div");
                                 const progressMeter = document.createElement("div");
@@ -1846,6 +1912,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const content = await readTextFile(
                         join(settings.projectPath, programDataDir, translationDir, entry.name),
                     );
+
+                    if (!content) {
+                        continue;
+                    }
+
                     const split = content.split("\n");
 
                     const buttonElement = document.createElement("button");
@@ -1869,6 +1940,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     if (totalLines > 0) {
+                        totalAllLines += totalLines;
+                        translatedLinesArray.push(translatedLines);
+
                         const translatedRatio = Math.round((translatedLines / totalLines) * 100);
                         const progressBar = document.createElement("div");
                         const progressMeter = document.createElement("div");
@@ -1885,6 +1959,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     i++;
                 }
             }
+
+            const totalTranslatedLines = translatedLinesArray.reduce((a, b) => a + b, 0);
+            updateProgressMeter(totalAllLines, totalTranslatedLines);
 
             // Create log file
             const logFilePath = join(settings.projectPath, programDataDir, logFile);
@@ -2425,6 +2502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                     leftPanel.children[i].lastElementChild?.firstElementChild;
 
                                                 if (progressBar) {
+                                                    // TODO
                                                     (progressBar as HTMLElement).style.width =
                                                         progressBar.textContent = `100%`;
                                                 }
@@ -2884,7 +2962,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const newRowNumber = (Number.parseInt(rowNumberElement.textContent!) - 1).toString();
 
                 rowNumberElement.textContent = newRowNumber;
-                element.id = element.id.replace(/\d+/, newRowNumber);
+                element.id = element.id.replace(/\d+$/, newRowNumber);
             }
 
             row.remove();
