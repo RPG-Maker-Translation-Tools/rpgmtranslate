@@ -8,10 +8,28 @@ import {
     Settings,
 } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
-import { addToScope, compile, escapeText, read, readLastLine, translateText } from "./extensions/invokes";
+import {
+    addToScope,
+    appendToEnd,
+    compile,
+    escapeText,
+    extractArchive,
+    read,
+    readLastLine,
+    translateText,
+} from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
-import { EngineType, FilesAction, JumpDirection, Language, ProcessingMode, SaveMode, SearchMode } from "./types/enums";
+import {
+    EngineType,
+    FilesAction,
+    JumpDirection,
+    Language,
+    ProcessingMode,
+    RowDeleteMode,
+    SaveMode,
+    SearchMode,
+} from "./types/enums";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
@@ -24,6 +42,7 @@ import {
     mkdir,
     readDir,
     readTextFile,
+    readTextFileLines,
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
@@ -89,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bookmarksButton = document.getElementById("bookmarks-button") as HTMLButtonElement;
     const bookmarksMenu = document.getElementById("bookmarks-menu") as HTMLDivElement;
     const projectStatus = document.getElementById("project-status") as HTMLDivElement;
+    const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
     const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
     const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
     // #endregion
@@ -100,7 +120,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let windowLocalization: MainWindowLocalization;
 
-    const settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
+    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
         ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
         : (await createSettings())!;
 
@@ -123,18 +143,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const observerMain = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
-        {
-            root: document,
-        },
+        { root: document },
     );
 
     const observerFound = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
         { root: searchPanelFound },
@@ -143,11 +161,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const observerReplaced = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
-                entry.target.firstElementChild?.classList.toggle("hidden", !entry.isIntersecting);
+                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
         { root: searchPanelReplaced },
     );
+
+    let totalAllLines = 0;
+    const translatedLinesArray: number[] = [];
 
     await initializeProject(settings.projectPath);
 
@@ -204,9 +225,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await appWindow.setZoom(zoom);
 
+    function updateProgressMeter(total: number, translated: number) {
+        currentProgressMeter.style.width = `${Math.round((translated / total) * 100)}%`;
+        currentProgressMeter.innerHTML = `${translated} / ${total}`;
+    }
+
     function addBookmark(bookmarkTitle: string) {
         const bookmarkElement = document.createElement("button");
-        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex flex-row items-center justify-center p-2`;
+        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex h-4 flex-row items-center justify-center p-1`;
         bookmarkElement.innerHTML = bookmarkTitle;
 
         bookmarksMenu.appendChild(bookmarkElement);
@@ -278,7 +304,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             return XRegExp(regexp, attr);
         } catch (err) {
-            await message(`${windowLocalization.invalidRegexp} (${text}), ${err}`);
+            await message(`${windowLocalization.invalidRegexp} (${text}), ${err})`);
             return null;
         }
     }
@@ -371,7 +397,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
 
-        const currentSearchArray = contentContainer.firstElementChild?.children;
+        const openedTab = contentContainer.children;
 
         for (const file of await readDir(programDataDirPath)) {
             if (file.name.startsWith("matches-")) {
@@ -379,40 +405,42 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        for (const child of currentSearchArray ?? []) {
-            const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
+        if (openedTab.length) {
+            for (const child of openedTab) {
+                const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
 
-            if (searchMode !== SearchMode.OnlyOriginal) {
-                const elementText = node[2].value.replaceAllMultiple({
-                    "<": "&lt;",
-                    ">": "&gt;",
-                });
-                const matches = elementText.match(regexp);
+                if (searchMode !== SearchMode.OnlyOriginal) {
+                    const elementText = node[2].value.replaceAllMultiple({
+                        "<": "&lt;",
+                        ">": "&gt;",
+                    });
+                    const matches = elementText.match(regexp);
 
-                if (matches) {
-                    const result = createMatchesContainer(elementText, matches);
-                    isReplace ? results!.set(node[2], result) : objectToWrite.set(node[2].id, result);
+                    if (matches) {
+                        const result = createMatchesContainer(elementText, matches);
+                        isReplace ? results!.set(node[2], result) : objectToWrite.set(node[2].id, result);
+                    }
                 }
-            }
 
-            if (searchMode !== SearchMode.OnlyTranslation) {
-                const elementText = node[1].innerHTML.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
-                const matches = elementText.match(regexp);
+                if (searchMode !== SearchMode.OnlyTranslation) {
+                    const elementText = node[1].innerHTML.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
+                    const matches = elementText.match(regexp);
 
-                if (matches) {
-                    const result = createMatchesContainer(elementText, matches);
-                    isReplace ? results!.set(node[1], result) : objectToWrite.set(node[1].id, result);
+                    if (matches) {
+                        const result = createMatchesContainer(elementText, matches);
+                        isReplace ? results!.set(node[1], result) : objectToWrite.set(node[1].id, result);
+                    }
                 }
-            }
 
-            if ((objectToWrite.size + 1) % 1000 === 0) {
-                await writeTextFile(
-                    join(programDataDirPath, `matches-${file}.json`),
-                    JSON.stringify(Object.fromEntries(objectToWrite)),
-                );
+                if ((objectToWrite.size + 1) % 1000 === 0) {
+                    await writeTextFile(
+                        join(programDataDirPath, `matches-${file}.json`),
+                        JSON.stringify(Object.fromEntries(objectToWrite)),
+                    );
 
-                objectToWrite.clear();
-                file++;
+                    objectToWrite.clear();
+                    file++;
+                }
             }
         }
 
@@ -433,15 +461,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     continue;
                 }
 
-                for (const [lineNumber, line] of (
-                    await readTextFile(
-                        i < mapsEntries.length
-                            ? join(programDataDirPath, "temp-maps", name)
-                            : join(programDataDirPath, translationDir, name),
-                    )
-                )
-                    .split("\n")
-                    .entries()) {
+                let lineNumber = 0;
+
+                for await (const line of await readTextFileLines(
+                    i < mapsEntries.length
+                        ? join(programDataDirPath, "temp-maps", name)
+                        : join(programDataDirPath, translationDir, name),
+                )) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
                     if (searchMode !== SearchMode.OnlyTranslation) {
@@ -476,6 +502,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                         objectToWrite.clear();
                         file++;
                     }
+
+                    lineNumber++;
                 }
             }
         }
@@ -642,7 +670,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (event.button === 0) {
                 await changeState(file);
 
-                document.getElementById(elementId)!.parentElement?.parentElement?.scrollIntoView({
+                contentContainer.children[Number.parseInt(row)].scrollIntoView({
                     block: "center",
                     inline: "center",
                 });
@@ -810,7 +838,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (mode !== SaveMode.Backup) {
             if (state) {
-                for (const child of contentContainer.firstElementChild!.children) {
+                for (const child of contentContainer.children) {
                     const originalTextElement = child.firstElementChild!.children[1] as HTMLDivElement;
                     const translatedTextElement = child.firstElementChild!.children[2] as HTMLTextAreaElement;
 
@@ -823,6 +851,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (state === "system") {
                     const originalTitle = currentGameTitle.getAttribute("original-title")!;
+
                     const output =
                         originalTitle +
                         LINES_SEPARATOR +
@@ -922,12 +951,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (state) {
             await save(SaveMode.SingleFile);
 
-            let totalFields = contentContainer.firstElementChild!.children.length;
+            let totalFields = contentContainer.children.length;
 
             if (totalFields) {
                 let translatedFields = 0;
 
-                for (const child of contentContainer.firstElementChild!.children) {
+                for (const child of contentContainer.children) {
                     const original = child.firstElementChild!.children[1] as HTMLDivElement;
                     const translation = child.firstElementChild!.children[2] as HTMLTextAreaElement;
 
@@ -944,12 +973,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const progressBar = selectedTab.lastElementChild?.firstElementChild as HTMLSpanElement | null;
 
                 if (progressBar) {
+                    translatedLinesArray[stateIndex!] = translatedFields;
+                    updateProgressMeter(
+                        totalAllLines,
+                        translatedLinesArray.reduce((a, b) => a + b, 0),
+                    );
+
                     progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
                 }
             }
         }
 
-        contentContainer.firstElementChild?.remove();
+        contentContainer.innerHTML = "";
 
         if (state) {
             const selectedTab = leftPanel.children[stateIndex!];
@@ -983,7 +1018,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             currentState.innerHTML = newState;
 
-            for (const child of contentContainer.firstElementChild!.children) {
+            for (const child of contentContainer.children) {
                 observerMain.observe(child);
             }
         }
@@ -1048,9 +1083,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             goToRowInput.classList.remove("hidden");
                             goToRowInput.focus();
 
-                            const lastRow = contentContainer
-                                .firstElementChild!.lastElementChild!.id.split("-", 3)
-                                .at(-1)!;
+                            const lastRow = contentContainer.lastElementChild!.id.split("-", 2)[1];
 
                             goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
 
@@ -1142,8 +1175,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 return;
                             }
 
-                            const idParts = focusedElement.id.split("-", 3);
-                            const index = Number.parseInt(idParts.pop()!);
+                            const idParts = focusedElement.id.split("-", 2);
+                            const index = Number.parseInt(idParts[1]);
 
                             if (Number.isNaN(index)) {
                                 return;
@@ -1151,7 +1184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                             const step = direction === JumpDirection.Next ? 1 : -1;
                             const nextElement = document.getElementById(
-                                `${idParts.join("-")}-${index + step}`,
+                                `${idParts[0]}-${index + step}`,
                             ) as HTMLTextAreaElement | null;
 
                             if (!nextElement) {
@@ -1181,15 +1214,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                             if (!selectedField.placeholder) {
                                 const counterpart = selectedField.parentElement!.children[1];
 
-                                if (!settings.from || !settings.to) {
+                                if (!settings.translation.from || !settings.translation.to) {
                                     alert(windowLocalization.translationLanguagesNotSelected);
                                     return;
                                 }
 
                                 const translated = await translateText({
                                     text: counterpart.textContent!,
-                                    to: settings.to,
-                                    from: settings.from,
+                                    to: settings.translation.to,
+                                    from: settings.translation.from,
                                 });
 
                                 selectedField.placeholder = translated;
@@ -1293,17 +1326,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const content = (await readTextFile(pathToContent)).split("\n");
 
-        // TODO: probably remove this contentDiv because everything can be just put
-        //       to contentContainer directly
-        const contentDiv = document.createElement("div");
-        contentDiv.id = contentName;
-        contentDiv.className = tw`flex-col`;
+        if (!content[0]) {
+            alert("This file has no lines.");
+            return;
+        }
 
         if (contentName === "system") {
             content.pop();
         }
 
-        let contentDivHeight = 0;
+        const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < content.length; i++) {
             const [originalText, translationText] = content[i].split(LINES_SEPARATOR, 2);
@@ -1320,7 +1352,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             textContainer.className = tw`flex h-full flex-row justify-around py-[1px]`;
 
             const originalTextElement = document.createElement("div");
-            originalTextElement.id = `${contentName}-original-${added}`;
             originalTextElement.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer whitespace-pre-wrap p-1 outline outline-2`;
 
             if (settings.fontUrl) {
@@ -1330,7 +1361,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             originalTextElement.textContent = originalTextSplit;
 
             const translationTextElement = document.createElement("textarea");
-            translationTextElement.id = `${contentName}-translation-${added}`;
             translationTextElement.rows = translationTextSplit.length;
             translationTextElement.className = tw`outlinePrimary outlineFocused backgroundPrimary font h-auto w-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
             translationTextElement.spellcheck = false;
@@ -1345,20 +1375,28 @@ document.addEventListener("DOMContentLoaded", async () => {
             translationTextElement.value = translationTextSplit.join("\n");
 
             const rowElement = document.createElement("div");
-            rowElement.id = `${contentName}-row-${added}`;
             rowElement.className = tw`outlinePrimary backgroundPrimary flex w-48 flex-row p-1 outline outline-2`;
 
             const spanElement = document.createElement("span");
             spanElement.textContent = added.toString();
 
             const innerDiv = document.createElement("div");
-            innerDiv.className = tw`flex w-full items-start justify-end p-0.5`;
+            innerDiv.className = tw`textThird flex w-full items-start justify-end p-0.5 text-xl`;
 
-            const button = document.createElement("button");
-            button.className = tw`borderPrimary backgroundPrimaryHovered textThird flex h-6 w-6 items-center justify-center rounded-md border-2 font-material text-xl`;
-            button.textContent = "bookmark";
+            const bookmarkButton = document.createElement("button");
+            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
+            bookmarkButton.textContent = "bookmark";
 
-            innerDiv.appendChild(button);
+            if (bookmarks.includes(textParent.id)) {
+                bookmarkButton.classList.add("backgroundThird");
+            }
+
+            const deleteButton = document.createElement("button");
+            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
+            deleteButton.textContent = "close";
+
+            innerDiv.appendChild(bookmarkButton);
+            innerDiv.appendChild(deleteButton);
             rowElement.appendChild(spanElement);
             rowElement.appendChild(innerDiv);
 
@@ -1379,17 +1417,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 textParent.style.minHeight =
                     `${minHeight}px`;
 
-            contentDivHeight += minHeight;
-
             textContainer.appendChild(rowElement);
             textContainer.appendChild(originalTextElement);
             textContainer.appendChild(translationTextElement);
             textParent.appendChild(textContainer);
-            contentDiv.appendChild(textParent);
+            fragment.appendChild(textParent);
         }
 
-        contentDiv.style.minHeight = `${contentDivHeight}px`;
-        contentContainer.appendChild(contentDiv);
+        contentContainer.appendChild(fragment);
     }
 
     async function startCompilation(silent: boolean) {
@@ -1661,6 +1696,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return false;
             }
 
+            originalDir = "";
+
             if (await exists(join(pathToProject, "Data"))) {
                 originalDir = "Data";
             } else if (await exists(join(pathToProject, "data"))) {
@@ -1669,6 +1706,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (await exists(join(pathToProject, "original"))) {
                 originalDir = "original";
+            }
+
+            if (!originalDir) {
+                for (const archiveName of ["Game.rgssad", "Game.rgss2a", "Game.rgss3a"]) {
+                    const archivePath = join(pathToProject, archiveName);
+
+                    if (await exists(archivePath)) {
+                        await extractArchive({
+                            inputPath: archivePath,
+                            outputPath: pathToProject,
+                            processingMode: ProcessingMode.Default,
+                        });
+                        break;
+                    }
+                }
+
+                originalDir = "Data";
             }
 
             if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
@@ -1731,9 +1785,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                     ).gameTitle;
                 } else {
-                    const iniFileContent = (await readTextFile(join(settings.projectPath, "Game.ini"))).split("\n");
-
-                    for (const line of iniFileContent) {
+                    for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
                         if (line.toLowerCase().startsWith("title")) {
                             gameTitle = line.split("=", 2)[1].trim();
                         }
@@ -1752,6 +1804,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     engineType: settings.engineType!,
                     logging: true,
                     language: settings.language,
+                    generateJson: false,
+                });
+
+                await appendToEnd({
+                    path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
+                    text: `${gameTitle}${LINES_SEPARATOR}`,
                 });
             }
 
@@ -1770,6 +1828,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const mapsLines = (
                         await readTextFile(join(settings.projectPath, programDataDir, translationDir, name))
                     ).split("\n");
+
+                    if (mapsLines.length === 1) {
+                        continue;
+                    }
 
                     const result: string[] = [];
 
@@ -1822,6 +1884,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
 
                             if (totalLines > 0) {
+                                totalAllLines += totalLines;
+                                translatedLinesArray.push(translatedLines);
+
                                 const translatedRatio = Math.round((translatedLines / totalLines) * 100);
                                 const progressBar = document.createElement("div");
                                 const progressMeter = document.createElement("div");
@@ -1847,6 +1912,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const content = await readTextFile(
                         join(settings.projectPath, programDataDir, translationDir, entry.name),
                     );
+
+                    if (!content) {
+                        continue;
+                    }
+
                     const split = content.split("\n");
 
                     const buttonElement = document.createElement("button");
@@ -1870,6 +1940,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
 
                     if (totalLines > 0) {
+                        totalAllLines += totalLines;
+                        translatedLinesArray.push(translatedLines);
+
                         const translatedRatio = Math.round((translatedLines / totalLines) * 100);
                         const progressBar = document.createElement("div");
                         const progressMeter = document.createElement("div");
@@ -1886,6 +1959,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     i++;
                 }
             }
+
+            const totalTranslatedLines = translatedLinesArray.reduce((a, b) => a + b, 0);
+            updateProgressMeter(totalAllLines, totalTranslatedLines);
 
             // Create log file
             const logFilePath = join(settings.projectPath, programDataDir, logFile);
@@ -2022,30 +2098,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     resizable: false,
                 });
 
-                const settingsUnlisten = await settingsWindow.once<
-                    [
-                        boolean,
-                        number,
-                        number,
-                        Intl.UnicodeBCP47LocaleIdentifier,
-                        Intl.UnicodeBCP47LocaleIdentifier,
-                        string,
-                    ]
-                >("get-settings", async (data) => {
-                    const [enabled, max, period, from, to, fontUrl] = data.payload;
+                const settingsUnlisten = await settingsWindow.once<Settings>("get-settings", async (data) => {
+                    settings = data.payload;
 
-                    if (enabled && !backupIsActive) {
+                    if (settings.backup.enabled && !backupIsActive) {
                         backup();
                     }
 
-                    settings.backup.enabled = enabled;
-                    settings.backup.max = max;
-                    settings.backup.period = period;
-                    settings.from = from;
-                    settings.to = to;
-                    settings.fontUrl = fontUrl;
-
-                    await loadFont(fontUrl);
+                    await loadFont(settings.fontUrl);
                 });
 
                 await settingsWindow.once("tauri://destroyed", settingsUnlisten);
@@ -2345,7 +2405,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     await sleep(1000);
 
                                     if (filename === state!) {
-                                        const children = contentContainer.firstElementChild!.children;
+                                        const children = contentContainer.children;
 
                                         for (const element of children) {
                                             const originalField = element.firstElementChild!
@@ -2364,8 +2424,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                     ) {
                                                         void translateText({
                                                             text: originalField.textContent!,
-                                                            from: settings.from,
-                                                            to: settings.to,
+                                                            from: settings.translation.from,
+                                                            to: settings.translation.to,
                                                         }).then((translated) => (translationField.value = translated));
                                                     }
                                                     break;
@@ -2424,8 +2484,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                                     return `${original}${LINES_SEPARATOR}${await translateText(
                                                                         {
                                                                             text: original,
-                                                                            from: settings.from,
-                                                                            to: settings.to,
+                                                                            from: settings.translation.from,
+                                                                            to: settings.translation.to,
                                                                         },
                                                                     )}`;
                                                                 } else {
@@ -2442,6 +2502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                     leftPanel.children[i].lastElementChild?.firstElementChild;
 
                                                 if (progressBar) {
+                                                    // TODO
                                                     (progressBar as HTMLElement).style.width =
                                                         progressBar.textContent = `100%`;
                                                 }
@@ -2542,7 +2603,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 break;
                             }
                             case "translate-tools-menu-button": {
-                                if (!settings.from || !settings.to) {
+                                if (!settings.translation.from || !settings.translation.to) {
                                     alert(windowLocalization.translationLanguagesNotSelected);
                                     return;
                                 }
@@ -2850,9 +2911,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
-            const row = target.parentElement!.parentElement!;
-            const parts = row.id.split("-", 3);
-            const bookmarkText = `${parts[0]}-${parts[2]}`;
+            const row = target.parentElement!.parentElement!.parentElement!.parentElement!;
+            const parts = row.id.split("-", 2);
+            const bookmarkText = `${parts[0]}-${parts[1]}`;
 
             const bookmarkId = bookmarks.findIndex((string) => string === bookmarkText);
 
@@ -2875,6 +2936,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             target.classList.toggle("backgroundThird");
+        } else if (target.textContent === "close") {
+            if (typeof settings.rowDeleteMode !== "number" || settings.rowDeleteMode === RowDeleteMode.Disabled) {
+                alert(windowLocalization.deletingDisabled);
+                return;
+            } else if (settings.rowDeleteMode === RowDeleteMode.Confirmation) {
+                const confirmation = await ask(windowLocalization.deletingConfirmation);
+
+                if (!confirmation) {
+                    return;
+                }
+            }
+
+            const row = target.parentElement!.parentElement!.parentElement!.parentElement!;
+            const position = Number.parseInt(target.parentElement!.parentElement!.firstElementChild!.textContent!);
+
+            const contentElement = contentContainer;
+            const children = contentElement.children as HTMLCollectionOf<HTMLDivElement>;
+
+            for (let i = position; i < children.length; i++) {
+                const element = children[i];
+
+                const rowNumberField = element.firstElementChild!.firstElementChild!;
+                const rowNumberElement = rowNumberField.firstElementChild!;
+                const newRowNumber = (Number.parseInt(rowNumberElement.textContent!) - 1).toString();
+
+                rowNumberElement.textContent = newRowNumber;
+                element.id = element.id.replace(/\d+$/, newRowNumber);
+            }
+
+            row.remove();
         } else if (event.button === 0) {
             if (shiftPressed) {
                 if (
@@ -2987,7 +3078,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const state = parts[0];
 
         await changeState(state);
-        contentContainer.firstElementChild!.children[Number.parseInt(parts[1])].scrollIntoView({
+        contentContainer.children[Number.parseInt(parts[1])].scrollIntoView({
             inline: "center",
             block: "center",
         });
@@ -3027,7 +3118,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (name === "temp-maps") {
                         await removePath(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-                    } else if (entry.isFile && !["compile-settings.json", "replacement-log.json"].includes(name)) {
+                    } else if (
+                        entry.isFile &&
+                        !["compile-settings.json", "replacement-log.json", "bookmarks.txt"].includes(name)
+                    ) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
                 }

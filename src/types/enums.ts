@@ -38,3 +38,9 @@ export const enum JumpDirection {
     Next,
     Previous,
 }
+
+export const enum RowDeleteMode {
+    Disabled,
+    Confirmation,
+    Allowed,
+}

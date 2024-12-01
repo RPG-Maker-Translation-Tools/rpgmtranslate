@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) as HTMLSpanElement;
     const readButton = document.getElementById("read-button") as HTMLButtonElement;
     const mapsProcessingModeSelect = document.getElementById("maps-processing-mode-select") as HTMLSelectElement;
+    const generateJsonCheckbox = document.getElementById("generate-json-checkbox") as HTMLSpanElement;
 
     readingModeSelect.addEventListener("change", () => {
         if (readingModeSelect.value === "append") {
@@ -146,6 +147,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     doNotAskAgainCheckbox.innerHTML = "";
                 }
                 break;
+            case generateJsonCheckbox.id:
+                if (!generateJsonCheckbox.textContent) {
+                    generateJsonCheckbox.innerHTML = "check";
+                } else {
+                    generateJsonCheckbox.innerHTML = "";
+                }
+                break;
         }
     });
 
@@ -211,6 +219,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 engineType: engineType!,
                 language: settings.language,
                 logging: Boolean(loggingCheckbox.textContent),
+                generateJson: Boolean(generateJsonCheckbox.textContent),
             });
 
             await emit("restart");

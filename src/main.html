@@ -23,25 +23,25 @@
                 </div>
                 <div class="dropdown-menu backgroundSecond hidden" id="file-menu">
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered reloadButton p-2 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered reloadButton p-1.5 text-base"
                         id="reload-button"
                     ></button>
                 </div>
                 <div class="dropdown-menu backgroundSecond hidden" id="help-menu">
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered helpButton p-2 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered helpButton p-1.5 text-base"
                         id="help-button"
                     ></button>
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered aboutButton p-2 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered aboutButton p-1.5 text-base"
                         id="about-button"
                     ></button>
                 </div>
                 <div class="dropdown-menu backgroundSecond hidden" id="language-menu">
-                    <button class="backgroundPrimary backgroundPrimaryHovered p-2 text-base" id="ru-button">
+                    <button class="backgroundPrimary backgroundPrimaryHovered p-1.5 text-base" id="ru-button">
                         Русский/Russian
                     </button>
-                    <button class="backgroundPrimary backgroundPrimaryHovered p-2 text-base" id="en-button">
+                    <button class="backgroundPrimary backgroundPrimaryHovered p-1.5 text-base" id="en-button">
                         English/Английский
                     </button>
                 </div>
@@ -139,6 +139,14 @@
                     <!-- End -->
 
                     <div class="flex h-full w-full content-end justify-end pr-4">
+                        <div class="flex w-32 items-center justify-center">
+                            <div class="backgroundSecond w-full rounded-sm">
+                                <div
+                                    class="backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none"
+                                    id="current-progress-meter"
+                                ></div>
+                            </div>
+                        </div>
                         <div class="flex min-w-32 items-center justify-center p-4 text-sm" id="current-state"></div>
                         <div class="flex flex-col items-center justify-center text-sm" id="game-info">
                             <input
@@ -160,7 +168,7 @@
 
             <div class="flex flex-row justify-start" id="main">
                 <div
-                    class="backgroundPrimary fixed z-30 flex h-[91.25%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
+                    class="backgroundPrimary fixed z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
                     id="left-panel"
                 ></div>
 
@@ -339,7 +347,7 @@
         </div>
 
         <div
-            class="backgroundPrimary fixed z-50 hidden h-auto max-h-64 min-h-4 w-48 flex-col overflow-auto text-lg"
+            class="backgroundPrimary fixed z-50 hidden max-h-32 w-48 flex-col overflow-auto text-sm"
             id="bookmarks-menu"
         ></div>
     </body>

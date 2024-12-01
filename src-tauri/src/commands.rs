@@ -1,16 +1,14 @@
-use crate::{
-    functions::get_game_type,
-    read::{read_map, read_other, read_scripts, read_system},
-    statics::{EXTENSION, GOOGLE_TRANS, LOCALIZATION},
-    write::{write_maps, write_other, write_plugins, write_scripts, write_system},
-    EngineType, GameType, Language, Localization, MapsProcessingMode, ProcessingMode, ResultExt,
-};
+use crate::{get_game_type, GOOGLE_TRANS};
 use regex::escape;
-use serde::{Deserialize, Deserializer};
+use rvpacker_lib::{
+    read::*,
+    types::{EngineType, GameType, MapsProcessingMode, ProcessingMode, ResultExt},
+    write::*,
+};
+use serde::Deserialize;
 use std::{
-    fs::{create_dir_all, File},
-    io::{Read, Seek, SeekFrom},
-    mem::transmute,
+    fs::{create_dir_all, File, OpenOptions},
+    io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     time::Instant,
 };
@@ -18,68 +16,27 @@ use tauri::{command, Manager, Runtime, Scopes, Window};
 use tauri_plugin_fs::FsExt;
 use translators::Translator;
 
-impl<'de> Deserialize<'de> for MapsProcessingMode {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: u8 = Deserialize::deserialize(deserializer)?;
-        Ok(unsafe { transmute::<u8, MapsProcessingMode>(value) })
-    }
-}
-
-impl<'de> Deserialize<'de> for EngineType {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: u8 = Deserialize::deserialize(deserializer)?;
-        Ok(unsafe { transmute::<u8, EngineType>(value) })
-    }
-}
-
-impl<'de> Deserialize<'de> for ProcessingMode {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: u8 = Deserialize::deserialize(deserializer)?;
-        Ok(unsafe { transmute::<u8, ProcessingMode>(value) })
-    }
-}
-
-impl<'de> Deserialize<'de> for Language {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let value: u8 = Deserialize::deserialize(deserializer)?;
-        Ok(unsafe { transmute::<u8, Language>(value) })
-    }
-}
-
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
-pub struct CompileSettings {
-    projectPath: PathBuf,
-    originalDir: PathBuf,
-    outputPath: PathBuf,
-    gameTitle: String,
+pub struct CompileSettings<'a> {
+    projectPath: &'a Path,
+    originalDir: &'a Path,
+    outputPath: &'a Path,
+    gameTitle: &'a str,
     mapsProcessingMode: MapsProcessingMode,
     romanize: bool,
     disableCustomProcessing: bool,
     disableProcessing: [bool; 4],
     engineType: EngineType,
     logging: bool,
-    language: Language,
 }
 
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
-pub struct ReadSettings {
-    projectPath: PathBuf,
-    originalDir: PathBuf,
-    gameTitle: String,
+pub struct ReadSettings<'a> {
+    projectPath: &'a Path,
+    originalDir: &'a Path,
+    gameTitle: &'a str,
     mapsProcessingMode: MapsProcessingMode,
     romanize: bool,
     disableCustomProcessing: bool,
@@ -87,7 +44,7 @@ pub struct ReadSettings {
     processingMode: ProcessingMode,
     engineType: EngineType,
     logging: bool,
-    language: Language,
+    generateJson: bool,
 }
 
 #[command]
@@ -107,13 +64,8 @@ pub fn compile(settings: CompileSettings) -> f64 {
         disableCustomProcessing: disable_custom_processing,
         disableProcessing: disable_processing,
         engineType: engine_type,
-        language,
         logging,
     } = settings;
-
-    if unsafe { LOCALIZATION.is_none() } {
-        unsafe { LOCALIZATION = Some(Localization::new(language)) };
-    }
 
     let start_time: Instant = Instant::now();
 
@@ -126,8 +78,6 @@ pub fn compile(settings: CompileSettings) -> f64 {
         EngineType::VX => ".rvdata",
         EngineType::XP => ".rxdata",
     };
-
-    unsafe { EXTENSION = extension };
 
     let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
     let original_path: &Path = &project_path.join(original_dir);
@@ -149,7 +99,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
     let game_type: Option<GameType> = if disable_custom_processing {
         None
     } else {
-        get_game_type(&game_title)
+        get_game_type(game_title)
     };
 
     if !disable_processing[0] {
@@ -162,7 +112,6 @@ pub fn compile(settings: CompileSettings) -> f64 {
             logging,
             game_type,
             engine_type,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
         );
     }
 
@@ -175,7 +124,6 @@ pub fn compile(settings: CompileSettings) -> f64 {
             logging,
             game_type,
             engine_type,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
         );
     }
 
@@ -187,7 +135,6 @@ pub fn compile(settings: CompileSettings) -> f64 {
             romanize,
             logging,
             engine_type,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
         );
     }
 
@@ -200,7 +147,6 @@ pub fn compile(settings: CompileSettings) -> f64 {
                 translation_path,
                 &unsafe { plugins_output_path.unwrap_unchecked() },
                 logging,
-                unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
             );
         }
 
@@ -213,7 +159,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
                 data_output_path,
                 romanize,
                 logging,
-                unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+                engine_type,
             );
         }
     }
@@ -233,13 +179,9 @@ pub fn read(settings: ReadSettings) {
         disableProcessing: disable_processing,
         processingMode: processing_mode,
         engineType: engine_type,
-        language,
         logging,
+        generateJson: mut generate_json,
     } = settings;
-
-    if unsafe { LOCALIZATION.is_none() } {
-        unsafe { LOCALIZATION = Some(Localization::new(language)) };
-    }
 
     let processing_mode: ProcessingMode = processing_mode;
     let engine_type: EngineType = engine_type;
@@ -252,12 +194,10 @@ pub fn read(settings: ReadSettings) {
         EngineType::XP => ".rxdata",
     };
 
-    unsafe { EXTENSION = extension };
-
     let game_type: Option<GameType> = if disable_custom_processing {
         None
     } else {
-        get_game_type(&game_title)
+        get_game_type(game_title)
     };
 
     let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
@@ -265,6 +205,10 @@ pub fn read(settings: ReadSettings) {
     let translation_path: &Path = &project_path.join(data_dir).join("translation");
 
     create_dir_all(translation_path).unwrap_log(file!(), line!());
+
+    if engine_type == EngineType::New {
+        generate_json = false;
+    }
 
     if !disable_processing[0] {
         read_map(
@@ -276,7 +220,7 @@ pub fn read(settings: ReadSettings) {
             game_type,
             engine_type,
             processing_mode,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -289,7 +233,7 @@ pub fn read(settings: ReadSettings) {
             game_type,
             processing_mode,
             engine_type,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -301,7 +245,7 @@ pub fn read(settings: ReadSettings) {
             logging,
             processing_mode,
             engine_type,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 
@@ -311,13 +255,13 @@ pub fn read(settings: ReadSettings) {
             translation_path,
             romanize,
             logging,
-            unsafe { LOCALIZATION.as_ref().unwrap_unchecked() },
+            generate_json,
         );
     }
 }
 
 #[command]
-pub fn read_last_line(file_path: PathBuf) -> String {
+pub fn read_last_line(file_path: &Path) -> String {
     let mut file: File = File::open(file_path).unwrap_log(file!(), line!());
     let mut buffer: Vec<u8> = Vec::new();
 
@@ -360,4 +304,19 @@ pub fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
     }
 
     tauri_scope.allow_directory(path, true).unwrap_log(file!(), line!());
+}
+
+#[command]
+pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: ProcessingMode) {
+    let bytes: Vec<u8> = std::fs::read(input_path).unwrap();
+    let mut decrypter: rpgmad_lib::Decrypter = rpgmad_lib::Decrypter::new(bytes);
+    decrypter
+        .extract(output_path, processing_mode == ProcessingMode::Force)
+        .unwrap();
+}
+
+#[tauri::command]
+pub fn append_to_end(path: &Path, text: &str) {
+    let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log(file!(), line!());
+    write!(file, "\n{text}").unwrap_log(file!(), line!());
 }

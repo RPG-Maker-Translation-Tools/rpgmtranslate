@@ -4,7 +4,7 @@ use crate::{
     functions::{extract_strings, get_object_data, romanize_string},
     println,
     statics::{ENDS_WITH_IF_RE, EXTENSION, LINES_SEPARATOR, LISA_PREFIX_RE, NEW_LINE},
-    Code, EngineType, GameType, Localization, MapsProcessingMode, OptionExt, ResultExt, Variable,
+    types::{Code, EngineType, GameType, Localization, MapsProcessingMode, OptionExt, ResultExt, Variable},
 };
 use encoding_rs::Encoding;
 use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};

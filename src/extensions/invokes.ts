@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { ProcessingMode } from "../types/enums";
 
 export async function read(args: ReadArgs) {
     await invoke("read", { settings: args });
@@ -26,4 +27,12 @@ export async function translateText(args: {
     from: Intl.UnicodeBCP47LocaleIdentifier;
 }): Promise<string> {
     return await invoke<string>("translate_text", args);
+}
+
+export async function extractArchive(args: { inputPath: string; outputPath: string; processingMode: ProcessingMode }) {
+    await invoke("extract_archive", args);
+}
+
+export async function appendToEnd(args: { path: string; text: string }) {
+    await invoke("append_to_end", args);
 }
