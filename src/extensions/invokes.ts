@@ -32,3 +32,7 @@ export async function translateText(args: {
 export async function extractArchive(args: { inputPath: string; outputPath: string; processingMode: ProcessingMode }) {
     await invoke("extract_archive", args);
 }
+
+export async function appendToEnd(args: { path: string; text: string }) {
+    await invoke("append_to_end", args);
+}

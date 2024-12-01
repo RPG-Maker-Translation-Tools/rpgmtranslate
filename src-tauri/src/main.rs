@@ -57,7 +57,8 @@ fn main() {
             read_last_line,
             translate_text,
             add_to_scope,
-            extract_archive
+            extract_archive,
+            append_to_end
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]

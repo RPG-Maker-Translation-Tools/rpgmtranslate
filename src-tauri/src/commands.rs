@@ -7,8 +7,8 @@ use rvpacker_lib::{
 };
 use serde::Deserialize;
 use std::{
-    fs::{create_dir_all, File},
-    io::{Read, Seek, SeekFrom},
+    fs::{create_dir_all, File, OpenOptions},
+    io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     time::Instant,
 };
@@ -313,4 +313,10 @@ pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: P
     decrypter
         .extract(output_path, processing_mode == ProcessingMode::Force)
         .unwrap();
+}
+
+#[tauri::command]
+pub fn append_to_end(path: &Path, text: &str) {
+    let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log(file!(), line!());
+    write!(file, "\n{text}").unwrap_log(file!(), line!());
 }
