@@ -2502,7 +2502,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                     leftPanel.children[i].lastElementChild?.firstElementChild;
 
                                                 if (progressBar) {
-                                                    // TODO
+                                                    translatedLinesArray[i] = newLines!.length;
+                                                    updateProgressMeter(
+                                                        totalAllLines,
+                                                        translatedLinesArray.reduce((a, b) => a + b, 0),
+                                                    );
+
                                                     (progressBar as HTMLElement).style.width =
                                                         progressBar.textContent = `100%`;
                                                 }
