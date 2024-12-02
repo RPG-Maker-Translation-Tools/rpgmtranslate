@@ -142,6 +142,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     fromLanguageInput.addEventListener("blur", () => {
+        if (!fromLanguageInput.value.trim()) {
+            return;
+        }
+
         try {
             new Intl.Locale(fromLanguageInput.value);
             settings.translation.from = fromLanguageInput.value;
@@ -152,6 +156,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     toLanguageInput.addEventListener("blur", () => {
+        if (!toLanguageInput.value.trim()) {
+            return;
+        }
+
         try {
             new Intl.Locale(toLanguageInput.value);
             settings.translation.to = toLanguageInput.value;
