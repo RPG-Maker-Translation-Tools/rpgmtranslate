@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     fromLanguageInput.addEventListener("input", () => {
-        fromLanguageInput.value = toLanguageInput.value.replaceAll(/[^a-z]/g, "");
+        fromLanguageInput.value = fromLanguageInput.value.replaceAll(/[^a-z]/g, "");
     });
 
     toLanguageInput.addEventListener("input", () => {
