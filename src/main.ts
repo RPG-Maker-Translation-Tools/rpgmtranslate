@@ -317,7 +317,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const resultElement = document.createElement("div");
         resultElement.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-xl`;
 
-        const counterpartElement = document.getElementById(metadata.replace(type, reverseType));
+        const rowContainer = document.getElementById(`${file}-${row}`);
+        const counterpartElement = type.startsWith("o")
+            ? rowContainer?.lastElementChild?.lastElementChild
+            : rowContainer?.lastElementChild?.children[1];
 
         const mainDiv = document.createElement("div");
         mainDiv.className = tw`text-base`;
@@ -418,7 +421,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (matches) {
                         const result = createMatchesContainer(elementText, matches);
-                        isReplace ? results!.set(node[2], result) : objectToWrite.set(node[2].id, result);
+                        const metadata = node[2].parentElement!.parentElement!.id.split("-");
+                        const formattedMetadata = `${metadata[0]}-original-${metadata[1]}`;
+                        isReplace ? results!.set(node[2], result) : objectToWrite.set(formattedMetadata, result);
                     }
                 }
 
@@ -428,7 +433,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (matches) {
                         const result = createMatchesContainer(elementText, matches);
-                        isReplace ? results!.set(node[1], result) : objectToWrite.set(node[1].id, result);
+                        const metadata = node[1].parentElement!.parentElement!.id.split("-");
+                        const formattedMetadata = `${metadata[0]}-original-${metadata[1]}`;
+                        isReplace ? results!.set(node[1], result) : objectToWrite.set(formattedMetadata, result);
                     }
                 }
 
