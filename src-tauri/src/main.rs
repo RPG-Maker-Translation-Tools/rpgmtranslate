@@ -5,7 +5,6 @@ mod commands;
 use crate::commands::*;
 use lazy_static::lazy_static;
 use regex::Regex;
-use rvpacker_lib::types::OptionExt;
 use rvpacker_lib::types::{GameType, ResultExt};
 use tauri::{generate_context, generate_handler, App, Builder, Manager};
 use translators::GoogleTranslator;
@@ -62,9 +61,7 @@ fn main() {
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]
-            _app.get_webview_window("main")
-                .unwrap_log(file!(), line!())
-                .open_devtools();
+            _app.get_webview_window("main").unwrap().open_devtools();
             Ok(())
         })
         .run(generate_context!())
