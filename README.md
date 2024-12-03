@@ -13,7 +13,7 @@ The program can open folders with games on the above-mentioned engines, and then
 
 In some cases, the source files of the XP/VX/VXAce games may be encrypted (in this case, generally, there is no data folder in the root directory of the game).
 
-The graphical interface does not yet know how to handle such cases, and you will have to manually unpack the source files of games from an encrypted file using [RPG Maker Decrypter](https://github.com/uuksu/RPGMakerDecrypter).
+It's also able to automatically decrypt `.rgss` archives in encrypted games.
 
 If you have troubled figuring out the program, check the `Help > Help` top menu option. That will probably help.
 
@@ -50,4 +50,4 @@ This means that you can use and modify the program in any way. You can do what t
 
 The repository contains third-party software, that is licensed under other conditions:
 
--   `Google Material Icons` - licensed under `Apache License Version 2.0`.
+- `Google Material Icons` - licensed under `Apache License Version 2.0`.
