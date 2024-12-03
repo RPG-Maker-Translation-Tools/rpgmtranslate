@@ -300,7 +300,7 @@ pub fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
     let tauri_scope = window.state::<Scopes>();
 
     if let Some(s) = window.try_fs_scope() {
-        s.allow_directory(path, true);
+        s.allow_directory(path, true).unwrap_log(file!(), line!());
     }
 
     tauri_scope.allow_directory(path, true).unwrap_log(file!(), line!());
