@@ -461,13 +461,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     continue;
                 }
 
-                let lineNumber = 0;
-
-                for await (const line of await readTextFileLines(
+                for (const [lineNumber, line] of (
+                    await readTextFile(
                     i < mapsEntries.length
                         ? join(programDataDirPath, "temp-maps", name)
                         : join(programDataDirPath, translationDir, name),
-                )) {
+                    )
+                )
+                    .split("\n")
+                    .entries()) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
                     if (searchMode !== SearchMode.OnlyTranslation) {
@@ -502,8 +504,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         objectToWrite.clear();
                         file++;
                     }
-
-                    lineNumber++;
                 }
             }
         }
