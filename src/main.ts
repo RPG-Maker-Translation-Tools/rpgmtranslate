@@ -183,27 +183,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     let selectedTextareas: Record<string, string> = {};
     let replacedTextareas: Record<string, string> = {};
 
-    const bookmarks: string[] = [];
+    const bookmarks: Bookmark[] = [];
 
     {
-        const bookmarksFilePath = join(settings.projectPath, programDataDir, "bookmarks.txt");
+        const bookmarksFilePath = join(settings.projectPath, programDataDir, "bookmarks.json");
         await addToScope({ path: bookmarksFilePath });
 
         if (await exists(bookmarksFilePath)) {
-            const bookmarksFileContent = await readTextFile(bookmarksFilePath);
-            const bookmarkTitles = bookmarksFileContent.split(",");
+            const bookmarkEntries = JSON.parse(await readTextFile(bookmarksFilePath)) as Bookmark[];
 
-            for (const bookmarkTitle of bookmarkTitles) {
-                if (!bookmarkTitle) {
-                    continue;
-                }
-
-                const parts = bookmarkTitle.split("-", 2);
-                const rowElement = document.getElementById(`${parts[0]}-row-${parts[1]}`);
-                rowElement?.lastElementChild?.firstElementChild?.classList.toggle("backgroundThird");
-
-                addBookmark(bookmarkTitle);
-                bookmarks.push(bookmarkTitle);
+            for (const bookmark of bookmarkEntries) {
+                addBookmark(bookmark);
             }
         }
     }
@@ -230,10 +220,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         currentProgressMeter.innerHTML = `${translated} / ${total}`;
     }
 
-    function addBookmark(bookmarkTitle: string) {
+    function addBookmark(bookmark: Bookmark) {
+        bookmarks.push(bookmark);
+
         const bookmarkElement = document.createElement("button");
-        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex h-4 flex-row items-center justify-center p-1`;
-        bookmarkElement.innerHTML = bookmarkTitle;
+        bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex h-auto flex-row items-center justify-center p-1`;
+        bookmarkElement.innerHTML = `${bookmark.title}<br>${bookmark.description}`;
 
         bookmarksMenu.appendChild(bookmarkElement);
     }
@@ -1392,7 +1384,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
             bookmarkButton.textContent = "bookmark";
 
-            if (bookmarks.includes(textParent.id)) {
+            if (bookmarks.some((obj) => obj.title === textParent.id)) {
                 bookmarkButton.classList.add("backgroundThird");
             }
 
@@ -2928,31 +2920,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
-            const row = target.parentElement!.parentElement!.parentElement!.parentElement!;
-            const parts = row.id.split("-", 2);
-            const bookmarkText = `${parts[0]}-${parts[1]}`;
+            const rowContainer = target.parentElement!.parentElement!.parentElement!.parentElement!;
+            const title = rowContainer.id;
+            const bookmarkIndex = bookmarks.findIndex((obj) => obj.title === title);
 
-            const bookmarkId = bookmarks.findIndex((string) => string === bookmarkText);
-
-            if (bookmarkId !== -1) {
-                bookmarks.splice(bookmarkId, 1);
+            if (bookmarkIndex !== -1) {
+                bookmarks.splice(bookmarkIndex, 1);
 
                 for (const bookmark of bookmarksMenu.children) {
-                    if (bookmark.textContent === bookmarkText) {
+                    if (bookmark.textContent?.startsWith(title)) {
                         bookmark.remove();
                     }
                 }
+
+                target.classList.remove("backgroundThird");
             } else {
-                bookmarks.push(bookmarkText);
-                addBookmark(bookmarkText);
+                const input = document.createElement("input");
+                input.className = "absolute w-auto h-7 p-1 z-50 text-base input textSecond backgroundSecond";
+                input.style.left = `${target.offsetLeft + target.clientWidth}px`;
+                input.style.top = `${target.offsetTop}px`;
+                document.body.appendChild(input);
+
+                requestAnimationFrame(() => {
+                    input.focus();
+                });
+
+                input.onkeydown = (event) => {
+                    if (event.key === "Enter") {
+                        const description = input.value;
+                        input.remove();
+
+                        addBookmark({ title, description });
+                        target.classList.add("backgroundThird");
+                    } else if (event.key === "Escape") {
+                        requestAnimationFrame(() => {
+                            input.remove();
+                        });
+                    }
+                };
             }
-
-            await writeTextFile(
-                join(settings.projectPath, programDataDir, "bookmarks.txt"),
-                Array.from(bookmarks).join(","),
-            );
-
-            target.classList.toggle("backgroundThird");
         } else if (target.textContent === "close") {
             if (typeof settings.rowDeleteMode !== "number" || settings.rowDeleteMode === RowDeleteMode.Disabled) {
                 alert(windowLocalization.deletingDisabled);
