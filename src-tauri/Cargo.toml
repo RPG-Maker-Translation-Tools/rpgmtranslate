@@ -1,6 +1,6 @@
 [package]
 name = "rpgmtranslate"
-version = "4.0.10"
+version = "4.0.11"
 description = "A graphical interface that allows you to open RPG Maker games' text and edit it, then writing it back to the initial form."
 authors = ["savannstm <savannstm@gmail.com>"]
 edition = "2021"
@@ -23,20 +23,21 @@ marshal-rs = { version = "0.3.2", features = ["sonic"] }
 flate2 = "1.0.35"
 encoding_rs = "0.8.35"
 tauri-plugin-process = "2.0.1"
-tauri-plugin-fs = "2.0.3"
+tauri-plugin-fs = "2.1.0"
 tauri-plugin-os = "2.0.1"
-tauri-plugin-dialog = "2.0.3"
+tauri-plugin-dialog = "2.0.4"
 tauri-plugin-shell = "2.0.2"
-tauri-plugin-persisted-scope = "2.0.3"
+tauri-plugin-persisted-scope = "2.1.0"
 translators = { version = "0.1.4", features = ["all"] }
-tauri-plugin-log = "2.0.2"
+tauri-plugin-log = "2.0.3"
 log = "0.4.22"
-tokio = "1.41.1"
+tokio = "1.42.0"
 rpgmad-lib = { version = "1.0.1", features = ["rayon"] }
-rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.0.6", features = ["log", "serde"] }
+rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.0.7", features = ["log", "serde"] }
+tauri-plugin-clipboard-manager = "2.0.2"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2.0.1"
+tauri-plugin-single-instance = "2.0.2"
