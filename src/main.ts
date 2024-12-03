@@ -1169,13 +1169,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
                 case "Enter": {
                     if (event.altKey || event.ctrlKey) {
-                        function jumpToRow(direction: JumpDirection) {
+                        function jump(direction: JumpDirection) {
                             const focusedElement = document.activeElement as HTMLElement;
                             if (!contentContainer.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
                                 return;
                             }
 
-                            const idParts = focusedElement.id.split("-", 2);
+                            const idParts = focusedElement.parentElement!.parentElement!.id.split("-", 2);
                             const index = Number.parseInt(idParts[1]);
 
                             if (Number.isNaN(index)) {
@@ -1183,9 +1183,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
 
                             const step = direction === JumpDirection.Next ? 1 : -1;
-                            const nextElement = document.getElementById(
-                                `${idParts[0]}-${index + step}`,
-                            ) as HTMLTextAreaElement | null;
+                            const nextElement = document.getElementById(`${idParts[0]}-${index + step}`)
+                                ?.lastElementChild?.lastElementChild as HTMLTextAreaElement | null;
 
                             if (!nextElement) {
                                 return;
@@ -1198,12 +1197,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
 
                         if (event.altKey) {
-                            jumpToRow(JumpDirection.Next);
+                            jump(JumpDirection.Next);
                         } else if (event.ctrlKey) {
-                            jumpToRow(JumpDirection.Previous);
+                            jump(JumpDirection.Previous);
                         }
                     }
-
                     break;
                 }
                 case "KeyT":
