@@ -34,6 +34,7 @@ import {
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { ask, message, open as openPath } from "@tauri-apps/plugin-dialog";
 import {
     BaseDirectory,
@@ -2961,37 +2962,43 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     multipleTextAreasSelected = true;
                     const target = event.target as HTMLTextAreaElement;
+                    const rowContainer = target.parentElement!.parentElement! as HTMLDivElement;
 
-                    const targetId = target.id.split("-");
-                    const targetRow = Number.parseInt(targetId.pop()!);
+                    const targetMetadata = rowContainer.id.split("-");
+                    const targetRowNumber = Number.parseInt(targetMetadata[1]);
 
-                    const focusedElementId = document.activeElement.id.split("-");
-                    const focusedElementRow = Number.parseInt(focusedElementId.pop()!);
+                    const focusedElementMetadata = document.activeElement.parentElement!.parentElement!.id.split("-");
+                    const focusedElementRowNumber = Number.parseInt(focusedElementMetadata[1]);
 
-                    const rowsRange = targetRow - focusedElementRow;
+                    const rowsRange = targetRowNumber - focusedElementRowNumber;
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
                         for (let i = 0; i <= rowsToSelect; i++) {
-                            const line = focusedElementRow + i;
+                            const line = focusedElementRowNumber + i;
 
-                            const nextElement = document.getElementById(
-                                `${targetId.join("-")}-${line}`,
-                            ) as HTMLTextAreaElement;
+                            const nextRowContainer = document.getElementById(
+                                `${targetMetadata[0]}-${line}`,
+                            ) as HTMLDivElement;
 
-                            nextElement.style.borderColor = theme.borderFocused;
-                            selectedTextareas[nextElement.id] = nextElement.value;
+                            const nextElement = nextRowContainer.lastElementChild!
+                                .lastElementChild! as HTMLTextAreaElement;
+
+                            nextElement.style.outlineColor = theme.outlineFocused;
+                            selectedTextareas[nextRowContainer.id] = nextElement.value;
                         }
                     } else {
                         for (let i = rowsToSelect; i >= 0; i--) {
-                            const line = focusedElementRow - i;
+                            const line = focusedElementRowNumber - i;
 
-                            const nextElement = document.getElementById(
-                                `${targetId.join("-")}-${line}`,
-                            ) as HTMLTextAreaElement;
+                            const nextRowContainer = document.getElementById(
+                                `${targetMetadata[0]}-${line}`,
+                            ) as HTMLDivElement;
 
-                            nextElement.style.borderColor = theme.borderFocused;
-                            selectedTextareas[nextElement.id] = nextElement.value;
+                            const nextElement = nextRowContainer.lastElementChild!
+                                .lastElementChild! as HTMLTextAreaElement;
+                            nextElement.style.outlineColor = theme.outlineFocused;
+                            selectedTextareas[nextRowContainer.id] = nextElement.value;
                         }
                     }
                 }
@@ -2999,37 +3006,36 @@ document.addEventListener("DOMContentLoaded", async () => {
                 multipleTextAreasSelected = false;
 
                 for (const id of Object.keys(selectedTextareas)) {
-                    const element = document.getElementById(id) as HTMLTextAreaElement;
-                    element.style.borderColor = "";
+                    const element = document.getElementById(id) as HTMLDivElement;
+                    (element.lastElementChild!.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
                 }
             }
         }
     });
-    contentContainer.addEventListener("paste", (event) => {
-        const text = event.clipboardData?.getData("text/plain");
 
-        if (
-            contentContainer.contains(document.activeElement) &&
-            document.activeElement?.tagName === "TEXTAREA" &&
-            text?.includes("\\\\#")
-        ) {
+    contentContainer.addEventListener("paste", async (event) => {
+        const text = await readText();
+
+        if (document.activeElement?.tagName === "TEXTAREA" && text.includes("\0")) {
             event.preventDefault();
-            const clipboardTextSplit = text.split("\\\\#");
+            const clipboardTextSplit = text.split("\0");
             const textRows = clipboardTextSplit.length;
 
             if (textRows < 1) {
                 return;
             } else {
-                const focusedElement = document.activeElement as HTMLElement;
-                const focusedElementId = focusedElement.id.split("-");
-                const focusedElementNumber = Number.parseInt(focusedElementId.pop()!);
+                const textarea = document.activeElement as HTMLTextAreaElement;
+                const rowContainer = textarea.parentElement!.parentElement!;
+                const rowContainerMetadata = rowContainer.id.split("-");
+                const rowContainerNumber = Number.parseInt(rowContainerMetadata[1]);
 
                 for (let i = 0; i < textRows; i++) {
-                    const elementToReplace = document.getElementById(
-                        `${focusedElementId.join("-")}-${focusedElementNumber + i}`,
-                    ) as HTMLTextAreaElement;
+                    const rowContainer = document.getElementById(
+                        `${rowContainerMetadata[0]}-${rowContainerNumber + i}`,
+                    ) as HTMLDivElement;
+                    const elementToReplace = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
 
-                    replacedTextareas[elementToReplace.id] = elementToReplace.value.replaceAll(text, "");
+                    replacedTextareas[rowContainer.id] = elementToReplace.value.replaceAll(text, "");
                     elementToReplace.value = clipboardTextSplit[i];
                     elementToReplace.calculateHeight();
                 }
@@ -3039,15 +3045,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    contentContainer.addEventListener("copy", (event) => {
-        if (
-            multipleTextAreasSelected &&
-            contentContainer.contains(document.activeElement) &&
-            document.activeElement?.tagName === "TEXTAREA"
-        ) {
+    contentContainer.addEventListener("copy", async (event) => {
+        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
-            selectedTextareas[document.activeElement.id] = (document.activeElement as HTMLTextAreaElement).value;
-            event.clipboardData?.setData("text/plain", Array.from(Object.values(selectedTextareas)).join("\\\\#"));
+
+            const textarea = document.activeElement as HTMLTextAreaElement;
+            selectedTextareas[textarea.parentElement!.parentElement!.id] = textarea.value;
+
+            await writeText(Array.from(Object.values(selectedTextareas)).join("\0"));
         }
     });
 
@@ -3068,18 +3073,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    contentContainer.addEventListener("cut", (event) => {
-        if (
-            multipleTextAreasSelected &&
-            contentContainer.contains(document.activeElement) &&
-            document.activeElement?.tagName === "TEXTAREA"
-        ) {
+    contentContainer.addEventListener("cut", async (event) => {
+        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
-            event.clipboardData?.setData("text/plain", Array.from(Object.values(selectedTextareas)).join("\\\\#"));
+            await writeText(Array.from(Object.values(selectedTextareas)).join("\0"));
 
             for (const key of Object.keys(selectedTextareas)) {
-                const textarea = document.getElementById(key) as HTMLTextAreaElement;
-                textarea.value = "";
+                const rowContainer = document.getElementById(key) as HTMLDivElement;
+                (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).value = "";
             }
 
             saved = false;
