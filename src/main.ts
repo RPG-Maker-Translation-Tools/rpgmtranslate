@@ -2833,8 +2833,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     contentContainer.addEventListener("click", async (event) => {
         const target = event.target as HTMLElement;
 
-        if (target.id.includes("original")) {
-            await navigator.clipboard.writeText(target.textContent!);
+        if (target.tagName === "DIV") {
+            const rowContainer = target.parentElement?.parentElement;
+
+            if (rowContainer) {
+                if (/\d$/.test(rowContainer.id)) {
+                    await writeText(target.textContent!);
+                }
+            }
         }
     });
 
