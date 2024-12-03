@@ -1818,32 +1818,77 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let i = 1;
 
+            await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
+
+            function createLeftPanelEntry(name: string, content: string[], i: number): HTMLButtonElement {
+                const buttonElement = document.createElement("button");
+                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+                buttonElement.id = (i - 1).toString();
+
+                const stateSpan = document.createElement("span");
+                stateSpan.innerHTML = name.startsWith("maps") ? name : name.slice(0, -4);
+                stateSpan.className = "pr-1";
+                buttonElement.appendChild(stateSpan);
+
+                let totalLines = content.length;
+                let translatedLines = 0;
+
+                for (const line of content) {
+                    if (line.startsWith("<!--")) {
+                        totalLines--;
+                    } else if (!line.endsWith(LINES_SEPARATOR)) {
+                        translatedLines++;
+                    }
+                }
+
+                if (totalLines > 0) {
+                    totalAllLines += totalLines;
+                    translatedLinesArray.push(translatedLines);
+
+                    const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                    const progressBar = document.createElement("div");
+                    const progressMeter = document.createElement("div");
+
+                    progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                    progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                    progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                    progressBar.appendChild(progressMeter);
+                    buttonElement.appendChild(progressBar);
+                } else {
+                    translatedLinesArray.push(0);
+                }
+
+                return buttonElement;
+            }
+
             for (const entry of translationFiles) {
-                const name = entry.name;
-                if (!name.endsWith(".txt")) {
+                if (!entry.name.endsWith(".txt")) {
                     continue;
                 }
 
-                if (name.startsWith("maps")) {
-                    const mapsLines = (
-                        await readTextFile(join(settings.projectPath, programDataDir, translationDir, name))
-                    ).split("\n");
+                const name = entry.name;
+                const content = await readTextFile(join(settings.projectPath, programDataDir, translationDir, name));
 
-                    if (mapsLines.length === 1) {
+                if (!content) {
+                    continue;
+                }
+
+                const split = content.split("\n");
+
+                if (name.startsWith("maps")) {
+                    if (split.length === 1) {
                         continue;
                     }
 
                     const result: string[] = [];
-
-                    await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-
                     const mapsNumbers: number[] = [];
 
-                    for (let l = 0; l <= mapsLines.length; l++) {
-                        const line = mapsLines[l];
+                    for (let l = 0; l <= split.length; l++) {
+                        const line = split[l];
 
-                        if (l === mapsLines.length || line.startsWith("<!-- Map")) {
-                            if (l !== mapsLines.length) {
+                        if (l === split.length || line.startsWith("<!-- Map")) {
+                            if (l !== split.length) {
                                 mapsNumbers.push(Number.parseInt(line.slice(8)));
                             }
 
@@ -1859,107 +1904,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 joined,
                             );
 
-                            const buttonElement = document.createElement("button");
-                            buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
-                            buttonElement.id = (i - 1).toString();
-
-                            const mapsNumberSpan = document.createElement("span");
-                            mapsNumberSpan.innerHTML = `maps${mapsNumber}`;
-                            mapsNumberSpan.className = "pr-1";
-                            buttonElement.appendChild(mapsNumberSpan);
-
-                            if (result.length <= 1) {
-                                buttonElement.classList.replace("backgroundPrimary", "bg-red-600");
-                            }
-
-                            let totalLines = result.length;
-                            let translatedLines = 0;
-
-                            for (const line of result) {
-                                if (line.startsWith("<!--")) {
-                                    totalLines--;
-                                } else if (!line.endsWith(LINES_SEPARATOR)) {
-                                    translatedLines++;
-                                }
-                            }
-
-                            if (totalLines > 0) {
-                                totalAllLines += totalLines;
-                                translatedLinesArray.push(translatedLines);
-
-                                const translatedRatio = Math.round((translatedLines / totalLines) * 100);
-                                const progressBar = document.createElement("div");
-                                const progressMeter = document.createElement("div");
-
-                                progressBar.className = tw`backgroundSecond w-full rounded-sm`;
-                                progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
-                                progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
-
-                                progressBar.appendChild(progressMeter);
-                                buttonElement.appendChild(progressBar);
-                            } else {
-                                translatedLinesArray.push(0);
-                            }
-
-                            leftPanel.appendChild(buttonElement);
+                            leftPanel.appendChild(createLeftPanelEntry(`maps${mapsNumber}`, result, i));
 
                             result.length = 0;
-                            result.push(line);
                             i++;
-                        } else {
-                            result.push(line);
                         }
+
+                        result.push(line);
                     }
                 } else {
-                    const content = await readTextFile(
-                        join(settings.projectPath, programDataDir, translationDir, entry.name),
-                    );
-
-                    if (!content) {
-                        continue;
-                    }
-
-                    const split = content.split("\n");
-
-                    const buttonElement = document.createElement("button");
-                    buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
-                    buttonElement.id = (i - 1).toString();
-
-                    const stateSpan = document.createElement("span");
-                    stateSpan.innerHTML = entry.name.slice(0, -4);
-                    stateSpan.className = "pr-1";
-                    buttonElement.appendChild(stateSpan);
-
-                    let totalLines = split.length;
-                    let translatedLines = 0;
-
-                    for (const line of split) {
-                        if (line.startsWith("<!--")) {
-                            totalLines--;
-                        } else if (!line.endsWith(LINES_SEPARATOR)) {
-                            translatedLines++;
-                        }
-                    }
-
-                    if (totalLines > 0) {
-                        totalAllLines += totalLines;
-                        translatedLinesArray.push(translatedLines);
-
-                        const translatedRatio = Math.round((translatedLines / totalLines) * 100);
-                        const progressBar = document.createElement("div");
-                        const progressMeter = document.createElement("div");
-
-                        progressBar.className = tw`backgroundSecond w-full rounded-sm`;
-                        progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
-                        progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
-
-                        progressBar.appendChild(progressMeter);
-                        buttonElement.appendChild(progressBar);
-                    } else {
-                        translatedLinesArray.push(0);
-                    }
-
-                    leftPanel.appendChild(buttonElement);
+                    leftPanel.appendChild(createLeftPanelEntry(name, split, i));
                     i++;
                 }
             }
