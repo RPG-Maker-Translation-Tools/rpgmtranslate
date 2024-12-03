@@ -2971,7 +2971,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            const row = target.parentElement!.parentElement!.parentElement!.parentElement!;
+            const rowContainer = target.parentElement!.parentElement!.parentElement!.parentElement!;
             const position = Number.parseInt(target.parentElement!.parentElement!.firstElementChild!.textContent!);
 
             const contentElement = contentContainer;
@@ -2988,7 +2988,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 element.id = element.id.replace(/\d+$/, newRowNumber);
             }
 
-            row.remove();
+            totalAllLines -= 1;
+            rowContainer.remove();
         } else if (event.button === 0) {
             if (shiftPressed) {
                 if (
