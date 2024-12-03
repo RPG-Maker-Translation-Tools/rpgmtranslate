@@ -49,6 +49,7 @@ fn main() {
             let _ = window.maximize();
             let _ = window.set_focus();
         }))
+        .plugin(tauri_plugin_clipboard_manager::init())
         .invoke_handler(generate_handler![
             escape_text,
             read,
