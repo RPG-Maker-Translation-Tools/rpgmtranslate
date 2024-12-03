@@ -3094,6 +3094,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         await waitForSave();
 
         if (await exitConfirmation()) {
+            await writeTextFile(
+                join(settings.projectPath, programDataDir, "bookmarks.json"),
+                JSON.stringify(bookmarks),
+            );
+
             if (settings.projectPath) {
                 const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
 
@@ -3104,7 +3109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         await removePath(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
                     } else if (
                         entry.isFile &&
-                        !["compile-settings.json", "replacement-log.json", "bookmarks.txt"].includes(name)
+                        !["compile-settings.json", "replacement-log.json", "bookmarks.json"].includes(name)
                     ) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
