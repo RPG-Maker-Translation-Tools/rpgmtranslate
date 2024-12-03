@@ -120,3 +120,8 @@ interface TextAreaPropertiesMemo extends Record<string, string | number> {
     fontSize?: string;
     fontFamily?: string;
 }
+
+interface Bookmark {
+    title: string;
+    description: string;
+}
