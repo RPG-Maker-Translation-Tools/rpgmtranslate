@@ -463,9 +463,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (const [lineNumber, line] of (
                     await readTextFile(
-                    i < mapsEntries.length
-                        ? join(programDataDirPath, "temp-maps", name)
-                        : join(programDataDirPath, translationDir, name),
+                        i < mapsEntries.length
+                            ? join(programDataDirPath, "temp-maps", name)
+                            : join(programDataDirPath, translationDir, name),
                     )
                 )
                     .split("\n")
@@ -1759,6 +1759,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             settings.projectPath = "";
             projectStatus.innerHTML = windowLocalization.noProjectSelected;
         } else {
+            totalAllLines = 0;
+            translatedLinesArray.length = 0;
+
             settings.projectPath = pathToProject;
 
             // Create program data directory
@@ -1895,6 +1898,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 progressBar.appendChild(progressMeter);
                                 buttonElement.appendChild(progressBar);
+                            } else {
+                                translatedLinesArray.push(0);
                             }
 
                             leftPanel.appendChild(buttonElement);
@@ -1951,6 +1956,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         progressBar.appendChild(progressMeter);
                         buttonElement.appendChild(progressBar);
+                    } else {
+                        translatedLinesArray.push(0);
                     }
 
                     leftPanel.appendChild(buttonElement);
