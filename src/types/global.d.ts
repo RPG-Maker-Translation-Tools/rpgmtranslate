@@ -125,3 +125,5 @@ interface Bookmark {
     title: string;
     description: string;
 }
+
+type ReplacementLog = Record<string, { old: string; new: string }>;
