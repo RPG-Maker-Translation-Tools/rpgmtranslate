@@ -702,18 +702,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                         if (elementToReplace) {
                             newText = (await replaceText(elementToReplace as HTMLTextAreaElement))!;
                         } else {
-                            const regexp: RegExp | null = await createRegExp(searchInput.value);
+                            const regexp = await createRegExp(searchInput.value);
                             if (!regexp) {
                                 return;
                             }
 
                             const normalizedFilename = file + ".txt";
+                            const pathToFile = normalizedFilename.startsWith("maps")
+                                ? join(settings.projectPath, programDataDir, tempMapsDir, normalizedFilename)
+                                : join(settings.projectPath, programDataDir, translationDir, normalizedFilename);
 
-                            const content = (
-                                await readTextFile(
-                                    join(settings.projectPath, programDataDir, translationDir, normalizedFilename),
-                                )
-                            ).split("\n");
+                            const content = (await readTextFile(pathToFile)).split("\n");
 
                             const lineToReplace = Number.parseInt(row) - 1;
                             const requiredLine = content[lineToReplace];
@@ -732,10 +731,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                             newText = translatedReplaced;
 
-                            await writeTextFile(
-                                join(settings.projectPath, programDataDir, translationDir, normalizedFilename),
-                                content.join("\n"),
-                            );
+                            await writeTextFile(pathToFile, content.join("\n"));
                         }
 
                         if (newText) {
