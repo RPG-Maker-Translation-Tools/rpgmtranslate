@@ -539,39 +539,48 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function handleReplacedClick(event: MouseEvent) {
         const target = event.target as HTMLElement;
+        const element = target.hasAttribute("reverted") ? target : target.parentElement!;
 
-        const element = target.classList.contains("replaced-element") ? target : target.parentElement!;
-
-        if (element.hasAttribute("reverted") || !searchPanelReplaced.contains(element)) {
+        if (element.getAttribute("reverted") === "1" || !searchPanelReplaced.contains(element)) {
             return;
         }
 
-        const clicked = document.getElementById(element.firstElementChild!.textContent!) as HTMLTextAreaElement;
-        const secondParent = element.parentElement!.parentElement!;
+        const rowContainerId = element.firstElementChild!.textContent!;
+        const [file, rowNumber] = rowContainerId.split("-");
+
+        const row = Number.parseInt(rowNumber) - 1;
 
         if (event.button === 0) {
-            await changeState(secondParent.parentElement!.id);
+            await changeState(file);
 
-            secondParent.scrollIntoView({
+            contentContainer.children[row].scrollIntoView({
                 block: "center",
                 inline: "center",
             });
         } else if (event.button === 2) {
-            clicked.value = element.children[1].textContent!;
+            if (state === file) {
+                const textarea = contentContainer.children[row].lastElementChild!
+                    .lastElementChild! as HTMLTextAreaElement;
 
-            element.innerHTML = `<span class="text-base"><code>${element.firstElementChild!.textContent!}</code>\n${windowLocalization.textReverted}\n<code>${element.children[1].textContent!}</code></span>`;
-            element.setAttribute("reverted", "");
+                textarea.value = element.children[1].textContent!;
+            } else {
+                const filePath = file.startsWith("maps")
+                    ? join(settings.projectPath, programDataDir, tempMapsDir, file + ".txt")
+                    : join(settings.projectPath, programDataDir, translationDir, file + ".txt");
 
-            const replacementLogContent: Record<string, { original: string; translation: string }> = JSON.parse(
-                await readTextFile(join(settings.projectPath, programDataDir, logFile)),
-            ) as Record<string, { original: string; translation: string }>;
+                const fileLines = (await readTextFile(filePath)).split("\n");
 
-            delete replacementLogContent[clicked.id];
+                const neededLineSplit = fileLines[row].split(LINES_SEPARATOR);
+                neededLineSplit[1] = element.children[1].textContent!;
 
-            await writeTextFile(
-                join(settings.projectPath, programDataDir, logFile),
-                JSON.stringify(replacementLogContent),
-            );
+                fileLines[row] = neededLineSplit.join(LINES_SEPARATOR);
+
+                await writeTextFile(filePath, fileLines.join("\n"));
+            }
+
+            element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${windowLocalization.textReverted}<div>${element.children[1].textContent!}</div>`;
+            element.setAttribute("reverted", "1");
+            delete replaced[rowContainerId];
         }
     }
 
