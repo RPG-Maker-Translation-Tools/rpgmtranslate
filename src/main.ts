@@ -160,15 +160,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         { root: searchPanelFound },
     );
 
-    const observerReplaced = new IntersectionObserver(
-        (entries) => {
-            for (const entry of entries) {
-                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
-            }
-        },
-        { root: searchPanelReplaced },
-    );
-
     let totalAllLines = 0;
     const translatedLinesArray: number[] = [];
 
@@ -179,7 +170,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadFont(settings.fontUrl);
     // #endregion
 
-    let replaced: Record<string, Record<string, string>> = {};
+    async function fetchReplacementLog(): Promise<ReplacementLog> {
+        const replaced: ReplacementLog = {};
+
+        const replacementLog = JSON.parse(
+            await readTextFile(join(settings.projectPath, programDataDir, logFile)),
+        ) as ReplacementLog;
+        for (const [key, value] of Object.entries(replacementLog)) {
+            replaced[key] = value;
+        }
+
+        return replaced;
+    }
+
+    const replaced: ReplacementLog = await fetchReplacementLog();
+
     const activeGhostLines: HTMLDivElement[] = [];
 
     const selectedTextareas = new Map<number, string>();
@@ -763,19 +768,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function replaceText(text: string | HTMLTextAreaElement): Promise<string | undefined> {
-        async function updateLog() {
-            const logFilePath = join(settings.projectPath, programDataDir, logFile);
-            const prevFile = JSON.parse(await readTextFile(logFilePath)) as Record<string, Record<string, string>>;
-
-            const newObject: Record<string, Record<string, string>> = {
-                ...prevFile,
-                ...replaced,
-            };
-
-            await writeTextFile(logFilePath, JSON.stringify(newObject));
-            replaced = {};
-        }
-
         if (text instanceof HTMLTextAreaElement) {
             const regexp: RegExp | null = await createRegExp(searchInput.value);
             if (!regexp) {
@@ -792,9 +784,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ])
                 .join("");
 
-            replaced[text.id] = { original: text.value, translation: newValue };
-
-            await updateLog();
+            replaced[text.id] = { old: text.value, new: newValue };
 
             text.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
             return newValue;
@@ -815,19 +805,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             for (const textarea of results.keys()) {
-                if (!textarea.id.includes("original")) {
-                    const newValue = textarea.value.replace(regexp, replaceInput.value);
+                const newValue = textarea.value.replace(regexp, replaceInput.value);
 
-                    replaced[textarea.id] = {
-                        original: textarea.value,
-                        translation: newValue,
-                    };
+                replaced[textarea.parentElement!.parentElement!.id] = {
+                    old: textarea.value,
+                    new: newValue,
+                };
 
-                    textarea.value = newValue;
-                }
+                textarea.value = newValue;
             }
-
-            await updateLog();
         }
     }
 
@@ -2572,53 +2558,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case "switch-search-content":
-                {
-                    searchPanelFound.toggleMultiple("hidden", "flex");
-                    searchPanelReplaced.toggleMultiple("hidden", "flex");
+            case "switch-search-content": {
+                searchPanelFound.classList.toggle("hidden");
+                searchPanelReplaced.classList.toggle("hidden");
 
-                    const searchSwitch = target;
+                if (target.innerHTML.trim() === "search") {
+                    target.innerHTML = "menu_book";
+                    observerFound.disconnect();
 
-                    if (searchSwitch.innerHTML.trim() === "search") {
-                        searchSwitch.innerHTML = "menu_book";
+                    for (const [key, value] of Object.entries(replaced)) {
+                        const replacedContainer = document.createElement("div");
+                        replacedContainer.className = tw`textSecond backgroundSecond borderPrimary my-1 cursor-pointer border-2 p-1 text-base`;
+                        replacedContainer.setAttribute("reverted", "0");
 
-                        const replacementLogContent: Record<string, { original: string; translation: string }> =
-                            JSON.parse(
-                                await readTextFile(join(settings.projectPath, programDataDir, logFile)),
-                            ) as Record<string, { original: string; translation: string }>;
+                        replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material">arrow_downward</div><div>${value.new}</div>`;
 
-                        for (const [key, value] of Object.entries(replacementLogContent)) {
-                            const replacedContainer = document.createElement("div");
-
-                            const replacedElement = document.createElement("div");
-                            replacedElement.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-xl`;
-
-                            replacedElement.innerHTML = `<div class="text-base textThird">${key}</div><div class=text-base>${value.original}</div><div class="flex justify-center items-center text-xl textPrimary font-material">arrow_downward</div><div class="text-base">${value.translation}</div>`;
-
-                            replacedContainer.appendChild(replacedElement);
-                            searchPanelReplaced.appendChild(replacedContainer);
-                        }
-
-                        observerFound.disconnect();
-                        searchPanelReplaced.style.height = `${searchPanelReplaced.scrollHeight}px`;
-
-                        for (const container of searchPanelReplaced.children as HTMLCollectionOf<HTMLElement>) {
-                            container.style.width = `${container.clientWidth}px`;
-                            container.style.height = `${container.clientHeight}px`;
-
-                            observerReplaced.observe(container);
-                            container.firstElementChild?.classList.add("hidden");
-                        }
-
-                        searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
-                    } else {
-                        searchSwitch.innerHTML = "search";
-                        searchPanelReplaced.innerHTML = "";
-
-                        searchPanelReplaced.removeEventListener("mousedown", handleReplacedClick);
+                        searchPanelReplaced.appendChild(replacedContainer);
                     }
+
+                    searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
+                } else {
+                    target.innerHTML = "search";
+                    searchPanelReplaced.innerHTML = "";
+                    searchPanelReplaced.removeEventListener("mousedown", handleReplacedClick);
                 }
                 break;
+            }
             case "previous-page-button": {
                 const page = Number.parseInt(searchCurrentPage.textContent!);
 
@@ -3058,10 +3023,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await waitForSave();
 
         if (await exitConfirmation()) {
-            await writeTextFile(
-                join(settings.projectPath, programDataDir, "bookmarks.json"),
-                JSON.stringify(bookmarks),
-            );
+            await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
 
             if (settings.projectPath) {
                 const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
