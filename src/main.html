@@ -350,5 +350,43 @@
             class="backgroundPrimary fixed z-50 hidden h-auto max-h-32 w-48 flex-col overflow-auto text-sm"
             id="bookmarks-menu"
         ></div>
+
+        <div
+            class="backgroundPrimary textPrimary outlinePrimary fixed z-50 hidden h-4/6 w-7/12 flex-col gap-1 p-2 text-base"
+            id="select-files-window"
+        >
+            <div class="selectFiles flex h-8 flex-row items-center justify-center text-lg"></div>
+            <div class="h-fit columns-8 gap-2 overflow-y-scroll"></div>
+            <div class="flex flex-col items-center justify-center gap-2">
+                <div class="hidden flex-row items-center justify-center gap-2">
+                    <label class="wrapNumber text-base"></label>
+                    <input class="input backgroundSecond h-8" type="text" />
+                </div>
+            </div>
+            <div class="flex w-auto flex-row items-center justify-center gap-4">
+                <button
+                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1"
+                >
+                    Select all
+                </button>
+                <button
+                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1"
+                >
+                    Deselect all
+                </button>
+            </div>
+            <div class="flex flex-row items-center justify-center gap-4">
+                <button
+                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1"
+                >
+                    Apply
+                </button>
+                <button
+                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
     </body>
 </html>
