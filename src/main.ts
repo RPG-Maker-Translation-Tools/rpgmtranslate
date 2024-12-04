@@ -112,6 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
     const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
     const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
+    const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
     // #endregion
 
     // #region Program initialization
@@ -2262,92 +2263,38 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
 
                         function showSelectFilesWindow(rootElement: HTMLElement, action: FilesAction) {
-                            const settingsWindow = document.createElement("div");
-                            settingsWindow.id = "select-files-window";
-                            settingsWindow.className = tw`backgroundPrimary textPrimary outlinePrimary fixed flex h-4/6 w-7/12 flex-col gap-1 p-2 text-base`;
+                            const selectFilesWindowChildren = selectFilesWindow.children;
 
                             const { x, y } = rootElement.getBoundingClientRect();
-                            settingsWindow.style.left = `${x + rootElement.clientWidth}px`;
-                            settingsWindow.style.top = `${y}px`;
-                            settingsWindow.style.zIndex = "50";
+                            selectFilesWindow.style.left = `${x + rootElement.clientWidth}px`;
+                            selectFilesWindow.style.top = `${y}px`;
 
-                            const settingsWindowHeader = document.createElement("div");
-                            settingsWindowHeader.className = tw`flex h-8 flex-row items-center justify-center text-lg`;
-                            settingsWindowHeader.innerHTML = windowLocalization.selectFiles;
-
-                            const settingsWindowBody = document.createElement("div");
-                            settingsWindowBody.className = tw`h-fit columns-8 columns-[128px] gap-2 overflow-y-scroll`;
-
-                            for (const child of leftPanel.children) {
-                                const checkboxDiv = document.createElement("div");
-                                checkboxDiv.className = tw`flex flex-row items-center gap-1 p-0.5`;
-                                checkboxDiv.id = child.id;
-
-                                const checkbox = document.createElement("span");
-                                checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 min-w-6 max-w-6`;
-
-                                const checkboxLabel = document.createElement("label");
-                                checkboxLabel.className = tw`text-base`;
-                                checkboxLabel.innerHTML = child.firstElementChild!.textContent!;
-
-                                checkboxDiv.appendChild(checkbox);
-                                checkboxDiv.appendChild(checkboxLabel);
-                                settingsWindowBody.appendChild(checkboxDiv);
-                            }
-
-                            const settingsWindowFooter = document.createElement("div");
-                            settingsWindowFooter.className = tw`flex flex-col items-center justify-center gap-2`;
+                            const selectFilesWindowBody = selectFilesWindowChildren[1];
+                            const selectFilesWindowFooter = selectFilesWindowChildren[2];
 
                             if (action === FilesAction.Wrap) {
-                                const wrapSettingsDiv = document.createElement("div");
-                                wrapSettingsDiv.className = tw`flex flex-row items-center justify-center gap-2`;
-
-                                const wrapInputLabel = document.createElement("label");
-                                wrapInputLabel.className = tw`text-base`;
-                                wrapInputLabel.innerHTML = windowLocalization.wrapNumber;
-
-                                const wrapNumberInput = document.createElement("input");
-                                wrapNumberInput.className = tw`input backgroundSecond h-8`;
-
-                                wrapSettingsDiv.appendChild(wrapInputLabel);
-                                wrapSettingsDiv.appendChild(wrapNumberInput);
-
-                                settingsWindowFooter.appendChild(wrapSettingsDiv);
+                                selectFilesWindowFooter.firstElementChild!.classList.remove("hidden");
                             }
 
-                            const controlButtonsDiv = document.createElement("div");
-                            controlButtonsDiv.className = tw`flex w-auto flex-row items-center justify-center gap-4`;
-
-                            const selectAllButton = document.createElement("button");
-                            selectAllButton.className = tw`button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1`;
-                            selectAllButton.innerHTML = "Select all";
-
-                            const deselectAllButton = document.createElement("button");
-                            deselectAllButton.className = tw`button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1`;
-                            deselectAllButton.innerHTML = "Deselect all";
-
-                            const confirmButtonDiv = document.createElement("div");
-                            confirmButtonDiv.className = tw`flex flex-row items-center justify-center gap-4`;
-
-                            const applyButton = document.createElement("button");
-                            applyButton.className = tw`backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1`;
-                            applyButton.innerHTML = "Apply";
-
-                            const cancelButton = document.createElement("button");
-                            cancelButton.className = tw`backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1`;
-                            cancelButton.innerHTML = "Cancel";
+                            const controlButtonsDivChildren = selectFilesWindowChildren[3].children;
+                            const selectAllButton = controlButtonsDivChildren[0] as HTMLButtonElement;
 
                             selectAllButton.onclick = () => {
-                                for (const element of settingsWindowBody.children) {
+                                for (const element of selectFilesWindowBody.children) {
                                     element.firstElementChild!.textContent = "check";
                                 }
                             };
 
+                            const deselectAllButton = controlButtonsDivChildren[1] as HTMLButtonElement;
+
                             deselectAllButton.onclick = () => {
-                                for (const element of settingsWindowBody.children) {
+                                for (const element of selectFilesWindowBody.children) {
                                     element.firstElementChild!.textContent = "";
                                 }
                             };
+
+                            const confirmButtonsDivChildren = selectFilesWindowChildren[4].children;
+                            const applyButton = confirmButtonsDivChildren[0] as HTMLButtonElement;
 
                             const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -2386,7 +2333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 const filenames: [string, number][] = [];
 
-                                for (const element of settingsWindowBody.children) {
+                                for (const element of selectFilesWindowBody.children) {
                                     if (element.firstElementChild!.textContent) {
                                         filenames.push([
                                             element.lastElementChild!.textContent!,
@@ -2429,7 +2376,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                             translationField.value,
                                                             Number.parseInt(
                                                                 (
-                                                                    settingsWindowFooter.firstElementChild!
+                                                                    selectFilesWindowFooter.firstElementChild!
                                                                         .lastElementChild! as HTMLInputElement
                                                                 ).value,
                                                             ),
@@ -2442,7 +2389,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                         }
                                     } else {
                                         const contentPath = filename.startsWith("maps")
-                                            ? join(settings.projectPath, programDataDir, "temp-maps", filename + ".txt")
+                                            ? join(settings.projectPath, programDataDir, tempMapsDir, filename + ".txt")
                                             : join(
                                                   settings.projectPath,
                                                   programDataDir,
@@ -2516,7 +2463,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                             translation.replaceAll(NEW_LINE, "\n"),
                                                             Number.parseInt(
                                                                 (
-                                                                    settingsWindowFooter.firstElementChild!
+                                                                    selectFilesWindowFooter.firstElementChild!
                                                                         .lastElementChild! as HTMLInputElement
                                                                 ).value,
                                                             ),
@@ -2534,35 +2481,25 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             await writeTextFile(contentPath, newLines.join("\n"));
                                         }
 
-                                        settingsWindowBody.children[i].firstElementChild!.classList.add(
+                                        selectFilesWindowBody.children[i].firstElementChild!.classList.add(
                                             "text-green-500",
                                         );
                                     }
                                 }
 
                                 saved = false;
-                                settingsWindow.remove();
+                                selectFilesWindow.classList.replace("flex", "hidden");
                             };
+
+                            const cancelButton = confirmButtonsDivChildren[1] as HTMLButtonElement;
 
                             cancelButton.onclick = () => {
-                                settingsWindow.remove();
+                                selectFilesWindow.classList.replace("flex", "hidden");
                             };
-
-                            controlButtonsDiv.appendChild(selectAllButton);
-                            controlButtonsDiv.appendChild(deselectAllButton);
-                            settingsWindowFooter.appendChild(controlButtonsDiv);
-
-                            confirmButtonDiv.appendChild(applyButton);
-                            confirmButtonDiv.appendChild(cancelButton);
-                            settingsWindowFooter.appendChild(confirmButtonDiv);
-
-                            settingsWindow.appendChild(settingsWindowHeader);
-                            settingsWindow.appendChild(settingsWindowBody);
-                            settingsWindow.appendChild(settingsWindowFooter);
 
                             const toggledBoxes = new Set<HTMLElement>();
 
-                            settingsWindow.onmousemove = (event) => {
+                            selectFilesWindow.onmousemove = (event) => {
                                 if (event.buttons === 1) {
                                     const target = event.target as HTMLElement;
 
@@ -2573,11 +2510,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 }
                             };
 
-                            settingsWindow.onmouseup = () => {
+                            selectFilesWindow.onmouseup = () => {
                                 toggledBoxes.clear();
                             };
 
-                            settingsWindow.onclick = (event) => {
+                            selectFilesWindow.onclick = (event) => {
                                 const target = event.target as HTMLElement;
 
                                 if (target.classList.contains("checkbox") && !toggledBoxes.has(target)) {
@@ -2586,15 +2523,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 }
                             };
 
-                            document.body.appendChild(settingsWindow);
+                            selectFilesWindow.classList.replace("hidden", "flex");
                         }
 
                         switch (target.id) {
                             case "trim-tools-menu-button": {
-                                const selectFilesWindow = document.querySelector("#select-files-window");
-
-                                if (selectFilesWindow) {
-                                    selectFilesWindow.remove();
+                                if (selectFilesWindow.classList.contains("flex")) {
+                                    selectFilesWindow.classList.replace("flex", "hidden");
                                     return;
                                 } else {
                                     showSelectFilesWindow(target, FilesAction.Trim);
@@ -2607,10 +2542,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     return;
                                 }
 
-                                const selectFilesWindow = document.querySelector("#select-files-window");
-
-                                if (selectFilesWindow) {
-                                    selectFilesWindow.remove();
+                                if (selectFilesWindow.classList.contains("flex")) {
+                                    selectFilesWindow.classList.replace("flex", "hidden");
                                     return;
                                 } else {
                                     showSelectFilesWindow(target, FilesAction.Translate);
@@ -2618,10 +2551,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 break;
                             }
                             case "wrap-tools-menu-button": {
-                                const selectFilesWindow = document.querySelector("#select-files-window");
-
-                                if (selectFilesWindow) {
-                                    selectFilesWindow.remove();
+                                if (selectFilesWindow.classList.contains("flex")) {
+                                    selectFilesWindow.classList.replace("flex", "hidden");
                                     return;
                                 } else {
                                     showSelectFilesWindow(target, FilesAction.Wrap);
