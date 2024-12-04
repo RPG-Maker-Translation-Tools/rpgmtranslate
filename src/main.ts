@@ -1828,18 +1828,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let i = 1;
 
-            await mkdir(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
+            await mkdir(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
 
-            function createLeftPanelEntry(name: string, content: string[], i: number): HTMLButtonElement {
-                const buttonElement = document.createElement("button");
-                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
-                buttonElement.id = (i - 1).toString();
-
-                const stateSpan = document.createElement("span");
-                stateSpan.innerHTML = name.startsWith("maps") ? name : name.slice(0, -4);
-                stateSpan.className = "pr-1";
-                buttonElement.appendChild(stateSpan);
-
+            function createTab(name: string, content: string[], i: number): HTMLButtonElement | undefined {
                 let totalLines = content.length;
                 let translatedLines = 0;
 
@@ -1851,23 +1842,47 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
 
-                if (totalLines > 0) {
-                    totalAllLines += totalLines;
-                    translatedLinesArray.push(translatedLines);
-
-                    const translatedRatio = Math.round((translatedLines / totalLines) * 100);
-                    const progressBar = document.createElement("div");
-                    const progressMeter = document.createElement("div");
-
-                    progressBar.className = tw`backgroundSecond w-full rounded-sm`;
-                    progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
-                    progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
-
-                    progressBar.appendChild(progressMeter);
-                    buttonElement.appendChild(progressBar);
-                } else {
-                    translatedLinesArray.push(0);
+                if (totalLines === 0) {
+                    return;
                 }
+
+                const buttonElement = document.createElement("button");
+                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+                buttonElement.id = (i - 1).toString();
+
+                const stateSpan = document.createElement("span");
+                stateSpan.innerHTML = name;
+                stateSpan.className = "pr-1";
+                buttonElement.appendChild(stateSpan);
+
+                totalAllLines += totalLines;
+                translatedLinesArray.push(translatedLines);
+
+                const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                const progressBar = document.createElement("div");
+                const progressMeter = document.createElement("div");
+
+                progressBar.className = tw`backgroundSecond w-full rounded-sm`;
+                progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+
+                progressBar.appendChild(progressMeter);
+                buttonElement.appendChild(progressBar);
+
+                const checkboxDiv = document.createElement("div");
+                checkboxDiv.className = tw`flex flex-row items-center gap-1 p-0.5`;
+                checkboxDiv.id = buttonElement.id;
+
+                const checkbox = document.createElement("span");
+                checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 min-w-6 max-w-6`;
+
+                const checkboxLabel = document.createElement("label");
+                checkboxLabel.className = tw`text-base`;
+                checkboxLabel.innerHTML = buttonElement.firstElementChild!.textContent!;
+
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(checkboxLabel);
+                selectFilesWindow.children[1].appendChild(checkboxDiv);
 
                 return buttonElement;
             }
@@ -1910,11 +1925,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const mapsNumber = mapsNumbers.shift();
                             const joined = result.join("\n");
                             await writeTextFile(
-                                join(settings.projectPath, programDataDir, "temp-maps", `maps${mapsNumber}.txt`),
+                                join(settings.projectPath, programDataDir, tempMapsDir, `maps${mapsNumber}.txt`),
                                 joined,
                             );
 
-                            leftPanel.appendChild(createLeftPanelEntry(`maps${mapsNumber}`, result, i));
+                            const tab = createTab(`maps${mapsNumber}`, result, i);
+
+                            if (tab) {
+                                leftPanel.appendChild(tab);
+                            }
 
                             result.length = 0;
                             i++;
@@ -1923,13 +1942,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                         result.push(line);
                     }
                 } else {
-                    leftPanel.appendChild(createLeftPanelEntry(name, split, i));
+                    const tab = createTab(name.slice(0, -4), split, i);
+
+                    if (tab) {
+                        leftPanel.appendChild(tab);
+                    }
+
                     i++;
                 }
             }
 
-            const totalTranslatedLines = translatedLinesArray.reduce((a, b) => a + b, 0);
-            updateProgressMeter(totalAllLines, totalTranslatedLines);
+            updateProgressMeter(
+                totalAllLines,
+                translatedLinesArray.reduce((a, b) => a + b, 0),
+            );
 
             // Create log file
             const logFilePath = join(settings.projectPath, programDataDir, logFile);
