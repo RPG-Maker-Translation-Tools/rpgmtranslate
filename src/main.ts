@@ -182,8 +182,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let replaced: Record<string, Record<string, string>> = {};
     const activeGhostLines: HTMLDivElement[] = [];
 
-    let selectedTextareas: Record<string, string> = {};
-    let replacedTextareas: Record<string, string> = {};
+    const selectedTextareas = new Map<number, string>();
+    const replacedTextareas = new Map<number, string>();
 
     const bookmarks: Bookmark[] = [];
 
@@ -1070,18 +1070,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                     case "KeyZ":
                         event.preventDefault();
 
-                        for (const id of Object.keys(selectedTextareas)) {
-                            const textarea = document.getElementById(id) as HTMLTextAreaElement;
-                            textarea.value = selectedTextareas[id];
+                        for (const [rowNumber, value] of selectedTextareas.entries()) {
+                            const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
+                            textarea.value = value;
                         }
 
-                        for (const id of Object.keys(replacedTextareas)) {
-                            const textarea = document.getElementById(id) as HTMLTextAreaElement;
-                            textarea.value = replacedTextareas[id];
+                        for (const [rowNumber, value] of replacedTextareas.entries()) {
+                            const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
+                            textarea.value = value;
                             textarea.calculateHeight();
                         }
 
-                        replacedTextareas = {};
+                        replacedTextareas.clear();
                         break;
                     case "KeyS":
                         await save(SaveMode.AllFiles);
@@ -2924,56 +2926,51 @@ document.addEventListener("DOMContentLoaded", async () => {
                     document.activeElement?.tagName === "TEXTAREA"
                 ) {
                     event.preventDefault();
-                    selectedTextareas = {};
 
+                    selectedTextareas.clear();
                     multipleTextAreasSelected = true;
-                    const target = event.target as HTMLTextAreaElement;
-                    const rowContainer = target.parentElement!.parentElement! as HTMLDivElement;
 
-                    const targetMetadata = rowContainer.id.split("-");
-                    const targetRowNumber = Number.parseInt(targetMetadata[1]);
+                    const clickedRowContainerNumber = Number.parseInt(
+                        (event.target as HTMLElement).parentElement!.parentElement!.id.split("-")[1],
+                    );
+                    const focusedElementRowNumber = Number.parseInt(
+                        document.activeElement.parentElement!.parentElement!.id.split("-")[1],
+                    );
 
-                    const focusedElementMetadata = document.activeElement.parentElement!.parentElement!.id.split("-");
-                    const focusedElementRowNumber = Number.parseInt(focusedElementMetadata[1]);
-
-                    const rowsRange = targetRowNumber - focusedElementRowNumber;
+                    const rowsRange = clickedRowContainerNumber - focusedElementRowNumber;
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
                         for (let i = 0; i <= rowsToSelect; i++) {
-                            const line = focusedElementRowNumber + i;
+                            const rowNumber = focusedElementRowNumber + i - 1;
 
-                            const nextRowContainer = document.getElementById(
-                                `${targetMetadata[0]}-${line}`,
-                            ) as HTMLDivElement;
+                            const nextRowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
 
                             const nextElement = nextRowContainer.lastElementChild!
                                 .lastElementChild! as HTMLTextAreaElement;
 
                             nextElement.style.outlineColor = theme.outlineFocused;
-                            selectedTextareas[nextRowContainer.id] = nextElement.value;
+                            selectedTextareas.set(rowNumber, nextElement.value);
                         }
                     } else {
                         for (let i = rowsToSelect; i >= 0; i--) {
-                            const line = focusedElementRowNumber - i;
+                            const rowNumber = focusedElementRowNumber - i - 1;
 
-                            const nextRowContainer = document.getElementById(
-                                `${targetMetadata[0]}-${line}`,
-                            ) as HTMLDivElement;
+                            const nextRowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
 
                             const nextElement = nextRowContainer.lastElementChild!
                                 .lastElementChild! as HTMLTextAreaElement;
                             nextElement.style.outlineColor = theme.outlineFocused;
-                            selectedTextareas[nextRowContainer.id] = nextElement.value;
+                            selectedTextareas.set(rowNumber, nextElement.value);
                         }
                     }
                 }
             } else {
                 multipleTextAreasSelected = false;
 
-                for (const id of Object.keys(selectedTextareas)) {
-                    const element = document.getElementById(id) as HTMLDivElement;
-                    (element.lastElementChild!.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
+                for (const rowNumber of selectedTextareas.keys()) {
+                    const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                    (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
                 }
             }
         }
@@ -2990,18 +2987,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (textRows < 1) {
                 return;
             } else {
-                const textarea = document.activeElement as HTMLTextAreaElement;
-                const rowContainer = textarea.parentElement!.parentElement!;
-                const rowContainerMetadata = rowContainer.id.split("-");
-                const rowContainerNumber = Number.parseInt(rowContainerMetadata[1]);
+                const rowContainer = document.activeElement.parentElement!.parentElement!;
+                const rowContainerNumber = Number.parseInt(rowContainer.id.split("-")[1]);
 
                 for (let i = 0; i < textRows; i++) {
-                    const rowContainer = document.getElementById(
-                        `${rowContainerMetadata[0]}-${rowContainerNumber + i}`,
-                    ) as HTMLDivElement;
+                    const rowNumber = rowContainerNumber + i - 1;
+                    const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
                     const elementToReplace = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
 
-                    replacedTextareas[rowContainer.id] = elementToReplace.value.replaceAll(text, "");
+                    replacedTextareas.set(rowNumber, elementToReplace.value.replaceAll(text, ""));
                     elementToReplace.value = clipboardTextSplit[i];
                     elementToReplace.calculateHeight();
                 }
@@ -3016,9 +3010,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             const textarea = document.activeElement as HTMLTextAreaElement;
-            selectedTextareas[textarea.parentElement!.parentElement!.id] = textarea.value;
+            selectedTextareas.set(
+                Number.parseInt(textarea.parentElement!.parentElement!.id.split("-")[1]),
+                textarea.value,
+            );
 
-            await writeText(Array.from(Object.values(selectedTextareas)).join("\0"));
+            await writeText(Array.from(selectedTextareas.values()).join("\0"));
         }
     });
 
@@ -3042,10 +3039,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     contentContainer.addEventListener("cut", async (event) => {
         if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
-            await writeText(Array.from(Object.values(selectedTextareas)).join("\0"));
+            await writeText(Array.from(selectedTextareas.values()).join("\0"));
 
-            for (const key of Object.keys(selectedTextareas)) {
-                const rowContainer = document.getElementById(key) as HTMLDivElement;
+            for (const rowNumber of selectedTextareas.keys()) {
+                const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
                 (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).value = "";
             }
 
