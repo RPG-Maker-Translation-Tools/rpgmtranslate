@@ -64,10 +64,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const LINES_SEPARATOR = "<#>";
     const sheet = getThemeStyleSheet()!;
 
-    const translationDir = "translation";
-
     const programDataDir = ".rpgmtranslate";
+
+    const translationDir = "translation";
+    const tempMapsDir = "temp-maps";
+
     const logFile = "replacement-log.json";
+    const bookmarksFile = "bookmarks.json";
 
     const settingsPath = "res/settings.json";
 
@@ -193,7 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bookmarks: Bookmark[] = [];
 
     {
-        const bookmarksFilePath = join(settings.projectPath, programDataDir, "bookmarks.json");
+        const bookmarksFilePath = join(settings.projectPath, programDataDir, bookmarksFile);
         await addToScope({ path: bookmarksFilePath });
 
         if (await exists(bookmarksFilePath)) {
@@ -228,12 +231,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function addBookmark(bookmark: Bookmark) {
-        bookmarks.push(bookmark);
-
         const bookmarkElement = document.createElement("button");
         bookmarkElement.className = tw`backgroundPrimary backgroundSecondHovered flex h-auto flex-row items-center justify-center p-1`;
         bookmarkElement.innerHTML = `${bookmark.title}<br>${bookmark.description}`;
 
+        bookmarks.push(bookmark);
         bookmarksMenu.appendChild(bookmarkElement);
     }
 
@@ -316,10 +318,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const resultElement = document.createElement("div");
         resultElement.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-xl`;
 
-        const rowContainer = document.getElementById(`${file}-${row}`);
+        const rowContainer = contentContainer.children[Number.parseInt(row) - 1] as HTMLDivElement;
         const counterpartElement = type.startsWith("o")
-            ? rowContainer?.lastElementChild?.lastElementChild
-            : rowContainer?.lastElementChild?.children[1];
+            ? rowContainer.lastElementChild!.lastElementChild
+            : rowContainer.lastElementChild!.children[1];
 
         const mainDiv = document.createElement("div");
         mainDiv.className = tw`text-base`;
@@ -452,7 +454,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!searchLocation) {
             const translationEntries = await readDir(join(programDataDirPath, translationDir));
-            const mapsEntries = await readDir(join(programDataDirPath, "temp-maps"));
+            const mapsEntries = await readDir(join(programDataDirPath, tempMapsDir));
 
             for (const [i, entry] of [
                 mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4)) - Number.parseInt(b.name.slice(4))),
@@ -470,7 +472,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (const [lineNumber, line] of (
                     await readTextFile(
                         i < mapsEntries.length
-                            ? join(programDataDirPath, "temp-maps", name)
+                            ? join(programDataDirPath, tempMapsDir, name)
                             : join(programDataDirPath, translationDir, name),
                     )
                 )
@@ -825,7 +827,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const translationPath = join(settings.projectPath, programDataDir, translationDir);
-        const tempMapsPath = join(settings.projectPath, programDataDir, "temp-maps");
+        const tempMapsPath = join(settings.projectPath, programDataDir, tempMapsDir);
         const outputArray: string[] = [];
 
         if (mode !== SaveMode.Backup) {
@@ -902,7 +904,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             await mkdir(backupFolderName, { recursive: true });
-            await mkdir(join(backupFolderName, "temp-maps"));
+            await mkdir(join(backupFolderName, tempMapsDir));
             await mkdir(join(backupFolderName, translationDir));
 
             for (const entry of await readDir(translationPath)) {
@@ -910,7 +912,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             for (const entry of await readDir(tempMapsPath)) {
-                await copyFile(join(tempMapsPath, entry.name), join(backupFolderName, "temp-maps", entry.name));
+                await copyFile(join(tempMapsPath, entry.name), join(backupFolderName, tempMapsDir, entry.name));
             }
         }
 
@@ -1018,7 +1020,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
         if (event.code === "Enter") {
-            const targetRow = document.getElementById(`${state!}-${goToRowInput.value}`) as HTMLTextAreaElement | null;
+            const targetRow = document.getElementById(`${state!}-${goToRowInput.value}`) as HTMLDivElement | null;
 
             if (targetRow) {
                 targetRow.scrollIntoView({
@@ -1077,7 +1079,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             goToRowInput.classList.remove("hidden");
                             goToRowInput.focus();
 
-                            const lastRow = contentContainer.lastElementChild!.id.split("-", 2)[1];
+                            const lastRow = contentContainer.lastElementChild!.id.split("-")[1];
 
                             goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
 
@@ -1169,7 +1171,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 return;
                             }
 
-                            const idParts = focusedElement.parentElement!.parentElement!.id.split("-", 2);
+                            const idParts = focusedElement.parentElement!.parentElement!.id.split("-");
                             const index = Number.parseInt(idParts[1]);
 
                             if (Number.isNaN(index)) {
@@ -1305,7 +1307,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let pathToContent = join(translationPath, formattedFilename);
 
         if (contentName.startsWith("maps")) {
-            pathToContent = join(programDataDirPath, "temp-maps", formattedFilename);
+            pathToContent = join(programDataDirPath, tempMapsDir, formattedFilename);
         }
 
         if (contentName.startsWith("plugins") && !(await exists(pathToContent))) {
@@ -1330,7 +1332,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < content.length; i++) {
-            const [originalText, translationText] = content[i].split(LINES_SEPARATOR, 2);
+            const [originalText, translationText] = content[i].split(LINES_SEPARATOR);
             const added = i + 1;
 
             const originalTextSplit = originalText.replaceAll(NEW_LINE, "\n");
@@ -1782,7 +1784,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } else {
                     for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
                         if (line.toLowerCase().startsWith("title")) {
-                            gameTitle = line.split("=", 2)[1].trim();
+                            gameTitle = line.split("=")[1].trim();
                         }
                     }
                 }
@@ -2810,15 +2812,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
-            const rowContainer = target.parentElement!.parentElement!.parentElement!.parentElement!;
-            const title = rowContainer.id;
-            const bookmarkIndex = bookmarks.findIndex((obj) => obj.title === title);
+            const rowContainerId = target.parentElement!.parentElement!.parentElement!.parentElement!.id;
+            const bookmarkIndex = bookmarks.findIndex((obj) => obj.title === rowContainerId);
 
             if (bookmarkIndex !== -1) {
                 bookmarks.splice(bookmarkIndex, 1);
 
                 for (const bookmark of bookmarksMenu.children) {
-                    if (bookmark.textContent?.startsWith(title)) {
+                    if (bookmark.textContent?.startsWith(rowContainerId)) {
                         bookmark.remove();
                     }
                 }
@@ -2840,7 +2841,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const description = input.value;
                         input.remove();
 
-                        addBookmark({ title, description });
+                        addBookmark({ title: rowContainerId, description });
                         target.classList.add("backgroundThird");
                     } else if (event.key === "Escape") {
                         requestAnimationFrame(() => {
@@ -2870,8 +2871,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             for (let i = position; i < children.length; i++) {
                 const element = children[i];
 
-                const rowNumberField = element.firstElementChild!.firstElementChild!;
-                const rowNumberElement = rowNumberField.firstElementChild!;
+                const rowNumberElement = element.firstElementChild!.firstElementChild!.firstElementChild!;
                 const newRowNumber = (Number.parseInt(rowNumberElement.textContent!) - 1).toString();
 
                 rowNumberElement.textContent = newRowNumber;
@@ -2987,7 +2987,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const parts = target.textContent!.split("-", 2);
+        const parts = target.textContent!.split("-");
         const state = parts[0];
 
         await changeState(state);
@@ -3020,6 +3020,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (await exitConfirmation()) {
             await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
+            await writeTextFile(join(settings.projectPath, programDataDir, bookmarksFile), JSON.stringify(bookmarks));
 
             if (settings.projectPath) {
                 const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
@@ -3027,12 +3028,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (const entry of dataDirEntries) {
                     const name = entry.name;
 
-                    if (name === "temp-maps") {
-                        await removePath(join(settings.projectPath, programDataDir, "temp-maps"), { recursive: true });
-                    } else if (
-                        entry.isFile &&
-                        !["compile-settings.json", "replacement-log.json", "bookmarks.json"].includes(name)
-                    ) {
+                    if (name === tempMapsDir) {
+                        await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
+                    } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
                 }
