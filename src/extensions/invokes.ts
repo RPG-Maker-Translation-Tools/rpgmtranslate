@@ -25,6 +25,7 @@ export async function translateText(args: {
     text: string;
     to: Intl.UnicodeBCP47LocaleIdentifier;
     from: Intl.UnicodeBCP47LocaleIdentifier;
+    replace: boolean;
 }): Promise<string> {
     return await invoke<string>("translate_text", args);
 }
