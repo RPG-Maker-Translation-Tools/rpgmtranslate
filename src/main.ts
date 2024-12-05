@@ -84,13 +84,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchCurrentPage = document.getElementById("search-current-page") as HTMLSpanElement;
     const searchTotalPages = document.getElementById("search-total-pages") as HTMLSpanElement;
     const topPanel = document.getElementById("top-panel") as HTMLDivElement;
-    const topPanelButtonsContainer = document.getElementById("top-panel-buttons") as HTMLDivElement;
-    const saveButton = document.getElementById("save-button") as HTMLButtonElement;
-    const compileButton = document.getElementById("compile-button") as HTMLButtonElement;
-    const themeButton = document.getElementById("theme-button") as HTMLButtonElement;
-    const themeMenu = document.getElementById("theme-menu") as HTMLDivElement;
-    const toolsButton = document.getElementById("tools-button") as HTMLButtonElement;
-    const toolsMenu = document.getElementById("tools-menu") as HTMLDivElement;
+    const topPanelButtonsDiv = topPanel.firstElementChild! as HTMLDivElement;
+    const saveButton = topPanelButtonsDiv.children[1] as HTMLButtonElement;
+    const compileButton = topPanelButtonsDiv.children[2] as HTMLButtonElement;
+    const themeButton = topPanelButtonsDiv.children[5] as HTMLButtonElement;
+    const themeMenu = topPanelButtonsDiv.children[6] as HTMLDivElement;
+    const toolsButton = topPanelButtonsDiv.children[10] as HTMLButtonElement;
+    const toolsMenu = topPanelButtonsDiv.children[11] as HTMLDivElement;
     const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
     const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
     const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
@@ -658,7 +658,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         await searchText(text, false);
 
-        async function handleResultSelecting(event: MouseEvent) {
+        async function handleResultClick(event: MouseEvent) {
             const target = event.target as HTMLDivElement;
 
             const resultElement = (
@@ -757,8 +757,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         showSearchPanel(hide);
 
-        searchPanelFound.removeEventListener("mousedown", handleResultSelecting);
-        searchPanelFound.addEventListener("mousedown", handleResultSelecting);
+        searchPanelFound.removeEventListener("mousedown", handleResultClick);
+        searchPanelFound.addEventListener("mousedown", handleResultClick);
     }
 
     async function replaceText(text: string | HTMLTextAreaElement): Promise<string | undefined> {
@@ -2016,10 +2016,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    topPanelButtonsContainer.addEventListener("click", async (event) => {
-        const target = topPanelButtonsContainer.secondHighestParent(event.target as HTMLElement);
+    topPanelButtonsDiv.addEventListener("click", async (event) => {
+        const target = topPanelButtonsDiv.secondHighestParent(event.target as HTMLElement);
 
-        if ((!settings.projectPath && target.id !== "open-directory-button") || target === topPanelButtonsContainer) {
+        if ((!settings.projectPath && target.id !== "open-directory-button") || target === topPanelButtonsDiv) {
             return;
         }
 
