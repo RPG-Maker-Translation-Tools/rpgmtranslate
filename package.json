@@ -1,7 +1,7 @@
 {
     "name": "rpgmtranslate",
     "private": true,
-    "version": "4.0.12",
+    "version": "4.0.13",
     "type": "module",
     "scripts": {
         "dev": "vite",
