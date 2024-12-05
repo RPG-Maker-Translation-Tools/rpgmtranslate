@@ -1920,10 +1920,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                             if (tab) {
                                 leftPanel.appendChild(tab);
+                                i++;
                             }
 
                             result.length = 0;
-                            i++;
                         }
 
                         result.push(line);
@@ -1933,9 +1933,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (tab) {
                         leftPanel.appendChild(tab);
+                        i++;
                     }
-
-                    i++;
                 }
             }
 
