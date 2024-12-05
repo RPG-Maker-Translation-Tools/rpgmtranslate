@@ -2331,33 +2331,40 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 for (const [filename, i] of filenames) {
                                     await sleep(1000);
 
-                                    if (filename === state!) {
-                                        const children = contentContainer.children;
-
-                                        for (const element of children) {
+                                    if (filename === state) {
+                                        for (const element of contentContainer.children) {
                                             const originalField = element.firstElementChild!
                                                 .children[1] as HTMLDivElement;
                                             const translationField = element.firstElementChild!
                                                 .children[2] as HTMLTextAreaElement;
 
+                                            const translationExists = Boolean(translationField.value.trim());
+
                                             switch (action) {
                                                 case FilesAction.Trim:
-                                                    translationField.value = translationField.value.trim();
+                                                    if (translationExists) {
+                                                        translationField.value = translationField.value.trim();
+                                                    }
                                                     break;
                                                 case FilesAction.Translate:
                                                     if (
-                                                        !translationField.value.trim() &&
+                                                        !translationExists &&
                                                         !/^<!--(?! Map)/.exec(originalField.textContent!)
                                                     ) {
                                                         void translateText({
                                                             text: originalField.textContent!,
                                                             from: settings.translation.from,
                                                             to: settings.translation.to,
-                                                        }).then((translated) => (translationField.value = translated));
+                                                        }).then((translated) => {
+                                                            translationField.value = translated;
+                                                        });
                                                     }
                                                     break;
                                                 case FilesAction.Wrap:
-                                                    if (translationField.value.trim()) {
+                                                    if (
+                                                        translationExists &&
+                                                        !/^<!--(?! Map)/.exec(originalField.textContent!)
+                                                    ) {
                                                         translationField.value = wrapText(
                                                             translationField.value,
                                                             Number.parseInt(
@@ -2382,90 +2389,73 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                   translationDir,
                                                   filename + ".txt",
                                               );
-                                        const content = await readTextFile(contentPath);
 
-                                        const lines = content.split("\n");
-                                        let newLines: string[] | undefined;
+                                        const newLines = await Promise.all(
+                                            (await readTextFile(contentPath)).split("\n").map(async (line) => {
+                                                const [original, translation] = line.split(LINES_SEPARATOR);
+                                                const translationExists = Boolean(translation.trim());
 
-                                        switch (action) {
-                                            case FilesAction.Trim:
-                                                newLines = lines.map((line) => {
-                                                    const [original, translation] = line.split(LINES_SEPARATOR);
-                                                    return translation
-                                                        ? `${original}${LINES_SEPARATOR}${translation.trim()}`
-                                                        : line;
-                                                });
-                                                break;
-                                            case FilesAction.Translate: {
-                                                try {
-                                                    newLines = (
-                                                        await Promise.all(
-                                                            lines.map(async (line) => {
-                                                                const [original, translation] =
-                                                                    line.split(LINES_SEPARATOR);
-
-                                                                if (
-                                                                    !translation.trim() &&
-                                                                    !/^<!--(?! Map)/.exec(original)
-                                                                ) {
-                                                                    return `${original}${LINES_SEPARATOR}${await translateText(
-                                                                        {
-                                                                            text: original,
-                                                                            from: settings.translation.from,
-                                                                            to: settings.translation.to,
-                                                                        },
-                                                                    )}`;
-                                                                } else {
-                                                                    return line;
-                                                                }
-                                                            }),
-                                                        )
-                                                    ).map((line) => line.replaceAll("\n", NEW_LINE));
-                                                } catch (e) {
-                                                    console.error(e);
-                                                }
-
-                                                const progressBar =
-                                                    leftPanel.children[i].lastElementChild?.firstElementChild;
-
-                                                if (progressBar) {
-                                                    translatedLinesArray[i] = newLines!.length;
-                                                    updateProgressMeter(
-                                                        totalAllLines,
-                                                        translatedLinesArray.reduce((a, b) => a + b, 0),
-                                                    );
-
-                                                    (progressBar as HTMLElement).style.width =
-                                                        progressBar.textContent = `100%`;
-                                                }
-                                                break;
-                                            }
-                                            case FilesAction.Wrap:
-                                                newLines = lines.map((line) => {
-                                                    const [original, translation] = line.split(LINES_SEPARATOR);
-
-                                                    if (translation.trim() && !/^<!--(?! Map)/.exec(original)) {
-                                                        const wrapped = wrapText(
-                                                            translation.replaceAll(NEW_LINE, "\n"),
-                                                            Number.parseInt(
-                                                                (
-                                                                    selectFilesWindowFooter.firstElementChild!
-                                                                        .lastElementChild! as HTMLInputElement
-                                                                ).value,
-                                                            ),
-                                                        );
-
-                                                        return `${original}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
-                                                    } else {
-                                                        return line;
+                                                switch (action) {
+                                                    case FilesAction.Trim:
+                                                        return translationExists
+                                                            ? `${original}${LINES_SEPARATOR}${translation.trim()}`
+                                                            : line;
+                                                    case FilesAction.Translate: {
+                                                        try {
+                                                            if (!translationExists && !/^<!--(?! Map)/.exec(original)) {
+                                                                return `${original}${LINES_SEPARATOR}${await translateText(
+                                                                    {
+                                                                        text: original,
+                                                                        from: settings.translation.from,
+                                                                        to: settings.translation.to,
+                                                                    },
+                                                                )}`;
+                                                            } else {
+                                                                return line;
+                                                            }
+                                                        } catch (e) {
+                                                            console.error(e);
+                                                            return line;
+                                                        }
                                                     }
-                                                });
-                                                break;
+                                                    case FilesAction.Wrap:
+                                                        if (translationExists && !/^<!--(?! Map)/.exec(original)) {
+                                                            const wrapped = wrapText(
+                                                                translation.replaceAll(NEW_LINE, "\n"),
+                                                                Number.parseInt(
+                                                                    (
+                                                                        selectFilesWindowFooter.firstElementChild!
+                                                                            .lastElementChild! as HTMLInputElement
+                                                                    ).value,
+                                                                ),
+                                                            );
+
+                                                            return `${original}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
+                                                        } else {
+                                                            return line;
+                                                        }
+                                                }
+                                            }),
+                                        );
+
+                                        if (action === FilesAction.Translate) {
+                                            const progressBar =
+                                                leftPanel.children[i].lastElementChild?.firstElementChild;
+
+                                            if (progressBar) {
+                                                updateProgressMeter(
+                                                    totalAllLines,
+                                                    translatedLinesArray.reduce((a, b) => a + b, 0),
+                                                );
+
+                                                (progressBar as HTMLElement).style.width =
+                                                    progressBar.textContent = `100%`;
+                                            }
+
+                                            translatedLinesArray[i] = newLines.length;
                                         }
 
-                                        if (newLines) {
-                                            await writeTextFile(contentPath, newLines.join("\n"));
-                                        }
+                                        await writeTextFile(contentPath, newLines.join("\n"));
 
                                         selectFilesWindowBody.children[i].firstElementChild!.classList.add(
                                             "text-green-500",
