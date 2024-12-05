@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (matches) {
                         const result = createMatchesContainer(elementText, matches);
                         const metadata = node[2].parentElement!.parentElement!.id.split("-");
-                        const formattedMetadata = `${metadata[0]}-original-${metadata[1]}`;
+                        const formattedMetadata = `${metadata[0]}-translation-${metadata[1]}`;
                         isReplace ? results!.set(node[2], result) : objectToWrite.set(formattedMetadata, result);
                     }
                 }
