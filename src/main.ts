@@ -1301,7 +1301,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const programDataDirPath = join(settings.projectPath, programDataDir);
         const translationPath = join(programDataDirPath, translationDir);
 
-        let contentName = state.toString();
+        const contentName = state.toString();
         const formattedFilename = `${contentName}.txt`;
 
         let pathToContent = join(translationPath, formattedFilename);
@@ -1312,18 +1312,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (contentName.startsWith("plugins") && !(await exists(pathToContent))) {
             if (await exists(join(translationPath, "scripts.txt"))) {
-                contentName = "scripts";
                 pathToContent = join(translationPath, formattedFilename);
-                (leftPanel.lastElementChild as HTMLElement).innerHTML = "scripts";
             }
         }
 
         const content = (await readTextFile(pathToContent)).split("\n");
-
-        if (!content[0]) {
-            alert("This file has no lines.");
-            return;
-        }
 
         if (contentName === "system") {
             content.pop();
