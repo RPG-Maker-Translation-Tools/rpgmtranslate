@@ -689,7 +689,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     return;
                 } else {
                     if (replaceInput.value.trim()) {
-                        const elementToReplace = document.getElementById(elementId);
+                        const elementToReplace =
+                            file !== state
+                                ? null
+                                : contentContainer.children[Number.parseInt(row) - 1].lastElementChild!
+                                      .lastElementChild!;
 
                         let newText: string;
 
