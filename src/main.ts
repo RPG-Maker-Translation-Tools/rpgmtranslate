@@ -313,33 +313,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     function appendMatch(metadata: string, result: string, counterpartTextMisc?: string) {
         const [file, type, row] = metadata.split("-");
         const reverseType = type.startsWith("o") ? "translation" : "original";
+
         const resultContainer = document.createElement("div");
+        resultContainer.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-base`;
 
-        const resultElement = document.createElement("div");
-        resultElement.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-xl`;
-
-        const rowContainer = contentContainer.children[Number.parseInt(row) - 1] as HTMLDivElement;
-        const counterpartElement = type.startsWith("o")
-            ? rowContainer.lastElementChild!.lastElementChild
-            : rowContainer.lastElementChild!.children[1];
-
-        const mainDiv = document.createElement("div");
-        mainDiv.className = tw`text-base`;
+        const rowContainer =
+            file !== state ? null : (contentContainer.children[Number.parseInt(row) - 1] as HTMLDivElement);
+        const counterpartElement = rowContainer?.lastElementChild!.children[type.startsWith("o") ? 2 : 1];
 
         const resultDiv = document.createElement("div");
         resultDiv.innerHTML = result;
-        mainDiv.appendChild(resultDiv);
+        resultContainer.appendChild(resultDiv);
 
         const originalInfo = document.createElement("div");
         originalInfo.className = tw`textThird text-xs`;
 
         originalInfo.innerHTML = `${file} - ${type} - ${row}`;
-        mainDiv.appendChild(originalInfo);
+        resultContainer.appendChild(originalInfo);
 
         const arrow = document.createElement("div");
         arrow.className = tw`textSecond flex items-center justify-center font-material text-xl`;
         arrow.innerHTML = "arrow_downward";
-        mainDiv.appendChild(arrow);
+        resultContainer.appendChild(arrow);
 
         const counterpart = document.createElement("div");
 
@@ -350,48 +345,45 @@ document.addEventListener("DOMContentLoaded", async () => {
             : counterpartTextMisc;
         counterpart.innerHTML = counterpartText!.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
 
-        mainDiv.appendChild(counterpart);
+        resultContainer.appendChild(counterpart);
 
         const counterpartInfo = document.createElement("div");
         counterpartInfo.className = tw`textThird text-xs`;
 
         counterpartInfo.innerHTML = `${file} - ${reverseType} - ${row}`;
-        mainDiv.appendChild(counterpartInfo);
+        resultContainer.appendChild(counterpartInfo);
 
-        resultElement.appendChild(mainDiv);
-
-        resultElement.setAttribute("data", `${file}-${type}-${row}`);
-        resultContainer.appendChild(resultElement);
+        resultContainer.setAttribute("data", `${file}-${type}-${row}`);
         searchPanelFound.appendChild(resultContainer);
-    }
-
-    function createMatchesContainer(elementText: string, matches: string[]): string {
-        const result: string[] = [];
-        let lastIndex = 0;
-
-        for (const match of matches) {
-            const start = elementText.indexOf(match, lastIndex);
-            const end = start + match.length;
-
-            const beforeDiv = `<span>${elementText.slice(lastIndex, start)}</span>`;
-            const matchDiv = `<span class="backgroundThird">${match}</span>`;
-
-            result.push(beforeDiv);
-            result.push(matchDiv);
-
-            lastIndex = end;
-        }
-
-        const afterDiv = `<span>${elementText.slice(lastIndex)}</span>`;
-        result.push(afterDiv);
-
-        return result.join("");
     }
 
     async function searchText(text: string, isReplace: boolean): Promise<Map<HTMLTextAreaElement, string> | null> {
         const regexp: RegExp | null = await createRegExp(text);
         if (!regexp) {
             return null;
+        }
+
+        function createMatchesContainer(elementText: string, matches: string[]): string {
+            const result: string[] = [];
+            let lastIndex = 0;
+
+            for (const match of matches) {
+                const start = elementText.indexOf(match, lastIndex);
+                const end = start + match.length;
+
+                const beforeDiv = `<span>${elementText.slice(lastIndex, start)}</span>`;
+                const matchDiv = `<span class="backgroundThird">${match}</span>`;
+
+                result.push(beforeDiv);
+                result.push(matchDiv);
+
+                lastIndex = end;
+            }
+
+            const afterDiv = `<span>${elementText.slice(lastIndex)}</span>`;
+            result.push(afterDiv);
+
+            return result.join("");
         }
 
         const programDataDirPath = join(settings.projectPath, programDataDir);
