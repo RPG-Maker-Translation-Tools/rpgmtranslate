@@ -293,6 +293,7 @@ pub async fn translate_text(text: String, from: String, to: String) -> String {
         .translate_async(&text, &from, &to)
         .await
         .unwrap_log(file!(), line!())
+        .replace('\n', r"\#")
 }
 
 #[command]
