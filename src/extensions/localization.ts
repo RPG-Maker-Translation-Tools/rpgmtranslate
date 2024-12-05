@@ -82,6 +82,10 @@ export class MainWindowLocalization {
     readonly wrapNumber: string;
     readonly deletingDisabled: string;
     readonly deletingConfirmation: string;
+    readonly selectAll: string;
+    readonly deselectAll: string;
+    readonly apply: string;
+    readonly cancel: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -171,6 +175,10 @@ export class MainWindowLocalization {
                 this.wrapNumber = "Длина строки для переноса";
                 this.deletingDisabled = "Удаление рядов выключено.";
                 this.deletingConfirmation = "Вы действительно хотите удалить этот ряд? Это действие необратимо!";
+                this.selectAll = "Выбрать всё";
+                this.deselectAll = "Убрать всё";
+                this.apply = "Применить";
+                this.cancel = "Отменить";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -259,6 +267,10 @@ export class MainWindowLocalization {
                 this.wrapNumber = "Line length for wrapping";
                 this.deletingDisabled = "Deleting is disabled in settings.";
                 this.deletingConfirmation = "Do you really want to delete this row? This action is irreversible!";
+                this.selectAll = "Select all";
+                this.deselectAll = "Deselect all";
+                this.apply = "Apply";
+                this.cancel = "Cancel";
                 break;
         }
     }
