@@ -10,7 +10,7 @@
     </head>
 
     <body class="textPrimary backgroundDark m-0 overflow-x-hidden p-0 text-2xl">
-        <div>
+        <header>
             <div class="backgroundPrimary sticky top-0 z-40 mr-2 flex h-6 w-full items-center text-sm" id="menu-bar">
                 <div class="menu-bar-button backgroundSecondHovered">
                     <button class="fileMenu px-2" id="file-menu-button"></button>
@@ -159,45 +159,40 @@
                     </div>
                 </div>
             </div>
+        </header>
 
-            <input
-                class="backgroundPrimary borderSecond borderFocused fixed right-1/4 top-8 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                id="goto-row-input"
-                type="number"
-            />
+        <main class="flex flex-row justify-start">
+            <div
+                class="backgroundPrimary fixed z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
+                id="left-panel"
+            ></div>
 
-            <div class="flex flex-row justify-start" id="main">
-                <div
-                    class="backgroundPrimary fixed z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
-                    id="left-panel"
-                ></div>
+            <div class="flex w-full flex-col justify-start p-8 text-lg" id="content-container"></div>
 
-                <div class="flex w-full flex-col justify-start p-8 text-lg" id="content-container"></div>
-
-                <div
-                    class="backgroundPrimary outlineThird fixed right-0 top-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline outline-2 transition-transform duration-500"
-                    id="search-results"
-                    shown="false"
-                    moving="false"
+            <div
+                class="backgroundPrimary outlineThird fixed right-0 top-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline outline-2 transition-transform duration-500"
+                id="search-results"
+                shown="false"
+                moving="false"
+            >
+                <button
+                    class="backgroundPrimaryHovered mb-2 flex h-12 w-full cursor-pointer select-none items-center justify-center font-material text-3xl"
+                    id="switch-search-content"
                 >
-                    <button
-                        class="backgroundPrimaryHovered mb-2 flex h-12 w-full cursor-pointer select-none items-center justify-center font-material text-3xl"
-                        id="switch-search-content"
-                    >
-                        search
-                    </button>
-                    <div class="flex h-12 w-full items-center justify-evenly">
-                        <button class="font-material" id="previous-page-button">chevron_left</button>
-                        <span class="currentPage" id="search-current-page"></span>
-                        <span class="separator" id="search-separator"></span>
-                        <span id="search-total-pages"></span>
-                        <button class="font-material" id="next-page-button">chevron_right</button>
-                    </div>
-                    <div class="flex w-full flex-col" id="search-content"></div>
-                    <div class="hidden w-full flex-col" id="replace-content"></div>
+                    search
+                </button>
+                <div class="flex h-12 w-full items-center justify-evenly">
+                    <button class="font-material" id="previous-page-button">chevron_left</button>
+                    <span class="currentPage" id="search-current-page"></span>
+                    <span class="separator" id="search-separator"></span>
+                    <span id="search-total-pages"></span>
+                    <button class="font-material" id="next-page-button">chevron_right</button>
                 </div>
+                <div class="flex w-full flex-col" id="search-content"></div>
+                <div class="hidden w-full flex-col" id="replace-content"></div>
             </div>
-        </div>
+        </main>
+
         <div class="backgroundPrimary fixed bottom-0 z-50 hidden text-lg" id="theme-window">
             <div class="flex items-end justify-end pr-2">
                 <button class="font-material">close</button>
@@ -262,12 +257,7 @@
             <div class="flex flex-col items-center justify-center pb-4">
                 <div class="flex flex-row gap-2">
                     <label class="themeName" for="theme-name-input"></label>
-                    <input
-                        class="input textSecond backgroundSecond h-8 text-base"
-                        id="theme-name-input"
-                        type="text"
-                        name=""
-                    />
+                    <input class="input textSecond backgroundSecond h-8 text-base" id="theme-name-input" type="text" />
                 </div>
 
                 <label class="allowedThemeNameCharacters" for="create-theme"></label>
@@ -281,7 +271,6 @@
         <div class="flex items-center justify-center p-8" id="project-status"></div>
 
         <div class="backgroundPrimary fixed z-50 hidden h-auto w-96" id="search-menu">
-            <br />
             <div class="flex h-auto flex-col">
                 <div class="flex h-auto flex-row items-center p-4" id="search-field">
                     <textarea
@@ -351,6 +340,12 @@
             id="bookmarks-menu"
         ></div>
 
+        <input
+            class="backgroundPrimary borderSecond borderFocused fixed right-1/4 top-8 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            id="goto-row-input"
+            type="number"
+        />
+
         <div
             class="backgroundPrimary textPrimary outlinePrimary fixed z-50 hidden h-4/6 w-7/12 flex-col gap-1 p-2 text-base"
             id="select-files-window"
@@ -365,27 +360,19 @@
             </div>
             <div class="flex w-auto flex-row items-center justify-center gap-4">
                 <button
-                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1"
-                >
-                    Select all
-                </button>
+                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary selectAll h-8 w-32 rounded-md border-2 p-1"
+                ></button>
                 <button
-                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary h-8 w-32 rounded-md border-2 p-1"
-                >
-                    Deselect all
-                </button>
+                    class="button borderPrimary backgroundPrimaryHovered backgroundPrimary deselectAll h-8 w-32 rounded-md border-2 p-1"
+                ></button>
             </div>
             <div class="flex flex-row items-center justify-center gap-4">
                 <button
-                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1"
-                >
-                    Apply
-                </button>
+                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary apply h-8 w-32 rounded-md border-2 p-1"
+                ></button>
                 <button
-                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary h-8 w-32 rounded-md border-2 p-1"
-                >
-                    Cancel
-                </button>
+                    class="backgroundPrimary button backgroundPrimaryHovered borderPrimary cancel h-8 w-32 rounded-md border-2 p-1"
+                ></button>
             </div>
         </div>
     </body>
