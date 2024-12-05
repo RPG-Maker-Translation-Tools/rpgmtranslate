@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
             }
         },
-        { root: searchPanelFound },
+        { root: document },
     );
 
     let totalAllLines = 0;
