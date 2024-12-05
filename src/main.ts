@@ -1213,6 +1213,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     text: counterpart.textContent!,
                                     to: settings.translation.to,
                                     from: settings.translation.from,
+                                    replace: false,
                                 });
 
                                 selectedField.placeholder = translated;
@@ -2343,6 +2344,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                             text: originalField.textContent!,
                                                             from: settings.translation.from,
                                                             to: settings.translation.to,
+                                                            replace: false,
                                                         }).then((translated) => {
                                                             translationField.value = translated;
                                                         });
@@ -2396,6 +2398,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                                         text: original,
                                                                         from: settings.translation.from,
                                                                         to: settings.translation.to,
+                                                                        replace: true,
                                                                     },
                                                                 )}`;
                                                             } else {
