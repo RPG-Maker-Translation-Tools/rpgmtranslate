@@ -887,8 +887,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     : join(translationPath, filePath);
 
                 await writeTextFile(savePath, outputArray.join("\n"));
-                outputArray.length = 0;
             }
+
+            outputArray.length = 0;
 
             if (mode === SaveMode.AllFiles) {
                 const entries = (await readDir(tempMapsPath)).sort(
