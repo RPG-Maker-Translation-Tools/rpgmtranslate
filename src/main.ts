@@ -31,6 +31,7 @@ import {
     SearchMode,
 } from "./types/enums";
 
+import { getVersion } from "@tauri-apps/api/app";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -57,35 +58,6 @@ const appWindow = getCurrentWebviewWindow();
 import XRegExp from "xregexp";
 
 document.addEventListener("DOMContentLoaded", async () => {
-    {
-        const update = await checkVersion();
-
-        if (update) {
-            let downloaded = 0;
-            let contentLength: number | undefined = 0;
-
-            await update.downloadAndInstall((event) => {
-                switch (event.event) {
-                    case "Started":
-                        contentLength = event.data.contentLength;
-                        console.log(`Started downloading ${event.data.contentLength} bytes`);
-                        break;
-                    case "Progress":
-                        downloaded += event.data.chunkLength;
-                        console.log(`Downloaded ${downloaded} from ${contentLength}`);
-                        break;
-                    case "Finished":
-                        console.log("Download finished");
-                        break;
-                }
-            });
-
-            await relaunch();
-        } else {
-            console.log("Program is already updated");
-        }
-    }
-
     await attachConsole();
     const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
@@ -149,26 +121,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     // #endregion
 
     // #region Program initialization
-    let clickTimer: number | null = null;
-    let backupIsActive = false;
-    let originalDir = "";
-
-    let windowLocalization: MainWindowLocalization;
+    let windowLocalization!: MainWindowLocalization;
 
     let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
         ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
         : (await createSettings())!;
 
+    // Set language
+    setLanguage(settings.language);
+
+    // Check for updates
+    {
+        const update = await checkVersion();
+
+        if (update) {
+            const installUpdate = await ask(
+                `${windowLocalization.newVersionFound}: ${update.version}\n${windowLocalization.currentVersion}: ${await getVersion()}`,
+                { title: windowLocalization.updateAvailable, okLabel: windowLocalization.installUpdate },
+            );
+
+            if (installUpdate) {
+                let downloaded = 0;
+                let contentLength: number | undefined = 0;
+
+                await update.downloadAndInstall((event) => {
+                    switch (event.event) {
+                        case "Started":
+                            contentLength = event.data.contentLength;
+                            console.log(`Started downloading ${event.data.contentLength} bytes`);
+                            break;
+                        case "Progress":
+                            downloaded += event.data.chunkLength;
+                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
+                            break;
+                        case "Finished":
+                            console.log("Download finished");
+                            break;
+                    }
+                });
+
+                await relaunch();
+            }
+        } else {
+            console.log("Program is already updated");
+        }
+    }
+
+    let clickTimer: number | null = null;
+    let backupIsActive = false;
+    let originalDir = "";
+
     // Set theme
     const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
-
     let theme: Theme = themes[settings.theme];
     let currentTheme: string;
 
     setTheme(theme);
-
-    // Set language
-    setLanguage(settings.language);
 
     // Initialize the project
     let state: string | null = null;

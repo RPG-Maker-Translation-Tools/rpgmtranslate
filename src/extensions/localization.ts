@@ -86,6 +86,10 @@ export class MainWindowLocalization {
     readonly deselectAll: string;
     readonly apply: string;
     readonly cancel: string;
+    readonly newVersionFound: string;
+    readonly currentVersion: string;
+    readonly updateAvailable: string;
+    readonly installUpdate: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -179,6 +183,10 @@ export class MainWindowLocalization {
                 this.deselectAll = "Убрать всё";
                 this.apply = "Применить";
                 this.cancel = "Отменить";
+                this.newVersionFound = "Обнаружена новая версия";
+                this.currentVersion = "Текущая версия";
+                this.updateAvailable = "Доступно обновление!";
+                this.installUpdate = "Установить обновление";
                 break;
             default:
                 this.cannotGetSettings = "Cannot find program's settings.";
@@ -271,6 +279,10 @@ export class MainWindowLocalization {
                 this.deselectAll = "Deselect all";
                 this.apply = "Apply";
                 this.cancel = "Cancel";
+                this.newVersionFound = "New version found";
+                this.currentVersion = "Current version";
+                this.updateAvailable = "Update available!";
+                this.installUpdate = "Install update";
                 break;
         }
     }
