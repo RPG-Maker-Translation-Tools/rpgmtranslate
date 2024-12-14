@@ -1003,15 +1003,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
                 }
+
+                selectedTab.classList.replace("backgroundThird", "backgroundPrimary");
             }
         }
 
         contentContainer.innerHTML = "";
-
-        if (state) {
-            const selectedTab = leftPanel.children[stateIndex!];
-            selectedTab.classList.replace("backgroundThird", "backgroundPrimary");
-        }
 
         if (!newState) {
             state = null;
