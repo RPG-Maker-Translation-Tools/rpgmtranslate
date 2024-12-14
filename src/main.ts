@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function fetchReplacementLog(): Promise<ReplacementLog> {
         const replaced: ReplacementLog = {};
 
-        if (await exists(join(settings.projectPath, programDataDir, logFile))) {
+        if (settings.projectPath && (await exists(join(settings.projectPath, programDataDir, logFile)))) {
             for (const [key, value] of Object.entries(
                 JSON.parse(await readTextFile(join(settings.projectPath, programDataDir, logFile))) as ReplacementLog,
             )) {
