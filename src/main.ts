@@ -3038,10 +3038,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         await waitForSave();
 
         if (await exitConfirmation()) {
-            await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
-            await writeTextFile(join(settings.projectPath, programDataDir, bookmarksFile), JSON.stringify(bookmarks));
-
             if (settings.projectPath) {
+                await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
+                await writeTextFile(
+                    join(settings.projectPath, programDataDir, bookmarksFile),
+                    JSON.stringify(bookmarks),
+                );
+
                 const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
 
                 for (const entry of dataDirEntries) {
