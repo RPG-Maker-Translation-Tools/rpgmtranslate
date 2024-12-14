@@ -24,7 +24,8 @@
         "os:allow-locale",
         "process:allow-exit",
         "clipboard-manager:allow-write-text",
-        "clipboard-manager:allow-read-text"
+        "clipboard-manager:allow-read-text",
+        "updater:default"
     ],
     "windows": ["main"]
 }

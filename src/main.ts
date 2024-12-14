@@ -49,13 +49,43 @@ import {
 } from "@tauri-apps/plugin-fs";
 import { attachConsole } from "@tauri-apps/plugin-log";
 import { locale as getLocale } from "@tauri-apps/plugin-os";
-import { exit } from "@tauri-apps/plugin-process";
+import { exit, relaunch } from "@tauri-apps/plugin-process";
+import { check as checkVersion } from "@tauri-apps/plugin-updater";
 const { Resource } = BaseDirectory;
 const appWindow = getCurrentWebviewWindow();
 
 import XRegExp from "xregexp";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    {
+        const update = await checkVersion();
+
+        if (update) {
+            let downloaded = 0;
+            let contentLength: number | undefined = 0;
+
+            await update.downloadAndInstall((event) => {
+                switch (event.event) {
+                    case "Started":
+                        contentLength = event.data.contentLength;
+                        console.log(`Started downloading ${event.data.contentLength} bytes`);
+                        break;
+                    case "Progress":
+                        downloaded += event.data.chunkLength;
+                        console.log(`Downloaded ${downloaded} from ${contentLength}`);
+                        break;
+                    case "Finished":
+                        console.log("Download finished");
+                        break;
+                }
+            });
+
+            await relaunch();
+        } else {
+            console.log("Program is already updated");
+        }
+    }
+
     await attachConsole();
     const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 

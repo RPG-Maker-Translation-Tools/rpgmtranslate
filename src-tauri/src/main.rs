@@ -50,6 +50,7 @@ fn main() {
             let _ = window.set_focus();
         }))
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(generate_handler![
             escape_text,
             read,
