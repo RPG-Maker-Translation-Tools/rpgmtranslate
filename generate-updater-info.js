@@ -3,7 +3,7 @@ const windowsSignatureFile = Bun.file(
     `./src-tauri/target/release/bundle/msi/rpgmtranslate_${version}_x64_en-US.msi.sig`,
 );
 const linuxSignatureFile = Bun.file(
-    `./src-tauri/target/release/bundle/appimage/rpgmtranslate_${version}_amd64_AppImage.sig`,
+    `./src-tauri/target/release/bundle/appimage/rpgmtranslate_${version}_amd64.AppImage.sig`,
 );
 
 const updaterMeta = {
