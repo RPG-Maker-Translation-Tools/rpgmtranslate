@@ -127,6 +127,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
         : (await createSettings())!;
 
+    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
+    let theme: Theme = themes[settings.theme];
+
     // Set language
     setLanguage(settings.language);
 
@@ -172,8 +175,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     let originalDir = "";
 
     // Set theme
-    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
-    let theme: Theme = themes[settings.theme];
     let currentTheme: string;
 
     setTheme(theme);
