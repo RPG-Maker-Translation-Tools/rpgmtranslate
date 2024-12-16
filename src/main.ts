@@ -31,14 +31,12 @@ import {
     SearchMode,
 } from "./types/enums";
 
-import { getVersion } from "@tauri-apps/api/app";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow, WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { ask, message, open as openPath } from "@tauri-apps/plugin-dialog";
 import {
-    BaseDirectory,
     copyFile,
     exists,
     mkdir,
@@ -52,14 +50,68 @@ import { attachConsole } from "@tauri-apps/plugin-log";
 import { locale as getLocale } from "@tauri-apps/plugin-os";
 import { exit, relaunch } from "@tauri-apps/plugin-process";
 import { check as checkVersion } from "@tauri-apps/plugin-updater";
-const { Resource } = BaseDirectory;
+// to not import BaseDirectory enum (which even isn't const)
+const Resource = 11;
 const appWindow = getCurrentWebviewWindow();
 
 import XRegExp from "xregexp";
 
+const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
+
 document.addEventListener("DOMContentLoaded", async () => {
     await attachConsole();
-    const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
+
+    // #region Settings and localization initialization, check for updates
+    let localization!: MainWindowLocalization;
+
+    let settings: Settings = (await exists("res/settings.json", { baseDir: Resource }))
+        ? (JSON.parse(await readTextFile("res/settings.json", { baseDir: Resource })) as Settings)
+        : (await createSettings())!;
+
+    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
+    let theme: Theme = themes[settings.theme];
+
+    initializeLocalization(settings.language);
+
+    {
+        const update = await checkVersion();
+
+        if (update) {
+            const installUpdate = await ask(
+                `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
+                { title: localization.updateAvailable, okLabel: localization.installUpdate },
+            );
+
+            if (installUpdate) {
+                let downloaded = 0;
+                let contentLength: number | undefined = 0;
+
+                await update.downloadAndInstall((event) => {
+                    switch (event.event) {
+                        case "Started":
+                            contentLength = event.data.contentLength;
+                            console.log(`Started downloading ${event.data.contentLength} bytes`);
+                            break;
+                        case "Progress":
+                            downloaded += event.data.chunkLength;
+                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
+                            break;
+                        case "Finished":
+                            console.log("Download finished");
+                            break;
+                    }
+                });
+
+                await relaunch();
+            }
+        } else {
+            console.log("Program is already updated");
+        }
+    }
+    // #endregion
+
+    // #region Program initialization
+    applyLocalization(localization, theme);
 
     // #region Static constants
     const NEW_LINE = "\\#";
@@ -76,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const settingsPath = "res/settings.json";
 
-    const contentContainer = document.getElementById("content-container") as HTMLDivElement;
+    const tabContent = document.getElementById("tab-content") as HTMLDivElement;
     const searchInput = document.getElementById("search-input") as HTMLTextAreaElement;
     const replaceInput = document.getElementById("replace-input") as HTMLTextAreaElement;
     const leftPanel = document.getElementById("left-panel") as HTMLDivElement;
@@ -106,8 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fileMenu = document.getElementById("file-menu") as HTMLDivElement;
     const helpMenu = document.getElementById("help-menu") as HTMLDivElement;
     const languageMenu = document.getElementById("language-menu") as HTMLDivElement;
-    const currentState = document.getElementById("current-state") as HTMLDivElement;
-    const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
+    const currentTabDiv = document.getElementById("current-tab") as HTMLDivElement;
     const createThemeMenuButton = document.getElementById("create-theme-menu-button") as HTMLButtonElement;
     const searchMenu = document.getElementById("search-menu") as HTMLDivElement;
     const searchButton = document.getElementById("search-button") as HTMLButtonElement;
@@ -118,60 +169,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
     const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
     const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
+    const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
     // #endregion
 
-    // #region Program initialization
-    let windowLocalization!: MainWindowLocalization;
-
-    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
-        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
-        : (await createSettings())!;
-
-    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
-    let theme: Theme = themes[settings.theme];
-
-    // Set language
-    setLanguage(settings.language);
-
-    // Check for updates
-    {
-        const update = await checkVersion();
-
-        if (update) {
-            const installUpdate = await ask(
-                `${windowLocalization.newVersionFound}: ${update.version}\n${windowLocalization.currentVersion}: ${await getVersion()}`,
-                { title: windowLocalization.updateAvailable, okLabel: windowLocalization.installUpdate },
-            );
-
-            if (installUpdate) {
-                let downloaded = 0;
-                let contentLength: number | undefined = 0;
-
-                await update.downloadAndInstall((event) => {
-                    switch (event.event) {
-                        case "Started":
-                            contentLength = event.data.contentLength;
-                            console.log(`Started downloading ${event.data.contentLength} bytes`);
-                            break;
-                        case "Progress":
-                            downloaded += event.data.chunkLength;
-                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
-                            break;
-                        case "Finished":
-                            console.log("Download finished");
-                            break;
-                    }
-                });
-
-                await relaunch();
-            }
-        } else {
-            console.log("Program is already updated");
-        }
-    }
-
-    let clickTimer: number | null = null;
-    let backupIsActive = false;
+    let backupIsActive: number | null = null;
     let originalDir = "";
 
     // Set theme
@@ -180,8 +181,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTheme(theme);
 
     // Initialize the project
-    let state: string | null = null;
-    let stateIndex: number | null = null;
+    let currentTab: string | null = null;
+    let currentTabIndex: number | null = null;
     let nextBackupNumber: number;
 
     const observerMain = new IntersectionObserver(
@@ -248,11 +249,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    let searchRegex = false;
-    let searchWhole = false;
-    let searchCase = false;
-    let searchLocation = false;
-
     let saved = true;
     let saving = false;
     let currentFocusedElement: [string, string] | [] = [];
@@ -296,10 +292,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
         }
 
-        windowLocalization = new MainWindowLocalization(language);
-
-        await message(windowLocalization.cannotGetSettings);
-        const askCreateSettings = await ask(windowLocalization.askCreateSettings);
+        localization = new MainWindowLocalization(language);
+        const askCreateSettings = await ask(localization.askCreateSettings);
 
         if (askCreateSettings) {
             const newSettings = new Settings(language);
@@ -309,26 +303,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                 baseDir: Resource,
             });
 
-            alert(windowLocalization.createdSettings);
+            alert(localization.createdSettings);
             return newSettings;
         } else {
             await exit();
         }
     }
 
-    function setLanguage(language: Language) {
+    function initializeLocalization(language: Language) {
         settings.language = language;
-        windowLocalization = new MainWindowLocalization(language);
-
-        applyLocalization(windowLocalization, theme);
-
-        for (const div of themeWindow.children[1].children) {
-            for (const subdiv of div.children) {
-                const label = subdiv.lastElementChild as HTMLLabelElement;
-                // @ts-expect-error object can be indexed by string fuck off
-                label.innerHTML = windowLocalization[subdiv.firstElementChild?.id];
-            }
-        }
+        localization = new MainWindowLocalization(language);
     }
 
     async function createRegExp(text: string): Promise<RegExp | null> {
@@ -337,15 +321,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             return null;
         }
 
-        let regexp = searchRegex ? text : await escapeText({ text });
-        regexp = searchWhole ? `(?<!\\p{L})${regexp}(?!\\p{L})` : regexp;
+        let regexp = searchRegexButton.classList.contains("backgroundThird") ? text : await escapeText({ text });
+        regexp = searchWholeButton.classList.contains("backgroundThird") ? `(?<!\\p{L})${regexp}(?!\\p{L})` : regexp;
 
-        const attr = searchCase ? "g" : "gi";
+        const attr = searchCaseButton.classList.contains("backgroundThird") ? "g" : "gi";
 
         try {
             return XRegExp(regexp, attr);
         } catch (err) {
-            await message(`${windowLocalization.invalidRegexp} (${text}), ${err})`);
+            await message(`${localization.invalidRegexp} (${text}), ${err})`);
             return null;
         }
     }
@@ -358,7 +342,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         resultContainer.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-base`;
 
         const rowContainer =
-            file !== state ? null : (contentContainer.children[Number.parseInt(row) - 1] as HTMLDivElement);
+            file !== currentTab ? null : (tabContent.children[Number.parseInt(row) - 1] as HTMLDivElement);
         const counterpartElement = rowContainer?.lastElementChild!.children[type.startsWith("o") ? 2 : 1];
 
         const resultDiv = document.createElement("div");
@@ -433,7 +417,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
 
-        const openedTab = contentContainer.children;
+        const openedTab = tabContent.children;
 
         for (const file of await readDir(programDataDirPath)) {
             if (file.name.startsWith("matches-")) {
@@ -484,7 +468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        if (!searchLocation) {
+        if (!searchLocationButton.classList.contains("backgroundThird")) {
             const translationEntries = await readDir(join(programDataDirPath, translationDir));
             const mapsEntries = await readDir(join(programDataDirPath, tempMapsDir));
 
@@ -497,7 +481,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const name = entry.name;
                 const nameWithoutExtension = name.slice(0, -4);
 
-                if (!name.endsWith(".txt") || (state && name.startsWith(state)) || name === "maps.txt") {
+                if (!name.endsWith(".txt") || (currentTab && name.startsWith(currentTab)) || name === "maps.txt") {
                     continue;
                 }
 
@@ -570,7 +554,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         } else {
-            searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${windowLocalization.noMatches}</div>`;
+            searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${localization.noMatches}</div>`;
             showSearchPanel(false);
         }
 
@@ -591,16 +575,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const row = Number.parseInt(rowNumber) - 1;
 
         if (event.button === 0) {
-            await changeState(file);
+            await changeTab(file);
 
-            contentContainer.children[row].scrollIntoView({
+            tabContent.children[row].scrollIntoView({
                 block: "center",
                 inline: "center",
             });
         } else if (event.button === 2) {
-            if (state === file) {
-                const textarea = contentContainer.children[row].lastElementChild!
-                    .lastElementChild! as HTMLTextAreaElement;
+            if (currentTab === file) {
+                const textarea = tabContent.children[row].lastElementChild!.lastElementChild! as HTMLTextAreaElement;
 
                 textarea.value = element.children[1].textContent!;
             } else {
@@ -618,7 +601,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await writeTextFile(filePath, fileLines.join("\n"));
             }
 
-            element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${windowLocalization.textReverted}<div>${element.children[1].textContent!}</div>`;
+            element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${localization.textReverted}<div>${element.children[1].textContent!}</div>`;
             element.setAttribute("reverted", "1");
             delete replaced[rowContainerId];
         }
@@ -717,23 +700,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             const [file, type, row] = elementId.split("-");
 
             if (event.button === 0) {
-                await changeState(file);
+                await changeTab(file);
 
-                contentContainer.children[Number.parseInt(row)].scrollIntoView({
+                tabContent.children[Number.parseInt(row)].scrollIntoView({
                     block: "center",
                     inline: "center",
                 });
             } else if (event.button === 2) {
                 if (type.startsWith("o")) {
-                    alert(windowLocalization.originalTextIrreplacable);
+                    alert(localization.originalTextIrreplacable);
                     return;
                 } else {
                     if (replaceInput.value.trim()) {
                         const elementToReplace =
-                            file !== state
+                            file !== currentTab
                                 ? null
-                                : contentContainer.children[Number.parseInt(row) - 1].lastElementChild!
-                                      .lastElementChild!;
+                                : tabContent.children[Number.parseInt(row) - 1].lastElementChild!.lastElementChild!;
 
                         let newText: string;
 
@@ -852,7 +834,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function save(mode: SaveMode) {
-        if (!settings.projectPath || (mode === SaveMode.SingleFile && !state) || (mode !== SaveMode.Backup && saving)) {
+        if (
+            !settings.projectPath ||
+            (mode === SaveMode.SingleFile && !currentTab) ||
+            (mode !== SaveMode.Backup && saving)
+        ) {
             return;
         }
 
@@ -867,8 +853,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const outputArray: string[] = [];
 
         if (mode !== SaveMode.Backup) {
-            if (state) {
-                for (const child of contentContainer.children) {
+            if (currentTab) {
+                for (const child of tabContent.children) {
                     const originalTextElement = child.firstElementChild!.children[1] as HTMLDivElement;
                     const translatedTextElement = child.firstElementChild!.children[2] as HTMLTextAreaElement;
 
@@ -879,7 +865,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
                 }
 
-                if (state === "system") {
+                if (currentTab === "system") {
                     const originalTitle = currentGameTitle.getAttribute("original-title")!;
 
                     const output =
@@ -890,8 +876,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     outputArray.push(output);
                 }
 
-                const filePath = `${state}.txt`;
-                const savePath = state.startsWith("maps")
+                const filePath = `${currentTab}.txt`;
+                const savePath = currentTab.startsWith("maps")
                     ? join(tempMapsPath, filePath)
                     : join(translationPath, filePath);
 
@@ -961,34 +947,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function backup() {
-        const intervalId = setInterval(async () => {
+        backupIsActive = setInterval(async () => {
             if (settings.backup.enabled) {
-                backupIsActive = true;
                 await save(SaveMode.Backup);
             } else {
-                backupIsActive = false;
-                clearInterval(intervalId);
+                clearInterval(backupIsActive!);
             }
         }, settings.backup.period * 1000);
     }
 
-    async function changeState(newState: string | null, newStateIndex?: number) {
-        if (state && state === newState) {
+    async function changeTab(filename: string | null, newTabIndex?: number) {
+        if (currentTab && currentTab === filename) {
             return;
         }
 
         await waitForSave();
         observerMain.disconnect();
 
-        if (state) {
+        if (currentTab) {
             await save(SaveMode.SingleFile);
 
-            let totalFields = contentContainer.children.length;
+            let totalFields = tabContent.children.length;
 
             if (totalFields) {
                 let translatedFields = 0;
 
-                for (const child of contentContainer.children) {
+                for (const child of tabContent.children) {
                     const original = child.firstElementChild!.children[1] as HTMLDivElement;
                     const translation = child.firstElementChild!.children[2] as HTMLTextAreaElement;
 
@@ -1001,11 +985,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const percentage = Math.round((translatedFields / totalFields) * 100);
 
-                const selectedTab = leftPanel.children[stateIndex!];
+                const selectedTab = leftPanel.children[currentTabIndex!];
                 const progressBar = selectedTab.lastElementChild?.firstElementChild as HTMLSpanElement | null;
 
                 if (progressBar) {
-                    translatedLinesArray[stateIndex!] = translatedFields;
+                    translatedLinesArray[currentTabIndex!] = translatedFields;
                     updateProgressMeter(
                         totalAllLines,
                         translatedLinesArray.reduce((a, b) => a + b, 0),
@@ -1018,19 +1002,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        contentContainer.innerHTML = "";
-
-        if (!newState) {
-            state = null;
-            currentState.innerHTML = "";
+        if (!filename) {
+            currentTab = null;
+            currentTabDiv.innerHTML = "";
         } else {
-            state = newState;
+            currentTab = filename;
 
-            if (!newStateIndex) {
+            if (!newTabIndex) {
                 let i = 0;
+
                 for (const element of leftPanel.children) {
-                    if (element.firstElementChild!.textContent === newState) {
-                        newStateIndex = i;
+                    if (element.firstElementChild!.textContent === filename) {
+                        newTabIndex = i;
                         break;
                     }
 
@@ -1038,24 +1021,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            stateIndex = newStateIndex!;
+            currentTabIndex = newTabIndex!;
 
-            const selectedTab = leftPanel.children[newStateIndex!];
+            const selectedTab = leftPanel.children[currentTabIndex];
             selectedTab.classList.replace("backgroundPrimary", "backgroundThird");
 
-            await createContentForState(newState);
+            await createTabContent(filename);
 
-            currentState.innerHTML = newState;
-
-            for (const child of contentContainer.children) {
-                observerMain.observe(child);
-            }
+            currentTabDiv.innerHTML = filename;
         }
     }
 
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
         if (event.code === "Enter") {
-            const targetRow = document.getElementById(`${state!}-${goToRowInput.value}`) as HTMLDivElement | null;
+            const targetRow = document.getElementById(`${currentTab!}-${goToRowInput.value}`) as HTMLDivElement | null;
 
             if (targetRow) {
                 targetRow.scrollIntoView({
@@ -1090,13 +1069,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                         event.preventDefault();
 
                         for (const [rowNumber, value] of selectedTextareas.entries()) {
-                            const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
                             const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
                             textarea.value = value;
                         }
 
                         for (const [rowNumber, value] of replacedTextareas.entries()) {
-                            const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
                             const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
                             textarea.value = value;
                             textarea.calculateHeight();
@@ -1110,13 +1089,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     case "KeyG":
                         event.preventDefault();
 
-                        if (state && goToRowInput.classList.contains("hidden")) {
+                        if (currentTab && goToRowInput.classList.contains("hidden")) {
                             goToRowInput.classList.remove("hidden");
                             goToRowInput.focus();
 
-                            const lastRow = contentContainer.lastElementChild!.id.split("-")[1];
+                            const lastRow = tabContent.lastElementChild!.id.split("-")[1];
 
-                            goToRowInput.placeholder = `${windowLocalization.goToRow} ${lastRow}`;
+                            goToRowInput.placeholder = `${localization.goToRow} ${lastRow}`;
 
                             goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
                         } else if (!goToRowInput.classList.contains("hidden")) {
@@ -1161,7 +1140,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             } else {
                 switch (event.code) {
                     case "Escape":
-                        await changeState(null);
+                        await changeTab(null);
                         break;
                     case "Tab":
                         leftPanel.toggleMultiple("translate-x-0", "-translate-x-full");
@@ -1170,20 +1149,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                         await displaySearchResults();
                         break;
                     case "ArrowDown":
-                        if (stateIndex !== null) {
-                            const newStateIndex = (stateIndex + 1) % leftPanel.children.length;
+                        if (currentTabIndex !== null) {
+                            const newStateIndex = (currentTabIndex + 1) % leftPanel.children.length;
 
-                            await changeState(
+                            await changeTab(
                                 leftPanel.children[newStateIndex].firstElementChild!.textContent,
                                 newStateIndex,
                             );
                         }
                         break;
                     case "ArrowUp":
-                        if (stateIndex !== null) {
+                        if (currentTabIndex !== null) {
                             const newStateIndex =
-                                (stateIndex - 1 + leftPanel.children.length) % leftPanel.children.length;
-                            await changeState(
+                                (currentTabIndex - 1 + leftPanel.children.length) % leftPanel.children.length;
+                            await changeTab(
                                 leftPanel.children[newStateIndex].firstElementChild!.textContent,
                                 newStateIndex,
                             );
@@ -1202,7 +1181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (event.altKey || event.ctrlKey) {
                         function jump(direction: JumpDirection) {
                             const focusedElement = document.activeElement as HTMLElement;
-                            if (!contentContainer.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
+                            if (!tabContent.contains(focusedElement) && focusedElement.tagName !== "TEXTAREA") {
                                 return;
                             }
 
@@ -1244,7 +1223,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const counterpart = selectedField.parentElement!.children[1];
 
                                 if (!settings.translation.from || !settings.translation.to) {
-                                    alert(windowLocalization.translationLanguagesNotSelected);
+                                    alert(localization.translationLanguagesNotSelected);
                                     return;
                                 }
 
@@ -1295,19 +1274,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (event.altKey) {
             switch (event.code) {
                 case "KeyC":
-                    searchCase = !searchCase;
                     searchCaseButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyW":
-                    searchWhole = !searchWhole;
                     searchWholeButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyR":
-                    searchRegex = !searchRegex;
                     searchRegexButton.classList.toggle("backgroundThird");
                     break;
                 case "KeyL":
-                    searchLocation = !searchLocation;
                     searchLocationButton.classList.toggle("backgroundThird");
                     break;
             }
@@ -1333,7 +1308,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function createContentForState(state: string) {
+    async function createTabContent(state: string) {
+        tabContent.innerHTML = "";
+
         const programDataDirPath = join(settings.projectPath, programDataDir);
         const translationPath = join(programDataDirPath, translationDir);
 
@@ -1342,14 +1319,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         let pathToContent = join(translationPath, formattedFilename);
 
-        if (contentName.startsWith("maps")) {
-            pathToContent = join(programDataDirPath, tempMapsDir, formattedFilename);
-        }
-
         if (contentName.startsWith("plugins") && !(await exists(pathToContent))) {
             if (await exists(join(translationPath, "scripts.txt"))) {
                 pathToContent = join(translationPath, formattedFilename);
             }
+        } else if (contentName.startsWith("maps")) {
+            pathToContent = join(programDataDirPath, tempMapsDir, formattedFilename);
         }
 
         const content = (await readTextFile(pathToContent)).split("\n");
@@ -1447,7 +1422,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             fragment.appendChild(textParent);
         }
 
-        contentContainer.appendChild(fragment);
+        tabContent.appendChild(fragment);
+
+        for (const child of tabContent.children) {
+            observerMain.observe(child);
+        }
     }
 
     async function startCompilation(silent: boolean) {
@@ -1462,7 +1441,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!compileSettings.initialized || !compileSettings.doNotAskAgain || !silent) {
             const compileWindow = new WebviewWindow("compile", {
                 url: "compile.html",
-                title: windowLocalization.compileWindowTitle,
+                title: localization.compileWindowTitle,
                 center: true,
             });
 
@@ -1517,7 +1496,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
             compileButton.firstElementChild!.classList.remove("animate-spin");
-            alert(`${windowLocalization.compileSuccess} ${executionTime}`);
+            alert(`${localization.compileSuccess} ${executionTime}`);
         }
     }
 
@@ -1611,11 +1590,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function handleFocus(event: FocusEvent) {
         const target = event.target as HTMLTextAreaElement;
 
-        if (
-            contentContainer.contains(target) &&
-            target.tagName === "TEXTAREA" &&
-            target.id !== currentFocusedElement[0]
-        ) {
+        if (tabContent.contains(target) && target.tagName === "TEXTAREA" && target.id !== currentFocusedElement[0]) {
             currentFocusedElement = [target.id, target.value];
 
             target.addEventListener("keyup", calculateHeight);
@@ -1640,7 +1615,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             currentFocusedElement.length = 0;
 
-            if (contentContainer.contains(target) && target.tagName === "TEXTAREA") {
+            if (tabContent.contains(target) && target.tagName === "TEXTAREA") {
                 target.removeEventListener("keyup", calculateHeight);
                 target.removeEventListener("input", trackFocus);
             }
@@ -1673,12 +1648,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (saved) {
             return true;
         } else {
-            askExitUnsaved = await ask(windowLocalization.unsavedChanges);
+            askExitUnsaved = await ask(localization.unsavedChanges);
         }
 
         let askExit: boolean;
         if (!askExitUnsaved) {
-            askExit = await ask(windowLocalization.exit);
+            askExit = await ask(localization.exit);
         } else {
             await save(SaveMode.AllFiles);
             return true;
@@ -1715,7 +1690,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             if (!(await exists(pathToProject))) {
-                await message(windowLocalization.selectedFolderMissing);
+                await message(localization.selectedFolderMissing);
                 return false;
             }
 
@@ -1761,10 +1736,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 settings.engineType = EngineType.New;
                 currentGameEngine.innerHTML = "MV / MZ";
             } else {
-                await message(windowLocalization.cannotDetermineEngine);
+                await message(localization.cannotDetermineEngine);
 
-                await changeState(null);
-                contentContainer.innerHTML = "";
+                await changeTab(null);
+                tabContent.innerHTML = "";
                 currentGameEngine.innerHTML = "";
                 currentGameTitle.value = "";
                 return false;
@@ -1775,14 +1750,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         await addToScope({ path: pathToProject });
 
-        projectStatus.innerHTML = windowLocalization.loadingProject;
+        projectStatus.innerHTML = localization.loadingProject;
         const interval = animateProgressText(projectStatus);
 
         const projectIsValid = await ensureProjectIsValid(pathToProject);
 
         if (!projectIsValid) {
             settings.projectPath = "";
-            projectStatus.innerHTML = windowLocalization.noProjectSelected;
+            projectStatus.innerHTML = localization.noProjectSelected;
         } else {
             totalAllLines = 0;
             translatedLinesArray.length = 0;
@@ -2013,7 +1988,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (settings.firstLaunch) {
                 new WebviewWindow("help", {
                     url: "help.html",
-                    title: windowLocalization.helpButton,
+                    title: localization.helpButton,
                     center: true,
                     alwaysOnTop: true,
                 });
@@ -2052,11 +2027,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 target = target.parentElement!;
             }
 
-            await changeState(target.firstElementChild!.textContent, Number.parseInt(target.id));
+            await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
         }
     });
 
-    topPanelButtonsDiv.addEventListener("click", async (event) => {
+    topPanelButtonsDiv.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+    });
+
+    topPanelButtonsDiv.addEventListener("mousedown", async (event) => {
         const target = topPanelButtonsDiv.secondHighestParent(event.target as HTMLElement);
 
         if ((!settings.projectPath && target.id !== "open-directory-button") || target === topPanelButtonsDiv) {
@@ -2071,28 +2050,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await save(SaveMode.AllFiles);
                 break;
             case "compile-button":
-                if (clickTimer === null) {
-                    clickTimer = setTimeout(async () => {
-                        clickTimer = null;
-                        await startCompilation(true);
-                    }, 250);
-                } else {
-                    clearTimeout(clickTimer);
-                    clickTimer = null;
-                    await startCompilation(false);
-                }
+                await startCompilation(event.button === 2 ? false : true);
                 break;
             case "open-directory-button": {
                 const directory = await openPath({ directory: true, multiple: false });
 
                 if (directory) {
                     if (directory === settings.projectPath) {
-                        await message(windowLocalization.directoryAlreadyOpened);
+                        await message(localization.directoryAlreadyOpened);
                         return;
                     }
 
-                    await changeState(null);
-                    contentContainer.innerHTML = "";
+                    await changeTab(null);
                     currentGameTitle.innerHTML = "";
 
                     await initializeProject(directory);
@@ -2102,7 +2071,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case "settings-button": {
                 const settingsWindow = new WebviewWindow("settings", {
                     url: "settings.html",
-                    title: windowLocalization.settingsButtonTitle,
+                    title: localization.settingsButtonTitle,
                     center: true,
                     resizable: false,
                 });
@@ -2162,7 +2131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
                                     await message(
-                                        `${windowLocalization.invalidThemeName} ${windowLocalization.allowedThemeNameCharacters}`,
+                                        `${localization.invalidThemeName} ${localization.allowedThemeNameCharacters}`,
                                     );
                                     return;
                                 }
@@ -2231,7 +2200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             case "read-button": {
                 const readWindow = new WebviewWindow("read", {
-                    title: windowLocalization.readWindowTitle,
+                    title: localization.readWindowTitle,
                     url: "read.html",
                     center: true,
                 });
@@ -2359,8 +2328,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 for (const [filename, i] of filenames) {
                                     await sleep(1000);
 
-                                    if (filename === state) {
-                                        for (const element of contentContainer.children) {
+                                    if (filename === currentTab) {
+                                        for (const element of tabContent.children) {
                                             const originalField = element.firstElementChild!
                                                 .children[1] as HTMLDivElement;
                                             const translationField = element.firstElementChild!
@@ -2544,7 +2513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
                             case "translate-tools-menu-button": {
                                 if (!settings.translation.from || !settings.translation.to) {
-                                    alert(windowLocalization.translationLanguagesNotSelected);
+                                    alert(localization.translationLanguagesNotSelected);
                                     return;
                                 }
 
@@ -2719,14 +2688,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                             case "help-button":
                                 new WebviewWindow("help", {
                                     url: "help.html",
-                                    title: windowLocalization.helpButton,
+                                    title: localization.helpButton,
                                     center: true,
                                 });
                                 break;
                             case "about-button":
                                 new WebviewWindow("about", {
                                     url: "about.html",
-                                    title: windowLocalization.aboutButton,
+                                    title: localization.aboutButton,
                                     center: true,
                                     resizable: false,
                                 });
@@ -2755,12 +2724,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         switch (target.id) {
                             case "ru-button":
                                 if (settings.language !== Language.Russian) {
-                                    setLanguage(Language.Russian);
+                                    initializeLocalization(Language.Russian);
+                                    applyLocalization(localization, theme);
                                 }
                                 break;
                             case "en-button":
                                 if (settings.language !== Language.English) {
-                                    setLanguage(Language.English);
+                                    initializeLocalization(Language.English);
+                                    applyLocalization(localization, theme);
                                 }
                                 break;
                         }
@@ -2780,9 +2751,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    contentContainer.addEventListener("focus", handleFocus, true);
-    contentContainer.addEventListener("blur", handleBlur, true);
-    contentContainer.addEventListener("click", async (event) => {
+    tabContent.addEventListener("focus", handleFocus, true);
+    tabContent.addEventListener("blur", handleBlur, true);
+    tabContent.addEventListener("click", async (event) => {
         const target = event.target as HTMLElement;
 
         if (target.tagName === "DIV") {
@@ -2810,25 +2781,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case "case-button":
-                searchCase = !searchCase;
                 searchCaseButton.classList.toggle("backgroundThird");
                 break;
             case "whole-button":
-                searchWhole = !searchWhole;
                 searchWholeButton.classList.toggle("backgroundThird");
                 break;
             case "regex-button":
-                searchRegex = !searchRegex;
                 searchRegexButton.classList.toggle("backgroundThird");
                 break;
             case "location-button":
-                searchLocation = !searchLocation;
                 searchLocationButton.classList.toggle("backgroundThird");
                 break;
         }
     });
 
-    contentContainer.addEventListener("mousedown", async (event) => {
+    tabContent.addEventListener("mousedown", async (event) => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
@@ -2872,10 +2839,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         } else if (target.textContent === "close") {
             if (typeof settings.rowDeleteMode !== "number" || settings.rowDeleteMode === RowDeleteMode.Disabled) {
-                alert(windowLocalization.deletingDisabled);
+                alert(localization.deletingDisabled);
                 return;
             } else if (settings.rowDeleteMode === RowDeleteMode.Confirmation) {
-                const confirmation = await ask(windowLocalization.deletingConfirmation);
+                const confirmation = await ask(localization.deletingConfirmation);
 
                 if (!confirmation) {
                     return;
@@ -2885,7 +2852,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const rowContainer = target.parentElement!.parentElement!.parentElement!.parentElement!;
             const position = Number.parseInt(target.parentElement!.parentElement!.firstElementChild!.textContent!);
 
-            const contentElement = contentContainer;
+            const contentElement = tabContent;
             const children = contentElement.children as HTMLCollectionOf<HTMLDivElement>;
 
             for (let i = position; i < children.length; i++) {
@@ -2902,10 +2869,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             rowContainer.remove();
         } else if (event.button === 0) {
             if (shiftPressed) {
-                if (
-                    contentContainer.contains(document.activeElement) &&
-                    document.activeElement?.tagName === "TEXTAREA"
-                ) {
+                if (tabContent.contains(document.activeElement) && document.activeElement?.tagName === "TEXTAREA") {
                     event.preventDefault();
 
                     selectedTextareas.clear();
@@ -2925,7 +2889,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         for (let i = 0; i <= rowsToSelect; i++) {
                             const rowNumber = focusedElementRowNumber + i - 1;
 
-                            const nextRowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
 
                             const nextElement = nextRowContainer.lastElementChild!
                                 .lastElementChild! as HTMLTextAreaElement;
@@ -2937,7 +2901,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         for (let i = rowsToSelect; i >= 0; i--) {
                             const rowNumber = focusedElementRowNumber - i - 1;
 
-                            const nextRowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                            const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
 
                             const nextElement = nextRowContainer.lastElementChild!
                                 .lastElementChild! as HTMLTextAreaElement;
@@ -2950,14 +2914,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 multipleTextAreasSelected = false;
 
                 for (const rowNumber of selectedTextareas.keys()) {
-                    const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                    const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
                     (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
                 }
             }
         }
     });
 
-    contentContainer.addEventListener("paste", async (event) => {
+    tabContent.addEventListener("paste", async (event) => {
         const text = await readText();
 
         if (document.activeElement?.tagName === "TEXTAREA" && text.includes("\0")) {
@@ -2973,7 +2937,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (let i = 0; i < textRows; i++) {
                     const rowNumber = rowContainerNumber + i - 1;
-                    const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                    const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
                     const elementToReplace = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
 
                     replacedTextareas.set(rowNumber, elementToReplace.value.replaceAll(text, ""));
@@ -2986,7 +2950,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    contentContainer.addEventListener("copy", async (event) => {
+    tabContent.addEventListener("copy", async (event) => {
         if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
 
@@ -3010,20 +2974,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         const parts = target.textContent!.split("-");
         const state = parts[0];
 
-        await changeState(state);
-        contentContainer.children[Number.parseInt(parts[1])].scrollIntoView({
+        await changeTab(state);
+        tabContent.children[Number.parseInt(parts[1])].scrollIntoView({
             inline: "center",
             block: "center",
         });
     });
 
-    contentContainer.addEventListener("cut", async (event) => {
+    tabContent.addEventListener("cut", async (event) => {
         if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
             await writeText(Array.from(selectedTextareas.values()).join("\0"));
 
             for (const rowNumber of selectedTextareas.keys()) {
-                const rowContainer = contentContainer.children[rowNumber] as HTMLDivElement;
+                const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
                 (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).value = "";
             }
 
