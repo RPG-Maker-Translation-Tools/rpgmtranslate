@@ -81,25 +81,25 @@ export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]
 }
 
 export function applyLocalization(localization: Localization, theme?: Theme) {
-    for (const [key, value] of Object.entries(localization) as string[][]) {
+    for (const [localizationKey, localizationString] of Object.entries(localization) as string[][]) {
         if (theme) {
-            if (key in theme) {
+            if (localizationKey in theme) {
                 continue;
             }
         }
 
-        const element = document.querySelectorAll(`.${key}`) as NodeListOf<HTMLElement> | null;
-        if (!element) {
+        const elements = document.querySelectorAll(`.${localizationKey}`) as NodeListOf<HTMLElement> | null;
+        if (!elements) {
             continue;
         }
 
-        if (key.endsWith("Title")) {
-            for (const elem of element) {
-                elem.title = value;
+        if (localizationKey.endsWith("Title")) {
+            for (const e of elements) {
+                e.title = localizationString;
             }
         } else {
-            for (const elem of element) {
-                elem.innerHTML = value;
+            for (const e of elements) {
+                e.innerHTML = localizationString;
             }
         }
     }
