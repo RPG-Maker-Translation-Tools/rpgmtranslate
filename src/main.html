@@ -147,7 +147,7 @@
                                 ></div>
                             </div>
                         </div>
-                        <div class="flex min-w-32 items-center justify-center p-4 text-sm" id="current-state"></div>
+                        <div class="flex min-w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
                         <div class="flex flex-col items-center justify-center text-sm" id="game-info">
                             <input
                                 class="input textSecond backgroundSecond min-h-8 w-96"
@@ -161,7 +161,7 @@
             </div>
         </header>
 
-        <main class="flex w-full flex-col justify-start p-8 text-lg" id="content-container"></main>
+        <main class="flex w-full flex-col justify-start p-8 text-lg" id="tab-content"></main>
 
         <div class="flex items-center justify-center p-8" id="project-status"></div>
 
@@ -172,57 +172,62 @@
             <div class="flex flex-row gap-4 p-4">
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-row gap-2">
-                        <input id="backgroundDark" type="color" /> <label for="backgroundDark"></label>
+                        <input id="backgroundDark" type="color" /> <label class="bgDark" for="backgroundDark"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="backgroundPrimary" type="color" /> <label for="backgroundPrimary"></label>
+                        <input id="backgroundPrimary" type="color" />
+                        <label class="bgPrimary" for="backgroundPrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlinePrimary" type="color" /> <label for="outlinePrimary"></label>
+                        <input id="outlinePrimary" type="color" />
+                        <label class="outPrimary" for="outlinePrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlineSecond" type="color" /> <label for="outlineSecond"></label>
+                        <input id="outlineSecond" type="color" /> <label class="outSecond" for="outlineSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlineThird" type="color" /> <label for="outlineThird"></label>
+                        <input id="outlineThird" type="color" /> <label class="outThird" for="outlineThird"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlineFocused" type="color" /> <label for="outlineFocused"></label>
+                        <input id="outlineFocused" type="color" />
+                        <label class="outFocused" for="outlineFocused"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="borderPrimary" type="color" /> <label for="borderPrimary"></label>
+                        <input id="borderPrimary" type="color" /> <label class="bdPrimary" for="borderPrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="borderSecond" type="color" /> <label for="borderSecond"></label>
+                        <input id="borderSecond" type="color" /> <label class="bdSecond" for="borderSecond"></label>
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-row gap-2">
-                        <input id="borderFocused" type="color" /> <label for="borderFocused"></label>
+                        <input id="borderFocused" type="color" /> <label class="bdFocused" for="borderFocused"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="backgroundSecond" type="color" /> <label for="backgroundSecond"></label>
+                        <input id="backgroundSecond" type="color" />
+                        <label class="bgSecond" for="backgroundSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundPrimaryHovered" type="color" />
-                        <label for="backgroundPrimaryHovered"></label>
+                        <label class="bgPrimaryHovered" for="backgroundPrimaryHovered"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundSecondHovered" type="color" />
-                        <label for="backgroundSecondHovered"></label>
+                        <label class="bgSecondHovered" for="backgroundSecondHovered"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="textPrimary" type="color" /> <label for="textPrimary"></label>
+                        <input id="textPrimary" type="color" /> <label class="txtPrimary" for="textPrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="textSecond" type="color" /> <label for="textSecond"></label>
+                        <input id="textSecond" type="color" /> <label class="txtSecond" for="textSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input class="appearance-none border-none outline-none" id="textThird" type="color" />
-                        <label for="textThird"></label>
+                        <label class="txtThird" for="textThird"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="backgroundThird" type="color" /> <label for="backgroundThird"></label>
+                        <input id="backgroundThird" type="color" />
+                        <label class="bgThird" for="backgroundThird"></label>
                     </div>
                 </div>
             </div>

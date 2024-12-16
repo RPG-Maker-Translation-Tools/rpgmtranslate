@@ -1,7 +1,6 @@
 import { Language } from "../types/enums";
 
 export class MainWindowLocalization {
-    readonly cannotGetSettings: string;
     readonly askCreateSettings: string;
     readonly createdSettings: string;
     readonly unsavedChanges: string;
@@ -37,22 +36,22 @@ export class MainWindowLocalization {
     readonly missingOriginalDir: string;
     readonly missingTranslationSubdirs: string;
     readonly noProjectSelected: string;
-    readonly backgroundDark: string;
-    readonly backgroundPrimary: string;
-    readonly backgroundSecond: string;
-    readonly backgroundThird: string;
-    readonly outlinePrimary: string;
-    readonly outlineSecond: string;
-    readonly outlineThird: string;
-    readonly outlineFocused: string;
-    readonly borderPrimary: string;
-    readonly borderSecond: string;
-    readonly borderFocused: string;
-    readonly backgroundPrimaryHovered: string;
-    readonly backgroundSecondHovered: string;
-    readonly textPrimary: string;
-    readonly textSecond: string;
-    readonly textThird: string;
+    readonly bgDark: string;
+    readonly bgPrimary: string;
+    readonly bgSecond: string;
+    readonly bgThird: string;
+    readonly outPrimary: string;
+    readonly outSecond: string;
+    readonly outThird: string;
+    readonly outFocused: string;
+    readonly bdPrimary: string;
+    readonly bdSecond: string;
+    readonly bdFocused: string;
+    readonly bgPrimaryHovered: string;
+    readonly bgSecondHovered: string;
+    readonly txtPrimary: string;
+    readonly txtSecond: string;
+    readonly txtThird: string;
     readonly createTheme: string;
     readonly allowedThemeNameCharacters: string;
     readonly invalidThemeName: string;
@@ -94,8 +93,7 @@ export class MainWindowLocalization {
     constructor(language: Language) {
         switch (language) {
             case Language.Russian:
-                this.cannotGetSettings = "Не удалось найти файл настроек программы.";
-                this.askCreateSettings = "Создать настройки?";
+                this.askCreateSettings = "Не удалось найти файл настроек программы.\nСоздать настройки?";
                 this.createdSettings =
                     "Настройки созданы.\nРезервное копирование: Включено\nПериод копирования: 60 сек.\nМаксимальное число копий: 99.\nТема: Классный цинк";
                 this.unsavedChanges = "У вас остались несохранённые изменения. Сохранить прогресс и выйти?";
@@ -133,22 +131,22 @@ export class MainWindowLocalization {
                     'Поддиректории "maps" и "other" директории "translation" отсутствуют. Проект не будет инициализирован.';
                 this.noProjectSelected =
                     'Проект не выбран. Выберите директорию проекта, используя кнопку "открыть папку" в левом верхнем углу. Директория должна содержать в себе папки "data" и "translation" (с поддиректориями "maps", "other" и "plugins", если это RPG Maker MV/MZ; или "maps" и "other", если это RPG Maker XP/VX/VXAce).';
-                this.backgroundDark = "Тёмный цвет фона";
-                this.backgroundPrimary = "Основной цвет фона";
-                this.backgroundSecond = "Второстепенный цвет фона";
-                this.backgroundThird = "Третий цвет фона";
-                this.outlinePrimary = "Основной цвет контура";
-                this.outlineSecond = "Второстепенный цвет контура";
-                this.outlineThird = "Третий цвет контура";
-                this.outlineFocused = "Цвет контура при фокусировке";
-                this.borderPrimary = "Основной цвет границы";
-                this.borderSecond = "Второстепенный цвет границы";
-                this.borderFocused = "Цвет границы при фокусировке";
-                this.backgroundPrimaryHovered = "Основной цвет фона при наведении курсора";
-                this.backgroundSecondHovered = "Второстепенный цвет фона при наведении курсора";
-                this.textPrimary = "Основной цвет текста";
-                this.textSecond = "Второстепенный цвет текста";
-                this.textThird = "Третий цвет текста";
+                this.bgDark = "Тёмный цвет фона";
+                this.bgPrimary = "Основной цвет фона";
+                this.bgSecond = "Второстепенный цвет фона";
+                this.bgThird = "Третий цвет фона";
+                this.outPrimary = "Основной цвет контура";
+                this.outSecond = "Второстепенный цвет контура";
+                this.outThird = "Третий цвет контура";
+                this.outFocused = "Цвет контура при фокусировке";
+                this.bdPrimary = "Основной цвет границы";
+                this.bdSecond = "Второстепенный цвет границы";
+                this.bdFocused = "Цвет границы при фокусировке";
+                this.bgPrimaryHovered = "Основной цвет фона при наведении курсора";
+                this.bgSecondHovered = "Второстепенный цвет фона при наведении курсора";
+                this.txtPrimary = "Основной цвет текста";
+                this.txtSecond = "Второстепенный цвет текста";
+                this.txtThird = "Третий цвет текста";
                 this.createTheme = "Создать тему";
                 this.allowedThemeNameCharacters = "Разрешенные символы: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Название темы недопустимо.";
@@ -189,8 +187,7 @@ export class MainWindowLocalization {
                 this.installUpdate = "Установить обновление";
                 break;
             default:
-                this.cannotGetSettings = "Cannot find program's settings.";
-                this.askCreateSettings = "Create settings?";
+                this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
                 this.createdSettings =
                     "Settings created.\nBackups: Enabled\nBackup period: 60 secs.\nMaximum backups: 99.\nTheme: Cool Zinc";
                 this.unsavedChanges = "You have unsaved changes. Save progress and quit?";
@@ -228,22 +225,22 @@ export class MainWindowLocalization {
                     "'translation' directory's subdirectories 'maps', 'other' and/or 'plugins' are missing. Project won't be initialized.";
                 this.noProjectSelected =
                     "No project selected. Select the project directory, using 'open folder' button in the left-top corner. Directory must contain directories  'data' and 'translation' (with 'maps', 'other' and 'plugins' subdirectories, if it's RPG Maker MV/MZ; or 'maps' and 'other', if it's RPG Maker XP/VX/VXAce).";
-                this.backgroundDark = "Dark background color";
-                this.backgroundPrimary = "Primary background color";
-                this.backgroundSecond = "Second background color";
-                this.backgroundThird = "Third background color";
-                this.outlinePrimary = "Primary outline color";
-                this.outlineSecond = "Second outline color";
-                this.outlineThird = "Third outline color";
-                this.outlineFocused = "Focused outline color";
-                this.borderPrimary = "Primary border color";
-                this.borderSecond = "Second border color";
-                this.borderFocused = "Focused border color";
-                this.backgroundPrimaryHovered = "Primary background color when hovered";
-                this.backgroundSecondHovered = "Second background color when hovered";
-                this.textPrimary = "Primary text color";
-                this.textSecond = "Second text color";
-                this.textThird = "Third text color";
+                this.bgDark = "Dark background color";
+                this.bgPrimary = "Primary background color";
+                this.bgSecond = "Second background color";
+                this.bgThird = "Third background color";
+                this.outPrimary = "Primary outline color";
+                this.outSecond = "Second outline color";
+                this.outThird = "Third outline color";
+                this.outFocused = "Focused outline color";
+                this.bdPrimary = "Primary border color";
+                this.bdSecond = "Second border color";
+                this.bdFocused = "Focused border color";
+                this.bgPrimaryHovered = "Primary background color when hovered";
+                this.bgSecondHovered = "Second background color when hovered";
+                this.txtPrimary = "Primary text color";
+                this.txtSecond = "Second text color";
+                this.txtThird = "Third text color";
                 this.createTheme = "Create theme";
                 this.allowedThemeNameCharacters = "Allowed characters: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Theme name is invalid.";
