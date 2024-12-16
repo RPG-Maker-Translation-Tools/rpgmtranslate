@@ -1,13 +1,13 @@
 import { applyLocalization, applyTheme, getThemeStyleSheet, walkDir } from "./extensions/functions";
+import { addToScope } from "./extensions/invokes";
 import { SettingsWindowLocalization } from "./extensions/localization";
 import "./extensions/math-extensions";
+import { RowDeleteMode } from "./types/enums";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
-import { addToScope } from "./extensions/invokes";
-import { RowDeleteMode } from "./types/enums";
 const appWindow = getCurrentWebviewWindow();
 
 interface FontObject extends Record<string, string> {
