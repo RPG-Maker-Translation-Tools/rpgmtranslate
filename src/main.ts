@@ -977,6 +977,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        await waitForSave();
         observerMain.disconnect();
 
         if (state) {
