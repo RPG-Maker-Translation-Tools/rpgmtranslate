@@ -1,6 +1,17 @@
 import { defineConfig, UserConfig } from "vite";
 import { ViteMinifyPlugin } from "vite-plugin-minify";
 
+function replaceTws() {
+    return {
+        name: "replace-tws",
+        transform(code: string) {
+            return {
+                code: code.replace(/tw`(.*)`/g, '"$1"'),
+            };
+        },
+    };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(
     async () =>
@@ -23,6 +34,7 @@ export default defineConfig(
                         compile: "./src/compile.html",
                         read: "./src/read.html",
                     },
+                    plugins: [replaceTws()],
                 },
             },
             // 2. tauri expects a fixed port, fail if that port is not available
