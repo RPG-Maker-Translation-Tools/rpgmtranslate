@@ -61,11 +61,13 @@ const tw = (strings: TemplateStringsArray, ...values: string[]): string => Strin
 document.addEventListener("DOMContentLoaded", async () => {
     await attachConsole();
 
+    const settingsPath = "res/settings.json";
+
     // #region Settings and localization initialization, check for updates
     let localization!: MainWindowLocalization;
 
-    let settings: Settings = (await exists("res/settings.json", { baseDir: Resource }))
-        ? (JSON.parse(await readTextFile("res/settings.json", { baseDir: Resource })) as Settings)
+    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
+        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
         : (await createSettings())!;
 
     const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
@@ -125,8 +127,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const logFile = "replacement-log.json";
     const bookmarksFile = "bookmarks.json";
-
-    const settingsPath = "res/settings.json";
 
     const tabContent = document.getElementById("tab-content") as HTMLDivElement;
     const searchInput = document.getElementById("search-input") as HTMLTextAreaElement;
@@ -296,15 +296,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const askCreateSettings = await ask(localization.askCreateSettings);
 
         if (askCreateSettings) {
-            const newSettings = new Settings(language);
+            const settings = new Settings(language);
 
             await addToScope({ path: settingsPath });
-            await writeTextFile(settingsPath, JSON.stringify(newSettings), {
+            await writeTextFile(settingsPath, JSON.stringify(settings), {
                 baseDir: Resource,
             });
 
             alert(localization.createdSettings);
-            return newSettings;
+            return settings;
         } else {
             await exit();
         }
