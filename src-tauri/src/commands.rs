@@ -84,7 +84,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
     let translation_path: &Path = &project_path.join(data_dir).join("translation");
     let (data_output_path, plugins_output_path) = if engine_type == EngineType::New {
         let plugins_output_path: PathBuf = output_path.join(data_dir).join("output/js");
-        create_dir_all(&plugins_output_path).unwrap_log(file!(), line!());
+        create_dir_all(&plugins_output_path).unwrap_log();
 
         (
             &output_path.join(data_dir).join("output/data"),
@@ -94,7 +94,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
         (&output_path.join(data_dir).join("output/Data"), None)
     };
 
-    create_dir_all(data_output_path).unwrap_log(file!(), line!());
+    create_dir_all(data_output_path).unwrap_log();
 
     let game_type: Option<GameType> = if disable_custom_processing {
         None
@@ -204,7 +204,7 @@ pub fn read(settings: ReadSettings) {
     let original_path: &Path = &project_path.join(original_dir);
     let translation_path: &Path = &project_path.join(data_dir).join("translation");
 
-    create_dir_all(translation_path).unwrap_log(file!(), line!());
+    create_dir_all(translation_path).unwrap_log();
 
     if engine_type == EngineType::New {
         generate_json = false;
@@ -255,6 +255,7 @@ pub fn read(settings: ReadSettings) {
             translation_path,
             romanize,
             logging,
+            processing_mode,
             generate_json,
         );
     }
@@ -262,17 +263,17 @@ pub fn read(settings: ReadSettings) {
 
 #[command]
 pub fn read_last_line(file_path: &Path) -> String {
-    let mut file: File = File::open(file_path).unwrap_log(file!(), line!());
+    let mut file: File = File::open(file_path).unwrap_log();
     let mut buffer: Vec<u8> = Vec::new();
 
-    let mut position: u64 = file.seek(SeekFrom::End(0)).unwrap_log(file!(), line!());
+    let mut position: u64 = file.seek(SeekFrom::End(0)).unwrap_log();
 
     while position > 0 {
         position -= 1;
-        file.seek(SeekFrom::Start(position)).unwrap_log(file!(), line!());
+        file.seek(SeekFrom::Start(position)).unwrap_log();
 
         let mut byte: [u8; 1] = [0; 1];
-        file.read_exact(&mut byte).unwrap_log(file!(), line!());
+        file.read_exact(&mut byte).unwrap_log();
 
         if byte == *b"\n" && !buffer.is_empty() {
             break;
@@ -289,10 +290,7 @@ pub fn read_last_line(file_path: &Path) -> String {
 pub async fn translate_text(text: String, from: String, to: String, replace: bool) -> String {
     tokio::time::sleep(std::time::Duration::from_millis(5)).await;
 
-    let mut translated: String = GOOGLE_TRANS
-        .translate_async(&text, &from, &to)
-        .await
-        .unwrap_log(file!(), line!());
+    let mut translated: String = GOOGLE_TRANS.translate_async(&text, &from, &to).await.unwrap_log();
 
     if replace {
         translated = translated.replace('\n', r"\#");
@@ -306,10 +304,10 @@ pub fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
     let tauri_scope = window.state::<Scopes>();
 
     if let Some(s) = window.try_fs_scope() {
-        s.allow_directory(path, true).unwrap_log(file!(), line!());
+        s.allow_directory(path, true).unwrap_log();
     }
 
-    tauri_scope.allow_directory(path, true).unwrap_log(file!(), line!());
+    tauri_scope.allow_directory(path, true).unwrap_log();
 }
 
 #[command]
@@ -323,6 +321,6 @@ pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: P
 
 #[tauri::command]
 pub fn append_to_end(path: &Path, text: &str) {
-    let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log(file!(), line!());
-    write!(file, "\n{text}").unwrap_log(file!(), line!());
+    let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log();
+    write!(file, "\n{text}").unwrap_log();
 }
