@@ -16,15 +16,9 @@ lazy_static! {
 pub fn get_game_type(game_title: &str) -> Option<GameType> {
     let lowercased: String = game_title.to_lowercase();
 
-    if Regex::new(r"\btermina\b")
-        .unwrap_log(file!(), line!())
-        .is_match(&lowercased)
-    {
+    if Regex::new(r"\btermina\b").unwrap_log().is_match(&lowercased) {
         Some(GameType::Termina)
-    } else if Regex::new(r"\blisa\b")
-        .unwrap_log(file!(), line!())
-        .is_match(&lowercased)
-    {
+    } else if Regex::new(r"\blisa\b").unwrap_log().is_match(&lowercased) {
         Some(GameType::LisaRPG)
     } else {
         None
