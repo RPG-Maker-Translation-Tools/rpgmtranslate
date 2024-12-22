@@ -444,8 +444,7 @@ export class CompileWindowLocalization {
                 this.disableOtherProcessingOption = "Выключить обработку файлов other";
                 this.disableSystemProcessingOption = "Выключить обработку файла system";
                 this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                this.dontAskAgain =
-                    "Больше не спрашивать (вы можете вновь открыть это окно двойным нажатием по кнопке компиляции)";
+                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
                 this.compileButtonText = "Скомпилировать";
                 this.mapsProcessingMode = "Режим обработки файлов maps";
                 this.defaultMapsMode = "Стандартный";
@@ -472,8 +471,7 @@ export class CompileWindowLocalization {
                 this.disableOtherProcessingOption = "Disable other processing";
                 this.disableSystemProcessingOption = "Disable system processing";
                 this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                this.dontAskAgain =
-                    "Don't ask again (you can open this window again by double-clicking compile button)";
+                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
                 this.compileButtonText = "Compile";
                 this.mapsProcessingMode = "Maps processing mode";
                 this.defaultMapsMode = "Default";
@@ -535,8 +533,7 @@ export class ReadWindowLocalization {
                 this.disableOtherProcessingOption = "Выключить обработку файлов other";
                 this.disableSystemProcessingOption = "Выключить обработку файла system";
                 this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                this.dontAskAgain =
-                    "Больше не спрашивать (вы можете вновь открыть это окно двойным нажатием по кнопке компиляции)";
+                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
                 this.readButtonText = "Прочитать";
                 this.readingInAppendMode = "Читаем в режиме добавления";
                 this.readingInForceMode = "Читаем в режиме принудительной перезаписи";
@@ -569,8 +566,7 @@ export class ReadWindowLocalization {
                 this.disableOtherProcessingOption = "Disable other processing";
                 this.disableSystemProcessingOption = "Disable system processing";
                 this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                this.dontAskAgain =
-                    "Don't ask again (you can open this window again by double-clicking compile button)";
+                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
                 this.readButtonText = "Read";
                 this.readingInAppendMode = "Reading in append mode";
                 this.readingInForceMode = "Reading in force rewrite mode";
