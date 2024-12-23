@@ -187,10 +187,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const progressText = document.getElementById("progress-text") as HTMLDivElement;
 
+            let processingMode = ProcessingMode.Default;
+
             if (readingModeSelect.value === "append") {
                 progressText.innerHTML = windowLocalization.readingInAppendMode;
+                processingMode = ProcessingMode.Append;
             } else if (readingModeSelect.value === "force") {
                 progressText.innerHTML = windowLocalization.readingInForceMode;
+                processingMode = ProcessingMode.Force;
             }
 
             const progressWindow = document.getElementById("progress-window") as HTMLDivElement;
@@ -208,12 +212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 romanize: Boolean(romanizeCheckbox.textContent),
                 disableCustomProcessing: Boolean(customProcessingCheckbox.textContent),
                 disableProcessing: Object.values(disableProcessings),
-                processingMode:
-                    readingModeSelect.value === "append"
-                        ? ProcessingMode.Append
-                        : readingModeSelect.value === "force"
-                          ? ProcessingMode.Force
-                          : ProcessingMode.Default,
+                processingMode,
                 engineType: engineType!,
                 language: settings.language,
                 logging: Boolean(loggingCheckbox.textContent),
