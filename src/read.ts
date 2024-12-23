@@ -177,12 +177,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let originalDir: string;
 
-            if (engineType === EngineType.New) {
+            if (await exists(join(projectPath, "original"))) {
+                originalDir = "original";
+            } else if (engineType === EngineType.New) {
                 originalDir = "data";
-
-                if (await exists(join(projectPath, "original"))) {
-                    originalDir = "original";
-                }
             } else {
                 originalDir = "Data";
             }
