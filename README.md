@@ -4,40 +4,38 @@
 
 ## General
 
-As the name says, this repository contains a graphical interface designed for editing and translating the text of games based on RPG Maker XP/VX/VXAce/MV/MZ engines.
+A fast and light graphical interface, designed for editing and translating games based on RPG Maker XP/VX/VXAce/MV/MZ engines.
 
-The program is written using Rust and TypeScript, and the graphical interface is implemented using Tauri. Under the hood, this GUI uses [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) to parse and write RPG Maker MV/MZ .json files, and [Rust implementation of Ruby Marshal](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VXAce files.
-The program can open folders with games on the above-mentioned engines, and then parse the text of the games into .txt files from the source files located in the "data" folder.
+Under the hood, this GUI uses:
+
+- [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) to parse and write RPG Maker MV/MZ .json files.
+- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VXAce files.
+- [rpgm-archive-decrypter](https://github.com/savannstm/rpgm-archive-decrypter) to decrypt .rgss RPG Maker XP/VX/VXAce archives.
+
+Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
 ![Interface](./screenshots/interface.png)
 
-In some cases, the source files of the XP/VX/VXAce games may be encrypted (in this case, generally, there is no data folder in the root directory of the game).
-
-It's also able to automatically decrypt `.rgss` archives in encrypted games.
-
 If you have troubled figuring out the program, check the `Help > Help` top menu option. That will probably help.
 
-**You can download the latest version from the Releases tab.**
+**Download the latest version from the Releases section.**
 
 ## Manual building
 
-Clone the repository:
+### Prerequisites
 
-`git clone https://github.com/savannstm/rpgmtranslate.git`.
+- C runtime, like `msvc` or `mingw64` on Windows and `gcc` or `clang` on Linux.
+- `rustup` with an installed Rust toolchain.
+- On Linux/mingw64 - Tauri dependencies (`gtk`, `webkit2gtk`).
+- JavaScript runtime (`nodejs`, `bun`, `deno`).
 
-cd to the `gui` directory and install all required Node.js dependencies:
+### Building
 
-`npm install`.
+Clone the repository: `git clone https://github.com/savannstm/rpgmtranslate.git`.
 
-Run
+`cd` to the repository and install all required Node.js dependencies: `npm install`.
 
-`npm run tauri dev`,
-
-to run the program in dev mode, or
-
-`npm run tauri build`,
-
-to build the program for your current OS.
+Run `npm run tauri dev`, to run the program in dev mode, or `npm run tauri build`, to build the program for your current OS.
 
 You can edit frontend's program source code in `src` directory, and backend source code in `src-tauri/src` directory.
 
