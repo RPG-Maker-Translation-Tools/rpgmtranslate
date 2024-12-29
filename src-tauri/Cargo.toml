@@ -1,6 +1,6 @@
 [package]
 name = "rpgmtranslate"
-version = "4.0.21"
+version = "4.0.22"
 description = "A graphical interface that allows you to open RPG Maker games' text and edit it, then writing it back to the initial form."
 authors = ["savannstm <savannstm@gmail.com>"]
 edition = "2021"
@@ -10,7 +10,7 @@ tauri-build = { version = "2.0.3", features = [] }
 
 [dependencies]
 tauri = { version = "2.1.1", features = ["protocol-asset", "devtools"] }
-serde = { version = "1.0.216", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.134"
 rayon = "1.10.0"
 regex = "1.11.1"
@@ -33,7 +33,7 @@ tauri-plugin-log = "2.2.0"
 log = "0.4.22"
 tokio = "1.42.0"
 rpgmad-lib = { version = "1.0.1", features = ["rayon"] }
-rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.2.0", features = ["log", "serde"] }
+rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.2.1", features = ["log", "serde"] }
 tauri-plugin-clipboard-manager = "2.2.0"
 
 [features]
