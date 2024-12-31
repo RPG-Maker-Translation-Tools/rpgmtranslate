@@ -59,160 +59,6 @@ import XRegExp from "xregexp";
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await attachConsole();
-
-    const settingsPath = "res/settings.json";
-
-    // #region Settings and localization initialization, check for updates
-    let localization!: MainWindowLocalization;
-
-    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
-        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
-        : (await createSettings())!;
-
-    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
-    let theme: Theme = themes[settings.theme];
-
-    initializeLocalization(settings.language);
-
-    {
-        const update = await checkVersion();
-
-        if (update) {
-            const installUpdate = await ask(
-                `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
-                { title: localization.updateAvailable, okLabel: localization.installUpdate },
-            );
-
-            if (installUpdate) {
-                let downloaded = 0;
-                let contentLength: number | undefined = 0;
-
-                await update.downloadAndInstall((event) => {
-                    switch (event.event) {
-                        case "Started":
-                            contentLength = event.data.contentLength;
-                            console.log(`Started downloading ${event.data.contentLength} bytes`);
-                            break;
-                        case "Progress":
-                            downloaded += event.data.chunkLength;
-                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
-                            break;
-                        case "Finished":
-                            console.log("Download finished");
-                            break;
-                    }
-                });
-
-                await relaunch();
-            }
-        } else {
-            console.log("Program is already updated");
-        }
-    }
-    // #endregion
-
-    // #region Program initialization
-    applyLocalization(localization, theme);
-
-    // #region Static constants
-    const NEW_LINE = "\\#";
-    const LINES_SEPARATOR = "<#>";
-    const sheet = getThemeStyleSheet()!;
-
-    const programDataDir = ".rpgmtranslate";
-
-    const translationDir = "translation";
-    const tempMapsDir = "temp-maps";
-
-    const logFile = "replacement-log.json";
-    const bookmarksFile = "bookmarks.json";
-
-    const tabContent = document.getElementById("tab-content") as HTMLDivElement;
-    const searchInput = document.getElementById("search-input") as HTMLTextAreaElement;
-    const replaceInput = document.getElementById("replace-input") as HTMLTextAreaElement;
-    const leftPanel = document.getElementById("left-panel") as HTMLDivElement;
-    const searchPanel = document.getElementById("search-results") as HTMLDivElement;
-    const searchPanelFound = document.getElementById("search-content") as HTMLDivElement;
-    const searchPanelReplaced = document.getElementById("replace-content") as HTMLDivElement;
-    const searchCurrentPage = document.getElementById("search-current-page") as HTMLSpanElement;
-    const searchTotalPages = document.getElementById("search-total-pages") as HTMLSpanElement;
-    const topPanel = document.getElementById("top-panel") as HTMLDivElement;
-    const topPanelButtonsDiv = topPanel.firstElementChild! as HTMLDivElement;
-    const saveButton = topPanelButtonsDiv.children[1] as HTMLButtonElement;
-    const compileButton = topPanelButtonsDiv.children[2] as HTMLButtonElement;
-    const themeButton = topPanelButtonsDiv.children[5] as HTMLButtonElement;
-    const themeMenu = topPanelButtonsDiv.children[6] as HTMLDivElement;
-    const toolsButton = topPanelButtonsDiv.children[10] as HTMLButtonElement;
-    const toolsMenu = topPanelButtonsDiv.children[11] as HTMLDivElement;
-    const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
-    const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
-    const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
-    const searchModeSelect = document.getElementById("search-mode") as HTMLSelectElement;
-    const searchLocationButton = document.getElementById("location-button") as HTMLButtonElement;
-    const goToRowInput = document.getElementById("goto-row-input") as HTMLInputElement;
-    const menuBar = document.getElementById("menu-bar") as HTMLDivElement;
-    const fileMenuButton = document.getElementById("file-menu-button") as HTMLButtonElement;
-    const helpMenuButton = document.getElementById("help-menu-button") as HTMLButtonElement;
-    const languageMenuButton = document.getElementById("language-menu-button") as HTMLButtonElement;
-    const fileMenu = document.getElementById("file-menu") as HTMLDivElement;
-    const helpMenu = document.getElementById("help-menu") as HTMLDivElement;
-    const languageMenu = document.getElementById("language-menu") as HTMLDivElement;
-    const currentTabDiv = document.getElementById("current-tab") as HTMLDivElement;
-    const createThemeMenuButton = document.getElementById("create-theme-menu-button") as HTMLButtonElement;
-    const searchMenu = document.getElementById("search-menu") as HTMLDivElement;
-    const searchButton = document.getElementById("search-button") as HTMLButtonElement;
-    const bookmarksButton = document.getElementById("bookmarks-button") as HTMLButtonElement;
-    const bookmarksMenu = document.getElementById("bookmarks-menu") as HTMLDivElement;
-    const projectStatus = document.getElementById("project-status") as HTMLDivElement;
-    const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
-    const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
-    const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
-    const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
-    const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
-    // #endregion
-
-    let backupIsActive: number | null = null;
-    let originalDir = "";
-
-    // Set theme
-    let currentTheme: string;
-
-    setTheme(theme);
-
-    // Initialize the project
-    let currentTab: string | null = null;
-    let currentTabIndex: number | null = null;
-    let nextBackupNumber: number;
-
-    const observerMain = new IntersectionObserver(
-        (entries) => {
-            for (const entry of entries) {
-                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
-            }
-        },
-        { root: document },
-    );
-
-    const observerFound = new IntersectionObserver(
-        (entries) => {
-            for (const entry of entries) {
-                entry.target.firstElementChild!.classList.toggle("hidden", !entry.isIntersecting);
-            }
-        },
-        { root: document },
-    );
-
-    let totalAllLines = 0;
-    const translatedLinesArray: number[] = [];
-
-    await initializeProject(settings.projectPath);
-
-    // Load the font
-    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
-    await loadFont(settings.fontUrl);
-    // #endregion
-
     async function fetchReplacementLog(): Promise<ReplacementLog> {
         const replaced: ReplacementLog = {};
 
@@ -226,40 +72,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         return replaced;
     }
-
-    const replaced: ReplacementLog = await fetchReplacementLog();
-
-    const activeGhostLines: HTMLDivElement[] = [];
-
-    const selectedTextareas = new Map<number, string>();
-    const replacedTextareas = new Map<number, string>();
-
-    const bookmarks: Bookmark[] = [];
-
-    {
-        const bookmarksFilePath = join(settings.projectPath, programDataDir, bookmarksFile);
-        await addToScope({ path: bookmarksFilePath });
-
-        if (await exists(bookmarksFilePath)) {
-            const bookmarkEntries = JSON.parse(await readTextFile(bookmarksFilePath)) as Bookmark[];
-
-            for (const bookmark of bookmarkEntries) {
-                addBookmark(bookmark);
-            }
-        }
-    }
-
-    let saved = true;
-    let saving = false;
-    let currentFocusedElement: [string, string] | [] = [];
-
-    let shiftPressed = false;
-
-    let multipleTextAreasSelected = false;
-
-    let zoom = 1;
-
-    await appWindow.setZoom(zoom);
 
     function updateProgressMeter(total: number, translated: number) {
         currentProgressMeter.style.width = `${Math.round((translated / total) * 100)}%`;
@@ -322,7 +134,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         let regexp = searchRegexButton.classList.contains("backgroundThird") ? text : await escapeText({ text });
-        regexp = searchWholeButton.classList.contains("backgroundThird") ? `(?<!\\p{L})${regexp}(?!\\p{L})` : regexp;
+
+        if (searchWholeButton.classList.contains("backgroundThird")) {
+            regexp = `(?<!\\p{L})${regexp}(?!\\p{L})`;
+        }
 
         const attr = searchCaseButton.classList.contains("backgroundThird") ? "g" : "gi";
 
@@ -343,7 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const rowContainer =
             file !== currentTab ? null : (tabContent.children[Number.parseInt(row) - 1] as HTMLDivElement);
-        const counterpartElement = rowContainer?.lastElementChild!.children[type.startsWith("o") ? 2 : 1];
+        const counterpartElement = rowContainer?.children[type.startsWith("o") ? 2 : 1];
 
         const resultDiv = document.createElement("div");
         resultDiv.innerHTML = result;
@@ -395,16 +210,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const start = elementText.indexOf(match, lastIndex);
                 const end = start + match.length;
 
-                const beforeDiv = `<span>${elementText.slice(lastIndex, start)}</span>`;
-                const matchDiv = `<span class="backgroundThird">${match}</span>`;
-
-                result.push(beforeDiv);
+                const matchDiv = `${elementText.slice(lastIndex, start)}<span class="backgroundThird">${match}</span>`;
                 result.push(matchDiv);
 
                 lastIndex = end;
             }
 
-            const afterDiv = `<span>${elementText.slice(lastIndex)}</span>`;
+            const afterDiv = elementText.slice(lastIndex);
             result.push(afterDiv);
 
             return result.join("");
@@ -427,7 +239,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (openedTab.length) {
             for (const child of openedTab) {
-                const node = child.firstElementChild!.children as HTMLCollectionOf<HTMLTextAreaElement>;
+                const node = child.children as HTMLCollectionOf<HTMLTextAreaElement>;
 
                 if (searchMode !== SearchMode.OnlyOriginal) {
                     const elementText = node[2].value.replaceAllMultiple({
@@ -438,7 +250,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (matches) {
                         const result = createMatchesContainer(elementText, matches);
-                        const metadata = node[2].parentElement!.parentElement!.id.split("-");
+                        const metadata = node[2].closest(`[id^="${currentTab}"]`)!.id.split("-");
                         const formattedMetadata = `${metadata[0]}-translation-${metadata[1]}`;
                         isReplace ? results!.set(node[2], result) : objectToWrite.set(formattedMetadata, result);
                     }
@@ -450,7 +262,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (matches) {
                         const result = createMatchesContainer(elementText, matches);
-                        const metadata = node[1].parentElement!.parentElement!.id.split("-");
+                        const metadata = node[1].closest(`[id^="${currentTab}"]`)!.id.split("-");
                         const formattedMetadata = `${metadata[0]}-original-${metadata[1]}`;
                         isReplace ? results!.set(node[1], result) : objectToWrite.set(formattedMetadata, result);
                     }
@@ -553,7 +365,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     appendMatch(id, result);
                 }
             }
-        } else {
+        } else if (!isReplace) {
             searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${localization.noMatches}</div>`;
             showSearchPanel(false);
         }
@@ -563,7 +375,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function handleReplacedClick(event: MouseEvent) {
         const target = event.target as HTMLElement;
-        const element = target.hasAttribute("reverted") ? target : target.parentElement!;
+        const element = target.closest("[reverted]")!;
 
         if (element.getAttribute("reverted") === "1" || !searchPanelReplaced.contains(element)) {
             return;
@@ -583,8 +395,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         } else if (event.button === 2) {
             if (currentTab === file) {
-                const textarea = tabContent.children[row].lastElementChild!.lastElementChild! as HTMLTextAreaElement;
-
+                const textarea = tabContent.children[row].lastElementChild! as HTMLTextAreaElement;
                 textarea.value = element.children[1].textContent!;
             } else {
                 const filePath = file.startsWith("maps")
@@ -683,14 +494,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         async function handleResultClick(event: MouseEvent) {
             const target = event.target as HTMLDivElement;
-
-            const resultElement = (
-                target.parentElement?.hasAttribute("data")
-                    ? target.parentElement
-                    : target.parentElement?.parentElement?.hasAttribute("data")
-                      ? target.parentElement.parentElement
-                      : target.parentElement?.parentElement?.parentElement
-            ) as HTMLDivElement;
+            const resultElement = target.closest("[data]")!;
 
             if (!searchPanelFound.contains(resultElement)) {
                 return;
@@ -715,7 +519,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const elementToReplace =
                             file !== currentTab
                                 ? null
-                                : tabContent.children[Number.parseInt(row) - 1].lastElementChild!.lastElementChild!;
+                                : tabContent.children[Number.parseInt(row) - 1].lastElementChild!;
 
                         let newText: string;
 
@@ -761,20 +565,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
-        }
-
-        observerFound.disconnect();
-        searchPanelFound.style.height = `${searchPanelFound.scrollHeight}px`;
-
-        for (const container of searchPanelFound.children as HTMLCollectionOf<HTMLDivElement>) {
-            container.style.width = `${container.clientWidth}px`;
-            container.style.height = `${container.clientHeight}px`;
-
-            observerFound.observe(container);
-        }
-
-        for (const container of searchPanelFound.children as HTMLCollectionOf<HTMLDivElement>) {
-            container.firstElementChild?.classList.add("hidden");
         }
 
         showSearchPanel(hide);
@@ -823,7 +613,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             for (const textarea of results.keys()) {
                 const newValue = textarea.value.replace(regexp, replaceInput.value);
 
-                replaced[textarea.parentElement!.parentElement!.id] = {
+                replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
                     old: textarea.value,
                     new: newValue,
                 };
@@ -855,8 +645,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (mode !== SaveMode.Backup) {
             if (currentTab) {
                 for (const child of tabContent.children) {
-                    const originalTextElement = child.firstElementChild!.children[1] as HTMLDivElement;
-                    const translatedTextElement = child.firstElementChild!.children[2] as HTMLTextAreaElement;
+                    const originalTextElement = child.children[1] as HTMLDivElement;
+                    const translatedTextElement = child.children[2] as HTMLTextAreaElement;
 
                     outputArray.push(
                         originalTextElement.textContent!.replaceAll("\n", NEW_LINE) +
@@ -962,7 +752,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         await waitForSave();
-        observerMain.disconnect();
 
         if (currentTab) {
             await save(SaveMode.SingleFile);
@@ -973,8 +762,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 let translatedFields = 0;
 
                 for (const child of tabContent.children) {
-                    const original = child.firstElementChild!.children[1] as HTMLDivElement;
-                    const translation = child.firstElementChild!.children[2] as HTMLTextAreaElement;
+                    const original = child.children[1] as HTMLDivElement;
+                    const translation = child.children[2] as HTMLTextAreaElement;
 
                     if (original.textContent!.startsWith("<!--")) {
                         totalFields--;
@@ -1070,13 +859,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         for (const [rowNumber, value] of selectedTextareas.entries()) {
                             const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
+                            const textarea = rowContainer.lastElementChild! as HTMLTextAreaElement;
                             textarea.value = value;
                         }
 
                         for (const [rowNumber, value] of replacedTextareas.entries()) {
                             const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const textarea = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
+                            const textarea = rowContainer.lastElementChild! as HTMLTextAreaElement;
                             textarea.value = value;
                             textarea.calculateHeight();
                         }
@@ -1185,7 +974,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 return;
                             }
 
-                            const idParts = focusedElement.parentElement!.parentElement!.id.split("-");
+                            const idParts = focusedElement.closest(`[id^="${currentTab}"]`)!.id.split("-");
                             const index = Number.parseInt(idParts[1]);
 
                             if (Number.isNaN(index)) {
@@ -1193,8 +982,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
 
                             const step = direction === JumpDirection.Next ? 1 : -1;
-                            const nextElement = document.getElementById(`${idParts[0]}-${index + step}`)
-                                ?.lastElementChild?.lastElementChild as HTMLTextAreaElement | null;
+                            const nextElement = document.getElementById(`${idParts[0]}-${index + step}`)!
+                                .lastElementChild as HTMLTextAreaElement | null;
 
                             if (!nextElement) {
                                 return;
@@ -1260,17 +1049,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (event.ctrlKey) {
                 searchInput.value += "\n";
-                searchInput.calculateHeight();
             } else {
                 if (searchInput.value.trim()) {
                     searchPanelFound.innerHTML = "";
                     await displaySearchResults(searchInput.value, false);
                 }
             }
-        } else if (event.code === "Backspace") {
-            requestAnimationFrame(() => {
-                searchInput.calculateHeight();
-            });
         } else if (event.altKey) {
             switch (event.code) {
                 case "KeyC":
@@ -1287,6 +1071,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     break;
             }
         }
+
+        requestAnimationFrame(() => {
+            searchInput.calculateHeight();
+        });
     }
 
     function handleReplaceInputKeypress(event: KeyboardEvent) {
@@ -1344,42 +1132,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const textParent = document.createElement("div");
             textParent.id = `${contentName}-${added}`;
-            textParent.className = tw`h-auto w-full`;
+            textParent.className = tw`flex w-full flex-row justify-around py-[1px]`;
 
-            const textContainer = document.createElement("div");
-            textContainer.className = tw`flex h-full flex-row justify-around py-[1px]`;
-
-            const originalTextElement = document.createElement("div");
-            originalTextElement.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer whitespace-pre-wrap p-1 outline outline-2`;
+            const originalTextDiv = document.createElement("div");
+            originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer whitespace-pre-wrap p-1 outline outline-2`;
 
             if (settings.fontUrl) {
-                originalTextElement.style.fontFamily = "font";
+                originalTextDiv.style.fontFamily = "font";
             }
 
-            originalTextElement.textContent = originalTextSplit;
+            originalTextDiv.textContent = originalTextSplit;
 
-            const translationTextElement = document.createElement("textarea");
-            translationTextElement.rows = translationTextSplit.length;
-            translationTextElement.className = tw`outlinePrimary outlineFocused backgroundPrimary font h-auto w-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
-            translationTextElement.spellcheck = false;
-            translationTextElement.autocomplete = "off";
-            translationTextElement.autocapitalize = "off";
-            translationTextElement.autofocus = false;
+            const translationTextArea = document.createElement("textarea");
+            translationTextArea.rows = translationTextSplit.length;
+            translationTextArea.className = tw`outlinePrimary outlineFocused backgroundPrimary font w-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
+            translationTextArea.spellcheck = false;
+            translationTextArea.autocomplete = "off";
+            translationTextArea.autocapitalize = "off";
+            translationTextArea.autofocus = false;
 
             if (settings.fontUrl) {
-                translationTextElement.style.fontFamily = "font";
+                translationTextArea.style.fontFamily = "font";
             }
 
-            translationTextElement.value = translationTextSplit.join("\n");
+            translationTextArea.value = translationTextSplit.join("\n");
 
-            const rowElement = document.createElement("div");
-            rowElement.className = tw`outlinePrimary backgroundPrimary flex w-48 flex-row p-1 outline outline-2`;
+            const rowNumberContainer = document.createElement("div");
+            rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-48 flex-row p-1 outline outline-2`;
 
-            const spanElement = document.createElement("span");
-            spanElement.textContent = added.toString();
+            const rowNumberSpan = document.createElement("span");
+            rowNumberSpan.textContent = added.toString();
 
-            const innerDiv = document.createElement("div");
-            innerDiv.className = tw`textThird flex w-full items-start justify-end p-0.5 text-xl`;
+            const rowNumberButtonDiv = document.createElement("div");
+            rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end p-0.5 text-xl`;
 
             const bookmarkButton = document.createElement("button");
             bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
@@ -1393,40 +1178,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             deleteButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
             deleteButton.textContent = "close";
 
-            innerDiv.appendChild(bookmarkButton);
-            innerDiv.appendChild(deleteButton);
-            rowElement.appendChild(spanElement);
-            rowElement.appendChild(innerDiv);
+            rowNumberButtonDiv.appendChild(bookmarkButton);
+            rowNumberButtonDiv.appendChild(deleteButton);
+            rowNumberContainer.appendChild(rowNumberSpan);
+            rowNumberContainer.appendChild(rowNumberButtonDiv);
 
-            originalTextElement.classList.add("text-lg");
-            document.body.appendChild(originalTextElement);
+            originalTextDiv.classList.add("text-lg");
+            document.body.appendChild(originalTextDiv);
 
-            const { lineHeight, paddingTop } = window.getComputedStyle(originalTextElement);
+            const { lineHeight, paddingTop } = window.getComputedStyle(originalTextDiv);
             const minHeight =
-                (originalTextElement.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) +
+                (originalTextDiv.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) +
                 Number.parseInt(paddingTop) * 2;
 
-            document.body.removeChild(originalTextElement);
-            originalTextElement.classList.remove("text-lg");
+            document.body.removeChild(originalTextDiv);
+            originalTextDiv.classList.remove("text-lg");
 
-            rowElement.style.minHeight =
-                originalTextElement.style.minHeight =
-                translationTextElement.style.minHeight =
+            textParent.style.minHeight =
+                rowNumberContainer.style.minHeight =
+                originalTextDiv.style.minHeight =
+                translationTextArea.style.minHeight =
                 textParent.style.minHeight =
                     `${minHeight}px`;
 
-            textContainer.appendChild(rowElement);
-            textContainer.appendChild(originalTextElement);
-            textContainer.appendChild(translationTextElement);
-            textParent.appendChild(textContainer);
+            textParent.appendChild(rowNumberContainer);
+            textParent.appendChild(originalTextDiv);
+            textParent.appendChild(translationTextArea);
             fragment.appendChild(textParent);
         }
 
         tabContent.appendChild(fragment);
-
-        for (const child of tabContent.children) {
-            observerMain.observe(child);
-        }
     }
 
     async function startCompilation(silent: boolean) {
@@ -1519,19 +1300,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const { lineHeight, fontSize, fontFamily } = textAreaPropertiesMemo;
 
-        const offsetTop = textarea.offsetTop;
-        const offsetLeft = textarea.offsetLeft;
-
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d")!;
         context.font = `${fontSize} ${fontFamily}`;
 
-        let top = offsetTop;
+        let top = textarea.offsetTop;
 
         for (let i = 0; i < lines.length - 1; i++) {
             const line = lines[i];
             const textWidth = context.measureText(`${line} `).width;
-            const left = offsetLeft + textWidth;
+            const left = textarea.offsetLeft + textWidth;
 
             positions.push({ left, top });
             top += lineHeight;
@@ -1594,9 +1372,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             currentFocusedElement = [target.id, target.value];
 
             target.addEventListener("keyup", calculateHeight);
-            target.addEventListener("input", trackFocus);
 
-            trackFocus(event);
+            if (settings.displayGhostLines) {
+                target.addEventListener("input", trackFocus);
+                trackFocus(event);
+            }
         }
     }
 
@@ -1617,7 +1397,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (tabContent.contains(target) && target.tagName === "TEXTAREA") {
                 target.removeEventListener("keyup", calculateHeight);
-                target.removeEventListener("input", trackFocus);
+
+                if (settings.displayGhostLines) {
+                    target.removeEventListener("input", trackFocus);
+                }
             }
         }
     }
@@ -2018,6 +1801,179 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearInterval(interval);
     }
 
+    // #region Settings and localization initialization, check for updates
+    await attachConsole();
+
+    const settingsPath = "res/settings.json";
+
+    let localization!: MainWindowLocalization;
+
+    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
+        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
+        : (await createSettings())!;
+
+    const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
+    let theme: Theme = themes[settings.theme];
+
+    initializeLocalization(settings.language);
+
+    try {
+        const update = await checkVersion();
+
+        if (update) {
+            const installUpdate = await ask(
+                `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
+                { title: localization.updateAvailable, okLabel: localization.installUpdate },
+            );
+
+            if (installUpdate) {
+                let downloaded = 0;
+                let contentLength: number | undefined = 0;
+
+                await update.downloadAndInstall((event) => {
+                    switch (event.event) {
+                        case "Started":
+                            contentLength = event.data.contentLength;
+                            console.log(`Started downloading ${event.data.contentLength} bytes`);
+                            break;
+                        case "Progress":
+                            downloaded += event.data.chunkLength;
+                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
+                            break;
+                        case "Finished":
+                            console.log("Download finished");
+                            break;
+                    }
+                });
+
+                await relaunch();
+            }
+        } else {
+            console.log("Program is already updated");
+        }
+    } catch (e) {
+        console.error(e);
+    }
+    // #endregion
+
+    // #region Program initialization
+    applyLocalization(localization, theme);
+
+    // #region Static constants
+    const NEW_LINE = "\\#";
+    const LINES_SEPARATOR = "<#>";
+    const sheet = getThemeStyleSheet()!;
+
+    const programDataDir = ".rpgmtranslate";
+
+    const translationDir = "translation";
+    const tempMapsDir = "temp-maps";
+
+    const logFile = "replacement-log.json";
+    const bookmarksFile = "bookmarks.json";
+
+    const tabContent = document.getElementById("tab-content") as HTMLDivElement;
+    const searchInput = document.getElementById("search-input") as HTMLTextAreaElement;
+    const replaceInput = document.getElementById("replace-input") as HTMLTextAreaElement;
+    const leftPanel = document.getElementById("left-panel") as HTMLDivElement;
+    const searchPanel = document.getElementById("search-results") as HTMLDivElement;
+    const searchPanelFound = document.getElementById("search-content") as HTMLDivElement;
+    const searchPanelReplaced = document.getElementById("replace-content") as HTMLDivElement;
+    const searchCurrentPage = document.getElementById("search-current-page") as HTMLSpanElement;
+    const searchTotalPages = document.getElementById("search-total-pages") as HTMLSpanElement;
+    const topPanel = document.getElementById("top-panel") as HTMLDivElement;
+    const topPanelButtonsDiv = topPanel.firstElementChild! as HTMLDivElement;
+    const saveButton = topPanelButtonsDiv.children[1] as HTMLButtonElement;
+    const compileButton = topPanelButtonsDiv.children[2] as HTMLButtonElement;
+    const themeButton = topPanelButtonsDiv.children[5] as HTMLButtonElement;
+    const themeMenu = topPanelButtonsDiv.children[6] as HTMLDivElement;
+    const toolsButton = topPanelButtonsDiv.children[10] as HTMLButtonElement;
+    const toolsMenu = topPanelButtonsDiv.children[11] as HTMLDivElement;
+    const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
+    const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
+    const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
+    const searchModeSelect = document.getElementById("search-mode") as HTMLSelectElement;
+    const searchLocationButton = document.getElementById("location-button") as HTMLButtonElement;
+    const goToRowInput = document.getElementById("goto-row-input") as HTMLInputElement;
+    const menuBar = document.getElementById("menu-bar") as HTMLDivElement;
+    const fileMenuButton = document.getElementById("file-menu-button") as HTMLButtonElement;
+    const helpMenuButton = document.getElementById("help-menu-button") as HTMLButtonElement;
+    const languageMenuButton = document.getElementById("language-menu-button") as HTMLButtonElement;
+    const fileMenu = document.getElementById("file-menu") as HTMLDivElement;
+    const helpMenu = document.getElementById("help-menu") as HTMLDivElement;
+    const languageMenu = document.getElementById("language-menu") as HTMLDivElement;
+    const currentTabDiv = document.getElementById("current-tab") as HTMLDivElement;
+    const createThemeMenuButton = document.getElementById("create-theme-menu-button") as HTMLButtonElement;
+    const searchMenu = document.getElementById("search-menu") as HTMLDivElement;
+    const searchButton = document.getElementById("search-button") as HTMLButtonElement;
+    const bookmarksButton = document.getElementById("bookmarks-button") as HTMLButtonElement;
+    const bookmarksMenu = document.getElementById("bookmarks-menu") as HTMLDivElement;
+    const projectStatus = document.getElementById("project-status") as HTMLDivElement;
+    const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
+    const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
+    const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
+    const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
+    const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
+    // #endregion
+
+    let backupIsActive: number | null = null;
+    let originalDir = "";
+
+    // Set theme
+    let currentTheme: string;
+
+    setTheme(theme);
+
+    // Initialize the project
+    let currentTab: string | null = null;
+    let currentTabIndex: number | null = null;
+    let nextBackupNumber: number;
+
+    let totalAllLines = 0;
+    const translatedLinesArray: number[] = [];
+
+    await initializeProject(settings.projectPath);
+
+    // Load the font
+    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
+    await loadFont(settings.fontUrl);
+
+    const replaced: ReplacementLog = await fetchReplacementLog();
+
+    const activeGhostLines: HTMLDivElement[] = [];
+
+    const selectedTextareas = new Map<number, string>();
+    const replacedTextareas = new Map<number, string>();
+
+    const bookmarks: Bookmark[] = [];
+
+    {
+        const bookmarksFilePath = join(settings.projectPath, programDataDir, bookmarksFile);
+        await addToScope({ path: bookmarksFilePath });
+
+        if (await exists(bookmarksFilePath)) {
+            const bookmarkEntries = JSON.parse(await readTextFile(bookmarksFilePath)) as Bookmark[];
+
+            for (const bookmark of bookmarkEntries) {
+                addBookmark(bookmark);
+            }
+        }
+    }
+
+    let saved = true;
+    let saving = false;
+    let currentFocusedElement: [string, string] | [] = [];
+
+    let shiftPressed = false;
+
+    let multipleTextAreasSelected = false;
+
+    let zoom = 1;
+
+    await appWindow.setZoom(zoom);
+    // #endregion
+
+    // #region Event listeners
     leftPanel.addEventListener("click", async (event) => {
         let target = event.target as HTMLElement;
         const leftPanelChildren = Array.from(leftPanel.children);
@@ -2050,7 +2006,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await save(SaveMode.AllFiles);
                 break;
             case "compile-button":
-                await startCompilation(event.button === 2 ? false : true);
+                await startCompilation(event.button !== 2);
                 break;
             case "open-directory-button": {
                 const directory = await openPath({ directory: true, multiple: false });
@@ -2330,10 +2286,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                     if (filename === currentTab) {
                                         for (const element of tabContent.children) {
-                                            const originalField = element.firstElementChild!
-                                                .children[1] as HTMLDivElement;
-                                            const translationField = element.firstElementChild!
-                                                .children[2] as HTMLTextAreaElement;
+                                            const originalField = element.children[1] as HTMLDivElement;
+                                            const translationField = element.children[2] as HTMLTextAreaElement;
 
                                             const translationExists = Boolean(translationField.value.trim());
 
@@ -2551,7 +2505,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (target.innerHTML.trim() === "search") {
                     target.innerHTML = "menu_book";
-                    observerFound.disconnect();
 
                     for (const [key, value] of Object.entries(replaced)) {
                         const replacedContainer = document.createElement("div");
@@ -2751,22 +2704,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    tabContent.addEventListener("focus", handleFocus, true);
-    tabContent.addEventListener("blur", handleBlur, true);
-    tabContent.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.tagName === "DIV") {
-            const rowContainer = target.parentElement?.parentElement;
-
-            if (rowContainer) {
-                if (/\d$/.test(rowContainer.id)) {
-                    await writeText(target.textContent!);
-                }
-            }
-        }
-    });
-
     searchMenu.addEventListener("click", async (event) => {
         if (!settings.projectPath) {
             return;
@@ -2795,11 +2732,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    tabContent.addEventListener("focus", handleFocus, true);
+    tabContent.addEventListener("blur", handleBlur, true);
+    tabContent.addEventListener("click", async (event) => {
+        const target = event.target as HTMLElement;
+
+        if (target.tagName === "DIV") {
+            const rowContainer = target.parentElement;
+
+            if (rowContainer) {
+                if (/\d$/.test(rowContainer.id)) {
+                    await writeText(target.textContent!);
+                }
+            }
+        }
+    });
+
     tabContent.addEventListener("mousedown", async (event) => {
         const target = event.target as HTMLElement;
 
         if (target.textContent === "bookmark") {
-            const rowContainerId = target.parentElement!.parentElement!.parentElement!.parentElement!.id;
+            const rowContainerId = target.closest(`[id^="${currentTab}"]`)!.id;
             const bookmarkIndex = bookmarks.findIndex((obj) => obj.title === rowContainerId);
 
             if (bookmarkIndex !== -1) {
@@ -2849,16 +2802,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
 
-            const rowContainer = target.parentElement!.parentElement!.parentElement!.parentElement!;
-            const position = Number.parseInt(target.parentElement!.parentElement!.firstElementChild!.textContent!);
+            const rowContainer = target.closest(`[id^="${currentTab}"]`)!;
+            const position = Number.parseInt(target.parentElement!.firstElementChild!.textContent!);
 
-            const contentElement = tabContent;
-            const children = contentElement.children as HTMLCollectionOf<HTMLDivElement>;
+            const children = tabContent.children as HTMLCollectionOf<HTMLDivElement>;
 
             for (let i = position; i < children.length; i++) {
                 const element = children[i];
 
-                const rowNumberElement = element.firstElementChild!.firstElementChild!.firstElementChild!;
+                const rowNumberElement = element.firstElementChild!.firstElementChild!;
                 const newRowNumber = (Number.parseInt(rowNumberElement.textContent!) - 1).toString();
 
                 rowNumberElement.textContent = newRowNumber;
@@ -2876,35 +2828,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     multipleTextAreasSelected = true;
 
                     const clickedRowContainerNumber = Number.parseInt(
-                        (event.target as HTMLElement).parentElement!.parentElement!.id.split("-")[1],
+                        (event.target as HTMLElement).closest(`[id^="${currentTab}"]`)!.id.split("-")[1],
                     );
-                    const focusedElementRowNumber = Number.parseInt(
-                        document.activeElement.parentElement!.parentElement!.id.split("-")[1],
+                    const focusedRowContainerNumber = Number.parseInt(
+                        document.activeElement.closest(`[id^="${currentTab}"]`)!.id.split("-")[1],
                     );
 
-                    const rowsRange = clickedRowContainerNumber - focusedElementRowNumber;
+                    const rowsRange = clickedRowContainerNumber - focusedRowContainerNumber;
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
                         for (let i = 0; i <= rowsToSelect; i++) {
-                            const rowNumber = focusedElementRowNumber + i - 1;
+                            const rowNumber = focusedRowContainerNumber + i - 1;
 
                             const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-
-                            const nextElement = nextRowContainer.lastElementChild!
-                                .lastElementChild! as HTMLTextAreaElement;
+                            const nextElement = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
 
                             nextElement.style.outlineColor = theme.outlineFocused;
                             selectedTextareas.set(rowNumber, nextElement.value);
                         }
                     } else {
                         for (let i = rowsToSelect; i >= 0; i--) {
-                            const rowNumber = focusedElementRowNumber - i - 1;
+                            const rowNumber = focusedRowContainerNumber - i - 1;
 
                             const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
+                            const nextElement = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                            const nextElement = nextRowContainer.lastElementChild!
-                                .lastElementChild! as HTMLTextAreaElement;
                             nextElement.style.outlineColor = theme.outlineFocused;
                             selectedTextareas.set(rowNumber, nextElement.value);
                         }
@@ -2915,9 +2864,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (const rowNumber of selectedTextareas.keys()) {
                     const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                    (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
+                    (rowContainer.lastElementChild! as HTMLTextAreaElement).style.outlineColor = "";
                 }
             }
+        }
+    });
+
+    tabContent.addEventListener("copy", async (event) => {
+        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
+            event.preventDefault();
+
+            const textarea = document.activeElement as HTMLTextAreaElement;
+            selectedTextareas.set(
+                Number.parseInt(textarea.closest(`[id^="${currentTab}"]`)!.id.split("-")[1]),
+                textarea.value,
+            );
+
+            await writeText(Array.from(selectedTextareas.values()).join("\0"));
+        }
+    });
+
+    tabContent.addEventListener("cut", async (event) => {
+        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
+            event.preventDefault();
+            await writeText(Array.from(selectedTextareas.values()).join("\0"));
+
+            for (const rowNumber of selectedTextareas.keys()) {
+                const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
+                (rowContainer.lastElementChild! as HTMLTextAreaElement).value = "";
+            }
+
+            saved = false;
         }
     });
 
@@ -2932,13 +2909,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (textRows < 1) {
                 return;
             } else {
-                const rowContainer = document.activeElement.parentElement!.parentElement!;
+                const rowContainer = document.activeElement.closest(`[id^="${currentTab}"]`)!;
                 const rowContainerNumber = Number.parseInt(rowContainer.id.split("-")[1]);
 
                 for (let i = 0; i < textRows; i++) {
                     const rowNumber = rowContainerNumber + i - 1;
                     const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                    const elementToReplace = rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement;
+                    const elementToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
 
                     replacedTextareas.set(rowNumber, elementToReplace.value.replaceAll(text, ""));
                     elementToReplace.value = clipboardTextSplit[i];
@@ -2947,20 +2924,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 saved = false;
             }
-        }
-    });
-
-    tabContent.addEventListener("copy", async (event) => {
-        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
-            event.preventDefault();
-
-            const textarea = document.activeElement as HTMLTextAreaElement;
-            selectedTextareas.set(
-                Number.parseInt(textarea.parentElement!.parentElement!.id.split("-")[1]),
-                textarea.value,
-            );
-
-            await writeText(Array.from(selectedTextareas.values()).join("\0"));
         }
     });
 
@@ -2979,20 +2942,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             inline: "center",
             block: "center",
         });
-    });
-
-    tabContent.addEventListener("cut", async (event) => {
-        if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
-            event.preventDefault();
-            await writeText(Array.from(selectedTextareas.values()).join("\0"));
-
-            for (const rowNumber of selectedTextareas.keys()) {
-                const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                (rowContainer.lastElementChild!.lastElementChild! as HTMLTextAreaElement).value = "";
-            }
-
-            saved = false;
-        }
     });
 
     await listen("fetch-settings", async () => {
@@ -3029,4 +2978,5 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
         }
     });
+    // #endregion
 });
