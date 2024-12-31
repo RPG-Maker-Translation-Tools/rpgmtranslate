@@ -59,6 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
     const fontSelect = document.getElementById("font-select") as HTMLSelectElement;
     const rowDeleteModeSelect = document.getElementById("row-delete-mode-select") as HTMLSelectElement;
+    const displayGhostLinesCheck = document.getElementById("display-ghost-lines-check") as HTMLSpanElement;
 
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
@@ -72,9 +73,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         settings.rowDeleteMode = RowDeleteMode.Disabled;
     }
 
+    if (typeof settings.displayGhostLines !== "boolean") {
+        settings.displayGhostLines = false;
+    }
+
     rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
     fromLanguageInput.value = settings.translation.from;
     toLanguageInput.value = settings.translation.to;
+    displayGhostLinesCheck.innerHTML = settings.displayGhostLines ? "check" : "";
 
     if (!backupCheck.textContent) {
         backupSettings.classList.add("hidden");
@@ -182,6 +188,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (element.value === rowDeleteModeSelect.value) {
                 settings.rowDeleteMode = Number.parseInt(element.value);
             }
+        }
+    });
+
+    displayGhostLinesCheck.addEventListener("click", () => {
+        if (!displayGhostLinesCheck.textContent) {
+            backupSettings.classList.replace("hidden", "flex");
+
+            requestAnimationFrame(() => backupSettings.classList.replace("-translate-y-full", "translate-y-0"));
+
+            displayGhostLinesCheck.innerHTML = "check";
+            settings.displayGhostLines = true;
+        } else {
+            backupSettings.classList.replace("translate-y-0", "-translate-y-full");
+
+            backupSettings.addEventListener("transitionend", () => backupSettings.classList.replace("flex", "hidden"), {
+                once: true,
+            });
+
+            displayGhostLinesCheck.innerHTML = "";
+            settings.displayGhostLines = false;
         }
     });
 
