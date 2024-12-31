@@ -205,7 +205,7 @@ export class MainWindowLocalization {
                 this.menuButtonTitle = "Tabs (Tab)";
                 this.saveButtonTitle = "Save the translation files (Ctrl + S)";
                 this.compileButtonTitle = "Compile (Alt + C)";
-                this.settingsButtonTitle = "Options";
+                this.settingsButtonTitle = "Settings";
                 this.searchButtonTitle = "Search (Ctrl + F)";
                 this.searchInputTitle = "Search";
                 this.replaceButtonTitle = "Replace all matches with";
@@ -301,6 +301,7 @@ export class SettingsWindowLocalization {
     readonly disabled: string;
     readonly allowed: string;
     readonly delete: string;
+    readonly displayGhostLines: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -320,6 +321,7 @@ export class SettingsWindowLocalization {
                 this.disabled = "Выключить";
                 this.confirmation = "Спрашивать";
                 this.allowed = "Разрешить";
+                this.displayGhostLines = "Отображать переносы строк в текстовых полях";
                 break;
             default:
                 this.backupPeriodLabel = "Create backup every:";
@@ -337,6 +339,7 @@ export class SettingsWindowLocalization {
                 this.disabled = "Disabled";
                 this.confirmation = "Ask for confirmation";
                 this.allowed = "Allowed";
+                this.displayGhostLines = "Display lines breaks in text areas";
                 break;
         }
     }
