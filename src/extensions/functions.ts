@@ -176,6 +176,7 @@ export class Settings {
     translation: { from: Intl.UnicodeBCP47LocaleIdentifier; to: Intl.UnicodeBCP47LocaleIdentifier };
     engineType: EngineType | null;
     rowDeleteMode: RowDeleteMode;
+    displayGhostLines: boolean;
 
     constructor(language: Language) {
         this.language = language;
@@ -187,5 +188,6 @@ export class Settings {
         this.translation = { from: "", to: "" };
         this.engineType = null;
         this.rowDeleteMode = RowDeleteMode.Disabled;
+        this.displayGhostLines = false;
     }
 }
