@@ -419,63 +419,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function showSearchPanel(hide = true) {
-        if (searchPanel.getAttribute("moving") === "false") {
-            if (hide) {
-                searchPanel.toggleMultiple("translate-x-0", "translate-x-full");
-            } else {
-                searchPanel.classList.replace("translate-x-full", "translate-x-0");
-            }
-
-            searchPanel.setAttribute("moving", "true");
-        }
-
-        let loadingContainer: HTMLDivElement | null = null;
-
-        if (searchPanelFound.children.length > 0 && searchPanelFound.firstElementChild?.id !== "no-results") {
-            loadingContainer = document.createElement("div");
-            loadingContainer.className = tw`flex size-full items-center justify-center`;
-            loadingContainer.innerHTML = searchPanel.classList.contains("translate-x-0")
-                ? `<div class="text-4xl animate-spin font-material">refresh</div>`
-                : "";
-
-            searchPanelFound.appendChild(loadingContainer);
-        }
-
-        if (searchPanel.getAttribute("shown") === "false") {
-            searchPanel.addEventListener(
-                "transitionend",
-                () => {
-                    if (loadingContainer) {
-                        searchPanelFound.removeChild(loadingContainer);
-                    }
-
-                    searchPanel.setAttribute("shown", "true");
-                    searchPanel.setAttribute("moving", "false");
-                },
-                { once: true },
-            );
+        if (hide) {
+            searchPanel.toggleMultiple("translate-x-0", "translate-x-full");
         } else {
-            if (searchPanel.classList.contains("translate-x-full")) {
-                searchPanel.setAttribute("shown", "false");
-                searchPanel.setAttribute("moving", "true");
-
-                searchPanel.addEventListener(
-                    "transitionend",
-                    () => {
-                        searchPanel.setAttribute("moving", "false");
-                    },
-                    {
-                        once: true,
-                    },
-                );
-                return;
-            }
-
-            if (loadingContainer) {
-                searchPanelFound.removeChild(loadingContainer);
-            }
-
-            searchPanel.setAttribute("moving", "false");
+            searchPanel.classList.replace("translate-x-full", "translate-x-0");
         }
     }
 
@@ -1914,6 +1861,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
     const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
     const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
+    const searchSwitch = document.getElementById("switch-search-content") as HTMLDivElement;
     // #endregion
 
     let backupIsActive: number | null = null;
@@ -2499,7 +2447,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case "switch-search-content": {
+            case searchSwitch.id: {
                 searchPanelFound.classList.toggle("hidden");
                 searchPanelReplaced.classList.toggle("hidden");
 
@@ -2942,6 +2890,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             inline: "center",
             block: "center",
         });
+    });
+
+    searchPanel.addEventListener("transitionend", () => {
+        if (searchSwitch.innerHTML.trim() === "search") {
+            searchPanelFound.toggleMultiple("hidden", "flex");
+        } else {
+            searchPanelReplaced.toggleMultiple("hidden", "flex");
+        }
     });
 
     await listen("fetch-settings", async () => {

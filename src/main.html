@@ -253,8 +253,6 @@
         <div
             class="backgroundPrimary outlineThird fixed right-0 top-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline outline-2 transition-transform duration-500"
             id="search-results"
-            shown="false"
-            moving="false"
         >
             <button
                 class="backgroundPrimaryHovered mb-2 flex h-12 w-full cursor-pointer select-none items-center justify-center font-material text-3xl"
@@ -269,7 +267,7 @@
                 <span id="search-total-pages"></span>
                 <button class="font-material" id="next-page-button">chevron_right</button>
             </div>
-            <div class="flex w-full flex-col" id="search-content"></div>
+            <div class="hidden w-full flex-col" id="search-content"></div>
             <div class="hidden w-full flex-col" id="replace-content"></div>
         </div>
 
