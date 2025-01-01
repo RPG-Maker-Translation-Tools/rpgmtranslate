@@ -406,9 +406,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const textarea = tabContent.children[row].lastElementChild! as HTMLTextAreaElement;
                 textarea.value = element.children[1].textContent!;
             } else {
-                const filePath = file.startsWith("maps")
-                    ? join(settings.projectPath, programDataDir, tempMapsDir, file + ".txt")
-                    : join(settings.projectPath, programDataDir, translationDir, file + ".txt");
+                const filePath = join(
+                    settings.projectPath,
+                    programDataDir,
+                    file.startsWith("maps") ? tempMapsDir : translationDir,
+                    file + ".txt",
+                );
 
                 const fileLines = (await readTextFile(filePath)).split("\n");
 
@@ -487,9 +490,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                             }
 
                             const normalizedFilename = file + ".txt";
-                            const pathToFile = normalizedFilename.startsWith("maps")
-                                ? join(settings.projectPath, programDataDir, tempMapsDir, normalizedFilename)
-                                : join(settings.projectPath, programDataDir, translationDir, normalizedFilename);
+                            const pathToFile = join(
+                                settings.projectPath,
+                                programDataDir,
+                                normalizedFilename.startsWith("maps") ? tempMapsDir : translationDir,
+                                normalizedFilename,
+                            );
 
                             const content = (await readTextFile(pathToFile)).split("\n");
 
@@ -627,9 +633,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (mode !== SaveMode.Backup) {
             if (currentTab) {
-                for (const child of tabContent.children) {
-                    const originalTextElement = child.children[1] as HTMLDivElement;
-                    const translatedTextElement = child.children[2] as HTMLTextAreaElement;
+                for (const rowContainer of tabContent.children) {
+                    const originalTextElement = rowContainer.children[1] as HTMLDivElement;
+                    const translatedTextElement = rowContainer.children[2] as HTMLTextAreaElement;
 
                     outputArray.push(
                         originalTextElement.textContent!.replaceAll("\n", NEW_LINE) +
@@ -650,9 +656,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 const filePath = `${currentTab}.txt`;
-                const savePath = currentTab.startsWith("maps")
-                    ? join(tempMapsPath, filePath)
-                    : join(translationPath, filePath);
+                const savePath = join(currentTab.startsWith("maps") ? tempMapsPath : translationPath, filePath);
 
                 await writeTextFile(savePath, outputArray.join("\n"));
             }
@@ -744,9 +748,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (totalFields) {
                 let translatedFields = 0;
 
-                for (const child of tabContent.children) {
-                    const original = child.children[1] as HTMLDivElement;
-                    const translation = child.children[2] as HTMLTextAreaElement;
+                for (const rowContainer of tabContent.children) {
+                    const original = rowContainer.children[1] as HTMLDivElement;
+                    const translation = rowContainer.children[2] as HTMLTextAreaElement;
 
                     if (original.textContent!.startsWith("<!--")) {
                         totalFields--;
@@ -2082,8 +2086,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 await writeTextFile("res/themes.json", JSON.stringify(themes), { baseDir: Resource });
 
                                 const newThemeButton = document.createElement("button");
-                                newThemeButton.id = themeName;
-                                newThemeButton.textContent = themeName;
+                                newThemeButton.id = newThemeButton.textContent = themeName;
 
                                 themeMenu.insertBefore(themeMenu.lastElementChild as HTMLElement, newThemeButton);
                             }
@@ -2270,9 +2273,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     await sleep(1000);
 
                                     if (filename === currentTab) {
-                                        for (const element of tabContent.children) {
-                                            const originalField = element.children[1] as HTMLDivElement;
-                                            const translationField = element.children[2] as HTMLTextAreaElement;
+                                        for (const rowContainer of tabContent.children) {
+                                            const originalField = rowContainer.children[1] as HTMLDivElement;
+                                            const translationField = rowContainer.children[2] as HTMLTextAreaElement;
 
                                             const translationExists = Boolean(translationField.value.trim());
 
@@ -2318,14 +2321,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             }
                                         }
                                     } else {
-                                        const contentPath = filename.startsWith("maps")
-                                            ? join(settings.projectPath, programDataDir, tempMapsDir, filename + ".txt")
-                                            : join(
-                                                  settings.projectPath,
-                                                  programDataDir,
-                                                  translationDir,
-                                                  filename + ".txt",
-                                              );
+                                        const contentPath = join(
+                                            settings.projectPath,
+                                            programDataDir,
+                                            filename.startsWith("maps") ? tempMapsDir : translationDir,
+                                            filename + ".txt",
+                                        );
 
                                         const newLines = await Promise.all(
                                             (await readTextFile(contentPath)).split("\n").map(async (line) => {
