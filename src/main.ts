@@ -777,6 +777,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!filename) {
             currentTab = null;
             currentTabDiv.innerHTML = "";
+            tabContent.innerHTML = "";
         } else {
             currentTab = filename;
 
