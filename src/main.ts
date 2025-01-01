@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         searchPanelFound.appendChild(resultContainer);
     }
 
-    async function searchText(text: string, isReplace: boolean): Promise<Map<HTMLTextAreaElement, string> | null> {
+    async function searchText(text: string, replaceText: boolean): Promise<Map<string, number[]> | null> {
         const regexp: RegExp | null = await createRegExp(text);
         if (!regexp) {
             return null;
@@ -225,7 +225,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const programDataDirPath = join(settings.projectPath, programDataDir);
 
         const searchMode = Number.parseInt(searchModeSelect.value) as SearchMode;
-        const results = isReplace ? new Map<HTMLTextAreaElement, string>() : null;
+        const results = replaceText ? new Map<string, number[]>() : null;
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
 
@@ -237,56 +237,61 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        if (openedTab.length) {
-            for (const child of openedTab) {
-                const node = child.children as HTMLCollectionOf<HTMLTextAreaElement>;
+        for (const rowContainer of openedTab.length ? openedTab : []) {
+            const rowContainerChildren = rowContainer.children;
 
-                if (searchMode !== SearchMode.OnlyOriginal) {
-                    const elementText = node[2].value.replaceAllMultiple({
-                        "<": "&lt;",
-                        ">": "&gt;",
-                    });
-                    const matches = elementText.match(regexp);
+            if (searchMode !== SearchMode.OnlyOriginal) {
+                const translationTextArea = rowContainerChildren[2] as HTMLTextAreaElement;
+                const translationText = translationTextArea.value.replaceAllMultiple({
+                    "<": "&lt;",
+                    ">": "&gt;",
+                });
+                const matches = translationText.match(regexp);
 
-                    if (matches) {
-                        const result = createMatchesContainer(elementText, matches);
-                        const metadata = node[2].closest(`[id^="${currentTab}"]`)!.id.split("-");
-                        const formattedMetadata = `${metadata[0]}-translation-${metadata[1]}`;
-                        isReplace ? results!.set(node[2], result) : objectToWrite.set(formattedMetadata, result);
-                    }
+                if (matches) {
+                    const matchesContainer = createMatchesContainer(translationText, matches);
+                    const [file, row] = translationTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-");
+                    replaceText
+                        ? results!.has(file)
+                            ? results!.get(file)!.push(Number.parseInt(row))
+                            : results!.set(file, [Number.parseInt(row)])
+                        : objectToWrite.set(`${file}-translation-${row}`, matchesContainer);
                 }
+            }
 
-                if (searchMode !== SearchMode.OnlyTranslation) {
-                    const elementText = node[1].innerHTML.replaceAllMultiple({ "<": "&lt;", ">": "&gt;" });
-                    const matches = elementText.match(regexp);
+            if (searchMode !== SearchMode.OnlyTranslation && !replaceText) {
+                const originalTextDiv = rowContainerChildren[1] as HTMLDivElement;
+                const originalText = originalTextDiv.innerHTML.replaceAllMultiple({
+                    "<": "&lt;",
+                    ">": "&gt;",
+                });
+                const matches = originalText.match(regexp);
 
-                    if (matches) {
-                        const result = createMatchesContainer(elementText, matches);
-                        const metadata = node[1].closest(`[id^="${currentTab}"]`)!.id.split("-");
-                        const formattedMetadata = `${metadata[0]}-original-${metadata[1]}`;
-                        isReplace ? results!.set(node[1], result) : objectToWrite.set(formattedMetadata, result);
-                    }
+                if (matches) {
+                    const matchesContainer = createMatchesContainer(originalText, matches);
+                    const [file, row] = originalTextDiv.closest(`[id^="${currentTab}"]`)!.id.split("-");
+                    objectToWrite.set(`${file}-original-${row}`, matchesContainer);
                 }
+            }
 
-                if ((objectToWrite.size + 1) % 1000 === 0) {
-                    await writeTextFile(
-                        join(programDataDirPath, `matches-${file}.json`),
-                        JSON.stringify(Object.fromEntries(objectToWrite)),
-                    );
+            if ((objectToWrite.size + 1) % 1000 === 0) {
+                await writeTextFile(
+                    join(programDataDirPath, `matches-${file}.json`),
+                    JSON.stringify(Object.fromEntries(objectToWrite)),
+                );
 
-                    objectToWrite.clear();
-                    file++;
-                }
+                objectToWrite.clear();
+                file++;
             }
         }
 
         if (!searchLocationButton.classList.contains("backgroundThird")) {
-            const translationEntries = await readDir(join(programDataDirPath, translationDir));
             const mapsEntries = await readDir(join(programDataDirPath, tempMapsDir));
+            const otherEntries = await readDir(join(programDataDirPath, translationDir));
 
             for (const [i, entry] of [
                 mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4)) - Number.parseInt(b.name.slice(4))),
-                translationEntries,
+                otherEntries,
             ]
                 .flat()
                 .entries()) {
@@ -299,34 +304,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (const [lineNumber, line] of (
                     await readTextFile(
-                        i < mapsEntries.length
-                            ? join(programDataDirPath, tempMapsDir, name)
-                            : join(programDataDirPath, translationDir, name),
+                        join(programDataDirPath, i < mapsEntries.length ? tempMapsDir : translationDir, name),
                     )
                 )
                     .split("\n")
                     .entries()) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
-                    if (searchMode !== SearchMode.OnlyTranslation) {
-                        const originalMatches = original.match(regexp);
-                        if (originalMatches) {
-                            const result = createMatchesContainer(original, originalMatches);
-                            objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [
-                                result,
-                                translated,
-                            ]);
+                    if (searchMode !== SearchMode.OnlyOriginal) {
+                        const matches = translated.match(regexp);
+
+                        if (matches) {
+                            const matchesContainer = createMatchesContainer(translated, matches);
+                            replaceText
+                                ? results!.has(name)
+                                    ? results!.get(name)!.push(lineNumber)
+                                    : results!.set(name, [lineNumber])
+                                : objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
+                                      matchesContainer,
+                                      original,
+                                  ]);
                         }
                     }
 
-                    if (searchMode !== SearchMode.OnlyOriginal) {
-                        const translatedMatches = translated.match(regexp);
+                    if (searchMode !== SearchMode.OnlyTranslation && !replaceText) {
+                        const matches = original.match(regexp);
 
-                        if (translatedMatches) {
-                            const result = createMatchesContainer(translated, translatedMatches);
-                            objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
-                                result,
-                                original,
+                        if (matches) {
+                            const matchesContainer = createMatchesContainer(original, matches);
+                            objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [
+                                matchesContainer,
+                                translated,
                             ]);
                         }
                     }
@@ -365,7 +373,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     appendMatch(id, result);
                 }
             }
-        } else if (!isReplace) {
+        } else if (!replaceText) {
             searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${localization.noMatches}</div>`;
             showSearchPanel(false);
         }
@@ -547,7 +555,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const results: Map<HTMLTextAreaElement, string> = (await searchText(text, true))!;
+            const results: Map<string, number[]> = (await searchText(text, true))!;
             if (!results.size) {
                 return;
             }
@@ -557,15 +565,43 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            for (const textarea of results.keys()) {
-                const newValue = textarea.value.replace(regexp, replaceInput.value);
+            for (const [file, rowNumberArray] of results.entries()) {
+                if (currentTab?.startsWith(file)) {
+                    for (const rowNumber of rowNumberArray) {
+                        const textarea = tabContent.children[rowNumber - 1].lastElementChild! as HTMLTextAreaElement;
+                        const newValue = textarea.value.replace(regexp, replaceInput.value);
 
-                replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
-                    old: textarea.value,
-                    new: newValue,
-                };
+                        replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
+                            old: textarea.value,
+                            new: newValue,
+                        };
 
-                textarea.value = newValue;
+                        textarea.value = newValue;
+                    }
+                } else {
+                    const filePath = join(
+                        settings.projectPath,
+                        programDataDir,
+                        file.startsWith("maps") ? tempMapsDir : translationDir,
+                        file,
+                    );
+
+                    const fileContent = (await readTextFile(filePath)).split("\n");
+
+                    for (const rowNumber of rowNumberArray) {
+                        const [original, translated] = fileContent[rowNumber].split(LINES_SEPARATOR);
+                        const newValue = translated.replace(regexp, replaceInput.value);
+
+                        replaced[`${file}-${rowNumber}`] = {
+                            old: translated,
+                            new: newValue,
+                        };
+
+                        fileContent[rowNumber] = `${original}${LINES_SEPARATOR}${newValue}`;
+                    }
+
+                    await writeTextFile(filePath, fileContent.join("\n"));
+                }
             }
         }
     }
