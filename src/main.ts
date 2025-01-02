@@ -634,13 +634,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (mode !== SaveMode.Backup) {
             if (currentTab) {
                 for (const rowContainer of tabContent.children) {
-                    const originalTextElement = rowContainer.children[1] as HTMLDivElement;
-                    const translatedTextElement = rowContainer.children[2] as HTMLTextAreaElement;
+                    const originalTextDiv = rowContainer.children[1] as HTMLDivElement;
+                    const translationTextArea = rowContainer.children[2] as HTMLTextAreaElement;
 
                     outputArray.push(
-                        originalTextElement.textContent!.replaceAll("\n", NEW_LINE) +
+                        originalTextDiv.textContent!.replaceAll("\n", NEW_LINE) +
                             LINES_SEPARATOR +
-                            translatedTextElement.value.replaceAll("\n", NEW_LINE),
+                            translationTextArea.value.replaceAll("\n", NEW_LINE),
                     );
                 }
 
@@ -749,12 +749,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 let translatedFields = 0;
 
                 for (const rowContainer of tabContent.children) {
-                    const original = rowContainer.children[1] as HTMLDivElement;
-                    const translation = rowContainer.children[2] as HTMLTextAreaElement;
+                    const originalTextDiv = rowContainer.children[1] as HTMLDivElement;
+                    const translationTextArea = rowContainer.children[2] as HTMLTextAreaElement;
 
-                    if (original.textContent!.startsWith("<!--")) {
+                    if (originalTextDiv.textContent!.startsWith("<!--")) {
                         totalFields--;
-                    } else if (translation.value) {
+                    } else if (translationTextArea.value) {
                         translatedFields++;
                     }
                 }
@@ -778,12 +778,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
+        tabContent.innerHTML = "";
+
         if (!filename) {
             currentTab = null;
             currentTabDiv.innerHTML = "";
-            tabContent.innerHTML = "";
         } else {
-            currentTab = filename;
+            currentTabDiv.innerHTML = currentTab = filename;
 
             if (!newTabIndex) {
                 let i = 0;
@@ -804,8 +805,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             selectedTab.classList.replace("backgroundPrimary", "backgroundThird");
 
             await createTabContent(filename);
-
-            currentTabDiv.innerHTML = filename;
         }
     }
 
@@ -847,15 +846,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         for (const [rowNumber, value] of selectedTextareas.entries()) {
                             const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const textarea = rowContainer.lastElementChild! as HTMLTextAreaElement;
-                            textarea.value = value;
+                            const translationTextArea = rowContainer.lastElementChild! as HTMLTextAreaElement;
+                            translationTextArea.value = value;
                         }
 
                         for (const [rowNumber, value] of replacedTextareas.entries()) {
                             const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const textarea = rowContainer.lastElementChild! as HTMLTextAreaElement;
-                            textarea.value = value;
-                            textarea.calculateHeight();
+                            const translationTextArea = rowContainer.lastElementChild! as HTMLTextAreaElement;
+                            translationTextArea.value = value;
+                            translationTextArea.calculateHeight();
                         }
 
                         replacedTextareas.clear();
@@ -993,28 +992,28 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 case "KeyT":
                     if (event.ctrlKey) {
-                        const selectedField = event.target as HTMLTextAreaElement;
+                        const selectedTextArea = event.target as HTMLTextAreaElement;
 
-                        if (!selectedField.value) {
-                            if (!selectedField.placeholder) {
-                                const counterpart = selectedField.parentElement!.children[1];
-
+                        if (!selectedTextArea.value) {
+                            if (!selectedTextArea.placeholder) {
                                 if (!settings.translation.from || !settings.translation.to) {
                                     alert(localization.translationLanguagesNotSelected);
                                     return;
                                 }
 
-                                const translated = await translateText({
-                                    text: counterpart.textContent!,
+                                const originalTextDiv = selectedTextArea.parentElement!.children[1] as HTMLDivElement;
+
+                                const translation = await translateText({
+                                    text: originalTextDiv.textContent!,
                                     to: settings.translation.to,
                                     from: settings.translation.from,
                                     replace: false,
                                 });
 
-                                selectedField.placeholder = translated;
+                                selectedTextArea.placeholder = translation;
                             } else {
-                                selectedField.value = selectedField.placeholder;
-                                selectedField.placeholder = "";
+                                selectedTextArea.value = selectedTextArea.placeholder;
+                                selectedTextArea.placeholder = "";
                             }
                         }
                         break;
@@ -1085,8 +1084,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function createTabContent(state: string) {
-        tabContent.innerHTML = "";
-
         const programDataDirPath = join(settings.projectPath, programDataDir);
         const translationPath = join(programDataDirPath, translationDir);
 
@@ -2752,26 +2749,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 target.classList.remove("backgroundThird");
             } else {
-                const input = document.createElement("input");
-                input.className = "absolute w-auto h-7 p-1 z-50 text-base input textSecond backgroundSecond";
-                input.style.left = `${target.offsetLeft + target.clientWidth}px`;
-                input.style.top = `${target.offsetTop}px`;
-                document.body.appendChild(input);
+                const bookmarkDescriptionInput = document.createElement("input");
+                bookmarkDescriptionInput.className =
+                    "absolute w-auto h-7 p-1 z-50 text-base input textSecond backgroundSecond";
+                bookmarkDescriptionInput.style.left = `${target.offsetLeft + target.clientWidth}px`;
+                bookmarkDescriptionInput.style.top = `${target.offsetTop}px`;
+                document.body.appendChild(bookmarkDescriptionInput);
 
                 requestAnimationFrame(() => {
-                    input.focus();
+                    bookmarkDescriptionInput.focus();
                 });
 
-                input.onkeydown = (event) => {
+                bookmarkDescriptionInput.onkeydown = (event) => {
                     if (event.key === "Enter") {
-                        const description = input.value;
-                        input.remove();
+                        const description = bookmarkDescriptionInput.value;
+                        bookmarkDescriptionInput.remove();
 
                         addBookmark({ title: rowContainerId, description });
                         target.classList.add("backgroundThird");
                     } else if (event.key === "Escape") {
                         requestAnimationFrame(() => {
-                            input.remove();
+                            bookmarkDescriptionInput.remove();
                         });
                     }
                 };
@@ -2816,32 +2814,32 @@ document.addEventListener("DOMContentLoaded", async () => {
                     const clickedRowContainerNumber = Number.parseInt(
                         (event.target as HTMLElement).closest(`[id^="${currentTab}"]`)!.id.split("-")[1],
                     );
-                    const focusedRowContainerNumber = Number.parseInt(
+                    const selectedRowContainerNumber = Number.parseInt(
                         document.activeElement.closest(`[id^="${currentTab}"]`)!.id.split("-")[1],
                     );
 
-                    const rowsRange = clickedRowContainerNumber - focusedRowContainerNumber;
+                    const rowsRange = clickedRowContainerNumber - selectedRowContainerNumber;
                     const rowsToSelect = Math.abs(rowsRange);
 
                     if (rowsRange > 0) {
                         for (let i = 0; i <= rowsToSelect; i++) {
-                            const rowNumber = focusedRowContainerNumber + i - 1;
+                            const rowNumber = selectedRowContainerNumber + i - 1;
 
                             const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const nextElement = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
+                            const nextTextArea = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                            nextElement.style.outlineColor = theme.outlineFocused;
-                            selectedTextareas.set(rowNumber, nextElement.value);
+                            nextTextArea.style.outlineColor = theme.outlineFocused;
+                            selectedTextareas.set(rowNumber, nextTextArea.value);
                         }
                     } else {
                         for (let i = rowsToSelect; i >= 0; i--) {
-                            const rowNumber = focusedRowContainerNumber - i - 1;
+                            const rowNumber = selectedRowContainerNumber - i - 1;
 
                             const nextRowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                            const nextElement = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
+                            const nextTextArea = nextRowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                            nextElement.style.outlineColor = theme.outlineFocused;
-                            selectedTextareas.set(rowNumber, nextElement.value);
+                            nextTextArea.style.outlineColor = theme.outlineFocused;
+                            selectedTextareas.set(rowNumber, nextTextArea.value);
                         }
                     }
                 }
@@ -2860,10 +2858,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
 
-            const textarea = document.activeElement as HTMLTextAreaElement;
+            const selectedTextArea = document.activeElement as HTMLTextAreaElement;
             selectedTextareas.set(
-                Number.parseInt(textarea.closest(`[id^="${currentTab}"]`)!.id.split("-")[1]),
-                textarea.value,
+                Number.parseInt(selectedTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-")[1]),
+                selectedTextArea.value,
             );
 
             await writeText(Array.from(selectedTextareas.values()).join("\0"));
@@ -2901,11 +2899,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (let i = 0; i < textRows; i++) {
                     const rowNumber = rowContainerNumber + i - 1;
                     const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
-                    const elementToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
+                    const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                    replacedTextareas.set(rowNumber, elementToReplace.value.replaceAll(text, ""));
-                    elementToReplace.value = clipboardTextSplit[i];
-                    elementToReplace.calculateHeight();
+                    replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(text, ""));
+                    textAreaToReplace.value = clipboardTextSplit[i];
+                    textAreaToReplace.calculateHeight();
                 }
 
                 saved = false;
@@ -2920,11 +2918,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const parts = target.textContent!.split("-");
-        const state = parts[0];
+        const [file, row] = target.textContent!.split("-");
 
-        await changeTab(state);
-        tabContent.children[Number.parseInt(parts[1])].scrollIntoView({
+        await changeTab(file);
+        tabContent.children[Number.parseInt(row)].scrollIntoView({
             inline: "center",
             block: "center",
         });
