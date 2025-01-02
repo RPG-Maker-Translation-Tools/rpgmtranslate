@@ -79,9 +79,9 @@ pub fn compile(settings: CompileSettings) -> f64 {
         EngineType::XP => ".rxdata",
     };
 
-    let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
-    let original_path: &Path = &project_path.join(original_dir);
-    let translation_path: &Path = &project_path.join(data_dir).join("translation");
+    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
+    let original_path: &PathBuf = &project_path.join(original_dir);
+    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
     let (data_output_path, plugins_output_path) = if engine_type == EngineType::New {
         let plugins_output_path: PathBuf = output_path.join(data_dir).join("output/js");
         create_dir_all(&plugins_output_path).unwrap_log();
@@ -200,9 +200,9 @@ pub fn read(settings: ReadSettings) {
         get_game_type(game_title)
     };
 
-    let data_dir: &Path = &PathBuf::from(".rpgmtranslate");
-    let original_path: &Path = &project_path.join(original_dir);
-    let translation_path: &Path = &project_path.join(data_dir).join("translation");
+    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
+    let original_path: &PathBuf = &project_path.join(original_dir);
+    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
 
     create_dir_all(translation_path).unwrap_log();
 
