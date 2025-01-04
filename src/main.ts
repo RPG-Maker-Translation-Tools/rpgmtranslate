@@ -536,6 +536,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function replaceText(text: string | HTMLTextAreaElement): Promise<string | undefined> {
         if (text instanceof HTMLTextAreaElement) {
+            const textarea = text;
             const regexp: RegExp | null = await createRegExp(searchInput.value);
             if (!regexp) {
                 return;
@@ -543,7 +544,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const replacerText: string = replaceInput.value;
 
-            const newValue = text.value
+            const newValue = textarea.value
                 .split(regexp)
                 .flatMap((part, i, arr) => [
                     part,
@@ -551,9 +552,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ])
                 .join("");
 
-            replaced[text.id] = { old: text.value, new: newValue };
+            replaced[textarea.id] = { old: textarea.value, new: newValue };
+            textarea.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
+            saved = false;
 
-            text.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
             return newValue;
         } else {
             text = text.trim();
@@ -609,6 +611,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     await writeTextFile(filePath, fileContent.join("\n"));
                 }
             }
+
+            saved = false;
         }
     }
 
