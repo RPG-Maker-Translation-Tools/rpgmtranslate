@@ -961,15 +961,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 return;
                             }
 
-                            const idParts = focusedElement.closest(`[id^="${currentTab}"]`)!.id.split("-");
-                            const index = Number.parseInt(idParts[1]);
+                            const [file, i] = focusedElement.closest(`[id^="${currentTab}"]`)!.id.split("-");
+                            const index = Number.parseInt(i);
 
-                            if (Number.isNaN(index)) {
+                            if (Number.isNaN(index) || index === 1 || index === tabContent.children.length) {
                                 return;
                             }
 
                             const step = direction === JumpDirection.Next ? 1 : -1;
-                            const nextElement = document.getElementById(`${idParts[0]}-${index + step}`)!
+                            const nextElement = document.getElementById(`${file}-${index + step}`)!
                                 .lastElementChild as HTMLTextAreaElement | null;
 
                             if (!nextElement) {
