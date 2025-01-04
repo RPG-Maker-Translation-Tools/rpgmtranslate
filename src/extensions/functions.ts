@@ -177,6 +177,7 @@ export class Settings {
     engineType: EngineType | null;
     rowDeleteMode: RowDeleteMode;
     displayGhostLines: boolean;
+    checkForUpdates: boolean;
 
     constructor(language: Language) {
         this.language = language;
@@ -189,5 +190,6 @@ export class Settings {
         this.engineType = null;
         this.rowDeleteMode = RowDeleteMode.Disabled;
         this.displayGhostLines = false;
+        this.checkForUpdates = true;
     }
 }

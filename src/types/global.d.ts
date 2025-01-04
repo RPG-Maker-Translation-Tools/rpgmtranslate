@@ -34,6 +34,7 @@ interface Settings {
     engineType: import("./enums").EngineType | null;
     rowDeleteMode: import("./enums").RowDeleteMode;
     displayGhostLines: boolean;
+    checkForUpdates: boolean;
 }
 
 interface CompileSettings {
