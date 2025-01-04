@@ -302,6 +302,7 @@ export class SettingsWindowLocalization {
     readonly allowed: string;
     readonly delete: string;
     readonly displayGhostLines: string;
+    readonly checkForUpdates: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -322,6 +323,7 @@ export class SettingsWindowLocalization {
                 this.confirmation = "Спрашивать";
                 this.allowed = "Разрешить";
                 this.displayGhostLines = "Отображать переносы строк в текстовых полях";
+                this.checkForUpdates = "Проверять наличие обновлений";
                 break;
             default:
                 this.backupPeriodLabel = "Create backup every:";
@@ -340,6 +342,7 @@ export class SettingsWindowLocalization {
                 this.confirmation = "Ask for confirmation";
                 this.allowed = "Allowed";
                 this.displayGhostLines = "Display lines breaks in text areas";
+                this.checkForUpdates = "Check for updates";
                 break;
         }
     }
