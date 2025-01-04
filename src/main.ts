@@ -1806,42 +1806,44 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     initializeLocalization(settings.language);
 
-    try {
-        const update = await checkVersion();
+    if (settings.checkForUpdates || typeof settings.checkForUpdates !== "boolean") {
+        try {
+            const update = await checkVersion();
 
-        if (update) {
-            const installUpdate = await ask(
-                `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
-                { title: localization.updateAvailable, okLabel: localization.installUpdate },
-            );
+            if (update) {
+                const installUpdate = await ask(
+                    `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
+                    { title: localization.updateAvailable, okLabel: localization.installUpdate },
+                );
 
-            if (installUpdate) {
-                let downloaded = 0;
-                let contentLength: number | undefined = 0;
+                if (installUpdate) {
+                    let downloaded = 0;
+                    let contentLength: number | undefined = 0;
 
-                await update.downloadAndInstall((event) => {
-                    switch (event.event) {
-                        case "Started":
-                            contentLength = event.data.contentLength;
-                            console.log(`Started downloading ${event.data.contentLength} bytes`);
-                            break;
-                        case "Progress":
-                            downloaded += event.data.chunkLength;
-                            console.log(`Downloaded ${downloaded} from ${contentLength}`);
-                            break;
-                        case "Finished":
-                            console.log("Download finished");
-                            break;
-                    }
-                });
+                    await update.downloadAndInstall((event) => {
+                        switch (event.event) {
+                            case "Started":
+                                contentLength = event.data.contentLength;
+                                console.log(`Started downloading ${event.data.contentLength} bytes`);
+                                break;
+                            case "Progress":
+                                downloaded += event.data.chunkLength;
+                                console.log(`Downloaded ${downloaded} from ${contentLength}`);
+                                break;
+                            case "Finished":
+                                console.log("Download finished");
+                                break;
+                        }
+                    });
 
-                await relaunch();
+                    await relaunch();
+                }
+            } else {
+                console.log("Program is already updated");
             }
-        } else {
-            console.log("Program is already updated");
+        } catch (e) {
+            console.error(e);
         }
-    } catch (e) {
-        console.error(e);
     }
     // #endregion
 
