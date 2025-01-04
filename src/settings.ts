@@ -60,6 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fontSelect = document.getElementById("font-select") as HTMLSelectElement;
     const rowDeleteModeSelect = document.getElementById("row-delete-mode-select") as HTMLSelectElement;
     const displayGhostLinesCheck = document.getElementById("display-ghost-lines-check") as HTMLSpanElement;
+    const checkForUpdatesCheck = document.getElementById("check-for-updates-check") as HTMLSpanElement;
 
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
@@ -77,10 +78,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         settings.displayGhostLines = false;
     }
 
+    if (typeof settings.checkForUpdates !== "boolean") {
+        settings.checkForUpdates = true;
+    }
+
     rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
     fromLanguageInput.value = settings.translation.from;
     toLanguageInput.value = settings.translation.to;
     displayGhostLinesCheck.innerHTML = settings.displayGhostLines ? "check" : "";
+    checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
 
     if (!backupCheck.textContent) {
         backupSettings.classList.add("hidden");
@@ -193,21 +199,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     displayGhostLinesCheck.addEventListener("click", () => {
         if (!displayGhostLinesCheck.textContent) {
-            backupSettings.classList.replace("hidden", "flex");
-
-            requestAnimationFrame(() => backupSettings.classList.replace("-translate-y-full", "translate-y-0"));
-
             displayGhostLinesCheck.innerHTML = "check";
             settings.displayGhostLines = true;
         } else {
-            backupSettings.classList.replace("translate-y-0", "-translate-y-full");
-
-            backupSettings.addEventListener("transitionend", () => backupSettings.classList.replace("flex", "hidden"), {
-                once: true,
-            });
-
             displayGhostLinesCheck.innerHTML = "";
             settings.displayGhostLines = false;
+        }
+    });
+
+    checkForUpdatesCheck.addEventListener("click", () => {
+        if (!checkForUpdatesCheck.textContent) {
+            checkForUpdatesCheck.innerHTML = "check";
+            settings.checkForUpdates = true;
+        } else {
+            checkForUpdatesCheck.innerHTML = "";
+            settings.checkForUpdates = false;
         }
     });
 
