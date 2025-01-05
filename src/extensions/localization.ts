@@ -526,7 +526,7 @@ export class ReadWindowLocalization {
                 this.appendReadingMode = "Добавление";
                 this.forceReadingMode = "Перезапись";
                 this.appendModeDescription =
-                    "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса.";
+                    "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса. Перед чтением, убедитесь, что вы сохранили перевод!";
                 this.forceModeDescription =
                     "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
                 this.options = "Опции:";
@@ -559,7 +559,7 @@ export class ReadWindowLocalization {
                 this.appendReadingMode = "Append";
                 this.forceReadingMode = "Force rewrite";
                 this.appendModeDescription =
-                    "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress.";
+                    "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!";
                 this.forceModeDescription =
                     "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
                 this.options = "Options:";
