@@ -59,6 +59,37 @@ import XRegExp from "xregexp";
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
 document.addEventListener("DOMContentLoaded", async () => {
+    async function beforeClose(): Promise<boolean> {
+        await awaitSave();
+
+        if (await exitConfirmation()) {
+            if (settings.projectPath) {
+                await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
+                await writeTextFile(
+                    join(settings.projectPath, programDataDir, bookmarksFile),
+                    JSON.stringify(bookmarks),
+                );
+
+                const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
+
+                for (const entry of dataDirEntries) {
+                    const name = entry.name;
+
+                    if (name === tempMapsDir) {
+                        await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
+                    } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
+                        await removePath(join(settings.projectPath, programDataDir, name));
+                    }
+                }
+            }
+
+            await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     async function fetchReplacementLog(): Promise<ReplacementLog> {
         const replaced: ReplacementLog = {};
 
@@ -742,7 +773,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        await waitForSave();
+        await awaitSave();
 
         if (currentTab) {
             await save(SaveMode.SingleFile);
@@ -1438,7 +1469,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function waitForSave() {
+    async function awaitSave() {
         while (saving) {
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
@@ -2153,6 +2184,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 const unlistenRestart = await readWindow.once("restart", async () => {
+                    await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
+                    await writeTextFile(
+                        join(settings.projectPath, programDataDir, bookmarksFile),
+                        JSON.stringify(bookmarks),
+                    );
+
+                    const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
+
+                    for (const entry of dataDirEntries) {
+                        const name = entry.name;
+
+                        if (name === tempMapsDir) {
+                            await removePath(join(settings.projectPath, programDataDir, tempMapsDir), {
+                                recursive: true,
+                            });
+                        } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
+                            await removePath(join(settings.projectPath, programDataDir, name));
+                        }
+                    }
+
                     await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
                     location.reload();
                 });
@@ -2598,10 +2649,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         switch (target.id) {
                             case "reload-button":
-                                await waitForSave();
-
-                                if (await exitConfirmation()) {
-                                    await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
+                                if (await beforeClose()) {
                                     location.reload();
                                 }
                                 break;
@@ -2946,30 +2994,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     await appWindow.onCloseRequested(async (event) => {
-        await waitForSave();
-
-        if (await exitConfirmation()) {
-            if (settings.projectPath) {
-                await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
-                await writeTextFile(
-                    join(settings.projectPath, programDataDir, bookmarksFile),
-                    JSON.stringify(bookmarks),
-                );
-
-                const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
-
-                for (const entry of dataDirEntries) {
-                    const name = entry.name;
-
-                    if (name === tempMapsDir) {
-                        await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
-                    } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
-                        await removePath(join(settings.projectPath, programDataDir, name));
-                    }
-                }
-            }
-
-            await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
+        if (await beforeClose()) {
             await exit();
         } else {
             event.preventDefault();
