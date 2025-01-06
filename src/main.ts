@@ -2845,15 +2845,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const rowContainer = target.closest(`[id^="${currentTab}"]`)!;
-            const position = Number.parseInt(target.parentElement!.firstElementChild!.textContent!);
+            const position = Number.parseInt(rowContainer.firstElementChild!.textContent!);
 
             const children = tabContent.children as HTMLCollectionOf<HTMLDivElement>;
 
-            for (let i = position; i < children.length; i++) {
+rowContainer.remove();
+
+            for (let i = position - 1; i < children.length; i++) {
                 const element = children[i];
 
                 const rowNumberElement = element.firstElementChild!.firstElementChild!;
-                const newRowNumber = (Number.parseInt(rowNumberElement.textContent!) - 1).toString();
+                const newRowNumber = (i + 1).toString();
 
                 rowNumberElement.textContent = newRowNumber;
                 element.id = element.id.replace(/\d+$/, newRowNumber);
