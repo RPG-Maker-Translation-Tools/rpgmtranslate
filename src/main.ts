@@ -481,88 +481,83 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         await searchText(text, false);
 
-        async function handleResultClick(event: MouseEvent) {
-            const target = event.target as HTMLDivElement;
-            const resultElement = target.closest("[data]")!;
+        showSearchPanel(hide);
+    }
 
-            if (!searchPanelFound.contains(resultElement)) {
+    async function handleResultClick(event: MouseEvent) {
+        const target = event.target as HTMLDivElement;
+        const resultElement = target.closest("[data]")!;
+
+        if (!searchPanelFound.contains(resultElement)) {
+            return;
+        }
+
+        const elementId = resultElement.getAttribute("data")!;
+        const [file, type, row] = elementId.split("-");
+
+        if (event.button === 0) {
+            await changeTab(file);
+
+            tabContent.children[Number.parseInt(row)].scrollIntoView({
+                block: "center",
+                inline: "center",
+            });
+        } else if (event.button === 2) {
+            if (type.startsWith("o")) {
+                alert(localization.originalTextIrreplacable);
                 return;
-            }
+            } else {
+                if (replaceInput.value.trim()) {
+                    const elementToReplace =
+                        file !== currentTab ? null : tabContent.children[Number.parseInt(row) - 1].lastElementChild!;
 
-            const elementId = resultElement.getAttribute("data")!;
-            const [file, type, row] = elementId.split("-");
+                    let newText: string;
 
-            if (event.button === 0) {
-                await changeTab(file);
-
-                tabContent.children[Number.parseInt(row)].scrollIntoView({
-                    block: "center",
-                    inline: "center",
-                });
-            } else if (event.button === 2) {
-                if (type.startsWith("o")) {
-                    alert(localization.originalTextIrreplacable);
-                    return;
-                } else {
-                    if (replaceInput.value.trim()) {
-                        const elementToReplace =
-                            file !== currentTab
-                                ? null
-                                : tabContent.children[Number.parseInt(row) - 1].lastElementChild!;
-
-                        let newText: string;
-
-                        if (elementToReplace) {
-                            newText = (await replaceText(elementToReplace as HTMLTextAreaElement))!;
-                        } else {
-                            const regexp = await createRegExp(searchInput.value);
-                            if (!regexp) {
-                                return;
-                            }
-
-                            const normalizedFilename = file + ".txt";
-                            const pathToFile = join(
-                                settings.projectPath,
-                                programDataDir,
-                                normalizedFilename.startsWith("maps") ? tempMapsDir : translationDir,
-                                normalizedFilename,
-                            );
-
-                            const content = (await readTextFile(pathToFile)).split("\n");
-
-                            const lineToReplace = Number.parseInt(row) - 1;
-                            const requiredLine = content[lineToReplace];
-                            const [original, translated] = requiredLine.split(LINES_SEPARATOR);
-
-                            const translatedReplaced = translated
-                                .split(regexp)
-                                .flatMap((part, i, arr) => [
-                                    part,
-                                    i < arr.length - 1 ? `<span class="bg-red-600">${replaceInput.value}</span>` : "",
-                                ])
-                                .join("");
-
-                            content[lineToReplace] =
-                                `${original}${LINES_SEPARATOR}${translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "")}`;
-
-                            newText = translatedReplaced;
-
-                            await writeTextFile(pathToFile, content.join("\n"));
+                    if (elementToReplace) {
+                        newText = (await replaceText(elementToReplace as HTMLTextAreaElement))!;
+                    } else {
+                        const regexp = await createRegExp(searchInput.value);
+                        if (!regexp) {
+                            return;
                         }
 
-                        if (newText) {
-                            saved = false;
-                            resultElement.firstElementChild!.children[type.startsWith("o") ? 3 : 0].innerHTML = newText;
-                        }
+                        const normalizedFilename = file + ".txt";
+                        const pathToFile = join(
+                            settings.projectPath,
+                            programDataDir,
+                            normalizedFilename.startsWith("maps") ? tempMapsDir : translationDir,
+                            normalizedFilename,
+                        );
+
+                        const content = (await readTextFile(pathToFile)).split("\n");
+
+                        const lineToReplace = Number.parseInt(row) - 1;
+                        const requiredLine = content[lineToReplace];
+                        const [original, translated] = requiredLine.split(LINES_SEPARATOR);
+
+                        const translatedReplaced = translated
+                            .split(regexp)
+                            .flatMap((part, i, arr) => [
+                                part,
+                                i < arr.length - 1 ? `<span class="bg-red-600">${replaceInput.value}</span>` : "",
+                            ])
+                            .join("");
+
+                        content[lineToReplace] =
+                            `${original}${LINES_SEPARATOR}${translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "")}`;
+
+                        newText = translatedReplaced;
+
+                        await writeTextFile(pathToFile, content.join("\n"));
+                    }
+
+                    if (newText) {
+                        saved = false;
+                        resultElement.firstElementChild!.children[type.startsWith("o") ? 3 : 0].innerHTML = newText;
                     }
                 }
             }
         }
-
-        showSearchPanel(hide);
-
-        searchPanelFound.removeEventListener("mousedown", handleResultClick);
-        searchPanelFound.addEventListener("mousedown", handleResultClick);
     }
 
     async function replaceText(text: string | HTMLTextAreaElement): Promise<string | undefined> {
@@ -2849,7 +2844,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const children = tabContent.children as HTMLCollectionOf<HTMLDivElement>;
 
-rowContainer.remove();
+            rowContainer.remove();
 
             for (let i = position - 1; i < children.length; i++) {
                 const element = children[i];
@@ -2986,6 +2981,8 @@ rowContainer.remove();
             block: "center",
         });
     });
+
+    searchPanelFound.addEventListener("mousedown", handleResultClick);
 
     searchPanel.addEventListener("transitionend", () => {
         if (searchSwitch.innerHTML.trim() === "search") {
