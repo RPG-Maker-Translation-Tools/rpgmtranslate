@@ -999,7 +999,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const [file, i] = focusedElement.closest(`[id^="${currentTab}"]`)!.id.split("-");
                             const index = Number.parseInt(i);
 
-                            if (Number.isNaN(index) || index === 1 || index === tabContent.children.length) {
+                            if (
+                                Number.isNaN(index) ||
+                                (index === 1 && direction === JumpDirection.Previous) ||
+                                (index === tabContent.children.length && direction === JumpDirection.Next)
+                            ) {
                                 return;
                             }
 
