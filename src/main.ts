@@ -1997,15 +1997,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // #region Event listeners
     leftPanel.addEventListener("click", async (event) => {
-        let target = event.target as HTMLElement;
+        let target: HTMLElement | null = event.target as HTMLElement;
         const leftPanelChildren = Array.from(leftPanel.children);
 
         if (leftPanel.contains(target)) {
-            while (!leftPanelChildren.includes(target)) {
-                target = target.parentElement!;
+            while (target && !leftPanelChildren.includes(target)) {
+                target = target.parentElement;
             }
 
-            await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
+            if (target) await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
         }
     });
 
