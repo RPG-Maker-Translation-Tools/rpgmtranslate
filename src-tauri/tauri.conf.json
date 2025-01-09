@@ -29,7 +29,7 @@
     },
     "productName": "rpgmtranslate",
     "mainBinaryName": "rpgmtranslate",
-    "version": "4.1.6",
+    "version": "4.1.7",
     "identifier": "com.savannstm.rpgmtranslate",
     "plugins": {
         "updater": {
