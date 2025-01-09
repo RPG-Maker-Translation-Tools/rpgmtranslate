@@ -933,6 +933,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             await appWindow.setZoom((zoom -= 0.1));
                         }
                         break;
+                    case "KeyR":
+                        event.preventDefault();
+                        break;
                 }
             } else if (event.altKey) {
                 switch (event.code) {
