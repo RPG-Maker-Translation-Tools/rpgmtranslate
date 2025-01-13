@@ -81,7 +81,9 @@ pub fn compile(settings: CompileSettings) -> f64 {
 
     let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
     let original_path: &PathBuf = &project_path.join(original_dir);
+    let js_path: &PathBuf = &project_path.join("js");
     let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
+
     let (data_output_path, plugins_output_path) = if engine_type == EngineType::New {
         let plugins_output_path: PathBuf = output_path.join(data_dir).join("output/js");
         create_dir_all(&plugins_output_path).unwrap_log();
@@ -139,22 +141,17 @@ pub fn compile(settings: CompileSettings) -> f64 {
     }
 
     if !disable_processing[3] {
-        let plugins_file_path: &Path = &translation_path.join("plugins.json");
-
-        if game_type.is_some_and(|game_type: GameType| game_type == GameType::Termina) && plugins_file_path.exists() {
+        if engine_type == EngineType::New {
             write_plugins(
-                plugins_file_path,
+                &js_path.join("plugins.js"),
                 translation_path,
                 &unsafe { plugins_output_path.unwrap_unchecked() },
                 logging,
+                romanize,
             );
-        }
-
-        let scripts_file_path: &Path = &original_path.join(String::from("Scripts") + extension);
-
-        if engine_type != EngineType::New && scripts_file_path.exists() {
+        } else {
             write_scripts(
-                scripts_file_path,
+                &original_path.join(String::from("Scripts") + extension),
                 translation_path,
                 data_output_path,
                 romanize,
@@ -202,6 +199,7 @@ pub fn read(settings: ReadSettings) {
 
     let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
     let original_path: &PathBuf = &project_path.join(original_dir);
+    let js_path: &PathBuf = &project_path.join("js");
     let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
 
     create_dir_all(translation_path).unwrap_log();
@@ -249,15 +247,26 @@ pub fn read(settings: ReadSettings) {
         );
     }
 
-    if !disable_processing[3] && engine_type != EngineType::New {
-        read_scripts(
-            &original_path.join(String::from("Scripts") + extension),
-            translation_path,
-            romanize,
-            logging,
-            processing_mode,
-            generate_json,
-        );
+    if !disable_processing[3] {
+        if engine_type == EngineType::New {
+            read_plugins(
+                js_path.join("plugins.js"),
+                translation_path.to_path_buf(),
+                romanize,
+                logging,
+                processing_mode,
+                generate_json,
+            );
+        } else {
+            read_scripts(
+                &original_path.join(String::from("Scripts") + extension),
+                translation_path,
+                romanize,
+                logging,
+                processing_mode,
+                generate_json,
+            );
+        }
     }
 }
 
