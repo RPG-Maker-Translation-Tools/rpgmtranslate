@@ -342,6 +342,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     .entries()) {
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
+                    if (!translated) {
+                        console.log(localization.couldNotSplitLine, lineNumber + 1, name);
+                        continue;
+                    }
+
                     if (searchMode !== SearchMode.OnlyOriginal) {
                         const matches = translated.match(regexp);
 
