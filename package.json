@@ -1,7 +1,7 @@
 {
     "name": "rpgmtranslate",
     "private": true,
-    "version": "4.1.8",
+    "version": "4.2.0",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -25,9 +25,9 @@
         "xregexp": "5.1.1"
     },
     "devDependencies": {
-        "@eslint/js": "9.17.0",
-        "@tauri-apps/cli": "2.2.2",
-        "eslint": "9.17.0",
+        "@eslint/js": "9.18.0",
+        "@tauri-apps/cli": "2.2.4",
+        "eslint": "9.18.0",
         "prettier": "3.4.2",
         "prettier-plugin-organize-attributes": "1.0.0",
         "prettier-plugin-organize-imports": "4.1.0",
