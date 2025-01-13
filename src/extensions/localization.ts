@@ -89,6 +89,7 @@ export class MainWindowLocalization {
     readonly currentVersion: string;
     readonly updateAvailable: string;
     readonly installUpdate: string;
+    readonly couldNotSplitLine: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -185,6 +186,7 @@ export class MainWindowLocalization {
                 this.currentVersion = "Текущая версия";
                 this.updateAvailable = "Доступно обновление!";
                 this.installUpdate = "Установить обновление";
+                this.couldNotSplitLine = "Не удалось разделить линию на позиции в файле:";
                 break;
             default:
                 this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
@@ -280,6 +282,7 @@ export class MainWindowLocalization {
                 this.currentVersion = "Current version";
                 this.updateAvailable = "Update available!";
                 this.installUpdate = "Install update";
+                this.couldNotSplitLine = "Couldn't split line at line in file:";
                 break;
         }
     }
