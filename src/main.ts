@@ -57,6 +57,7 @@ const appWindow = getCurrentWebviewWindow();
 import XRegExp from "xregexp";
 
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 document.addEventListener("DOMContentLoaded", async () => {
     async function beforeClose(): Promise<boolean> {
@@ -971,6 +972,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 newStateIndex,
                             );
                         }
+
+                        if (event.repeat) {
+                            await sleep(100);
+                        }
                         break;
                     case "ArrowUp":
                         if (currentTabIndex !== null) {
@@ -980,6 +985,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 leftPanel.children[newStateIndex].firstElementChild!.textContent,
                                 newStateIndex,
                             );
+                        }
+
+                        if (event.repeat) {
+                            await sleep(100);
                         }
                         break;
                 }
