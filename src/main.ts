@@ -341,9 +341,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 )
                     .split("\n")
                     .entries()) {
+                    if (line.trim() === "") {
+                        continue;
+                    }
+
                     const [original, translated] = line.split(LINES_SEPARATOR);
 
-                    if (!translated) {
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                    if (translated === undefined) {
                         console.log(localization.couldNotSplitLine, lineNumber + 1, name);
                         continue;
                     }
@@ -1160,6 +1165,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < content.length; i++) {
+            if (content[i].trim() === "") {
+                continue;
+            }
+
             const [originalText, translationText] = content[i].split(LINES_SEPARATOR);
             const added = i + 1;
 
