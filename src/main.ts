@@ -57,7 +57,6 @@ const appWindow = getCurrentWebviewWindow();
 import XRegExp from "xregexp";
 
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 document.addEventListener("DOMContentLoaded", async () => {
     async function beforeClose(): Promise<boolean> {
@@ -775,7 +774,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function changeTab(filename: string | null, newTabIndex?: number) {
-        if (currentTab && currentTab === filename) {
+        if ((currentTab && currentTab === filename) || changeTimer) {
             return;
         }
 
@@ -847,6 +846,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             await createTabContent(filename);
         }
+
+        changeTimer = setTimeout(() => {
+            changeTimer = null;
+        }, 100);
     }
 
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
@@ -977,10 +980,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 newStateIndex,
                             );
                         }
-
-                        if (event.repeat) {
-                            await sleep(100);
-                        }
                         break;
                     case "ArrowUp":
                         if (currentTabIndex !== null) {
@@ -992,9 +991,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                             );
                         }
 
-                        if (event.repeat) {
-                            await sleep(100);
-                        }
                         break;
                 }
             }
@@ -2012,6 +2008,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let saving = false;
     let currentFocusedElement: [string, string] | [] = [];
 
+    let changeTimer: null | number = null;
     let shiftPressed = false;
 
     let multipleTextAreasSelected = false;
