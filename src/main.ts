@@ -2022,7 +2022,7 @@ newValue = textarea.value
                     await relaunch();
                 }
             } else {
-                console.log("Program is already updated");
+                console.log(localization.upToDate);
             }
         } catch (e) {
             console.error(e);
