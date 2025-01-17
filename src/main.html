@@ -281,12 +281,15 @@
                         cols="50"
                     ></textarea>
                 </div>
-                <div class="flex flex-row items-center justify-center">
+                <div class="flex flex-row items-center justify-center font-material">
                     <button
-                        class="button backgroundPrimaryHovered textThird replaceButtonTitle w-16 font-material"
+                        class="button backgroundPrimaryHovered textThird replaceButtonTitle w-16"
                         id="replace-button"
                     >
                         arrow_downward
+                    </button>
+                    <button class="button backgroundPrimaryHovered textThird putButtonTitle w-16" id="put-button">
+                        swipe_left
                     </button>
                 </div>
 
@@ -355,8 +358,8 @@
             <div class="h-fit columns-8 gap-2 overflow-y-scroll"></div>
             <div class="flex flex-col items-center justify-center gap-2">
                 <div class="hidden flex-row items-center justify-center gap-2">
-                    <label class="wrapNumber text-base"></label>
                     <input class="input backgroundSecond h-8" type="text" />
+                    <span class="wrapNumber text-base"></span>
                 </div>
             </div>
             <div class="flex w-auto flex-row items-center justify-center gap-4">
