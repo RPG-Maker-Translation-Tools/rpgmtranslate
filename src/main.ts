@@ -854,6 +854,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         changeTimer = setTimeout(() => {
             changeTimer = null;
         }, 100);
+
+        selectedTextareas.clear();
+        replacedTextareas.clear();
     }
 
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
