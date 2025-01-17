@@ -44,3 +44,9 @@ export const enum RowDeleteMode {
     Confirmation,
     Allowed,
 }
+
+export const enum ReplaceMode {
+    Replace,
+    Put,
+    Search,
+}
