@@ -2995,12 +2995,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (let i = 0; i < textRows; i++) {
                     const rowNumber = rowContainerNumber + i - 1;
-                    const rowContainer = tabContent.children[rowNumber] as HTMLDivElement;
+                    const rowContainer = tabContent.children[rowNumber] as HTMLDivElement | null;
+
+                    if (rowContainer) {
                     const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
 
                     replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(text, ""));
                     textAreaToReplace.value = clipboardTextSplit[i];
                     textAreaToReplace.calculateHeight();
+                    }
                 }
 
                 saved = false;
