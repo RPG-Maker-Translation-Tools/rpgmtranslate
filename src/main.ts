@@ -799,7 +799,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
 
-                const percentage = Math.round((translatedFields / totalFields) * 100);
+                const percentage = Math.floor((translatedFields / totalFields) * 100);
 
                 const selectedTab = leftPanel.children[currentTabIndex!];
                 const progressBar = selectedTab.lastElementChild?.firstElementChild as HTMLSpanElement | null;
@@ -812,6 +812,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
 
                     progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
+
+                    if (percentage === 100) {
+                        progressBar.classList.replace("backgroundThird", "bg-green-600");
+                    }
                 }
 
                 selectedTab.classList.replace("backgroundThird", "backgroundPrimary");
@@ -1673,13 +1677,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 totalAllLines += totalLines;
                 translatedLinesArray.push(translatedLines);
 
-                const translatedRatio = Math.round((translatedLines / totalLines) * 100);
+                const percentage = Math.floor((translatedLines / totalLines) * 100);
                 const progressBar = document.createElement("div");
                 const progressMeter = document.createElement("div");
 
                 progressBar.className = tw`backgroundSecond w-full rounded-sm`;
                 progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
-                progressMeter.style.width = progressMeter.textContent = `${translatedRatio}%`;
+                progressMeter.style.width = progressMeter.textContent = `${percentage}%`;
+
+                if (percentage === 100) {
+                    progressMeter.classList.replace("backgroundThird", "bg-green-600");
+                }
 
                 progressBar.appendChild(progressMeter);
                 buttonElement.appendChild(progressBar);
