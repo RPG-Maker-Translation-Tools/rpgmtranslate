@@ -1326,7 +1326,7 @@ newValue = textarea.value
             translationTextArea.value = translationTextSplit.join("\n");
 
             const rowNumberContainer = document.createElement("div");
-            rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-48 flex-row p-1 outline outline-2`;
+            rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-52 flex-row p-1 outline outline-2`;
 
             const rowNumberSpan = document.createElement("span");
             rowNumberSpan.textContent = added.toString();
