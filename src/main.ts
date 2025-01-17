@@ -26,6 +26,7 @@ import {
     JumpDirection,
     Language,
     ProcessingMode,
+ReplaceMode,
     RowDeleteMode,
     SaveMode,
     SearchMode,
@@ -182,13 +183,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function appendMatch(metadata: string, result: string, counterpartTextMisc?: string) {
         const [file, type, row] = metadata.split("-");
+
+        const actualRow = file !== currentTab ? Number.parseInt(row) + 1 : Number.parseInt(row);
+
         const reverseType = type.startsWith("o") ? "translation" : "original";
 
         const resultContainer = document.createElement("div");
         resultContainer.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-base`;
 
-        const rowContainer =
-            file !== currentTab ? null : (tabContent.children[Number.parseInt(row) - 1] as HTMLDivElement);
+        const rowContainer = file !== currentTab ? null : (tabContent.children[actualRow - 1] as HTMLDivElement);
         const counterpartElement = rowContainer?.children[type.startsWith("o") ? 2 : 1];
 
         const resultDiv = document.createElement("div");
@@ -198,7 +201,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const originalInfo = document.createElement("div");
         originalInfo.className = tw`textThird text-xs`;
 
-        originalInfo.innerHTML = `${file} - ${type} - ${row}`;
+        originalInfo.innerHTML = `${file} - ${type} - ${actualRow}`;
         resultContainer.appendChild(originalInfo);
 
         const arrow = document.createElement("div");
@@ -220,14 +223,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const counterpartInfo = document.createElement("div");
         counterpartInfo.className = tw`textThird text-xs`;
 
-        counterpartInfo.innerHTML = `${file} - ${reverseType} - ${row}`;
+        counterpartInfo.innerHTML = `${file} - ${reverseType} - ${actualRow}`;
         resultContainer.appendChild(counterpartInfo);
 
-        resultContainer.setAttribute("data", `${file}-${type}-${row}`);
+        resultContainer.setAttribute("data", `${file}-${type}-${actualRow}`);
         searchPanelFound.appendChild(resultContainer);
     }
 
-    async function searchText(text: string, replaceText: boolean): Promise<Map<string, number[]> | null> {
+    async function searchText(text: string, replaceMode: ReplaceMode): Promise<Map<string, number[]> | null> {
         const regexp: RegExp | null = await createRegExp(text);
         if (!regexp) {
             return null;
@@ -256,7 +259,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const programDataDirPath = join(settings.projectPath, programDataDir);
 
         const searchMode = Number.parseInt(searchModeSelect.value) as SearchMode;
-        const results = replaceText ? new Map<string, number[]>() : null;
+        const results = replaceMode !== ReplaceMode.Search ? new Map<string, number[]>() : null;
         const objectToWrite = new Map<string, string | [string, string]>();
         let file = 0;
 
@@ -271,26 +274,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         for (const rowContainer of openedTab.length ? openedTab : []) {
             const rowContainerChildren = rowContainer.children;
 
-            if (searchMode !== SearchMode.OnlyOriginal) {
+            if (searchMode !== SearchMode.OnlyOriginal && replaceMode !== ReplaceMode.Put) {
                 const translationTextArea = rowContainerChildren[2] as HTMLTextAreaElement;
                 const translationText = translationTextArea.value.replaceAllMultiple({
                     "<": "&lt;",
                     ">": "&gt;",
                 });
+
+                if (translationText) {
                 const matches = translationText.match(regexp);
 
                 if (matches) {
                     const matchesContainer = createMatchesContainer(translationText, matches);
                     const [file, row] = translationTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-");
-                    replaceText
+                    replaceMode !== ReplaceMode.Search
                         ? results!.has(file)
                             ? results!.get(file)!.push(Number.parseInt(row))
                             : results!.set(file, [Number.parseInt(row)])
                         : objectToWrite.set(`${file}-translation-${row}`, matchesContainer);
+}
                 }
             }
 
-            if (searchMode !== SearchMode.OnlyTranslation && !replaceText) {
+            if (searchMode !== SearchMode.OnlyTranslation && replaceMode !== ReplaceMode.Replace) {
                 const originalTextDiv = rowContainerChildren[1] as HTMLDivElement;
                 const originalText = originalTextDiv.innerHTML.replaceAllMultiple({
                     "<": "&lt;",
@@ -301,7 +307,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (matches) {
                     const matchesContainer = createMatchesContainer(originalText, matches);
                     const [file, row] = originalTextDiv.closest(`[id^="${currentTab}"]`)!.id.split("-");
-                    objectToWrite.set(`${file}-original-${row}`, matchesContainer);
+
+                    replaceMode !== ReplaceMode.Search
+                        ? results!.has(file)
+                            ? results!.get(file)!.push(Number.parseInt(row))
+                            : results!.set(file, [Number.parseInt(row)])
+                        : objectToWrite.set(`${file}-original-${row}`, matchesContainer);
                 }
             }
 
@@ -320,22 +331,34 @@ document.addEventListener("DOMContentLoaded", async () => {
             const mapsEntries = await readDir(join(programDataDirPath, tempMapsDir));
             const otherEntries = await readDir(join(programDataDirPath, translationDir));
 
+            const itemsIndex = otherEntries.findIndex((entry) => entry.name === "items.txt");
+            const beforeOtherEntries = otherEntries.slice(0, itemsIndex + 1);
+            const afterOtherEntries = otherEntries.slice(itemsIndex + 1);
+
             for (const [i, entry] of [
-                mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4)) - Number.parseInt(b.name.slice(4))),
-                otherEntries,
+beforeOtherEntries,
+                mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4, -4)) - Number.parseInt(b.name.slice(4, -4))),
+                afterOtherEntries,
             ]
                 .flat()
                 .entries()) {
                 const name = entry.name;
-                const nameWithoutExtension = name.slice(0, -4);
-
+                
                 if (!name.endsWith(".txt") || (currentTab && name.startsWith(currentTab)) || name === "maps.txt") {
                     continue;
                 }
 
+                const nameWithoutExtension = name.slice(0, -4);
+
                 for (const [lineNumber, line] of (
                     await readTextFile(
-                        join(programDataDirPath, i < mapsEntries.length ? tempMapsDir : translationDir, name),
+                        join(
+programDataDirPath,
+i < beforeOtherEntries.length || i > beforeOtherEntries.length + mapsEntries.length
+                                ? translationDir
+                                : tempMapsDir,
+name,
+),
                     )
                 )
                     .split("\n")
@@ -348,34 +371,45 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                     if (translated === undefined) {
-                        console.log(localization.couldNotSplitLine, lineNumber + 1, name);
+                        console.error(localization.couldNotSplitLine, lineNumber + 1, name);
                         continue;
                     }
 
-                    if (searchMode !== SearchMode.OnlyOriginal) {
-                        const matches = translated.match(regexp);
+const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
+                    const originalNormalized = original.replaceAll(NEW_LINE, "\n").trim();
+
+                    if (searchMode !== SearchMode.OnlyOriginal && replaceMode !== ReplaceMode.Put) {
+                        if (translatedNormalized) {
+                        const matches = translatedNormalized.match(regexp);
 
                         if (matches) {
-                            const matchesContainer = createMatchesContainer(translated, matches);
-                            replaceText
+                            const matchesContainer = createMatchesContainer(translatedNormalized, matches);
+                            
+                                replaceMode !== ReplaceMode.Search
                                 ? results!.has(name)
                                     ? results!.get(name)!.push(lineNumber)
                                     : results!.set(name, [lineNumber])
-                                : objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber + 1}`, [
+                                : objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber}`, [
                                       matchesContainer,
-                                      original,
+                                      originalNormalized,
                                   ]);
+}
                         }
                     }
 
-                    if (searchMode !== SearchMode.OnlyTranslation && !replaceText) {
-                        const matches = original.match(regexp);
+                    if (searchMode !== SearchMode.OnlyTranslation && replaceMode !== ReplaceMode.Replace) {
+                        const matches = originalNormalized.match(regexp);
 
                         if (matches) {
-                            const matchesContainer = createMatchesContainer(original, matches);
-                            objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber + 1}`, [
+                            const matchesContainer = createMatchesContainer(originalNormalized, matches);
+
+                            replaceMode !== ReplaceMode.Search
+                                ? results!.has(name)
+                                    ? results!.get(name)!.push(lineNumber)
+                                    : results!.set(name, [lineNumber])
+                                : objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber}`, [
                                 matchesContainer,
-                                translated,
+                                translatedNormalized,
                             ]);
                         }
                     }
@@ -414,7 +448,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     appendMatch(id, result);
                 }
             }
-        } else if (!replaceText) {
+        } else if (replaceMode === ReplaceMode.Search) {
             searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${localization.noMatches}</div>`;
             showSearchPanel(false);
         }
@@ -457,7 +491,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const fileLines = (await readTextFile(filePath)).split("\n");
 
                 const neededLineSplit = fileLines[row].split(LINES_SEPARATOR);
-                neededLineSplit[1] = element.children[1].textContent!;
+                neededLineSplit[1] = element.children[1].textContent!.replaceAll("\n", NEW_LINE);
 
                 fileLines[row] = neededLineSplit.join(LINES_SEPARATOR);
 
@@ -489,7 +523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        await searchText(text, false);
+        await searchText(text, ReplaceMode.Search);
 
         showSearchPanel(hide);
     }
@@ -517,14 +551,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 alert(localization.originalTextIrreplacable);
                 return;
             } else {
-                if (replaceInput.value.trim()) {
+                const replacer = replaceInput.value.trim();
+
+                if (replacer) {
                     const elementToReplace =
                         file !== currentTab ? null : tabContent.children[Number.parseInt(row) - 1].lastElementChild!;
 
                     let newText: string;
 
                     if (elementToReplace) {
-                        newText = (await replaceText(elementToReplace as HTMLTextAreaElement))!;
+                        newText = (await replaceText(
+elementToReplace as HTMLTextAreaElement,
+                            replacer,
+                            ReplaceMode.Replace,
+))!;
                     } else {
                         const regexp = await createRegExp(searchInput.value);
                         if (!regexp) {
@@ -544,17 +584,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const lineToReplace = Number.parseInt(row) - 1;
                         const requiredLine = content[lineToReplace];
                         const [original, translated] = requiredLine.split(LINES_SEPARATOR);
+const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
 
-                        const translatedReplaced = translated
+                        const translatedReplaced = translatedNormalized
                             .split(regexp)
                             .flatMap((part, i, arr) => [
                                 part,
-                                i < arr.length - 1 ? `<span class="bg-red-600">${replaceInput.value}</span>` : "",
+                                i < arr.length - 1 ? `<span class="bg-red-600">${replacer}</span>` : "",
                             ])
                             .join("");
 
+const replacedNormalized = translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "");
+
+                        replaced[`${file}-${lineToReplace}`] = { old: translatedNormalized, new: replacedNormalized };
+
                         content[lineToReplace] =
-                            `${original}${LINES_SEPARATOR}${translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "")}`;
+                            `${original}${LINES_SEPARATOR}${replacedNormalized.replaceAll("\n", NEW_LINE)}`;
 
                         newText = translatedReplaced;
 
@@ -567,10 +612,67 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             }
+        } else if (event.button === 1) {
+            if (type.startsWith("t")) {
+                alert(localization.translationTextAreaUnputtable);
+                return;
+            } else {
+                const replacer = replaceInput.value.trim();
+
+                if (replacer) {
+                    const elementToReplace =
+                        file !== currentTab ? null : tabContent.children[Number.parseInt(row) - 1].lastElementChild!;
+
+                    let newText: string;
+
+                    if (elementToReplace) {
+                        newText = (await replaceText(
+                            elementToReplace as HTMLTextAreaElement,
+                            replacer,
+                            ReplaceMode.Put,
+                        ))!;
+                    } else {
+                        const regexp = await createRegExp(searchInput.value);
+                        if (!regexp) {
+                            return;
+                        }
+
+                        const normalizedFilename = file + ".txt";
+                        const pathToFile = join(
+                            settings.projectPath,
+                            programDataDir,
+                            normalizedFilename.startsWith("maps") ? tempMapsDir : translationDir,
+                            normalizedFilename,
+                        );
+
+                        const content = (await readTextFile(pathToFile)).split("\n");
+
+                        const lineToReplace = Number.parseInt(row) - 1;
+                        const requiredLine = content[lineToReplace];
+                        const original = requiredLine.split(LINES_SEPARATOR)[0];
+
+                        const replacerNormalized = replacer.replaceAll("\n", NEW_LINE);
+                        content[lineToReplace] = `${original}${LINES_SEPARATOR}${replacerNormalized}`;
+
+                        newText = `<span class="bg-red-600">${replacer}</span>`;
+
+                        await writeTextFile(pathToFile, content.join("\n"));
+                    }
+
+                    if (newText) {
+                        saved = false;
+                        resultElement.children[3].innerHTML = newText;
+                    }
+                }
+            }
         }
     }
 
-    async function replaceText(text: string | HTMLTextAreaElement): Promise<string | undefined> {
+    async function replaceText(
+text: string | HTMLTextAreaElement,
+        replacer: string,
+        replaceMode: ReplaceMode,
+): Promise<string | undefined> {
         if (text instanceof HTMLTextAreaElement) {
             const textarea = text;
             const regexp: RegExp | null = await createRegExp(searchInput.value);
@@ -578,19 +680,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const replacerText: string = replaceInput.value;
+            let newValue: string;
 
-            const newValue = textarea.value
+            if (replaceMode === ReplaceMode.Replace) {
+newValue = textarea.value
                 .split(regexp)
                 .flatMap((part, i, arr) => [
                     part,
-                    i < arr.length - 1 ? `<span class="bg-red-600">${replacerText}</span>` : "",
+                    i < arr.length - 1 ? `<span class="bg-red-600">${replacer}</span>` : "",
                 ])
                 .join("");
 
             replaced[textarea.id] = { old: textarea.value, new: newValue };
             textarea.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
             saved = false;
+} else {
+                textarea.value = replacer;
+                newValue = `<span class="bg-red-600">${replacer}</span>`;
+            }
 
             return newValue;
         } else {
@@ -599,7 +706,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            const results: Map<string, number[]> = (await searchText(text, true))!;
+            const results: Map<string, number[]> = (await searchText(text, replaceMode))!;
             if (!results.size) {
                 return;
             }
@@ -613,7 +720,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (currentTab?.startsWith(file)) {
                     for (const rowNumber of rowNumberArray) {
                         const textarea = tabContent.children[rowNumber - 1].lastElementChild! as HTMLTextAreaElement;
-                        const newValue = textarea.value.replace(regexp, replaceInput.value);
+
+                        if (replaceMode === ReplaceMode.Replace) {
+                        const newValue = textarea.value.replace(regexp, replacer);
 
                         replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
                             old: textarea.value,
@@ -621,6 +730,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                         };
 
                         textarea.value = newValue;
+} else {
+                            textarea.value = replacer;
+                        }
                     }
                 } else {
                     const filePath = join(
@@ -634,14 +746,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     for (const rowNumber of rowNumberArray) {
                         const [original, translated] = fileContent[rowNumber].split(LINES_SEPARATOR);
-                        const newValue = translated.replace(regexp, replaceInput.value);
 
-                        replaced[`${file}-${rowNumber}`] = {
-                            old: translated,
+                        if (replaceMode === ReplaceMode.Replace) {
+                            const translatedNormalized = translated.replaceAll(NEW_LINE, "\n");
+                        const newValue = translatedNormalized.replace(regexp, replacer);
+
+                        replaced[`${file.slice(0, -4)}-${rowNumber}`] = {
+                            old: translatedNormalized,
                             new: newValue,
                         };
 
-                        fileContent[rowNumber] = `${original}${LINES_SEPARATOR}${newValue}`;
+                        fileContent[rowNumber] =
+`${original}${LINES_SEPARATOR}${newValue.replaceAll("\n", NEW_LINE)}`;
+                        } else {
+                            fileContent[rowNumber] =
+                                `${original}${LINES_SEPARATOR}${replacer.replaceAll("\n", NEW_LINE)}`;
+                        }
                     }
 
                     await writeTextFile(filePath, fileContent.join("\n"));
@@ -2790,11 +2910,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case "replace-button":
-                if (searchInput.value.trim() && replaceInput.value.trim()) {
-                    await replaceText(searchInput.value);
+            case "replace-button": {
+                const replacer = replaceInput.value.trim();
+                if (searchInput.value.trim() && replacer) {
+                    await replaceText(searchInput.value, replacer, ReplaceMode.Replace);
                 }
                 break;
+}
+            case "put-button": {
+                const replacer = replaceInput.value.trim();
+                if (searchInput.value.trim() && replacer) {
+                    await replaceText(searchInput.value, replacer, ReplaceMode.Put);
+                }
+                break;
+            }
             case "case-button":
                 searchCaseButton.classList.toggle("backgroundThird");
                 break;
