@@ -23,6 +23,7 @@ export class MainWindowLocalization {
     readonly searchInputTitle: string;
     readonly replaceButtonTitle: string;
     readonly replaceInputTitle: string;
+    readonly putButtonTitle: string;
     readonly caseButtonTitle: string;
     readonly wholeButtonTitle: string;
     readonly regexButtonTitle: string;
@@ -90,6 +91,8 @@ export class MainWindowLocalization {
     readonly updateAvailable: string;
     readonly installUpdate: string;
     readonly couldNotSplitLine: string;
+    readonly upToDate: string;
+    readonly translationTextAreaUnputtable: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -117,6 +120,7 @@ export class MainWindowLocalization {
                 this.searchInputTitle = "Поиск";
                 this.replaceButtonTitle = "Заменить все совпадения на";
                 this.replaceInputTitle = "Замена";
+                this.putButtonTitle = "Вставить текст в поле перевода совпадающего оригинального текста";
                 this.caseButtonTitle = "Учитывать регистр (Alt + C)";
                 this.wholeButtonTitle = "Искать слова целиком (Alt + W)";
                 this.regexButtonTitle = "Поиск по регулярным выражениям (Alt + R)";
@@ -187,6 +191,8 @@ export class MainWindowLocalization {
                 this.updateAvailable = "Доступно обновление!";
                 this.installUpdate = "Установить обновление";
                 this.couldNotSplitLine = "Не удалось разделить линию на позиции в файле:";
+                this.upToDate = "Программа обновлена до последней версии.";
+                this.translationTextAreaUnputtable = "Нельзя вставить текст в поле перевода.";
                 break;
             default:
                 this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
@@ -212,6 +218,7 @@ export class MainWindowLocalization {
                 this.searchInputTitle = "Search";
                 this.replaceButtonTitle = "Replace all matches with";
                 this.replaceInputTitle = "Replace";
+                this.putButtonTitle = "Put text to matching original text's translation textarea";
                 this.caseButtonTitle = "Consider case (Alt + C)";
                 this.wholeButtonTitle = "Search the whole text (Alt + W)";
                 this.regexButtonTitle = "Search by regular expressions (Alt + R)";
@@ -283,6 +290,8 @@ export class MainWindowLocalization {
                 this.updateAvailable = "Update available!";
                 this.installUpdate = "Install update";
                 this.couldNotSplitLine = "Couldn't split line at line in file:";
+                this.upToDate = "Program is up to date.";
+                this.translationTextAreaUnputtable = "You can't put text to a translation textarea.";
                 break;
         }
     }
