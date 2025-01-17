@@ -2607,8 +2607,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ),
                     ) as object;
 
-                    for (const [id, result] of Object.entries(matches)) {
-                        appendMatch(id, result as string);
+                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
+                        if (typeof result === "object") {
+                            appendMatch(id, result[0] as string, result[1] as string);
+                        } else {
+                            appendMatch(id, result);
+                        }
                     }
                 }
                 break;
@@ -2626,8 +2630,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ),
                     ) as object;
 
-                    for (const [id, result] of Object.entries(matches)) {
-                        appendMatch(id, result as string);
+                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
+                        if (typeof result === "object") {
+                            appendMatch(id, result[0] as string, result[1] as string);
+                        } else {
+                            appendMatch(id, result);
+                        }
                     }
                 }
                 break;
