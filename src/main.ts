@@ -26,7 +26,7 @@ import {
     JumpDirection,
     Language,
     ProcessingMode,
-ReplaceMode,
+    ReplaceMode,
     RowDeleteMode,
     SaveMode,
     SearchMode,
@@ -282,17 +282,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 if (translationText) {
-                const matches = translationText.match(regexp);
+                    const matches = translationText.match(regexp);
 
-                if (matches) {
-                    const matchesContainer = createMatchesContainer(translationText, matches);
-                    const [file, row] = translationTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-");
-                    replaceMode !== ReplaceMode.Search
-                        ? results!.has(file)
-                            ? results!.get(file)!.push(Number.parseInt(row))
-                            : results!.set(file, [Number.parseInt(row)])
-                        : objectToWrite.set(`${file}-translation-${row}`, matchesContainer);
-}
+                    if (matches) {
+                        const matchesContainer = createMatchesContainer(translationText, matches);
+                        const [file, row] = translationTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-");
+                        replaceMode !== ReplaceMode.Search
+                            ? results!.has(file)
+                                ? results!.get(file)!.push(Number.parseInt(row))
+                                : results!.set(file, [Number.parseInt(row)])
+                            : objectToWrite.set(`${file}-translation-${row}`, matchesContainer);
+                    }
                 }
             }
 
@@ -336,14 +336,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             const afterOtherEntries = otherEntries.slice(itemsIndex + 1);
 
             for (const [i, entry] of [
-beforeOtherEntries,
+                beforeOtherEntries,
                 mapsEntries.sort((a, b) => Number.parseInt(a.name.slice(4, -4)) - Number.parseInt(b.name.slice(4, -4))),
                 afterOtherEntries,
             ]
                 .flat()
                 .entries()) {
                 const name = entry.name;
-                
+
                 if (!name.endsWith(".txt") || (currentTab && name.startsWith(currentTab)) || name === "maps.txt") {
                     continue;
                 }
@@ -353,12 +353,12 @@ beforeOtherEntries,
                 for (const [lineNumber, line] of (
                     await readTextFile(
                         join(
-programDataDirPath,
-i < beforeOtherEntries.length || i > beforeOtherEntries.length + mapsEntries.length
+                            programDataDirPath,
+                            i < beforeOtherEntries.length || i > beforeOtherEntries.length + mapsEntries.length
                                 ? translationDir
                                 : tempMapsDir,
-name,
-),
+                            name,
+                        ),
                     )
                 )
                     .split("\n")
@@ -375,25 +375,25 @@ name,
                         continue;
                     }
 
-const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
+                    const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
                     const originalNormalized = original.replaceAll(NEW_LINE, "\n").trim();
 
                     if (searchMode !== SearchMode.OnlyOriginal && replaceMode !== ReplaceMode.Put) {
                         if (translatedNormalized) {
-                        const matches = translatedNormalized.match(regexp);
+                            const matches = translatedNormalized.match(regexp);
 
-                        if (matches) {
-                            const matchesContainer = createMatchesContainer(translatedNormalized, matches);
-                            
+                            if (matches) {
+                                const matchesContainer = createMatchesContainer(translatedNormalized, matches);
+
                                 replaceMode !== ReplaceMode.Search
-                                ? results!.has(name)
-                                    ? results!.get(name)!.push(lineNumber)
-                                    : results!.set(name, [lineNumber])
-                                : objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber}`, [
-                                      matchesContainer,
-                                      originalNormalized,
-                                  ]);
-}
+                                    ? results!.has(name)
+                                        ? results!.get(name)!.push(lineNumber)
+                                        : results!.set(name, [lineNumber])
+                                    : objectToWrite.set(`${nameWithoutExtension}-translation-${lineNumber}`, [
+                                          matchesContainer,
+                                          originalNormalized,
+                                      ]);
+                            }
                         }
                     }
 
@@ -408,9 +408,9 @@ const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
                                     ? results!.get(name)!.push(lineNumber)
                                     : results!.set(name, [lineNumber])
                                 : objectToWrite.set(`${nameWithoutExtension}-original-${lineNumber}`, [
-                                matchesContainer,
-                                translatedNormalized,
-                            ]);
+                                      matchesContainer,
+                                      translatedNormalized,
+                                  ]);
                         }
                     }
 
@@ -561,10 +561,10 @@ const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
 
                     if (elementToReplace) {
                         newText = (await replaceText(
-elementToReplace as HTMLTextAreaElement,
+                            elementToReplace as HTMLTextAreaElement,
                             replacer,
                             ReplaceMode.Replace,
-))!;
+                        ))!;
                     } else {
                         const regexp = await createRegExp(searchInput.value);
                         if (!regexp) {
@@ -584,7 +584,7 @@ elementToReplace as HTMLTextAreaElement,
                         const lineToReplace = Number.parseInt(row) - 1;
                         const requiredLine = content[lineToReplace];
                         const [original, translated] = requiredLine.split(LINES_SEPARATOR);
-const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
+                        const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
 
                         const translatedReplaced = translatedNormalized
                             .split(regexp)
@@ -594,7 +594,7 @@ const translatedNormalized = translated.replaceAll(NEW_LINE, "\n").trim();
                             ])
                             .join("");
 
-const replacedNormalized = translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "");
+                        const replacedNormalized = translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "");
 
                         replaced[`${file}-${lineToReplace}`] = { old: translatedNormalized, new: replacedNormalized };
 
@@ -669,10 +669,10 @@ const replacedNormalized = translatedReplaced.replaceAll(/<span(.*?)>|<\/span>/g
     }
 
     async function replaceText(
-text: string | HTMLTextAreaElement,
+        text: string | HTMLTextAreaElement,
         replacer: string,
         replaceMode: ReplaceMode,
-): Promise<string | undefined> {
+    ): Promise<string | undefined> {
         if (text instanceof HTMLTextAreaElement) {
             const textarea = text;
             const regexp: RegExp | null = await createRegExp(searchInput.value);
@@ -683,18 +683,18 @@ text: string | HTMLTextAreaElement,
             let newValue: string;
 
             if (replaceMode === ReplaceMode.Replace) {
-newValue = textarea.value
-                .split(regexp)
-                .flatMap((part, i, arr) => [
-                    part,
-                    i < arr.length - 1 ? `<span class="bg-red-600">${replacer}</span>` : "",
-                ])
-                .join("");
+                newValue = textarea.value
+                    .split(regexp)
+                    .flatMap((part, i, arr) => [
+                        part,
+                        i < arr.length - 1 ? `<span class="bg-red-600">${replacer}</span>` : "",
+                    ])
+                    .join("");
 
-            replaced[textarea.id] = { old: textarea.value, new: newValue };
-            textarea.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
-            saved = false;
-} else {
+                replaced[textarea.id] = { old: textarea.value, new: newValue };
+                textarea.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
+                saved = false;
+            } else {
                 textarea.value = replacer;
                 newValue = `<span class="bg-red-600">${replacer}</span>`;
             }
@@ -722,15 +722,15 @@ newValue = textarea.value
                         const textarea = tabContent.children[rowNumber - 1].lastElementChild! as HTMLTextAreaElement;
 
                         if (replaceMode === ReplaceMode.Replace) {
-                        const newValue = textarea.value.replace(regexp, replacer);
+                            const newValue = textarea.value.replace(regexp, replacer);
 
-                        replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
-                            old: textarea.value,
-                            new: newValue,
-                        };
+                            replaced[textarea.closest(`[id^="${currentTab}"]`)!.id] = {
+                                old: textarea.value,
+                                new: newValue,
+                            };
 
-                        textarea.value = newValue;
-} else {
+                            textarea.value = newValue;
+                        } else {
                             textarea.value = replacer;
                         }
                     }
@@ -749,15 +749,15 @@ newValue = textarea.value
 
                         if (replaceMode === ReplaceMode.Replace) {
                             const translatedNormalized = translated.replaceAll(NEW_LINE, "\n");
-                        const newValue = translatedNormalized.replace(regexp, replacer);
+                            const newValue = translatedNormalized.replace(regexp, replacer);
 
-                        replaced[`${file.slice(0, -4)}-${rowNumber}`] = {
-                            old: translatedNormalized,
-                            new: newValue,
-                        };
+                            replaced[`${file.slice(0, -4)}-${rowNumber}`] = {
+                                old: translatedNormalized,
+                                new: newValue,
+                            };
 
-                        fileContent[rowNumber] =
-`${original}${LINES_SEPARATOR}${newValue.replaceAll("\n", NEW_LINE)}`;
+                            fileContent[rowNumber] =
+                                `${original}${LINES_SEPARATOR}${newValue.replaceAll("\n", NEW_LINE)}`;
                         } else {
                             fileContent[rowNumber] =
                                 `${original}${LINES_SEPARATOR}${replacer.replaceAll("\n", NEW_LINE)}`;
@@ -1822,7 +1822,7 @@ newValue = textarea.value
                 const checkbox = document.createElement("span");
                 checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 min-w-6 max-w-6`;
 
-                const checkboxLabel = document.createElement("label");
+                const checkboxLabel = document.createElement("span");
                 checkboxLabel.className = tw`text-base`;
                 checkboxLabel.innerHTML = buttonElement.firstElementChild!.textContent!;
 
@@ -2916,7 +2916,7 @@ newValue = textarea.value
                     await replaceText(searchInput.value, replacer, ReplaceMode.Replace);
                 }
                 break;
-}
+            }
             case "put-button": {
                 const replacer = replaceInput.value.trim();
                 if (searchInput.value.trim() && replacer) {
@@ -3127,11 +3127,11 @@ newValue = textarea.value
                     const rowContainer = tabContent.children[rowNumber] as HTMLDivElement | null;
 
                     if (rowContainer) {
-                    const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
+                        const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                    replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(text, ""));
-                    textAreaToReplace.value = clipboardTextSplit[i];
-                    textAreaToReplace.calculateHeight();
+                        replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(text, ""));
+                        textAreaToReplace.value = clipboardTextSplit[i];
+                        textAreaToReplace.calculateHeight();
                     }
                 }
 
