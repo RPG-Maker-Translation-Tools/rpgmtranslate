@@ -935,6 +935,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (percentage === 100) {
                         progressBar.classList.replace("backgroundThird", "bg-green-600");
+                    } else {
+                        progressBar.classList.replace("bg-green-600", "backgroundThird");
                     }
                 }
 
