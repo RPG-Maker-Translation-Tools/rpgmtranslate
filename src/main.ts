@@ -1775,6 +1775,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             await mkdir(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
 
             function createTab(name: string, content: string[], i: number): HTMLButtonElement | undefined {
+                if (name === "system") {
+                    content = content.slice(0, -1);
+                }
+
                 let totalLines = content.length;
                 let translatedLines = 0;
 
