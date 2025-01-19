@@ -255,7 +255,6 @@ pub fn read(settings: ReadSettings) {
                 romanize,
                 logging,
                 processing_mode,
-                generate_json,
             );
         } else {
             read_scripts(
