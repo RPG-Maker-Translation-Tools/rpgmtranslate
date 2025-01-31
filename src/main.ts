@@ -1849,6 +1849,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return buttonElement;
             }
 
+            selectFilesWindow.children[1].innerHTML = "";
+
             for (const entry of translationFiles) {
                 if (!entry.name.endsWith(".txt")) {
                     continue;
