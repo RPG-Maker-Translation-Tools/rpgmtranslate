@@ -3,6 +3,7 @@ import {
     applyLocalization,
     applyTheme,
     CompileSettings,
+    determineExtension,
     getThemeStyleSheet,
     join,
     Settings,
@@ -1182,10 +1183,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     return;
                                 }
 
+                                const extension = determineExtension(settings.engineType!);
+
                                 const originalTextDiv = selectedTextArea.parentElement!.children[1] as HTMLDivElement;
+                                let originalText = originalTextDiv.textContent!;
+
+                                if (originalText.startsWith("<!-- Map") && !originalText.endsWith(`${extension} -->`)) {
+                                    originalText = originalText
+                                        .slice("<!-- Map000".length + extension.length + 1)
+                                        .slice(0, -4);
+                                }
 
                                 const translation = await translateText({
-                                    text: originalTextDiv.textContent!,
+                                    text: originalText,
                                     to: settings.translation.to,
                                     from: settings.translation.from,
                                     replace: false,
@@ -2402,6 +2412,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             return;
                         }
 
+                        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
                         function showSelectFilesWindow(rootElement: HTMLElement, action: FilesAction) {
                             const selectFilesWindowChildren = selectFilesWindow.children;
 
@@ -2436,9 +2448,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const confirmButtonsDivChildren = selectFilesWindowChildren[4].children;
                             const applyButton = confirmButtonsDivChildren[0] as HTMLButtonElement;
 
-                            const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-                            applyButton.onclick = async (event) => {
+                            async function applyTool(event: MouseEvent) {
                                 function wrapText(text: string, width: number): string {
                                     const lines = text.split("\n");
                                     const remainder: string[] = [];
@@ -2490,34 +2500,57 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             const originalField = rowContainer.children[1] as HTMLDivElement;
                                             const translationField = rowContainer.children[2] as HTMLTextAreaElement;
 
-                                            const translationExists = Boolean(translationField.value.trim());
+                                            if (!originalField.textContent?.trim()) {
+                                                return;
+                                            }
+
+                                            const originalText = originalField.textContent;
+                                            const translationText = translationField.value.trim();
+                                            const translationExists = Boolean(translationText);
+
+                                            const isComment = originalText.startsWith("<!--");
+                                            const isMapComment = originalText.startsWith("<!-- Map");
 
                                             switch (action) {
                                                 case FilesAction.Trim:
                                                     if (translationExists) {
-                                                        translationField.value = translationField.value.trim();
+                                                        translationField.value = translationText.trim();
                                                     }
                                                     break;
                                                 case FilesAction.Translate:
-                                                    if (
-                                                        !translationExists &&
-                                                        !/^<!--(?! Map)/.exec(originalField.textContent!)
-                                                    ) {
-                                                        void translateText({
-                                                            text: originalField.textContent!,
-                                                            from: settings.translation.from,
-                                                            to: settings.translation.to,
-                                                            replace: false,
-                                                        }).then((translated) => {
-                                                            translationField.value = translated;
-                                                        });
+                                                    if (!translationExists && !isComment) {
+                                                        const extension = determineExtension(settings.engineType!);
+
+                                                        if (
+                                                            isMapComment &&
+                                                            !originalText.endsWith(`${extension} -->`)
+                                                        ) {
+                                                            const mapTitle = originalText
+                                                                .slice("<!-- Map000".length + extension.length + 1)
+                                                                .slice(0, -4);
+
+                                                            void translateText({
+                                                                text: mapTitle,
+                                                                from: settings.translation.from,
+                                                                to: settings.translation.to,
+                                                                replace: false,
+                                                            }).then((translated) => {
+                                                                translationField.value = translated;
+                                                            });
+                                                        } else {
+                                                            void translateText({
+                                                                text: originalText,
+                                                                from: settings.translation.from,
+                                                                to: settings.translation.to,
+                                                                replace: false,
+                                                            }).then((translated) => {
+                                                                translationField.value = translated;
+                                                            });
+                                                        }
                                                     }
                                                     break;
                                                 case FilesAction.Wrap:
-                                                    if (
-                                                        translationExists &&
-                                                        !/^<!--(?! Map)/.exec(originalField.textContent!)
-                                                    ) {
+                                                    if (translationExists && !isComment) {
                                                         translationField.value = wrapText(
                                                             translationField.value,
                                                             Number.parseInt(
@@ -2544,24 +2577,57 @@ document.addEventListener("DOMContentLoaded", async () => {
                                         const newLines = await Promise.all(
                                             (await readTextFile(contentPath)).split("\n").map(async (line) => {
                                                 const [original, translation] = line.split(LINES_SEPARATOR);
-                                                const translationExists = Boolean(translation.trim());
+
+                                                if (!original.trim()) {
+                                                    return;
+                                                }
+
+                                                const translationTrimmed = translation.trim();
+                                                const translationExists = Boolean(translationTrimmed);
+
+                                                const isComment = original.startsWith("<!--");
+                                                const isMapComment = original.startsWith("<!-- Map");
 
                                                 switch (action) {
                                                     case FilesAction.Trim:
                                                         return translationExists
-                                                            ? `${original}${LINES_SEPARATOR}${translation.trim()}`
+                                                            ? `${original}${LINES_SEPARATOR}${translationTrimmed}`
                                                             : line;
                                                     case FilesAction.Translate: {
                                                         try {
-                                                            if (!translationExists && !/^<!--(?! Map)/.exec(original)) {
-                                                                return `${original}${LINES_SEPARATOR}${await translateText(
-                                                                    {
-                                                                        text: original,
-                                                                        from: settings.translation.from,
-                                                                        to: settings.translation.to,
-                                                                        replace: true,
-                                                                    },
-                                                                )}`;
+                                                            if (!translationExists && !isComment) {
+                                                                const extension = determineExtension(
+                                                                    settings.engineType!,
+                                                                );
+
+                                                                if (
+                                                                    isMapComment &&
+                                                                    !original.endsWith(`${extension} -->`)
+                                                                ) {
+                                                                    const mapTitle = original
+                                                                        .slice(
+                                                                            "<!-- Map000".length + extension.length + 1,
+                                                                        )
+                                                                        .slice(0, -4);
+
+                                                                    return `${original}${LINES_SEPARATOR}${await translateText(
+                                                                        {
+                                                                            text: mapTitle,
+                                                                            from: settings.translation.from,
+                                                                            to: settings.translation.to,
+                                                                            replace: true,
+                                                                        },
+                                                                    )}`;
+                                                                } else {
+                                                                    return `${original}${LINES_SEPARATOR}${await translateText(
+                                                                        {
+                                                                            text: original,
+                                                                            from: settings.translation.from,
+                                                                            to: settings.translation.to,
+                                                                            replace: true,
+                                                                        },
+                                                                    )}`;
+                                                                }
                                                             } else {
                                                                 return line;
                                                             }
@@ -2571,7 +2637,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                         }
                                                     }
                                                     case FilesAction.Wrap:
-                                                        if (translationExists && !/^<!--(?! Map)/.exec(original)) {
+                                                        if (translationExists && !isComment) {
                                                             const wrapped = wrapText(
                                                                 translation.replaceAll(NEW_LINE, "\n"),
                                                                 Number.parseInt(
@@ -2617,7 +2683,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 saved = false;
                                 selectFilesWindow.classList.replace("flex", "hidden");
-                            };
+                            }
+
+                            applyButton.onclick = applyTool;
 
                             const cancelButton = confirmButtonsDivChildren[1] as HTMLButtonElement;
 

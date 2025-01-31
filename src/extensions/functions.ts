@@ -129,6 +129,19 @@ export function animateProgressText(progressText: HTMLElement, interval = 500) {
 
 export const join = (...strings: string[]): string => strings.join("/");
 
+export function determineExtension(engineType: EngineType): string {
+    switch (engineType) {
+        case EngineType.New:
+            return ".json";
+        case EngineType.VXAce:
+            return ".rvdata2";
+        case EngineType.VX:
+            return ".rvdata";
+        case EngineType.XP:
+            return ".rxdata";
+    }
+}
+
 export class CompileSettings {
     initialized: boolean;
     romanize: boolean;
