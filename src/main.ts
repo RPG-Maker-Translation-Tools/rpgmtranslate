@@ -1805,7 +1805,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 const buttonElement = document.createElement("button");
-                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered";
+                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered h-8";
                 buttonElement.id = (i - 1).toString();
 
                 const stateSpan = document.createElement("span");
