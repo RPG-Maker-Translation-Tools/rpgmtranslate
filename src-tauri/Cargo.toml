@@ -33,7 +33,7 @@ tauri-plugin-log = "2.2.1"
 log = "0.4.25"
 tokio = "1.43.0"
 rpgmad-lib = { version = "1.0.1", features = ["rayon"] }
-rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.6.1", features = ["log", "serde"] }
+rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "3.6.2", features = ["log", "serde"] }
 tauri-plugin-clipboard-manager = "2.2.1"
 
 [features]
