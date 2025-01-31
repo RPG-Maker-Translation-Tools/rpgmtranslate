@@ -2401,6 +2401,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case toolsButton.id:
                 toolsMenu.toggleMultiple("hidden", "flex");
 
+                // TODO: It's COMPLETELY unreadable, no one will fucking ever figure it out
                 requestAnimationFrame(() => {
                     toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
@@ -2426,6 +2427,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                             if (action === FilesAction.Wrap) {
                                 selectFilesWindowFooter.firstElementChild!.classList.remove("hidden");
+                            } else {
+                                selectFilesWindowFooter.firstElementChild!.classList.add("hidden");
                             }
 
                             const controlButtonsDivChildren = selectFilesWindowChildren[3].children;
