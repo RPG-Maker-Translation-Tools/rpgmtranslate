@@ -1740,41 +1740,49 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (!parsed) {
                 await mkdir(translationPath, { recursive: true });
-                let gameTitle!: string;
+                const rootTranslationPath = join(settings.projectPath, translationDir);
 
-                if (settings.engineType === EngineType.New) {
-                    gameTitle = (
-                        JSON.parse(await readTextFile(join(settings.projectPath, originalDir, "System.json"))) as {
-                            gameTitle: string;
-                        }
-                    ).gameTitle;
+                if (await exists(rootTranslationPath)) {
+                    for (const entry of await readDir(rootTranslationPath)) {
+                        await copyFile(join(rootTranslationPath, entry.name), join(translationPath, entry.name));
+                    }
                 } else {
-                    for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
-                        if (line.toLowerCase().startsWith("title")) {
-                            gameTitle = line.split("=")[1].trim();
+                    let gameTitle!: string;
+
+                    if (settings.engineType === EngineType.New) {
+                        gameTitle = (
+                            JSON.parse(await readTextFile(join(settings.projectPath, originalDir, "System.json"))) as {
+                                gameTitle: string;
+                            }
+                        ).gameTitle;
+                    } else {
+                        for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
+                            if (line.toLowerCase().startsWith("title")) {
+                                gameTitle = line.split("=")[1].trim();
+                            }
                         }
                     }
+
+                    await read({
+                        projectPath: settings.projectPath,
+                        originalDir,
+                        gameTitle,
+                        mapsProcessingMode: 0,
+                        romanize: false,
+                        disableCustomProcessing: false,
+                        disableProcessing: [false, false, false, false],
+                        processingMode: ProcessingMode.Default,
+                        engineType: settings.engineType!,
+                        logging: true,
+                        language: settings.language,
+                        generateJson: false,
+                    });
+
+                    await appendToEnd({
+                        path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
+                        text: `${gameTitle}${LINES_SEPARATOR}`,
+                    });
                 }
-
-                await read({
-                    projectPath: settings.projectPath,
-                    originalDir,
-                    gameTitle,
-                    mapsProcessingMode: 0,
-                    romanize: false,
-                    disableCustomProcessing: false,
-                    disableProcessing: [false, false, false, false],
-                    processingMode: ProcessingMode.Default,
-                    engineType: settings.engineType!,
-                    logging: true,
-                    language: settings.language,
-                    generateJson: false,
-                });
-
-                await appendToEnd({
-                    path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
-                    text: `${gameTitle}${LINES_SEPARATOR}`,
-                });
             }
 
             const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
