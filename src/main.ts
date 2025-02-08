@@ -543,7 +543,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (event.button === 0) {
             await changeTab(file);
 
-            tabContent.children[Number.parseInt(row)].scrollIntoView({
+            tabContent.children[Number.parseInt(row) - 1].scrollIntoView({
                 block: "center",
                 inline: "center",
             });
