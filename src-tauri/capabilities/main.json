@@ -8,6 +8,7 @@
         "core:webview:allow-set-webview-zoom",
         "core:window:allow-close",
         "core:window:allow-destroy",
+        "core:window:allow-is-focused",
         "dialog:allow-ask",
         "dialog:allow-message",
         "dialog:allow-open",
