@@ -138,21 +138,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         localization = new MainWindowLocalization(language);
-        const askCreateSettings = await ask(localization.askCreateSettings);
+        const settings = new Settings(language);
 
-        if (askCreateSettings) {
-            const settings = new Settings(language);
+        await addToScope({ path: settingsPath });
+        await writeTextFile(settingsPath, JSON.stringify(settings), {
+            baseDir: Resource,
+        });
 
-            await addToScope({ path: settingsPath });
-            await writeTextFile(settingsPath, JSON.stringify(settings), {
-                baseDir: Resource,
-            });
-
-            alert(localization.createdSettings);
-            return settings;
-        } else {
-            await exit();
-        }
+        alert(localization.createdSettings);
+        return settings;
     }
 
     function initializeLocalization(language: Language) {
