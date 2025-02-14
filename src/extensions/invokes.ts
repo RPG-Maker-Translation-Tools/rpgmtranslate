@@ -37,3 +37,7 @@ export async function extractArchive(args: { inputPath: string; outputPath: stri
 export async function appendToEnd(args: { path: string; text: string }) {
     await invoke("append_to_end", args);
 }
+
+export async function walkDir(dir: string): Promise<string[]> {
+    return await invoke("walk_dir", { dir });
+}

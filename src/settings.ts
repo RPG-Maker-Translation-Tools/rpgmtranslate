@@ -1,5 +1,5 @@
-import { applyLocalization, applyTheme, getThemeStyleSheet, walkDir } from "./extensions/functions";
-import { addToScope } from "./extensions/invokes";
+import { applyLocalization, applyTheme, getThemeStyleSheet } from "./extensions/functions";
+import { addToScope, walkDir } from "./extensions/invokes";
 import { SettingsWindowLocalization } from "./extensions/localization";
 import "./extensions/math-extensions";
 import { RowDeleteMode } from "./types/enums";

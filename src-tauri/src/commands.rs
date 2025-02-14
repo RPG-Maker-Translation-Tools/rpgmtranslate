@@ -1,5 +1,6 @@
-use crate::{get_game_type, GOOGLE_TRANS};
-use regex::escape;
+use lazy_static::lazy_static;
+use regex::{escape, Regex};
+use rpgmad_lib::Decrypter;
 use rvpacker_lib::{
     read::*,
     types::{EngineType, GameType, MapsProcessingMode, ProcessingMode, ResultExt},
@@ -7,14 +8,16 @@ use rvpacker_lib::{
 };
 use serde::Deserialize;
 use std::{
-    fs::{create_dir_all, File, OpenOptions},
+    fs::{self, create_dir_all, File, OpenOptions},
     io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
-    time::Instant,
+    time::{Duration, Instant},
 };
 use tauri::{command, Manager, Runtime, Scopes, Window};
 use tauri_plugin_fs::FsExt;
-use translators::Translator;
+use tokio::time::sleep;
+use translators::{GoogleTranslator, Translator};
+use walkdir::WalkDir;
 
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
@@ -47,9 +50,39 @@ pub struct ReadSettings<'a> {
     generateJson: bool,
 }
 
+lazy_static! {
+    pub static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
+}
+
+#[inline(always)]
+fn get_game_type(game_title: &str) -> Option<GameType> {
+    let lowercased: String = game_title.to_lowercase();
+
+    if Regex::new(r"\btermina\b").unwrap_log().is_match(&lowercased) {
+        Some(GameType::Termina)
+    } else if Regex::new(r"\blisa\b").unwrap_log().is_match(&lowercased) {
+        Some(GameType::LisaRPG)
+    } else {
+        None
+    }
+}
+
 #[command]
 pub fn escape_text(text: &str) -> String {
     escape(text)
+}
+
+#[command]
+pub fn walk_dir(dir: &str) -> Vec<String> {
+    let mut entries: Vec<String> = Vec::new();
+
+    for entry in WalkDir::new(dir).into_iter().flatten() {
+        if entry.file_type().is_file() {
+            entries.push(entry.path().to_str().unwrap().to_string())
+        }
+    }
+
+    entries
 }
 
 #[command(async)]
@@ -283,7 +316,7 @@ pub fn read_last_line(file_path: &Path) -> String {
         let mut byte: [u8; 1] = [0; 1];
         file.read_exact(&mut byte).unwrap_log();
 
-        if byte == *b"\n" && !buffer.is_empty() {
+        if byte[0] == b'\n' && !buffer.is_empty() {
             break;
         }
 
@@ -296,7 +329,7 @@ pub fn read_last_line(file_path: &Path) -> String {
 
 #[command]
 pub async fn translate_text(text: String, from: String, to: String, replace: bool) -> String {
-    tokio::time::sleep(std::time::Duration::from_millis(5)).await;
+    sleep(Duration::from_millis(5)).await;
 
     let mut translated: String = GOOGLE_TRANS.translate_async(&text, &from, &to).await.unwrap_log();
 
@@ -320,8 +353,8 @@ pub fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
 
 #[command]
 pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: ProcessingMode) {
-    let bytes: Vec<u8> = std::fs::read(input_path).unwrap();
-    let mut decrypter: rpgmad_lib::Decrypter = rpgmad_lib::Decrypter::new(bytes);
+    let bytes: Vec<u8> = fs::read(input_path).unwrap();
+    let mut decrypter: Decrypter = Decrypter::new(bytes);
     decrypter
         .extract(output_path, processing_mode == ProcessingMode::Force)
         .unwrap();
