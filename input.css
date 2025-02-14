@@ -1,17 +1,38 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+    --font-*: initial;
+    --font-material: Material Symbols Outlined;
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
 
 .button {
-    @apply flex cursor-pointer select-none items-center justify-center;
+    @apply flex cursor-pointer items-center justify-center select-none;
 }
 
 .input {
-    @apply resize-none rounded-sm p-2 focus:outline-none;
+    @apply resize-none rounded-xs p-2 focus:outline-hidden;
 }
 
 .menu-button {
-    @apply flex h-8 w-full flex-row justify-center px-2 py-1;
+    @apply flex h-8 w-full cursor-pointer flex-row justify-center px-2 py-1;
 }
 
 .dropdown-menu {
@@ -23,5 +44,5 @@
 }
 
 .checkbox {
-    @apply flex cursor-pointer select-none items-center justify-center rounded-md border-2 font-material;
+    @apply font-material flex cursor-pointer items-center justify-center rounded-md border-2 select-none;
 }
