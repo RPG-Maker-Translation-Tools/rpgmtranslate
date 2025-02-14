@@ -49,31 +49,31 @@
             <div class="backgroundPrimary flex h-16 w-full items-center" id="top-panel">
                 <div class="flex h-full w-full items-center text-3xl" id="top-panel-buttons">
                     <button
-                        class="button backgroundPrimaryHovered textThird menuButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird menuButtonTitle font-material size-16 p-4 outline-hidden"
                         id="menu-button"
                     >
                         menu
                     </button>
                     <button
-                        class="button backgroundPrimaryHovered textThird saveButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird saveButtonTitle font-material size-16 p-4 outline-hidden"
                         id="save-button"
                     >
                         <div>save</div>
                     </button>
                     <button
-                        class="button backgroundPrimaryHovered textThird compileButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird compileButtonTitle font-material size-16 p-4 outline-hidden"
                         id="compile-button"
                     >
-                        <div>build</div>
+                        <div>manufacturing</div>
                     </button>
                     <button
-                        class="button backgroundPrimaryHovered textThird openButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird openButtonTitle font-material size-16 p-4 outline-hidden"
                         id="open-directory-button"
                     >
                         folder_open
                     </button>
                     <button
-                        class="button backgroundPrimaryHovered textThird settingsButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird settingsButtonTitle font-material size-16 p-4 outline-hidden"
                         id="settings-button"
                     >
                         settings
@@ -81,34 +81,22 @@
 
                     <!-- Theme button -->
                     <button
-                        class="button backgroundPrimaryHovered textThird themeButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird themeButtonTitle font-material size-16 p-4 outline-hidden"
                         id="theme-button"
                     >
                         palette
                     </button>
 
-                    <div class="dropdown-menu backgroundSecond hidden w-16" id="theme-menu">
-                        <button
-                            class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
-                            id="create-theme-menu-button"
-                        ></button>
-                    </div>
                     <!-- End -->
 
                     <button
-                        class="button backgroundPrimaryHovered textThird bookmarksButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird bookmarksButtonTitle font-material size-16 p-4 outline-hidden"
                         id="bookmarks-button"
                     >
                         bookmarks
                     </button>
                     <button
-                        class="button backgroundPrimaryHovered textThird readButtonTitle size-16 p-4 font-material outline-none"
-                        id="read-button"
-                    >
-                        menu_book
-                    </button>
-                    <button
-                        class="button backgroundPrimaryHovered textThird searchButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird searchButtonTitle font-material size-16 p-4 outline-hidden"
                         id="search-button"
                     >
                         search
@@ -116,45 +104,40 @@
 
                     <!-- Tools button -->
                     <button
-                        class="button backgroundPrimaryHovered textThird toolsButtonTitle size-16 p-4 font-material outline-none"
+                        class="button backgroundPrimaryHovered textThird toolsButtonTitle font-material size-16 p-4 outline-hidden"
                         id="tools-button"
                     >
                         construction
                     </button>
 
-                    <div class="dropdown-menu backgroundSecond hidden w-16" id="tools-menu">
-                        <button
-                            class="backgroundPrimary backgroundPrimaryHovered trimFields p-2 text-base"
-                            id="trim-tools-menu-button"
-                        ></button>
-                        <button
-                            class="backgroundPrimary backgroundPrimaryHovered translateFields p-2 text-base"
-                            id="translate-tools-menu-button"
-                        ></button>
-                        <button
-                            class="backgroundPrimary backgroundPrimaryHovered wrapFields p-2 text-base"
-                            id="wrap-tools-menu-button"
-                        ></button>
-                    </div>
+                    <button
+                        class="button backgroundPrimaryHovered textThird readButtonTitle font-material size-16 p-4 outline-hidden"
+                        id="read-button"
+                    >
+                        menu_book
+                    </button>
+
                     <!-- End -->
 
-                    <div class="flex h-full w-full content-end justify-end pr-4">
+                    <div class="hidden h-full w-full content-end justify-end pr-4" id="progress-meter-container">
                         <div class="flex w-32 items-center justify-center">
-                            <div class="backgroundSecond w-full rounded-sm">
+                            <div class="backgroundSecond w-full rounded-xs">
                                 <div
-                                    class="backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none"
-                                    id="current-progress-meter"
+                                    class="backgroundThird textPrimary rounded-xs p-0.5 text-center text-xs leading-none font-medium"
+                                    id="progress-meter"
                                 ></div>
                             </div>
                         </div>
-                        <div class="flex min-w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
-                        <div class="flex flex-col items-center justify-center text-sm" id="game-info">
+                        <div class="hidden min-w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
+                        <div class="hidden flex-col items-center justify-center text-sm" id="game-info">
                             <input
                                 class="input textSecond backgroundSecond min-h-8 w-96"
-                                id="current-game-title"
+                                id="game-title"
                                 type="text"
+                                autocomplete="off"
+                                autocapitalize="off"
                             />
-                            <div id="current-game-engine"></div>
+                            <div id="game-engine"></div>
                         </div>
                     </div>
                 </div>
@@ -222,7 +205,7 @@
                         <input id="textSecond" type="color" /> <label class="txtSecond" for="textSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input class="appearance-none border-none outline-none" id="textThird" type="color" />
+                        <input class="appearance-none border-none outline-hidden" id="textThird" type="color" />
                         <label class="txtThird" for="textThird"></label>
                     </div>
                     <div class="flex flex-row gap-2">
@@ -251,11 +234,11 @@
         ></div>
 
         <div
-            class="backgroundPrimary outlineThird fixed right-0 top-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline outline-2 transition-transform duration-500"
+            class="backgroundPrimary outlineThird fixed top-0 right-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline-2 transition-transform duration-500"
             id="search-results"
         >
             <button
-                class="backgroundPrimaryHovered mb-2 flex h-12 w-full cursor-pointer select-none items-center justify-center font-material text-3xl"
+                class="backgroundPrimaryHovered font-material mb-2 flex h-12 w-full cursor-pointer items-center justify-center text-3xl select-none"
                 id="switch-search-content"
             >
                 search
@@ -279,9 +262,10 @@
                         id="search-input"
                         rows="1"
                         cols="50"
+                        placeholder="Search input"
                     ></textarea>
                 </div>
-                <div class="flex flex-row items-center justify-center font-material">
+                <div class="font-material flex flex-row items-center justify-center">
                     <button
                         class="button backgroundPrimaryHovered textThird replaceButtonTitle w-16"
                         id="replace-button"
@@ -299,30 +283,31 @@
                         id="replace-input"
                         rows="1"
                         cols="50"
+                        placeholder="Replace input"
                     ></textarea>
                 </div>
             </div>
             <div class="flex flex-row justify-center">
                 <button
-                    class="button backgroundPrimaryHovered textThird caseButtonTitle size-16 p-2 font-material"
+                    class="button backgroundPrimaryHovered textThird caseButtonTitle font-material size-16 p-2"
                     id="case-button"
                 >
                     match_case
                 </button>
                 <button
-                    class="button backgroundPrimaryHovered textThird wholeButtonTitle size-16 p-2 font-material"
+                    class="button backgroundPrimaryHovered textThird wholeButtonTitle font-material size-16 p-2"
                     id="whole-button"
                 >
                     match_word
                 </button>
                 <button
-                    class="button backgroundPrimaryHovered textThird regexButtonTitle size-16 p-2 font-material"
+                    class="button backgroundPrimaryHovered textThird regexButtonTitle font-material size-16 p-2"
                     id="regex-button"
                 >
                     regular_expression
                 </button>
                 <button
-                    class="button backgroundPrimaryHovered textThird locationButtonTitle size-16 p-2 font-material"
+                    class="button backgroundPrimaryHovered textThird locationButtonTitle font-material size-16 p-2"
                     id="location-button"
                 >
                     location_on
@@ -331,7 +316,7 @@
 
             <div class="flex items-center justify-center p-2 text-base">
                 <span class="searchMode pr-2"></span>
-                <select class="backgroundSecond rounded-sm outline-none" id="search-mode">
+                <select class="backgroundSecond rounded-xs outline-hidden" id="search-mode">
                     <option class="searchAll" value="0"></option>
                     <option class="searchOnlyOriginal" value="1"></option>
                     <option class="searchOnlyTranslation" value="2"></option>
@@ -345,7 +330,7 @@
         ></div>
 
         <input
-            class="backgroundPrimary borderSecond borderFocused fixed right-1/4 top-8 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base outline-none"
+            class="backgroundPrimary borderSecond borderFocused fixed top-8 right-1/4 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base outline-hidden"
             id="goto-row-input"
             type="number"
         />
@@ -379,6 +364,28 @@
                     class="backgroundPrimary button backgroundPrimaryHovered borderPrimary cancel h-8 w-32 rounded-md border-2 p-1"
                 ></button>
             </div>
+        </div>
+
+        <div class="dropdown-menu backgroundSecond hidden w-16" id="theme-menu">
+            <button
+                class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
+                id="create-theme-menu-button"
+            ></button>
+        </div>
+
+        <div class="dropdown-menu backgroundSecond hidden w-16" id="tools-menu">
+            <button
+                class="backgroundPrimary backgroundPrimaryHovered trimFields p-2 text-base"
+                id="trim-tools-menu-button"
+            ></button>
+            <button
+                class="backgroundPrimary backgroundPrimaryHovered translateFields p-2 text-base"
+                id="translate-tools-menu-button"
+            ></button>
+            <button
+                class="backgroundPrimary backgroundPrimaryHovered wrapFields p-2 text-base"
+                id="wrap-tools-menu-button"
+            ></button>
         </div>
     </body>
 </html>
