@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>RPGMTranslate Documentation</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/fontawesome.min.css" rel="stylesheet">
+        <link href="css/brands.min.css" rel="stylesheet">
+        <link href="css/solid.min.css" rel="stylesheet">
+        <link href="css/v4-font-face.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" disabled>
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" >
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">RPGMTranslate Documentation</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href="." class="nav-link active" aria-current="page">First launch</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="search/" class="nav-link">Search guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="text-editing/" class="nav-link">Text editing guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="build/" class="nav-link">Build from source</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="search/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <script src="js/darkmode.js"></script>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#first-launch" class="nav-link">First launch</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#getting-started" class="nav-link">Getting Started</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#interface-layout" class="nav-link">Interface layout</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#opening-a-project" class="nav-link">Opening a project</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#advanced-usage" class="nav-link">Advanced usage</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="first-launch">First launch</h1>
+<p>This documentation covers the first launch usage of RPGMTranslate, open and simple translation tool for RPG Maker games, and one of its main strengths is that it tries to keep a simple file structure and uses plain text translation files.</p>
+<p>For more advanced usage, refer to the advanced guides:</p>
+<ul>
+<li><a href="search/">Search</a> guide</li>
+<li><a href="text-editing/">Text editing</a> guide</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<p>First, download the latest release from <a href="https://github.com/savannstm/rpgmtranslate/releases/latest">GitHub</a>. Program is completely free, and you can get the <code>.msi</code> extension binaries for Windows, and <code>.deb</code> or self-contained <code>.AppImage</code> for Linux. To build from the source, refer to <a href="build/">Building from source</a>.</p>
+<p>Once you've installed the program and launched it, it'll create a settings file in <code>ROOT_DIR/res/settings.json</code>, along with a themes file in <code>ROOT_DIR/res/themes.json</code>.</p>
+<p>If the program didn't load the interface for any reason (I don't have the resources for thorough testing), you can open the console with <code>F12</code> to look for errors. It's actually always helpful.</p>
+<h2 id="interface-layout">Interface layout</h2>
+<p><img alt="Layout" src="assets/layout.png" /></p>
+<p>When you open the program for the first time, you will see the following layout:</p>
+<ol>
+<li>Menu bar buttons</li>
+<li>Menu button (Tab)</li>
+<li>Save button (Ctrl + S)</li>
+<li>Compile button (Alt + C)</li>
+<li>Open directory button</li>
+<li>Settings button</li>
+<li>Themes button</li>
+<li>Bookmarks button</li>
+<li>Search button (Ctrl + S)</li>
+<li>Tools button</li>
+<li>Read button</li>
+<li>Project info (will show when a project is opened, includes translated rows counter, currently opened tab name, changable game title and project's engine)</li>
+<li>Search panel (R)</li>
+<li>Main area (will show when a project is opened and a tab is opened)</li>
+</ol>
+<p>To clarify,</p>
+<ul>
+<li>"compile" term was selected because it sounds cool, and it's distinctive. In the underlying <code>rvpacker-txt-rs-lib</code> library, the term that's used for writing the translation back to initial files is "write".</li>
+<li>"a project" is a directory, that contains an RPG Maker game. So, "to open a project" means to open a directory that contains an RPG Maker game in the program.</li>
+<li>"a tab" is an entry from the left menu (also left panel, tabs panel/menu), that is clicked to open a specific file in the program, for example <code>skills.txt</code>.</li>
+</ul>
+<p>All the layout parts must be obvious to you.</p>
+<h2 id="opening-a-project">Opening a project</h2>
+<p>To open a project, just click on the Open directory button and select the folder in the dialog window.</p>
+<p>After that, the program will create an <code>.rpgmtranslate</code> directory in the root of the opened folder.</p>
+<p>This directory - is a working directory, where all the files related to the project stored, including the translation in form of <code>.txt</code> files, that are fully plain text and can be safely zipped and sent to anyone.</p>
+<p>The program is extremely careful about backups - by default, backup happens every 60 seconds, and the program stores up to 99 backups in <code>.rpgmtranslate/backups</code> directory.</p>
+<p>From there, you can just open a tab from the left menu and start your translation.</p>
+<h2 id="advanced-usage">Advanced usage</h2>
+<p>For the usage of search - see <a href="search/">Search</a>.</p>
+<p>For the usage of text manipulation tools and its under-the-hood details - see <a href="text-editing/">Text editing</a>.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js"></script>
+        <script src="search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.6.1
+Build Date UTC : 2025-02-14 12:28:58.193516+00:00
+-->
