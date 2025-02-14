@@ -1968,10 +1968,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (settings.firstLaunch) {
                 new WebviewWindow("help", {
-                    url: "help.html",
+                    url: "https://savannstm.github.io/rpgmtranslate/",
                     title: localization.helpButton,
                     center: true,
-                    alwaysOnTop: true,
                 });
 
                 settings.firstLaunch = false;
@@ -2925,7 +2924,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         switch (target.id) {
                             case "help-button":
                                 new WebviewWindow("help", {
-                                    url: "help.html",
+                                    url: "https://savannstm.github.io/rpgmtranslate/",
                                     title: localization.helpButton,
                                     center: true,
                                 });
