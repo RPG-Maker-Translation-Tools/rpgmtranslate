@@ -98,7 +98,6 @@ interface ReadArgs extends Record<string, unknown> {
     engineType: import("./enums").EngineType;
     logging: boolean;
     language: import("./enums").Language;
-    generateJson: boolean;
 }
 
 interface CompileArgs extends Record<string, unknown> {
