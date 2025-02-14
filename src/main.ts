@@ -107,8 +107,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateProgressMeter(total: number, translated: number) {
-        currentProgressMeter.style.width = `${Math.round((translated / total) * 100)}%`;
-        currentProgressMeter.innerHTML = `${translated} / ${total}`;
+        globalProgressMeter.style.width = `${Math.round((translated / total) * 100)}%`;
+        globalProgressMeter.innerHTML = `${translated} / ${total}`;
     }
 
     function addBookmark(bookmark: Bookmark) {
@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         resultContainer.appendChild(originalInfo);
 
         const arrow = document.createElement("div");
-        arrow.className = tw`textSecond flex items-center justify-center font-material text-xl`;
+        arrow.className = tw`textSecond font-material flex items-center justify-center text-xl`;
         arrow.innerHTML = "arrow_downward";
         resultContainer.appendChild(arrow);
 
@@ -437,7 +437,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const matches = JSON.parse(await readTextFile(join(programDataDirPath, "matches-0.json"))) as object;
 
             for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-                if (typeof result === "object") {
+                if (Array.isArray(result)) {
                     appendMatch(id, result[0] as string, result[1] as string);
                 } else {
                     appendMatch(id, result);
@@ -881,7 +881,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function backup() {
         backupIsActive = setInterval(async () => {
             if (settings.backup.enabled) {
-                await save(SaveMode.Backup);
+                if (await appWindow.isFocused()) {
+                    await save(SaveMode.Backup);
+                }
             } else {
                 clearInterval(backupIsActive!);
             }
@@ -1309,7 +1311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             textParent.className = tw`flex w-full flex-row justify-around py-[1px]`;
 
             const originalTextDiv = document.createElement("div");
-            originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer whitespace-pre-wrap p-1 outline outline-2`;
+            originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
 
             if (settings.fontUrl) {
                 originalTextDiv.style.fontFamily = "font";
@@ -1341,7 +1343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end p-0.5 text-xl`;
 
             const bookmarkButton = document.createElement("button");
-            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
+            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 items-center justify-center rounded-md border-2`;
             bookmarkButton.textContent = "bookmark";
 
             if (bookmarks.some((obj) => obj.title === textParent.id)) {
@@ -1349,7 +1351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const deleteButton = document.createElement("button");
-            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered flex max-h-6 items-center justify-center rounded-md border-2 font-material`;
+            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 items-center justify-center rounded-md border-2`;
             deleteButton.textContent = "close";
 
             rowNumberButtonDiv.appendChild(bookmarkButton);
@@ -1680,6 +1682,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 originalDir = "Data";
             }
 
+            gameInfo.classList.replace("hidden", "flex");
+            currentTabDiv.classList.replace("hidden", "flex");
+            progressMeterContainer.classList.replace("hidden", "flex");
+
             if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
                 settings.engineType = EngineType.XP;
                 currentGameEngine.innerHTML = "XP";
@@ -1696,9 +1702,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await message(localization.cannotDetermineEngine);
 
                 await changeTab(null);
+
                 tabContent.innerHTML = "";
                 currentGameEngine.innerHTML = "";
                 currentGameTitle.value = "";
+
+                gameInfo.classList.replace("flex", "hidden");
+                currentTabDiv.classList.replace("flex", "hidden");
+                progressMeterContainer.classList.replace("flex", "hidden");
+
                 return false;
             }
 
@@ -1769,7 +1781,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         engineType: settings.engineType!,
                         logging: true,
                         language: settings.language,
-                        generateJson: false,
                     });
 
                     await appendToEnd({
@@ -1822,8 +1833,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const progressBar = document.createElement("div");
                 const progressMeter = document.createElement("div");
 
-                progressBar.className = tw`backgroundSecond w-full rounded-sm`;
-                progressMeter.className = tw`backgroundThird textPrimary rounded-sm p-0.5 text-center text-xs font-medium leading-none`;
+                progressBar.className = tw`backgroundSecond w-full rounded-xs`;
+                progressMeter.className = tw`backgroundThird textPrimary rounded-xs p-0.5 text-center text-xs leading-none font-medium`;
                 progressMeter.style.width = progressMeter.textContent = `${percentage}%`;
 
                 if (percentage === 100) {
@@ -1838,7 +1849,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 checkboxDiv.id = buttonElement.id;
 
                 const checkbox = document.createElement("span");
-                checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 min-w-6 max-w-6`;
+                checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 max-w-6 min-w-6`;
 
                 const checkboxLabel = document.createElement("span");
                 checkboxLabel.className = tw`text-base`;
@@ -2076,12 +2087,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchTotalPages = document.getElementById("search-total-pages") as HTMLSpanElement;
     const topPanel = document.getElementById("top-panel") as HTMLDivElement;
     const topPanelButtonsDiv = topPanel.firstElementChild! as HTMLDivElement;
-    const saveButton = topPanelButtonsDiv.children[1] as HTMLButtonElement;
-    const compileButton = topPanelButtonsDiv.children[2] as HTMLButtonElement;
-    const themeButton = topPanelButtonsDiv.children[5] as HTMLButtonElement;
-    const themeMenu = topPanelButtonsDiv.children[6] as HTMLDivElement;
-    const toolsButton = topPanelButtonsDiv.children[10] as HTMLButtonElement;
-    const toolsMenu = topPanelButtonsDiv.children[11] as HTMLDivElement;
+    const saveButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#save-button")!;
+    const compileButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#compile-button")!;
+    const themeButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#theme-button")!;
+    const themeMenu = document.getElementById("theme-menu")! as HTMLDivElement;
+    const toolsButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#tools-button")!;
+    const toolsMenu = document.getElementById("tools-menu")! as HTMLDivElement;
     const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
     const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
     const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
@@ -2102,9 +2113,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bookmarksButton = document.getElementById("bookmarks-button") as HTMLButtonElement;
     const bookmarksMenu = document.getElementById("bookmarks-menu") as HTMLDivElement;
     const projectStatus = document.getElementById("project-status") as HTMLDivElement;
-    const currentProgressMeter = document.getElementById("current-progress-meter") as HTMLDivElement;
-    const currentGameEngine = document.getElementById("current-game-engine") as HTMLDivElement;
-    const currentGameTitle = document.getElementById("current-game-title") as HTMLInputElement;
+    const progressMeterContainer = document.getElementById("progress-meter-container") as HTMLDivElement;
+    const globalProgressMeter = document.getElementById("progress-meter") as HTMLDivElement;
+    const gameInfo = document.getElementById("game-info") as HTMLDivElement;
+    const currentGameEngine = document.getElementById("game-engine") as HTMLDivElement;
+    const currentGameTitle = document.getElementById("game-title") as HTMLInputElement;
     const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
     const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
     const searchSwitch = document.getElementById("switch-search-content") as HTMLDivElement;
@@ -2187,9 +2200,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     topPanelButtonsDiv.addEventListener("mousedown", async (event) => {
-        const target = topPanelButtonsDiv.secondHighestParent(event.target as HTMLElement);
+        const target = (event.target as HTMLElement).closest(`[id$="button"]`);
 
-        if ((!settings.projectPath && target.id !== "open-directory-button") || target === topPanelButtonsDiv) {
+        if (
+            target === null ||
+            (!settings.projectPath && target.id !== "open-directory-button") ||
+            !topPanelButtonsDiv.contains(target)
+        ) {
             return;
         }
 
@@ -2454,8 +2471,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const confirmButtonsDivChildren = selectFilesWindowChildren[4].children;
                             const applyButton = confirmButtonsDivChildren[0] as HTMLButtonElement;
 
-                            async function applyTool(event: MouseEvent) {
-                                function wrapText(text: string, width: number): string {
+                            async function applyTool() {
+                                function wrapText(text: string, length: number): string {
                                     const lines = text.split("\n");
                                     const remainder: string[] = [];
                                     const wrappedLines: string[] = [];
@@ -2466,10 +2483,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             remainder.length = 0;
                                         }
 
-                                        if (line.length > width) {
+                                        if (line.length > length) {
                                             const words = line.split(" ");
 
-                                            while (line.length > width && words.length > 0) {
+                                            while (line.length > length && words.length > 0) {
                                                 remainder.unshift(words.pop()!);
                                                 line = words.join(" ");
                                             }
@@ -2507,7 +2524,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                             const translationField = rowContainer.children[2] as HTMLTextAreaElement;
 
                                             if (!originalField.textContent?.trim()) {
-                                                return;
+                                                continue;
                                             }
 
                                             const originalText = originalField.textContent;
@@ -2562,12 +2579,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                             Number.parseInt(
                                                                 (
                                                                     selectFilesWindowFooter.firstElementChild!
-                                                                        .lastElementChild! as HTMLInputElement
+                                                                        .firstElementChild! as HTMLInputElement
                                                                 ).value,
                                                             ),
                                                         );
 
-                                                        calculateHeight(event);
+                                                        translationField.calculateHeight();
                                                     }
                                                     break;
                                             }
@@ -2649,7 +2666,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                                 Number.parseInt(
                                                                     (
                                                                         selectFilesWindowFooter.firstElementChild!
-                                                                            .lastElementChild! as HTMLInputElement
+                                                                            .firstElementChild! as HTMLInputElement
                                                                     ).value,
                                                                 ),
                                                             );
