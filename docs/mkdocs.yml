@@ -1,0 +1,16 @@
+site_name: RPGMTranslate Documentation
+site_description: Documentation for RPGMTranslate
+theme:
+    name: material
+    palette:
+        scheme: slate
+
+nav:
+    - Home: index.md
+    - User Guide:
+          - Search Features: search.md
+          - Text Editing: text-editing.md
+    - Building from Source: build.md
+
+repo_url: https://github.com/savannstm/rpgmtranslate
+repo_name: savannstm/rpgmtranslate
