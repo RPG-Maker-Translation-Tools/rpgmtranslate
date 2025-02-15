@@ -14,7 +14,7 @@ function replaceTws() {
 
 // https://vitejs.dev/config/
 export default defineConfig(
-    async () =>
+    () =>
         ({
             // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
             //
@@ -30,7 +30,6 @@ export default defineConfig(
                         main: "./src/main.html",
                         options: "./src/settings.html",
                         about: "./src/about.html",
-                        help: "./src/help.html",
                         compile: "./src/compile.html",
                         read: "./src/read.html",
                     },
