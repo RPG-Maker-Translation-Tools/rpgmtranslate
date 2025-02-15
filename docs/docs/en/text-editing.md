@@ -2,7 +2,7 @@
 
 ## Editing Area Layout
 
-![Editing area layout](assets/editing-area-layout.png)
+![Editing area layout](../assets/editing-area-layout.png)
 
 The editing interface contains:
 

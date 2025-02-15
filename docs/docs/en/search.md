@@ -2,7 +2,7 @@
 
 ## Search Window Layout
 
-![Search window layout](assets/search-window-layout.png)
+![Search window layout](../assets/search-window-layout.png)
 
 The search interface contains:
 
@@ -37,13 +37,13 @@ But if you want to use regex in the program, here's a quick breakdown:
 
 Example of searching for `\c` pattern:
 
-![Regex demonstration](assets/regex-demonstration.png)
+![Regex demonstration](../assets/regex-demonstration.png)
 
 Note: When using regex in replace operations, substitutions (like $1) are not supported. The replacement is literal.
 
 ## Search Results Panel
 
-![Search results panel](assets/search-results-panel-layout.png)
+![Search results panel](../assets/search-results-panel-layout.png)
 
 Panel components:
 
@@ -54,6 +54,7 @@ Panel components:
 
 Interaction:
 
+- R: Open and close the panel
 - Left-click: Navigate to text location
 - Right-click: Replace matched text with replace input
 
