@@ -1,7 +1,7 @@
 {
     "name": "rpgmtranslate",
     "private": true,
-    "version": "4.4.0",
+    "version": "4.4.1",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -25,7 +25,7 @@
         "xregexp": "5.1.1"
     },
     "devDependencies": {
-        "@tailwindcss/cli": "4.0.6",
+        "@tailwindcss/cli": "4.0.7",
         "@eslint/js": "9.20.0",
         "@tauri-apps/cli": "2.2.7",
         "eslint": "9.20.1",
@@ -33,9 +33,9 @@
         "prettier-plugin-organize-attributes": "1.0.0",
         "prettier-plugin-organize-imports": "4.1.0",
         "prettier-plugin-tailwindcss": "0.6.11",
-        "tailwindcss": "4.0.6",
+        "tailwindcss": "4.0.7",
         "typescript": "5.7.3",
-        "typescript-eslint": "8.24.0",
+        "typescript-eslint": "8.24.1",
         "vite": "6.1.0",
         "vite-plugin-minify": "2.1.0"
     }
