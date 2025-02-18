@@ -217,7 +217,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    await appWindow.onCloseRequested(async () => {
+    await appWindow.onCloseRequested(async (event) => {
+        if (fromLanguageInput.value.trim()) {
+            try {
+                new Intl.Locale(fromLanguageInput.value);
+                settings.translation.from = fromLanguageInput.value;
+            } catch {
+                alert(windowLocalization.incorrectLanguageTag);
+                fromLanguageInput.value = settings.translation.from;
+                event.preventDefault();
+            }
+        }
+
+        if (toLanguageInput.value.trim()) {
+            try {
+                new Intl.Locale(toLanguageInput.value);
+                settings.translation.to = toLanguageInput.value;
+            } catch {
+                alert(windowLocalization.incorrectLanguageTag);
+                toLanguageInput.value = settings.translation.to;
+                event.preventDefault();
+            }
+        }
+
         await emit("get-settings", settings);
     });
 });
