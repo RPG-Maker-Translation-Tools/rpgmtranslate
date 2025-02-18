@@ -21,13 +21,13 @@ async function fetchFonts(): Promise<FontObject> {
 
     await addToScope({ path: fontPath });
 
-    const entries: string[] = await walkDir(fontPath);
+    const entries = await walkDir(fontPath);
 
     for (const path of entries) {
         const extension = path.slice(-3);
 
         if (["ttf", "otf"].includes(extension)) {
-            fontsObject[path] = path.slice(path.replaceAll("\\", "/").lastIndexOf("/"));
+            fontsObject[path] = path.slice(path.replaceAll("\\", "/").lastIndexOf("/") + 1);
         }
     }
 
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     fontSelect.addEventListener("change", async () => {
         for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
             if (element.value === fontSelect.value) {
-                settings.fontUrl = element.id;
+                settings.fontUrl = element.id.replaceAll("\\", "/");
 
                 const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
                 document.fonts.add(font);
@@ -216,6 +216,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             settings.checkForUpdates = false;
         }
     });
+
+    for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+        if (element.value.includes(settings.fontUrl.slice(settings.fontUrl.lastIndexOf("/") + 1))) {
+            fontSelect.value = element.value;
+        }
+    }
 
     await appWindow.onCloseRequested(async (event) => {
         if (fromLanguageInput.value.trim()) {
