@@ -45,9 +45,15 @@ The interface includes:
 
 Important terms:
 
+- "Read" refers to re-parsing the translation, either in append mode, to append new text to the translation after game's update, or to force rewrite the translation and start from scratch.
 - "Compile" refers to writing translations back to initial files
 - "Project" is a directory containing an RPG Maker game
 - "Tab" is an entry from the left menu that opens a specific file
+
+Shortcuts:
+
+- Ctrl and +: Zoom in
+- Ctrl and -: Zoom out
 
 ## Opening a Project
 
