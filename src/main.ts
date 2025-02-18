@@ -22,8 +22,8 @@ import {
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
 import {
+    BatchAction,
     EngineType,
-    FilesAction,
     JumpDirection,
     Language,
     ProcessingMode,
@@ -58,6 +58,7 @@ const appWindow = getCurrentWebviewWindow();
 
 import XRegExp from "xregexp";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -991,11 +992,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             goToRowInput.value = "";
             goToRowInput.classList.add("hidden");
-            goToRowInput.removeEventListener("keydown", handleGotoRowInputKeypress);
         } else if (event.code === "Escape") {
             goToRowInput.value = "";
             goToRowInput.classList.add("hidden");
-            goToRowInput.removeEventListener("keydown", handleGotoRowInputKeypress);
         }
     }
 
@@ -1042,11 +1041,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                             const lastRow = tabContent.lastElementChild!.id.split("-")[1];
 
                             goToRowInput.placeholder = `${localization.goToRow} ${lastRow}`;
-
-                            goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
                         } else if (!goToRowInput.classList.contains("hidden")) {
                             goToRowInput.classList.add("hidden");
-                            goToRowInput.removeEventListener("keydown", handleGotoRowInputKeypress);
                         }
                         break;
                     case "KeyF":
@@ -1184,10 +1180,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const originalTextDiv = selectedTextArea.parentElement!.children[1] as HTMLDivElement;
                                 let originalText = originalTextDiv.textContent!;
 
-                                if (originalText.startsWith("<!-- Map") && !originalText.endsWith(`${extension} -->`)) {
-                                    originalText = originalText
-                                        .slice("<!-- Map000".length + extension.length + 1)
-                                        .slice(0, -4);
+                                if (
+                                    (!originalText.startsWith("<!--") && originalText.startsWith("<!-- Map")) ||
+                                    !originalText.startsWith("<!--")
+                                ) {
+                                    originalText = originalText.slice(12 + extension.length).slice(0, -4);
                                 }
 
                                 const translation = await translateText({
@@ -1546,13 +1543,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (tabContent.contains(target) && target.tagName === "TEXTAREA" && target.id !== currentFocusedElement[0]) {
             currentFocusedElement = [target.id, target.value];
-
-            target.addEventListener("keyup", calculateHeight);
-
-            if (settings.displayGhostLines) {
-                target.addEventListener("input", trackFocus);
-                trackFocus(event);
-            }
         }
     }
 
@@ -1570,14 +1560,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             currentFocusedElement.length = 0;
-
-            if (tabContent.contains(target) && target.tagName === "TEXTAREA") {
-                target.removeEventListener("keyup", calculateHeight);
-
-                if (settings.displayGhostLines) {
-                    target.removeEventListener("input", trackFocus);
-                }
-            }
         }
     }
 
@@ -1857,12 +1839,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 checkboxDiv.appendChild(checkbox);
                 checkboxDiv.appendChild(checkboxLabel);
-                selectFilesWindow.children[1].appendChild(checkboxDiv);
+                batchWindowBody.appendChild(checkboxDiv);
 
                 return buttonElement;
             }
 
-            selectFilesWindow.children[1].innerHTML = "";
+            batchWindowBody.innerHTML = "";
 
             for (const entry of translationFiles) {
                 if (!entry.name.endsWith(".txt")) {
@@ -2003,6 +1985,185 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearInterval(interval);
     }
 
+    function wrapText(text: string, length: number): string {
+        const lines = text.split("\n");
+        const remainder: string[] = [];
+        const wrappedLines: string[] = [];
+
+        for (let line of lines) {
+            if (remainder.length) {
+                line = `${remainder.join(" ")} ${line}`;
+                remainder.length = 0;
+            }
+
+            if (line.length > length) {
+                const words = line.split(" ");
+
+                while (line.length > length && words.length > 0) {
+                    remainder.unshift(words.pop()!);
+                    line = words.join(" ");
+                }
+
+                wrappedLines.push(words.join(" "));
+            } else {
+                wrappedLines.push(line);
+            }
+        }
+
+        if (remainder.length) {
+            wrappedLines.push(remainder.join(" "));
+        }
+
+        return wrappedLines.join("\n");
+    }
+
+    async function processFile(filename: string, i: number, wrapLength?: number) {
+        await sleep(1000);
+
+        filename === currentTab
+            ? await processCurrentTab(i, wrapLength)
+            : await processExternalFile(filename, i, wrapLength);
+    }
+
+    async function processCurrentTab(i: number, wrapLength?: number) {
+        for (const rowContainer of tabContent.children) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const [_, originalField, translationField] = rowContainer.children as HTMLCollectionOf<HTMLTextAreaElement>;
+
+            if (!originalField.textContent?.trim()) {
+                continue;
+            }
+
+            const originalText = originalField.textContent;
+            const translationText = translationField.value.trim();
+            const translationExists = Boolean(translationText);
+            const isComment = originalText.startsWith("<!--");
+            const isMapComment = originalText.startsWith("<!-- Map");
+
+            switch (batchWindowAction) {
+                case BatchAction.Trim:
+                    if (translationExists) {
+                        translationField.value = translationText.trim();
+                    }
+                    break;
+                case BatchAction.Translate:
+                    if ((isMapComment || !isComment) && !translationExists) {
+                        await translateField(originalText, isComment, isMapComment, translationField);
+                    }
+                    break;
+                case BatchAction.Wrap:
+                    if (!isComment && translationExists && wrapLength) {
+                        translationField.value = wrapText(translationField.value, wrapLength);
+                        translationField.calculateHeight();
+                    }
+                    break;
+            }
+        }
+
+        batchWindowBody.children[i].firstElementChild!.classList.add("text-green-500");
+        await sleep(500);
+    }
+
+    async function processExternalFile(filename: string, i: number, wrapLength?: number) {
+        const contentPath = join(
+            settings.projectPath,
+            programDataDir,
+            filename.startsWith("maps") ? tempMapsDir : translationDir,
+            filename + ".txt",
+        );
+
+        const newLines = await Promise.all(
+            (await readTextFile(contentPath)).split("\n").map(async (line) => {
+                const [original, translation] = line.split(LINES_SEPARATOR);
+                if (!original.trim()) {
+                    return;
+                }
+
+                const translationTrimmed = translation.trim();
+                const translationExists = Boolean(translationTrimmed);
+                const isComment = original.startsWith("<!--");
+                const isMapComment = original.startsWith("<!-- Map");
+
+                switch (batchWindowAction) {
+                    case BatchAction.Trim:
+                        return translationExists ? `${original}${LINES_SEPARATOR}${translationTrimmed}` : line;
+                    case BatchAction.Translate:
+                        if ((isMapComment || !isComment) && !translationExists) {
+                            return await translateLine(original, isComment, isMapComment);
+                        }
+
+                        return line;
+                    case BatchAction.Wrap:
+                        if (!isComment && translationExists && wrapLength) {
+                            const wrapped = wrapText(translation.replaceAll(NEW_LINE, "\n"), wrapLength);
+                            return `${original}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
+                        }
+
+                        return line;
+                }
+            }),
+        );
+
+        if (batchWindowAction === BatchAction.Translate) {
+            updateTranslationProgress(i, newLines.length);
+        }
+
+        await writeTextFile(contentPath, newLines.join("\n"));
+
+        batchWindowBody.children[i].firstElementChild!.classList.add("text-green-500");
+        await sleep(500);
+    }
+
+    async function translateField(text: string, isComment: boolean, isMapComment: boolean, field: HTMLTextAreaElement) {
+        const extension = determineExtension(settings.engineType!);
+        const textToTranslate = isMapComment || !isComment ? text.slice(12 + extension.length, -4) : text;
+
+        const translated = await translateText({
+            text: textToTranslate,
+            from: settings.translation.from,
+            to: settings.translation.to,
+            replace: false,
+        });
+        field.value = translated;
+    }
+
+    async function translateLine(text: string, isComment: boolean, isMapComment: boolean): Promise<string> {
+        const extension = determineExtension(settings.engineType!);
+        const textToTranslate = isMapComment || !isComment ? text.slice(12 + extension.length, -4) : text;
+
+        const translated = await translateText({
+            text: textToTranslate,
+            from: settings.translation.from,
+            to: settings.translation.to,
+            replace: true,
+        });
+        return `${text}${LINES_SEPARATOR}${translated}`;
+    }
+
+    function updateTranslationProgress(index: number, linesCount: number) {
+        const progressBar = leftPanel.children[index].lastElementChild?.firstElementChild as HTMLElement | null;
+
+        if (progressBar) {
+            updateProgressMeter(
+                totalAllLines,
+                translatedLinesArray.reduce((a, b) => a + b, 0),
+            );
+
+            progressBar.style.width = progressBar.textContent = "100%";
+        }
+
+        translatedLinesArray[index] = linesCount;
+    }
+
+    function initializeBatchWindow(rootElement: HTMLElement) {
+        const { x, y } = rootElement.getBoundingClientRect();
+        batchWindow.style.left = `${x + rootElement.clientWidth}px`;
+        batchWindow.style.top = `${y}px`;
+
+        batchWindowFooter.firstElementChild!.classList.toggle("hidden", batchWindowAction !== BatchAction.Wrap);
+        batchWindow.classList.replace("hidden", "flex");
+    }
+
     // #region Settings and localization initialization, check for updates
     await attachConsole();
 
@@ -2118,8 +2279,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const gameInfo = document.getElementById("game-info") as HTMLDivElement;
     const currentGameEngine = document.getElementById("game-engine") as HTMLDivElement;
     const currentGameTitle = document.getElementById("game-title") as HTMLInputElement;
-    const selectFilesWindow = document.getElementById("select-files-window") as HTMLDivElement;
+    const batchWindow = document.getElementById("batch-window") as HTMLDivElement;
+    const batchWindowBody = batchWindow.children[1];
+    const batchWindowFooter = batchWindow.children[2];
     const themeWindow = document.getElementById("theme-window") as HTMLDivElement;
+    const themeWindowBody = themeWindow.children[1];
+    const createThemeButton: HTMLButtonElement = themeWindow.querySelector("#create-theme")!;
+    const closeButton: HTMLButtonElement = themeWindow.querySelector("#close-button")!;
     const searchSwitch = document.getElementById("switch-search-content") as HTMLDivElement;
     // #endregion
 
@@ -2134,7 +2300,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Initialize the project
     let currentTab: string | null = null;
     let currentTabIndex: number | null = null;
+    let batchWindowAction!: BatchAction;
     let nextBackupNumber: number;
+
+    const batchSelectWindowChecked: HTMLElement[] = [];
 
     let totalAllLines = 0;
     const translatedLinesArray: number[] = [];
@@ -2191,7 +2360,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 target = target.parentElement;
             }
 
-            if (target) await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
+            if (target) {
+                await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
+            }
         }
     });
 
@@ -2263,98 +2434,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 requestAnimationFrame(() => {
                     themeMenu.style.left = `${themeButton.offsetLeft}px`;
                     themeMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
-
-                    themeMenu.addEventListener("click", (event: MouseEvent) => {
-                        const target = event.target as HTMLButtonElement;
-
-                        if (!themeMenu.contains(target)) {
-                            return;
-                        }
-
-                        if (target.id === "create-theme-menu-button") {
-                            themeWindow.classList.remove("hidden");
-
-                            function changeStyle(inputElement: Event) {
-                                const target = inputElement.target as HTMLInputElement;
-                                const id = target.id;
-                                const value = target.value;
-
-                                applyTheme(sheet, [id, value]);
-                            }
-
-                            async function createTheme() {
-                                const themeNameInput = themeWindow.lastElementChild!.firstElementChild!
-                                    .lastElementChild as HTMLInputElement;
-                                const themeName = themeNameInput.value;
-
-                                const newTheme = { name: themeName } as Theme;
-
-                                for (const div of themeWindow.children[1]
-                                    .children as HTMLCollectionOf<HTMLDivElement>) {
-                                    for (const subdiv of div.children) {
-                                        const inputElement = subdiv.firstElementChild as HTMLInputElement;
-                                        newTheme[inputElement.id] = inputElement.value;
-                                    }
-                                }
-
-                                if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
-                                    await message(
-                                        `${localization.invalidThemeName} ${localization.allowedThemeNameCharacters}`,
-                                    );
-                                    return;
-                                }
-
-                                themes[themeName] = newTheme;
-
-                                await writeTextFile("res/themes.json", JSON.stringify(themes), { baseDir: Resource });
-
-                                const newThemeButton = document.createElement("button");
-                                newThemeButton.id = newThemeButton.textContent = themeName;
-
-                                themeMenu.insertBefore(themeMenu.lastElementChild as HTMLElement, newThemeButton);
-                            }
-
-                            requestAnimationFrame(() => {
-                                themeWindow.style.left = `${(document.body.clientWidth - themeWindow.clientWidth) / 2}px`;
-
-                                let i = 1;
-                                const themeColors = Object.values(theme);
-
-                                for (const div of themeWindow.children[1]
-                                    .children as HTMLCollectionOf<HTMLDivElement>) {
-                                    for (const subdiv of div.children) {
-                                        const inputElement = subdiv.firstElementChild as HTMLInputElement;
-
-                                        inputElement.value = themeColors[i];
-                                        inputElement.addEventListener("input", changeStyle);
-                                        i++;
-                                    }
-                                }
-
-                                const closeButton = themeWindow.firstElementChild!
-                                    .firstElementChild as HTMLButtonElement;
-                                const createThemeButton = themeWindow.lastElementChild!
-                                    .lastElementChild as HTMLButtonElement;
-                                createThemeButton.addEventListener("click", createTheme);
-
-                                closeButton.addEventListener("click", () => {
-                                    for (const div of themeWindow.children[1]
-                                        .children as HTMLCollectionOf<HTMLDivElement>) {
-                                        for (const subdiv of div.children) {
-                                            const inputElement = subdiv.firstElementChild as HTMLInputElement;
-                                            inputElement.removeEventListener("input", changeStyle);
-                                        }
-                                    }
-
-                                    createThemeButton.removeEventListener("click", createTheme);
-                                    themeWindow.classList.add("hidden");
-                                });
-                            });
-                            return;
-                        }
-
-                        setTheme(themes[target.id]);
-                    });
                 });
                 break;
             case bookmarksButton.id:
@@ -2421,369 +2500,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             case toolsButton.id:
                 toolsMenu.toggleMultiple("hidden", "flex");
 
-                // TODO: It's COMPLETELY unreadable, no one will fucking ever figure it out
                 requestAnimationFrame(() => {
                     toolsMenu.style.left = `${toolsButton.offsetLeft}px`;
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
-
-                    toolsMenu.addEventListener("click", (event: MouseEvent) => {
-                        const target = event.target as HTMLButtonElement;
-
-                        if (!toolsMenu.contains(target)) {
-                            return;
-                        }
-
-                        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-                        function showSelectFilesWindow(rootElement: HTMLElement, action: FilesAction) {
-                            const selectFilesWindowChildren = selectFilesWindow.children;
-
-                            const { x, y } = rootElement.getBoundingClientRect();
-                            selectFilesWindow.style.left = `${x + rootElement.clientWidth}px`;
-                            selectFilesWindow.style.top = `${y}px`;
-
-                            const selectFilesWindowBody = selectFilesWindowChildren[1];
-                            const selectFilesWindowFooter = selectFilesWindowChildren[2];
-
-                            if (action === FilesAction.Wrap) {
-                                selectFilesWindowFooter.firstElementChild!.classList.remove("hidden");
-                            } else {
-                                selectFilesWindowFooter.firstElementChild!.classList.add("hidden");
-                            }
-
-                            const controlButtonsDivChildren = selectFilesWindowChildren[3].children;
-                            const selectAllButton = controlButtonsDivChildren[0] as HTMLButtonElement;
-
-                            selectAllButton.onclick = () => {
-                                for (const element of selectFilesWindowBody.children) {
-                                    element.firstElementChild!.textContent = "check";
-                                }
-                            };
-
-                            const deselectAllButton = controlButtonsDivChildren[1] as HTMLButtonElement;
-
-                            deselectAllButton.onclick = () => {
-                                for (const element of selectFilesWindowBody.children) {
-                                    element.firstElementChild!.textContent = "";
-                                }
-                            };
-
-                            const confirmButtonsDivChildren = selectFilesWindowChildren[4].children;
-                            const applyButton = confirmButtonsDivChildren[0] as HTMLButtonElement;
-
-                            async function applyTool() {
-                                function wrapText(text: string, length: number): string {
-                                    const lines = text.split("\n");
-                                    const remainder: string[] = [];
-                                    const wrappedLines: string[] = [];
-
-                                    for (let line of lines) {
-                                        if (remainder.length) {
-                                            line = `${remainder.join(" ")} ${line}`;
-                                            remainder.length = 0;
-                                        }
-
-                                        if (line.length > length) {
-                                            const words = line.split(" ");
-
-                                            while (line.length > length && words.length > 0) {
-                                                remainder.unshift(words.pop()!);
-                                                line = words.join(" ");
-                                            }
-
-                                            wrappedLines.push(words.join(" "));
-                                        } else {
-                                            wrappedLines.push(line);
-                                        }
-                                    }
-
-                                    if (remainder.length) {
-                                        wrappedLines.push(remainder.join(" "));
-                                    }
-
-                                    return wrappedLines.join("\n");
-                                }
-
-                                const filenames: [string, number][] = [];
-
-                                for (const element of selectFilesWindowBody.children) {
-                                    if (element.firstElementChild!.textContent) {
-                                        filenames.push([
-                                            element.lastElementChild!.textContent!,
-                                            Number.parseInt(element.id),
-                                        ]);
-                                    }
-                                }
-
-                                for (const [filename, i] of filenames) {
-                                    await sleep(1000);
-
-                                    if (filename === currentTab) {
-                                        for (const rowContainer of tabContent.children) {
-                                            const originalField = rowContainer.children[1] as HTMLDivElement;
-                                            const translationField = rowContainer.children[2] as HTMLTextAreaElement;
-
-                                            if (!originalField.textContent?.trim()) {
-                                                continue;
-                                            }
-
-                                            const originalText = originalField.textContent;
-                                            const translationText = translationField.value.trim();
-                                            const translationExists = Boolean(translationText);
-
-                                            const isComment = originalText.startsWith("<!--");
-                                            const isMapComment = originalText.startsWith("<!-- Map");
-
-                                            switch (action) {
-                                                case FilesAction.Trim:
-                                                    if (translationExists) {
-                                                        translationField.value = translationText.trim();
-                                                    }
-                                                    break;
-                                                case FilesAction.Translate:
-                                                    if (!translationExists && !isComment) {
-                                                        const extension = determineExtension(settings.engineType!);
-
-                                                        if (
-                                                            isMapComment &&
-                                                            !originalText.endsWith(`${extension} -->`)
-                                                        ) {
-                                                            const mapTitle = originalText
-                                                                .slice("<!-- Map000".length + extension.length + 1)
-                                                                .slice(0, -4);
-
-                                                            void translateText({
-                                                                text: mapTitle,
-                                                                from: settings.translation.from,
-                                                                to: settings.translation.to,
-                                                                replace: false,
-                                                            }).then((translated) => {
-                                                                translationField.value = translated;
-                                                            });
-                                                        } else {
-                                                            void translateText({
-                                                                text: originalText,
-                                                                from: settings.translation.from,
-                                                                to: settings.translation.to,
-                                                                replace: false,
-                                                            }).then((translated) => {
-                                                                translationField.value = translated;
-                                                            });
-                                                        }
-                                                    }
-                                                    break;
-                                                case FilesAction.Wrap:
-                                                    if (translationExists && !isComment) {
-                                                        translationField.value = wrapText(
-                                                            translationField.value,
-                                                            Number.parseInt(
-                                                                (
-                                                                    selectFilesWindowFooter.firstElementChild!
-                                                                        .firstElementChild! as HTMLInputElement
-                                                                ).value,
-                                                            ),
-                                                        );
-
-                                                        translationField.calculateHeight();
-                                                    }
-                                                    break;
-                                            }
-                                        }
-                                    } else {
-                                        const contentPath = join(
-                                            settings.projectPath,
-                                            programDataDir,
-                                            filename.startsWith("maps") ? tempMapsDir : translationDir,
-                                            filename + ".txt",
-                                        );
-
-                                        const newLines = await Promise.all(
-                                            (await readTextFile(contentPath)).split("\n").map(async (line) => {
-                                                const [original, translation] = line.split(LINES_SEPARATOR);
-
-                                                if (!original.trim()) {
-                                                    return;
-                                                }
-
-                                                const translationTrimmed = translation.trim();
-                                                const translationExists = Boolean(translationTrimmed);
-
-                                                const isComment = original.startsWith("<!--");
-                                                const isMapComment = original.startsWith("<!-- Map");
-
-                                                switch (action) {
-                                                    case FilesAction.Trim:
-                                                        return translationExists
-                                                            ? `${original}${LINES_SEPARATOR}${translationTrimmed}`
-                                                            : line;
-                                                    case FilesAction.Translate: {
-                                                        try {
-                                                            if (!translationExists && !isComment) {
-                                                                const extension = determineExtension(
-                                                                    settings.engineType!,
-                                                                );
-
-                                                                if (
-                                                                    isMapComment &&
-                                                                    !original.endsWith(`${extension} -->`)
-                                                                ) {
-                                                                    const mapTitle = original
-                                                                        .slice(
-                                                                            "<!-- Map000".length + extension.length + 1,
-                                                                        )
-                                                                        .slice(0, -4);
-
-                                                                    return `${original}${LINES_SEPARATOR}${await translateText(
-                                                                        {
-                                                                            text: mapTitle,
-                                                                            from: settings.translation.from,
-                                                                            to: settings.translation.to,
-                                                                            replace: true,
-                                                                        },
-                                                                    )}`;
-                                                                } else {
-                                                                    return `${original}${LINES_SEPARATOR}${await translateText(
-                                                                        {
-                                                                            text: original,
-                                                                            from: settings.translation.from,
-                                                                            to: settings.translation.to,
-                                                                            replace: true,
-                                                                        },
-                                                                    )}`;
-                                                                }
-                                                            } else {
-                                                                return line;
-                                                            }
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                            return line;
-                                                        }
-                                                    }
-                                                    case FilesAction.Wrap:
-                                                        if (translationExists && !isComment) {
-                                                            const wrapped = wrapText(
-                                                                translation.replaceAll(NEW_LINE, "\n"),
-                                                                Number.parseInt(
-                                                                    (
-                                                                        selectFilesWindowFooter.firstElementChild!
-                                                                            .firstElementChild! as HTMLInputElement
-                                                                    ).value,
-                                                                ),
-                                                            );
-
-                                                            return `${original}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
-                                                        } else {
-                                                            return line;
-                                                        }
-                                                }
-                                            }),
-                                        );
-
-                                        if (action === FilesAction.Translate) {
-                                            const progressBar =
-                                                leftPanel.children[i].lastElementChild?.firstElementChild;
-
-                                            if (progressBar) {
-                                                updateProgressMeter(
-                                                    totalAllLines,
-                                                    translatedLinesArray.reduce((a, b) => a + b, 0),
-                                                );
-
-                                                (progressBar as HTMLElement).style.width =
-                                                    progressBar.textContent = `100%`;
-                                            }
-
-                                            translatedLinesArray[i] = newLines.length;
-                                        }
-
-                                        await writeTextFile(contentPath, newLines.join("\n"));
-
-                                        selectFilesWindowBody.children[i].firstElementChild!.classList.add(
-                                            "text-green-500",
-                                        );
-                                    }
-                                }
-
-                                saved = false;
-                                selectFilesWindow.classList.replace("flex", "hidden");
-                            }
-
-                            applyButton.onclick = applyTool;
-
-                            const cancelButton = confirmButtonsDivChildren[1] as HTMLButtonElement;
-
-                            cancelButton.onclick = () => {
-                                selectFilesWindow.classList.replace("flex", "hidden");
-                            };
-
-                            const toggledBoxes = new Set<HTMLElement>();
-
-                            selectFilesWindow.onmousemove = (event) => {
-                                if (event.buttons === 1) {
-                                    const target = event.target as HTMLElement;
-
-                                    if (target.classList.contains("checkbox") && !toggledBoxes.has(target)) {
-                                        target.textContent = target.textContent ? "" : "check";
-                                        toggledBoxes.add(target);
-                                    }
-                                }
-                            };
-
-                            selectFilesWindow.onmouseup = () => {
-                                toggledBoxes.clear();
-                            };
-
-                            selectFilesWindow.onclick = (event) => {
-                                const target = event.target as HTMLElement;
-
-                                if (target.classList.contains("checkbox") && !toggledBoxes.has(target)) {
-                                    target.textContent = target.textContent ? "" : "check";
-                                    toggledBoxes.add(target);
-                                }
-                            };
-
-                            selectFilesWindow.classList.replace("hidden", "flex");
-                        }
-
-                        switch (target.id) {
-                            case "trim-tools-menu-button": {
-                                if (selectFilesWindow.classList.contains("flex")) {
-                                    selectFilesWindow.classList.replace("flex", "hidden");
-                                    return;
-                                } else {
-                                    showSelectFilesWindow(target, FilesAction.Trim);
-                                }
-                                break;
-                            }
-                            case "translate-tools-menu-button": {
-                                if (!settings.translation.from || !settings.translation.to) {
-                                    alert(localization.translationLanguagesNotSelected);
-                                    return;
-                                }
-
-                                if (selectFilesWindow.classList.contains("flex")) {
-                                    selectFilesWindow.classList.replace("flex", "hidden");
-                                    return;
-                                } else {
-                                    showSelectFilesWindow(target, FilesAction.Translate);
-                                }
-                                break;
-                            }
-                            case "wrap-tools-menu-button": {
-                                if (selectFilesWindow.classList.contains("flex")) {
-                                    selectFilesWindow.classList.replace("flex", "hidden");
-                                    return;
-                                } else {
-                                    showSelectFilesWindow(target, FilesAction.Wrap);
-                                }
-                                break;
-                            }
-                        }
-                    });
                 });
                 break;
         }
     });
+
+    searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
 
     searchPanel.addEventListener("click", async (event) => {
         const target = event.target as HTMLElement;
@@ -2805,12 +2530,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         searchPanelReplaced.appendChild(replacedContainer);
                     }
-
-                    searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
                 } else {
                     target.innerHTML = "search";
                     searchPanelReplaced.innerHTML = "";
-                    searchPanelReplaced.removeEventListener("mousedown", handleReplacedClick);
                 }
                 break;
             }
@@ -2828,7 +2550,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ) as object;
 
                     for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-                        if (typeof result === "object") {
+                        if (Array.isArray(result)) {
                             appendMatch(id, result[0] as string, result[1] as string);
                         } else {
                             appendMatch(id, result);
@@ -2851,7 +2573,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ) as object;
 
                     for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-                        if (typeof result === "object") {
+                        if (Array.isArray(result)) {
                             appendMatch(id, result[0] as string, result[1] as string);
                         } else {
                             appendMatch(id, result);
@@ -2860,135 +2582,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             }
-        }
-    });
-
-    searchInput.addEventListener("focus", () => {
-        searchInput.addEventListener("change", calculateHeight);
-        searchInput.addEventListener("keydown", handleSearchInputKeypress);
-
-        searchInput.addEventListener("blur", () => {
-            searchInput.value = searchInput.value.trim();
-            searchInput.removeEventListener("keydown", handleSearchInputKeypress);
-            searchInput.removeEventListener("change", calculateHeight);
-            searchInput.calculateHeight();
-        });
-    });
-
-    replaceInput.addEventListener("focus", () => {
-        replaceInput.addEventListener("keydown", handleReplaceInputKeypress);
-        replaceInput.addEventListener("change", calculateHeight);
-
-        replaceInput.addEventListener("blur", () => {
-            replaceInput.value = replaceInput.value.trim();
-            replaceInput.removeEventListener("keydown", handleReplaceInputKeypress);
-            replaceInput.removeEventListener("change", calculateHeight);
-            replaceInput.calculateHeight();
-        });
-    });
-
-    menuBar.addEventListener("click", (event) => {
-        const target = event.target as HTMLElement;
-
-        switch (target.id) {
-            case fileMenuButton.id:
-                fileMenu.toggleMultiple("hidden", "flex");
-                helpMenu.classList.replace("flex", "hidden");
-                languageMenu.classList.replace("flex", "hidden");
-
-                fileMenu.style.top = `${fileMenuButton.offsetTop + fileMenuButton.offsetHeight}px`;
-                fileMenu.style.left = `${fileMenuButton.offsetLeft}px`;
-
-                fileMenu.addEventListener(
-                    "click",
-                    async (event) => {
-                        const target = event.target as HTMLElement;
-                        fileMenu.classList.replace("flex", "hidden");
-
-                        switch (target.id) {
-                            case "reload-button":
-                                if (await beforeClose()) {
-                                    location.reload();
-                                }
-                                break;
-                        }
-                    },
-                    {
-                        once: true,
-                    },
-                );
-                break;
-            case helpMenuButton.id:
-                helpMenu.toggleMultiple("hidden", "flex");
-                fileMenu.classList.replace("flex", "hidden");
-                languageMenu.classList.replace("flex", "hidden");
-
-                helpMenu.style.top = `${helpMenuButton.offsetTop + helpMenuButton.offsetHeight}px`;
-                helpMenu.style.left = `${helpMenuButton.offsetLeft}px`;
-
-                helpMenu.addEventListener(
-                    "click",
-                    (event) => {
-                        helpMenu.classList.replace("flex", "hidden");
-                        const target = event.target as HTMLElement;
-
-                        switch (target.id) {
-                            case "help-button":
-                                new WebviewWindow("help", {
-                                    url: "https://savannstm.github.io/rpgmtranslate/",
-                                    title: localization.helpButton,
-                                    center: true,
-                                });
-                                break;
-                            case "about-button":
-                                new WebviewWindow("about", {
-                                    url: "about.html",
-                                    title: localization.aboutButton,
-                                    center: true,
-                                    resizable: false,
-                                });
-                                break;
-                        }
-                    },
-                    {
-                        once: true,
-                    },
-                );
-                break;
-            case languageMenuButton.id:
-                languageMenu.toggleMultiple("hidden", "flex");
-                helpMenu.classList.replace("flex", "hidden");
-                fileMenu.classList.replace("flex", "hidden");
-
-                languageMenu.style.top = `${languageMenuButton.offsetTop + languageMenuButton.offsetHeight}px`;
-                languageMenu.style.left = `${languageMenuButton.offsetLeft}px`;
-
-                languageMenu.addEventListener(
-                    "click",
-                    (event) => {
-                        languageMenu.classList.replace("flex", "hidden");
-                        const target = event.target as HTMLElement;
-
-                        switch (target.id) {
-                            case "ru-button":
-                                if (settings.language !== Language.Russian) {
-                                    initializeLocalization(Language.Russian);
-                                    applyLocalization(localization, theme);
-                                }
-                                break;
-                            case "en-button":
-                                if (settings.language !== Language.English) {
-                                    initializeLocalization(Language.English);
-                                    applyLocalization(localization, theme);
-                                }
-                                break;
-                        }
-                    },
-                    {
-                        once: true,
-                    },
-                );
-                break;
         }
     });
 
@@ -3237,6 +2830,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    tabContent.addEventListener("keyup", (event) => {
+        const target = event.target as HTMLTextAreaElement;
+
+        if (target.tagName === "TEXTAREA") {
+            target.calculateHeight();
+        }
+    });
+
+    tabContent.addEventListener("input", (event) => {
+        const target = event.target as HTMLTextAreaElement;
+
+        if (target.tagName === "TEXTAREA" && settings.displayGhostLines) {
+            trackFocus(event);
+        }
+    });
+
     bookmarksMenu.addEventListener("click", async (event) => {
         const target = event.target as HTMLElement;
 
@@ -3253,13 +2862,290 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    searchPanelFound.addEventListener("mousedown", handleResultClick);
-
     searchPanel.addEventListener("transitionend", () => {
         if (searchSwitch.innerHTML.trim() === "search") {
             searchPanelFound.toggleMultiple("hidden", "flex");
         } else {
             searchPanelReplaced.toggleMultiple("hidden", "flex");
+        }
+    });
+
+    searchPanelFound.addEventListener("mousedown", handleResultClick);
+
+    goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
+
+    searchMenu.addEventListener("blur", (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case searchInput.id:
+                searchInput.value = searchInput.value.trim();
+                searchInput.calculateHeight();
+                break;
+            case replaceInput.id:
+                replaceInput.value = replaceInput.value.trim();
+                replaceInput.calculateHeight();
+                break;
+        }
+    });
+
+    searchMenu.addEventListener("change", (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case searchInput.id:
+            case replaceInput.id:
+                calculateHeight(event);
+                break;
+        }
+    });
+
+    searchMenu.addEventListener("keydown", async (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case searchInput.id:
+                await handleSearchInputKeypress(event);
+                break;
+            case replaceInput.id:
+                handleReplaceInputKeypress(event);
+                break;
+        }
+    });
+
+    menuBar.addEventListener("click", async (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case fileMenuButton.id:
+                fileMenu.toggleMultiple("hidden", "flex");
+                helpMenu.classList.replace("flex", "hidden");
+                languageMenu.classList.replace("flex", "hidden");
+
+                fileMenu.style.top = `${fileMenuButton.offsetTop + fileMenuButton.offsetHeight}px`;
+                fileMenu.style.left = `${fileMenuButton.offsetLeft}px`;
+                break;
+            case "reload-button":
+                if (await beforeClose()) {
+                    location.reload();
+                }
+                break;
+            case helpMenuButton.id:
+                helpMenu.toggleMultiple("hidden", "flex");
+                fileMenu.classList.replace("flex", "hidden");
+                languageMenu.classList.replace("flex", "hidden");
+
+                helpMenu.style.top = `${helpMenuButton.offsetTop + helpMenuButton.offsetHeight}px`;
+                helpMenu.style.left = `${helpMenuButton.offsetLeft}px`;
+                break;
+            case "help-button":
+                new WebviewWindow("help", {
+                    url: "https://savannstm.github.io/rpgmtranslate/",
+                    title: localization.helpButton,
+                    center: true,
+                });
+                break;
+            case "about-button":
+                new WebviewWindow("about", {
+                    url: "about.html",
+                    title: localization.aboutButton,
+                    center: true,
+                    resizable: false,
+                });
+                break;
+            case languageMenuButton.id:
+                languageMenu.toggleMultiple("hidden", "flex");
+                helpMenu.classList.replace("flex", "hidden");
+                fileMenu.classList.replace("flex", "hidden");
+
+                languageMenu.style.top = `${languageMenuButton.offsetTop + languageMenuButton.offsetHeight}px`;
+                languageMenu.style.left = `${languageMenuButton.offsetLeft}px`;
+                break;
+            case "ru-button":
+                if (settings.language !== Language.Russian) {
+                    initializeLocalization(Language.Russian);
+                    applyLocalization(localization, theme);
+                }
+                break;
+            case "en-button":
+                if (settings.language !== Language.English) {
+                    initializeLocalization(Language.English);
+                    applyLocalization(localization, theme);
+                }
+                break;
+        }
+    });
+
+    themeWindow.addEventListener("input", (event) => {
+        const target = event.target as HTMLInputElement;
+
+        if (target.tagName === "INPUT") {
+            applyTheme(sheet, [target.id, target.value]);
+            return;
+        }
+    });
+
+    themeWindow.addEventListener("click", async (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case createThemeButton.id: {
+                const themeNameInput: HTMLInputElement = themeWindow.querySelector("#theme-name-input")!;
+                const themeName = themeNameInput.value.trim();
+
+                if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
+                    await message(`${localization.invalidThemeName} ${localization.allowedThemeNameCharacters}`);
+                    return;
+                }
+
+                const newTheme = { name: themeName } as Theme;
+                for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
+                    for (const subdiv of div.children) {
+                        const input = subdiv.firstElementChild as HTMLInputElement;
+                        newTheme[input.id] = input.value;
+                    }
+                }
+
+                themes[themeName] = newTheme;
+                await writeTextFile("res/themes.json", JSON.stringify(themes), { baseDir: Resource });
+
+                const newThemeButton = document.createElement("button");
+                newThemeButton.id = newThemeButton.textContent = themeName;
+                themeMenu.insertBefore(newThemeButton, themeMenu.lastElementChild);
+                break;
+            }
+            case closeButton.id:
+                themeWindow.classList.add("hidden");
+                break;
+        }
+    });
+
+    themeMenu.addEventListener("click", (event: MouseEvent) => {
+        const target = event.target as HTMLButtonElement;
+
+        if (!themeMenu.contains(target)) {
+            return;
+        }
+
+        if (target.id === "create-theme-menu-button") {
+            themeWindow.classList.remove("hidden");
+            themeWindow.style.left = `${(document.body.clientWidth - themeWindow.clientWidth) / 2}px`;
+
+            const themeColors = Object.values(theme);
+            let colorIndex = 1;
+
+            for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
+                for (const subdiv of div.children) {
+                    (subdiv.firstElementChild as HTMLInputElement).value = themeColors[colorIndex++];
+                }
+            }
+        } else {
+            setTheme(themes[target.id]);
+        }
+    });
+
+    batchWindow.addEventListener("click", async (event) => {
+        const target = event.target as HTMLElement | null;
+
+        if (target && batchWindow.contains(target)) {
+            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
+                target.textContent = target.textContent ? "" : "check";
+                batchSelectWindowChecked.push(target);
+            }
+
+            switch (target.id) {
+                case "select-all-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "check";
+                    }
+                    break;
+                case "deselect-all-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+                    break;
+                case "apply-button": {
+                    const filenames: [string, number][] = [];
+
+                    for (const element of batchWindowBody.children) {
+                        if (element.firstElementChild!.textContent) {
+                            filenames.push([element.lastElementChild!.textContent!, Number.parseInt(element.id)]);
+                        }
+                    }
+
+                    for (const [filename, i] of filenames) {
+                        await processFile(
+                            filename,
+                            i,
+                            Number.parseInt(
+                                (batchWindowFooter.firstElementChild!.firstElementChild! as HTMLInputElement).value,
+                            ),
+                        );
+                    }
+
+                    saved = false;
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+
+                    batchWindow.classList.replace("flex", "hidden");
+                    break;
+                }
+                case "cancel-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+
+                    batchWindow.classList.replace("flex", "hidden");
+                    break;
+            }
+        }
+    });
+
+    batchWindow.addEventListener("mousemove", (event) => {
+        if (event.buttons === 1) {
+            const target = event.target as HTMLElement;
+            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
+                target.textContent = target.textContent ? "" : "check";
+                batchSelectWindowChecked.push(target);
+            }
+        }
+    });
+
+    batchWindow.addEventListener("mouseup", () => {
+        batchSelectWindowChecked.length = 0;
+    });
+
+    toolsMenu.addEventListener("click", (event: MouseEvent) => {
+        const target = event.target as HTMLButtonElement;
+
+        if (!toolsMenu.contains(target)) {
+            return;
+        }
+
+        if (batchWindow.classList.contains("flex")) {
+            batchWindow.classList.replace("flex", "hidden");
+            return;
+        }
+
+        switch (target.id) {
+            case "translate-tools-menu-button":
+                if (!settings.translation.from || !settings.translation.to) {
+                    alert(localization.translationLanguagesNotSelected);
+                    return;
+                }
+
+                batchWindowAction = BatchAction.Translate;
+                initializeBatchWindow(target);
+                break;
+            case "trim-tools-menu-button":
+                batchWindowAction = BatchAction.Trim;
+                initializeBatchWindow(target);
+                break;
+            case "wrap-tools-menu-button":
+                batchWindowAction = BatchAction.Wrap;
+                initializeBatchWindow(target);
+                break;
         }
     });
 

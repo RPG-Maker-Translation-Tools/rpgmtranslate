@@ -150,7 +150,7 @@
 
         <div class="backgroundPrimary fixed bottom-0 z-50 hidden text-lg" id="theme-window">
             <div class="flex items-end justify-end pr-2">
-                <button class="font-material">close</button>
+                <button class="font-material" id="close-button">close</button>
             </div>
             <div class="flex flex-row gap-4 p-4">
                 <div class="flex flex-col gap-2">
@@ -337,7 +337,7 @@
 
         <div
             class="backgroundPrimary textPrimary outlinePrimary fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 p-2 text-base"
-            id="select-files-window"
+            id="batch-window"
         >
             <div class="selectFiles flex h-8 flex-row items-center justify-center text-lg"></div>
             <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
@@ -351,17 +351,21 @@
             <div class="flex w-auto flex-row items-center justify-center gap-4">
                 <button
                     class="button borderPrimary backgroundPrimaryHovered backgroundPrimary selectAll h-8 w-32 rounded-md border-2 p-1"
+                    id="select-all-button"
                 ></button>
                 <button
                     class="button borderPrimary backgroundPrimaryHovered backgroundPrimary deselectAll h-8 w-32 rounded-md border-2 p-1"
+                    id="deselect-all-button"
                 ></button>
             </div>
             <div class="flex flex-row items-center justify-center gap-4">
                 <button
                     class="backgroundPrimary button backgroundPrimaryHovered borderPrimary apply h-8 w-32 rounded-md border-2 p-1"
+                    id="apply-button"
                 ></button>
                 <button
                     class="backgroundPrimary button backgroundPrimaryHovered borderPrimary cancel h-8 w-32 rounded-md border-2 p-1"
+                    id="cancel-button"
                 ></button>
             </div>
         </div>

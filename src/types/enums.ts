@@ -28,7 +28,7 @@ export const enum SearchMode {
     OnlyTranslation,
 }
 
-export const enum FilesAction {
+export const enum BatchAction {
     Trim,
     Translate,
     Wrap,
