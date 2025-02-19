@@ -2773,13 +2773,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     tabContent.addEventListener("copy", async (event) => {
         if (multipleTextAreasSelected && document.activeElement?.tagName === "TEXTAREA") {
             event.preventDefault();
-
-            const selectedTextArea = document.activeElement as HTMLTextAreaElement;
-            selectedTextareas.set(
-                Number.parseInt(selectedTextArea.closest(`[id^="${currentTab}"]`)!.id.split("-")[1]),
-                selectedTextArea.value,
-            );
-
             await writeText(Array.from(selectedTextareas.values()).join("\0"));
         }
     });
