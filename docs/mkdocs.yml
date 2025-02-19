@@ -32,8 +32,8 @@ theme:
 extra:
     alternate:
         - name: English
-          link: /en/
+          link: /rpgmtranslate/en/
           lang: en
         - name: Русский
-          link: /ru/
+          link: /rpgmtranslate/ru/
           lang: ru
