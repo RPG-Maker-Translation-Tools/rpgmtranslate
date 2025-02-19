@@ -2972,7 +2972,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     themeWindow.addEventListener("input", (event) => {
         const target = event.target as HTMLInputElement;
 
-        if (target.tagName === "INPUT") {
+        if (target.type === "color") {
             applyTheme(sheet, [target.id, target.value]);
             return;
         }
