@@ -1408,11 +1408,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             let incorrectCompileSettings = false;
 
-            if (typeof compileSettings.logging !== "boolean") {
-                compileSettings.logging = false;
-                incorrectCompileSettings = true;
-            }
-
             if (typeof compileSettings.mapsProcessingMode !== "number") {
                 compileSettings.mapsProcessingMode = 0;
                 incorrectCompileSettings = true;
@@ -1445,7 +1440,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 disableCustomProcessing: compileSettings.disableCustomProcessing,
                 disableProcessing: Object.values(compileSettings.disableProcessing.of),
                 engineType: settings.engineType!,
-                logging: compileSettings.logging,
+                logging: true,
                 language: settings.language,
             });
 
