@@ -1873,7 +1873,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         if (l === split.length || line.startsWith("<!-- Map")) {
                             if (l !== split.length) {
-                                mapsNumbers.push(Number.parseInt(line.slice(8)));
+                                mapsNumbers.push(Number.parseInt(line.slice(line.lastIndexOf("<#>") + 3)));
                             }
 
                             if (!result.length) {
