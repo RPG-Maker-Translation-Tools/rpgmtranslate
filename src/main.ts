@@ -1180,6 +1180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 const originalTextDiv = selectedTextArea.parentElement!.children[1] as HTMLDivElement;
                                 let originalText = originalTextDiv.textContent!;
 
+                                // TODO: Different map display name style for rvpacker-lib v4
                                 if (
                                     (!originalText.startsWith("<!--") && originalText.startsWith("<!-- Map")) ||
                                     !originalText.startsWith("<!--")
@@ -2595,6 +2596,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
+            // TODO: Implement logic for search-button
             case "replace-button": {
                 const replacer = replaceInput.value.trim();
                 if (searchInput.value.trim() && replacer) {
