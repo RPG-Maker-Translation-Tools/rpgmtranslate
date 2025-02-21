@@ -2787,35 +2787,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     tabContent.addEventListener("paste", async (event) => {
-        const text = await readText();
+        const normalized = (await readText()).replaceAll(NEW_LINE, "\n");
 
-        if (document.activeElement?.tagName === "TEXTAREA" && text.includes("\0")) {
-            event.preventDefault();
-            const clipboardTextSplit = text.split("\0");
-            const textRows = clipboardTextSplit.length;
+        // TODO: Doesn't work
+        await writeText(normalized).then(() => {
+            if (document.activeElement?.tagName === "TEXTAREA" && normalized.includes("\0")) {
+                event.preventDefault();
+                const clipboardTextSplit = normalized.split("\0");
+                const textRows = clipboardTextSplit.length;
 
-            if (textRows < 1) {
-                return;
-            } else {
-                const rowContainer = document.activeElement.closest(`[id^="${currentTab}"]`)!;
-                const rowContainerNumber = Number.parseInt(rowContainer.id.split("-")[1]);
+                if (textRows === 0) {
+                    return;
+                } else {
+                    const rowContainer = document.activeElement.closest(`[id^="${currentTab}"]`)!;
+                    const rowContainerNumber = Number.parseInt(rowContainer.id.split("-")[1]);
 
-                for (let i = 0; i < textRows; i++) {
-                    const rowNumber = rowContainerNumber + i - 1;
-                    const rowContainer = tabContent.children[rowNumber] as HTMLDivElement | null;
+                    for (let i = 0; i < textRows; i++) {
+                        const rowNumber = rowContainerNumber + i - 1;
+                        const rowContainer = tabContent.children[rowNumber] as HTMLDivElement | null;
 
-                    if (rowContainer) {
-                        const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
+                        if (rowContainer) {
+                            const textAreaToReplace = rowContainer.lastElementChild! as HTMLTextAreaElement;
 
-                        replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(text, ""));
-                        textAreaToReplace.value = clipboardTextSplit[i];
-                        textAreaToReplace.calculateHeight();
+                            replacedTextareas.set(rowNumber, textAreaToReplace.value.replaceAll(normalized, ""));
+                            textAreaToReplace.value = clipboardTextSplit[i];
+                            textAreaToReplace.calculateHeight();
+                        }
                     }
-                }
 
-                saved = false;
+                    saved = false;
+                }
             }
-        }
+        });
     });
 
     tabContent.addEventListener("keyup", (event) => {
