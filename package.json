@@ -26,10 +26,10 @@
     },
     "devDependencies": {
         "@tailwindcss/cli": "4.0.8",
-        "@eslint/js": "9.20.0",
+        "@eslint/js": "9.21.0",
         "@tauri-apps/cli": "2.2.7",
-        "eslint": "9.20.1",
-        "prettier": "3.5.1",
+        "eslint": "9.21.0",
+        "prettier": "3.5.2",
         "prettier-plugin-organize-attributes": "1.0.0",
         "prettier-plugin-organize-imports": "4.1.0",
         "prettier-plugin-tailwindcss": "0.6.11",
