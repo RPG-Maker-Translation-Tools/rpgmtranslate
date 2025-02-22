@@ -1175,17 +1175,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     return;
                                 }
 
-                                const extension = determineExtension(settings.engineType!);
-
                                 const originalTextDiv = selectedTextArea.parentElement!.children[1] as HTMLDivElement;
                                 let originalText = originalTextDiv.textContent!;
 
-                                // TODO: Different map display name style for rvpacker-lib v4
-                                if (
-                                    (!originalText.startsWith("<!--") && originalText.startsWith("<!-- Map")) ||
-                                    !originalText.startsWith("<!--")
-                                ) {
-                                    originalText = originalText.slice(12 + extension.length).slice(0, -4);
+                                if (originalText.startsWith("<!-- In-game")) {
+                                    originalText = originalText.slice().slice(29, -4);
                                 }
 
                                 const translation = await translateText({
@@ -1867,7 +1861,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     for (let l = 0; l <= split.length; l++) {
                         const line = split[l];
 
-                        if (l === split.length || line.startsWith("<!-- Map")) {
+                        if (l === split.length || line.startsWith("<!-- Map -->")) {
                             if (l !== split.length) {
                                 mapsNumbers.push(Number.parseInt(line.slice(line.lastIndexOf("<#>") + 3)));
                             }
@@ -2034,7 +2028,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const translationText = translationField.value.trim();
             const translationExists = Boolean(translationText);
             const isComment = originalText.startsWith("<!--");
-            const isMapComment = originalText.startsWith("<!-- Map");
+            const isMapComment = originalText === "<!-- Map -->";
 
             switch (batchWindowAction) {
                 case BatchAction.Trim:
@@ -2078,7 +2072,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const translationTrimmed = translation.trim();
                 const translationExists = Boolean(translationTrimmed);
                 const isComment = original.startsWith("<!--");
-                const isMapComment = original.startsWith("<!-- Map");
+                const isMapComment = original === "<!-- Map -->";
 
                 switch (batchWindowAction) {
                     case BatchAction.Trim:
