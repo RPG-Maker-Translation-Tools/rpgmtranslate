@@ -6,13 +6,13 @@
 
 В основе этого графического интерфейса лежат:
 
-- [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) для парсинга и записи .json файлов RPG Maker MV/MZ.
+- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) для парсинга и записи .json файлов RPG Maker MV/MZ.
 - [marshal-rs](https://github.com/savannstm/marshal-rs) для парсинга и записи файлов RPG Maker XP/VX/VXAce.
-- [rpgm-archive-decrypter](https://github.com/savannstm/rpgm-archive-decrypter) для расшифровки архивов .rgss движков RPG Maker XP/VX/VXAce.
+- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) для расшифровки архивов .rgss движков RPG Maker XP/VX/VXAce.
 
 Используя эти инструменты, программа парсит текст в `.txt` файлы, позволяет вам редактировать их, а затем записывать обратно в исходный вид с применённым переводом.
 
-![Интерфейс](./screenshots/interface.png)
+![Интерфейс](screenshots/interface.png)
 
 Если у вас возникли проблемы с работой программы, выберите пункт `Помощь > Помощь` в верхнем меню. Возможно, это поможет.
 

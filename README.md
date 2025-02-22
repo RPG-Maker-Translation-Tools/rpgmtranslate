@@ -1,6 +1,6 @@
 # rpgmtranslate
 
-[README на русском](./README-ru.md)
+[README на русском](README-ru.md)
 
 ## General
 
@@ -8,9 +8,9 @@ A fast and light graphical interface, designed for editing and translating games
 
 Under the hood, this GUI uses:
 
-- [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) to parse and write RPG Maker MV/MZ .json files.
+- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse and write RPG Maker MV/MZ .json files.
 - [marshal-rs](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VXAce files.
-- [rpgm-archive-decrypter](https://github.com/savannstm/rpgm-archive-decrypter) to decrypt .rgss RPG Maker XP/VX/VXAce archives.
+- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) to decrypt .rgss RPG Maker XP/VX/VXAce archives.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
