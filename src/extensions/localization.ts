@@ -527,7 +527,6 @@ export class ReadWindowLocalization {
     readonly separateMapsMode: string;
     readonly preserveMapsMode: string;
     readonly loggingOption: string;
-    readonly generateJSONCheckbox: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -562,7 +561,6 @@ export class ReadWindowLocalization {
                 this.preserveMapsMode = "Сохранять дубликаты";
                 this.loggingOption =
                     "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
-                this.generateJSONCheckbox = "Сгенерировать JSON репрезентации файлов старых движков";
                 break;
             default:
                 this.mode = "Reading mode:";
@@ -594,7 +592,6 @@ export class ReadWindowLocalization {
                 this.separateMapsMode = "Separate maps text";
                 this.preserveMapsMode = "Preserve duplicates";
                 this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
-                this.generateJSONCheckbox = "Generate JSON representations of older engines' files";
                 break;
         }
     }

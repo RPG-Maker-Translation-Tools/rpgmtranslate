@@ -47,7 +47,6 @@ pub struct ReadSettings<'a> {
     processingMode: ProcessingMode,
     engineType: EngineType,
     logging: bool,
-    generateJson: bool,
 }
 
 lazy_static! {
@@ -210,7 +209,6 @@ pub fn read(settings: ReadSettings) {
         processingMode: processing_mode,
         engineType: engine_type,
         logging,
-        generateJson: mut generate_json,
     } = settings;
 
     let processing_mode: ProcessingMode = processing_mode;
@@ -237,10 +235,6 @@ pub fn read(settings: ReadSettings) {
 
     create_dir_all(translation_path).unwrap_log();
 
-    if engine_type == EngineType::New {
-        generate_json = false;
-    }
-
     if !disable_processing[0] {
         read_map(
             original_path,
@@ -251,7 +245,6 @@ pub fn read(settings: ReadSettings) {
             game_type,
             engine_type,
             processing_mode,
-            generate_json,
         );
     }
 
@@ -264,7 +257,6 @@ pub fn read(settings: ReadSettings) {
             game_type,
             processing_mode,
             engine_type,
-            generate_json,
         );
     }
 
@@ -276,7 +268,6 @@ pub fn read(settings: ReadSettings) {
             logging,
             processing_mode,
             engine_type,
-            generate_json,
         );
     }
 
@@ -296,7 +287,6 @@ pub fn read(settings: ReadSettings) {
                 romanize,
                 logging,
                 processing_mode,
-                generate_json,
             );
         }
     }
