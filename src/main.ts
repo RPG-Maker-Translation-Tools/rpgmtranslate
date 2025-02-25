@@ -87,6 +87,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
+
+            projectSettings.translationLanguages = {
+                from: fromLanguageInput.value,
+                to: toLanguageInput.value,
+            };
+
+            await writeTextFile(
+                join(settings.projectPath, programDataDir, "project-settings.json"),
+                JSON.stringify(projectSettings),
+            );
             return true;
         } else {
             return false;
