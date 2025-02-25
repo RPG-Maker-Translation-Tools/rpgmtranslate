@@ -2105,14 +2105,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const translationTrimmed = translation.trim();
                 const translationExists = Boolean(translationTrimmed);
                 const isComment = original.startsWith("<!--");
-                const isMapComment = original === "<!-- Map -->";
+                const isMapDisplayNameComment = original.startsWith("<!-- In-game");
 
                 switch (batchWindowAction) {
                     case BatchAction.Trim:
                         return translationExists ? `${original}${LINES_SEPARATOR}${translationTrimmed}` : line;
                     case BatchAction.Translate:
-                        if ((isMapComment || !isComment) && !translationExists) {
-                            return await translateLine(original, isComment, isMapComment);
+                        if ((isMapDisplayNameComment || !isComment) && !translationExists) {
+                            return await translateLine(original, isMapDisplayNameComment);
                         }
 
                         return line;
