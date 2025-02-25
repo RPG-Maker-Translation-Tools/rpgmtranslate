@@ -40,8 +40,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const backupSettings = document.getElementById("backup-settings") as HTMLDivElement;
     const backupMaxInput = document.getElementById("backup-max-input") as HTMLInputElement;
     const backupPeriodInput = document.getElementById("backup-period-input") as HTMLInputElement;
-    const fromLanguageInput = document.getElementById("from-language-input") as HTMLInputElement;
-    const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
     const fontSelect = document.getElementById("font-select") as HTMLSelectElement;
     const rowDeleteModeSelect = document.getElementById("row-delete-mode-select") as HTMLSelectElement;
     const displayGhostLinesCheck = document.getElementById("display-ghost-lines-check") as HTMLSpanElement;
@@ -50,10 +48,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     backupMaxInput.value = settings.backup.max.toString();
     backupPeriodInput.value = settings.backup.period.toString();
     backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
-
-    if (typeof settings.translation !== "object") {
-        settings.translation = { from: "", to: "" };
-    }
 
     if (typeof settings.rowDeleteMode !== "number") {
         settings.rowDeleteMode = RowDeleteMode.Disabled;
@@ -68,8 +62,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
-    fromLanguageInput.value = settings.translation.from;
-    toLanguageInput.value = settings.translation.to;
     displayGhostLinesCheck.innerHTML = settings.displayGhostLines ? "check" : "";
     checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
 
@@ -90,115 +82,99 @@ document.addEventListener("DOMContentLoaded", async () => {
         fontSelect.appendChild(optionElement);
     }
 
-    fontSelect.addEventListener("change", async () => {
-        for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
-            if (element.value === fontSelect.value) {
-                settings.fontUrl = element.id.replaceAll("\\", "/");
+    document.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement;
 
-                const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
-                document.fonts.add(font);
-                document.body.style.fontFamily = "font";
+        switch (target.id) {
+            case checkForUpdatesCheck.id:
+                if (!checkForUpdatesCheck.textContent) {
+                    checkForUpdatesCheck.innerHTML = "check";
+                    settings.checkForUpdates = true;
+                } else {
+                    checkForUpdatesCheck.innerHTML = "";
+                    settings.checkForUpdates = false;
+                }
+                break;
+            case displayGhostLinesCheck.id:
+                if (!displayGhostLinesCheck.textContent) {
+                    displayGhostLinesCheck.innerHTML = "check";
+                    settings.displayGhostLines = true;
+                } else {
+                    displayGhostLinesCheck.innerHTML = "";
+                    settings.displayGhostLines = false;
+                }
+                break;
+            case backupCheck.id:
+                if (!backupCheck.textContent) {
+                    backupSettings.classList.replace("hidden", "flex");
+
+                    requestAnimationFrame(() => backupSettings.classList.replace("-translate-y-full", "translate-y-0"));
+
+                    backupCheck.innerHTML = "check";
+                    settings.backup.enabled = true;
+                } else {
+                    backupSettings.classList.replace("translate-y-0", "-translate-y-full");
+
+                    backupSettings.addEventListener(
+                        "transitionend",
+                        () => backupSettings.classList.replace("flex", "hidden"),
+                        {
+                            once: true,
+                        },
+                    );
+
+                    backupCheck.innerHTML = "";
+                    settings.backup.enabled = false;
+                }
+                break;
+        }
+    });
+
+    document.addEventListener("input", (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target.id) {
+            case backupMaxInput.id: {
+                backupMaxInput.value = backupMaxInput.value.replaceAll(/[^0-9]/g, "");
+
+                const newBackupMax = Math.clamp(Number.parseInt(backupMaxInput.value), 1, 99);
+                backupMaxInput.value = newBackupMax.toString();
+                settings.backup.max = newBackupMax;
+                break;
+            }
+            case backupPeriodInput.id: {
+                backupPeriodInput.value = backupPeriodInput.value.replaceAll(/[^0-9]/g, "");
+
+                const newBackupPeriod = Math.clamp(Number.parseInt(backupPeriodInput.value), 60, 3600);
+                backupPeriodInput.value = newBackupPeriod.toString();
+                settings.backup.period = newBackupPeriod;
+                break;
             }
         }
     });
 
-    backupCheck.addEventListener("click", () => {
-        if (!backupCheck.textContent) {
-            backupSettings.classList.replace("hidden", "flex");
+    document.addEventListener("change", async (event) => {
+        const target = event.target as HTMLElement;
 
-            requestAnimationFrame(() => backupSettings.classList.replace("-translate-y-full", "translate-y-0"));
+        switch (target.id) {
+            case fontSelect.id:
+                for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+                    if (element.value === fontSelect.value) {
+                        settings.fontUrl = element.id.replaceAll("\\", "/");
 
-            backupCheck.innerHTML = "check";
-            settings.backup.enabled = true;
-        } else {
-            backupSettings.classList.replace("translate-y-0", "-translate-y-full");
-
-            backupSettings.addEventListener("transitionend", () => backupSettings.classList.replace("flex", "hidden"), {
-                once: true,
-            });
-
-            backupCheck.innerHTML = "";
-            settings.backup.enabled = false;
-        }
-    });
-
-    backupMaxInput.addEventListener("input", () => {
-        backupMaxInput.value = backupMaxInput.value.replaceAll(/[^0-9]/g, "");
-
-        const newBackupMax = Math.clamp(Number.parseInt(backupMaxInput.value), 1, 99);
-        backupMaxInput.value = newBackupMax.toString();
-        settings.backup.max = newBackupMax;
-    });
-
-    backupPeriodInput.addEventListener("input", () => {
-        backupPeriodInput.value = backupPeriodInput.value.replaceAll(/[^0-9]/g, "");
-
-        const newBackupPeriod = Math.clamp(Number.parseInt(backupPeriodInput.value), 60, 3600);
-        backupPeriodInput.value = newBackupPeriod.toString();
-        settings.backup.period = newBackupPeriod;
-    });
-
-    fromLanguageInput.addEventListener("blur", () => {
-        if (!fromLanguageInput.value.trim()) {
-            return;
-        }
-
-        try {
-            new Intl.Locale(fromLanguageInput.value);
-            settings.translation.from = fromLanguageInput.value;
-        } catch {
-            alert(windowLocalization.incorrectLanguageTag);
-            fromLanguageInput.value = settings.translation.from;
-        }
-    });
-
-    toLanguageInput.addEventListener("blur", () => {
-        if (!toLanguageInput.value.trim()) {
-            return;
-        }
-
-        try {
-            new Intl.Locale(toLanguageInput.value);
-            settings.translation.to = toLanguageInput.value;
-        } catch {
-            alert(windowLocalization.incorrectLanguageTag);
-            toLanguageInput.value = settings.translation.to;
-        }
-    });
-
-    fromLanguageInput.addEventListener("input", () => {
-        fromLanguageInput.value = fromLanguageInput.value.replaceAll(/[^a-z]/g, "");
-    });
-
-    toLanguageInput.addEventListener("input", () => {
-        toLanguageInput.value = toLanguageInput.value.replaceAll(/[^a-z]/g, "");
-    });
-
-    rowDeleteModeSelect.addEventListener("change", () => {
-        for (const element of rowDeleteModeSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
-            if (element.value === rowDeleteModeSelect.value) {
-                settings.rowDeleteMode = Number.parseInt(element.value);
-            }
-        }
-    });
-
-    displayGhostLinesCheck.addEventListener("click", () => {
-        if (!displayGhostLinesCheck.textContent) {
-            displayGhostLinesCheck.innerHTML = "check";
-            settings.displayGhostLines = true;
-        } else {
-            displayGhostLinesCheck.innerHTML = "";
-            settings.displayGhostLines = false;
-        }
-    });
-
-    checkForUpdatesCheck.addEventListener("click", () => {
-        if (!checkForUpdatesCheck.textContent) {
-            checkForUpdatesCheck.innerHTML = "check";
-            settings.checkForUpdates = true;
-        } else {
-            checkForUpdatesCheck.innerHTML = "";
-            settings.checkForUpdates = false;
+                        const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
+                        document.fonts.add(font);
+                        document.body.style.fontFamily = "font";
+                    }
+                }
+                break;
+            case rowDeleteModeSelect.id:
+                for (const element of rowDeleteModeSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+                    if (element.value === rowDeleteModeSelect.value) {
+                        settings.rowDeleteMode = Number.parseInt(element.value);
+                    }
+                }
+                break;
         }
     });
 
@@ -208,29 +184,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    await appWindow.onCloseRequested(async (event) => {
-        if (fromLanguageInput.value.trim()) {
-            try {
-                new Intl.Locale(fromLanguageInput.value);
-                settings.translation.from = fromLanguageInput.value;
-            } catch {
-                alert(windowLocalization.incorrectLanguageTag);
-                fromLanguageInput.value = settings.translation.from;
-                event.preventDefault();
-            }
-        }
-
-        if (toLanguageInput.value.trim()) {
-            try {
-                new Intl.Locale(toLanguageInput.value);
-                settings.translation.to = toLanguageInput.value;
-            } catch {
-                alert(windowLocalization.incorrectLanguageTag);
-                toLanguageInput.value = settings.translation.to;
-                event.preventDefault();
-            }
-        }
-
+    await appWindow.onCloseRequested(async () => {
         await emit("get-settings", settings);
     });
 });

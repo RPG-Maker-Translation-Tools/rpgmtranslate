@@ -11,6 +11,12 @@ export const enum ProcessingMode {
     Force,
 }
 
+export const enum MapsProcessingMode {
+    Default,
+    Separate,
+    Preserve,
+}
+
 export const enum Language {
     English,
     Russian,

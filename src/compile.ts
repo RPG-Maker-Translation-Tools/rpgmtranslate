@@ -67,24 +67,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case romanizeCheckbox.id:
-                if (!romanizeCheckbox.textContent) {
-                    romanizeCheckbox.innerHTML = "check";
-                    compileSettings.romanize = true;
-                } else {
-                    romanizeCheckbox.innerHTML = "";
-                    compileSettings.romanize = false;
-                }
-                break;
-            case customProcessingCheckbox.id:
-                if (!customProcessingCheckbox.textContent) {
-                    customProcessingCheckbox.innerHTML = "check";
-                    compileSettings.disableCustomProcessing = true;
-                } else {
-                    customProcessingCheckbox.innerHTML = "";
-                    compileSettings.disableCustomProcessing = false;
-                }
-                break;
             case customOutputPathCheckbox.id:
                 if (!customOutputPathCheckbox.textContent) {
                     customOutputPathSettings.classList.replace("hidden", "flex");

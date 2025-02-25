@@ -3,7 +3,6 @@ import {
     applyLocalization,
     applyTheme,
     CompileSettings,
-    determineExtension,
     getThemeStyleSheet,
     join,
     Settings,
@@ -26,6 +25,7 @@ import {
     EngineType,
     JumpDirection,
     Language,
+    MapsProcessingMode,
     ProcessingMode,
     ReplaceMode,
     RowDeleteMode,
@@ -998,6 +998,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    function areLanguageTagsValid(): boolean {
+        const from = fromLanguageInput.value.trim();
+        const to = toLanguageInput.value.trim();
+
+        if (!from || !to) {
+            alert(localization.translationLanguagesNotSelected);
+            return false;
+        }
+
+        try {
+            new Intl.Locale(from);
+            new Intl.Locale(to);
+        } catch {
+            alert(localization.incorrectLanguageTag);
+            return false;
+        }
+
+        return true;
+    }
+
     async function handleKeypress(event: KeyboardEvent) {
         if (!settings.projectPath) {
             return;
@@ -1170,8 +1190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         if (!selectedTextArea.value) {
                             if (!selectedTextArea.placeholder) {
-                                if (!settings.translation.from || !settings.translation.to) {
-                                    alert(localization.translationLanguagesNotSelected);
+                                if (!areLanguageTagsValid()) {
                                     return;
                                 }
 
@@ -1179,13 +1198,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 let originalText = originalTextDiv.textContent!;
 
                                 if (originalText.startsWith("<!-- In-game")) {
-                                    originalText = originalText.slice().slice(29, -4);
+                                    originalText = originalText.slice(29, -4);
                                 }
 
                                 const translation = await translateText({
                                     text: originalText,
-                                    to: settings.translation.to,
-                                    from: settings.translation.from,
+                                    to: toLanguageInput.value.trim(),
+                                    from: fromLanguageInput.value.trim(),
                                     replace: false,
                                 });
 
@@ -1383,9 +1402,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const compileSettings: CompileSettings = JSON.parse(
-            await readTextFile(join(settings.projectPath, programDataDir, "compile-settings.json")),
-        ) as CompileSettings;
+        if (typeof projectSettings.compileSettings !== "object") {
+            projectSettings.compileSettings = new CompileSettings();
+        }
+
+        const compileSettings: CompileSettings = projectSettings.compileSettings;
 
         if (!compileSettings.initialized || !compileSettings.doNotAskAgain || !silent) {
             const compileWindow = new WebviewWindow("compile", {
@@ -1632,32 +1653,64 @@ document.addEventListener("DOMContentLoaded", async () => {
             currentTabDiv.classList.replace("hidden", "flex");
             progressMeterContainer.classList.replace("hidden", "flex");
 
-            if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
-                settings.engineType = EngineType.XP;
-                currentGameEngine.innerHTML = "XP";
-            } else if (await exists(join(pathToProject, originalDir, "System.rvdata"))) {
-                settings.engineType = EngineType.VX;
-                currentGameEngine.innerHTML = "VX";
-            } else if (await exists(join(pathToProject, originalDir, "System.rvdata2"))) {
-                settings.engineType = EngineType.VXAce;
-                currentGameEngine.innerHTML = "VX Ace";
-            } else if (await exists(join(pathToProject, originalDir, "System.json"))) {
-                settings.engineType = EngineType.New;
-                currentGameEngine.innerHTML = "MV / MZ";
+            const projectSettingsPath = join(pathToProject, programDataDir, "project-settings.json");
+
+            if (await exists(projectSettingsPath)) {
+                projectSettings = JSON.parse(await readTextFile(projectSettingsPath));
+
+                if (typeof projectSettings.translationLanguages.to === "string") {
+                    toLanguageInput.value = projectSettings.translationLanguages.to;
+                }
+
+                if (typeof projectSettings.translationLanguages.from === "string") {
+                    fromLanguageInput.value = projectSettings.translationLanguages.from;
+                }
             } else {
-                await message(localization.cannotDetermineEngine);
+                projectSettings = {} as ProjectSettings;
+            }
 
-                await changeTab(null);
+            if (typeof projectSettings.engineType === "number") {
+                settings.engineType = projectSettings.engineType;
+            } else {
+                if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
+                    settings.engineType = EngineType.XP;
+                } else if (await exists(join(pathToProject, originalDir, "System.rvdata"))) {
+                    settings.engineType = EngineType.VX;
+                } else if (await exists(join(pathToProject, originalDir, "System.rvdata2"))) {
+                    settings.engineType = EngineType.VXAce;
+                } else if (await exists(join(pathToProject, originalDir, "System.json"))) {
+                    settings.engineType = EngineType.New;
+                } else {
+                    await message(localization.cannotDetermineEngine);
+                    await changeTab(null);
 
-                tabContent.innerHTML = "";
-                currentGameEngine.innerHTML = "";
-                currentGameTitle.value = "";
+                    tabContent.innerHTML = "";
+                    currentGameEngine.innerHTML = "";
+                    currentGameTitle.value = "";
 
-                gameInfo.classList.replace("flex", "hidden");
-                currentTabDiv.classList.replace("flex", "hidden");
-                progressMeterContainer.classList.replace("flex", "hidden");
+                    gameInfo.classList.replace("flex", "hidden");
+                    currentTabDiv.classList.replace("flex", "hidden");
+                    progressMeterContainer.classList.replace("flex", "hidden");
 
-                return false;
+                    return false;
+                }
+
+                projectSettings.engineType = settings.engineType;
+            }
+
+            switch (settings.engineType) {
+                case EngineType.New:
+                    currentGameEngine.innerHTML = "MV / MZ";
+                    break;
+                case EngineType.VXAce:
+                    currentGameEngine.innerHTML = "VX Ace";
+                    break;
+                case EngineType.VX:
+                    currentGameEngine.innerHTML = "VX";
+                    break;
+                case EngineType.XP:
+                    currentGameEngine.innerHTML = "XP";
+                    break;
             }
 
             return true;
@@ -1697,6 +1750,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (await exists(rootTranslationPath)) {
                     for (const entry of await readDir(rootTranslationPath)) {
                         await copyFile(join(rootTranslationPath, entry.name), join(translationPath, entry.name));
+                    }
+
+                    const metadataPath = join(rootTranslationPath, ".rvpacker-metadata");
+                    if (await exists(metadataPath)) {
+                        const metadata = JSON.parse(await readTextFile(metadataPath)) as {
+                            mapsProcessingMode: MapsProcessingMode;
+                            romanize: boolean;
+                            disableCustomProcessing: boolean;
+                        };
+
+                        projectSettings.mapsProcessingMode = metadata.mapsProcessingMode;
+                        projectSettings.romanize = metadata.romanize;
+                        projectSettings.disableCustomProcessing = metadata.disableCustomProcessing;
                     }
                 } else {
                     let gameTitle!: string;
@@ -1882,12 +1948,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             const logFilePath = join(settings.projectPath, programDataDir, logFile);
             if (!(await exists(logFilePath))) {
                 await writeTextFile(logFilePath, "{}");
-            }
-
-            // Create compile settings
-            const compileSettingsPath = join(settings.projectPath, programDataDir, "compile-settings.json");
-            if (!(await exists(compileSettingsPath))) {
-                await writeTextFile(compileSettingsPath, JSON.stringify(new CompileSettings()));
             }
 
             // Initialize themes
@@ -2077,27 +2137,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         await sleep(500);
     }
 
-    async function translateField(text: string, isComment: boolean, isMapComment: boolean, field: HTMLTextAreaElement) {
-        const extension = determineExtension(settings.engineType!);
-        const textToTranslate = isMapComment || !isComment ? text.slice(12 + extension.length, -4) : text;
+    async function translateLine(text: string, isMapComment: boolean): Promise<string> {
+        const textToTranslate = isMapComment ? text.slice(29, -4) : text;
 
         const translated = await translateText({
             text: textToTranslate,
-            from: settings.translation.from,
-            to: settings.translation.to,
-            replace: false,
-        });
-        field.value = translated;
-    }
-
-    async function translateLine(text: string, isComment: boolean, isMapComment: boolean): Promise<string> {
-        const extension = determineExtension(settings.engineType!);
-        const textToTranslate = isMapComment || !isComment ? text.slice(12 + extension.length, -4) : text;
-
-        const translated = await translateText({
-            text: textToTranslate,
-            from: settings.translation.from,
-            to: settings.translation.to,
+            from: fromLanguageInput.value.trim(),
+            to: toLanguageInput.value.trim(),
             replace: true,
         });
         return `${text}${LINES_SEPARATOR}${translated}`;
@@ -2250,6 +2296,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const createThemeButton: HTMLButtonElement = themeWindow.querySelector("#create-theme")!;
     const closeButton: HTMLButtonElement = themeWindow.querySelector("#close-button")!;
     const searchSwitch = document.getElementById("switch-search-content") as HTMLDivElement;
+    const fromLanguageInput = document.getElementById("from-language-input") as HTMLInputElement;
+    const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
     // #endregion
 
     let backupIsActive: number | null = null;
@@ -2265,6 +2313,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentTabIndex: number | null = null;
     let batchWindowAction!: BatchAction;
     let nextBackupNumber: number;
+
+    let projectSettings!: ProjectSettings;
 
     const batchSelectWindowChecked: HTMLElement[] = [];
 
@@ -2439,13 +2489,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     location.reload();
                 });
 
-                const unlistenFetch = await readWindow.once("fetch", async () => {
-                    await emit("metadata", [currentGameTitle.getAttribute("original-title")!, settings.engineType]);
-                });
-
                 await readWindow.once("tauri://destroyed", () => {
                     unlistenRestart();
-                    unlistenFetch();
                 });
                 break;
             }
@@ -3098,8 +3143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case "translate-tools-menu-button":
-                if (!settings.translation.from || !settings.translation.to) {
-                    alert(localization.translationLanguagesNotSelected);
+                if (!areLanguageTagsValid()) {
                     return;
                 }
 
@@ -3118,7 +3162,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     await listen("fetch-settings", async () => {
-        await emit("settings", [settings, theme]);
+        await emit("settings", [settings, theme, projectSettings]);
     });
 
     await appWindow.onCloseRequested(async (event) => {

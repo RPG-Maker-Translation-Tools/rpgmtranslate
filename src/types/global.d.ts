@@ -39,9 +39,6 @@ interface Settings {
 
 interface CompileSettings {
     initialized: boolean;
-    romanize: boolean;
-    mapsProcessingMode: number;
-    disableCustomProcessing: boolean;
     customOutputPath: {
         enabled: boolean;
         path: string;
@@ -56,7 +53,6 @@ interface CompileSettings {
         };
     };
     doNotAskAgain: boolean;
-    logging: boolean;
 }
 
 type ThemeObject = Record<string, Theme>;
@@ -86,34 +82,6 @@ interface CSSRule {
     selectorText: string;
 }
 
-interface ReadArgs extends Record<string, unknown> {
-    projectPath: string;
-    originalDir: string;
-    gameTitle: string;
-    mapsProcessingMode: number;
-    romanize: boolean;
-    disableCustomProcessing: boolean;
-    disableProcessing: boolean[];
-    processingMode: import("./enums").ProcessingMode;
-    engineType: import("./enums").EngineType;
-    logging: boolean;
-    language: import("./enums").Language;
-}
-
-interface CompileArgs extends Record<string, unknown> {
-    projectPath: string;
-    originalDir: string;
-    outputPath: string;
-    gameTitle: string;
-    mapsProcessingMode: number;
-    romanize: boolean;
-    disableCustomProcessing: boolean;
-    disableProcessing: boolean[];
-    engineType: import("./enums").EngineType;
-    logging: boolean;
-    language: import("./enums").Language;
-}
-
 interface TextAreaPropertiesMemo extends Record<string, string | number> {
     lineHeight?: number;
     padding?: number;
@@ -125,6 +93,18 @@ interface TextAreaPropertiesMemo extends Record<string, string | number> {
 interface Bookmark {
     title: string;
     description: string;
+}
+
+interface ProjectSettings {
+    compileSettings: CompileSettings;
+    engineType: import("./enums").EngineType;
+    translationLanguages: {
+        from: string;
+        to: string;
+    };
+    mapsProcessingMode: import("./enums").MapsProcessingMode;
+    romanize: boolean;
+    disableCustomProcessing: boolean;
 }
 
 type ReplacementLog = Record<string, { old: string; new: string }>;
