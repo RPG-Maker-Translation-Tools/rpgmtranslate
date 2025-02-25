@@ -390,34 +390,6 @@ export class AboutWindowLocalization {
     }
 }
 
-export class HelpWindowLocalization {
-    readonly help: string;
-    readonly helpText: string;
-    readonly hotkeys: string;
-    readonly hotkeysText: string;
-
-    constructor(language: Language) {
-        switch (language) {
-            case Language.Russian:
-                this.help = "Как пользоваться; что делать; куда нажимать?";
-                this.helpText =
-                    'Чтобы запустить проект и начать перевод, используйте кнопку "Открыть папку" в левом верхнем углу. Открываемая папка должна содержать в себе папку "data" с оригинальными файлами игры. Если текст игры не был распарсен ранее с использованием CLI-инструментов, прогрмма автоматически распарсит его. По умолчанию, программа поддерживает чтение и запись файлов движков RPG Maker XP/VX/VXAce/MV/MZ.<br>Программа регулярно создает резервные копии файлов переводов по пути "папка_проекта/.rpgmtranslate/backups", период резервного копирования и максимальное количество резервных копий можно регулировать в настройках. По умолчанию программа создает резервные копии каждые 60 секунд.<br>При сохранении перевода в программе, все файлы перевода будут сохранятся по пути "папка_проекта/.rpgmtranslate/translation".<br>Чтобы сохранить изменения в проекте, нажмите кнопку сохранить или используйте сочетание клавиш Ctrl + S. Программа автоматически сохранит ваш проект, и когда вы снова запустите программу, вы сможете продолжить с того места, на котором остановились.<br>Чтобы скомпилировать ваш перевод в рабочие файлы игры, нажмите кнопку компиляции или используйте сочетание клавиш Alt + C. Обязательно сохраните перевод перед компиляцией. Программа создаст полностью функциональные файлы игры с применённым переводом в папке "папка_проекта/.rpgmtranslate/output".<br>Вы можете еще раз прочитать это руководство или получить справку о горячих клавишах программы, выбрав пункты верхнего меню "Помощь" > "Помощь".';
-                this.hotkeys = "Горячие клавиши";
-                this.hotkeysText =
-                    "Tab - Открыть панель выбора файлов<br>Стрелки вниз/Вверх - Перейти к следующему/предыдущему файлу<br>Ctrl + S - Сохранить файлы перевода<br>Ctrl + F - Открыть окно поиска текста<br>R - Открыть панель результатов поиска<br>Alt/Ctrl + Enter - Переход к текстовому полю ниже/выше выделенного соответственно<br>ЛКМ на оригинальном текстовом поле - скопировать текст из него<br>Ctrl + T, пока текстовая область выделена: при первой активации показать предварительный просмотр машинного перевода оригинального текста. При второй, вставить машинный перевод в поле<br>Esc - Если сфокусированным элементом является текстовая область, убрать фокусировку, в противном случае закрыть открытый файл<br>Alt + C, если вы НЕ сфокусированы на текстовой области - скомпилировать перевод<br>Alt + C, Alt + W, Alt + R, Alt + T, пока вы сфокусированы на поле поиска - переключить поиск по регистру, целым словам, регулярным выражениям и поиск только по переводу<br>ЛКМ на результате поиска - открыть выбранное поле<br>ПКМ на результате поиска - заменить текст этого элемента на тот, который в данный момент введен в поле замены текста<br>ЛКМ на результате журнала - открыть ранее изменённый элемент<br>ПКМ на результате журнала - вернуть изменённый элемент в исходное состояние<br>Ctrl + G - открыть поле перехода к строке<br>Ctrl + B - открыть окно закладок<br>Ctrl + R - открыть окно чтения файлов";
-                break;
-            default:
-                this.help = "How to use; what to do; where to click?";
-                this.helpText =
-                    "To start the project and start the translation, use the 'Open Folder' button in the upper left corner. The folder must contain the 'data' folder with the original game files. If the text of the game has not been parsed previously using CLI tools, the program will automatically parse it. By default, the program supports reading and writing RPG Maker XP/VX/VXAce/MV/MZ engine files.<br>The program regularly creates backups of translation files in the path 'project_folder/.rpgmtranslate/backups', the backup period and the maximum number of backups can be adjusted in the settings. By default, the program creates backups every 60 seconds.<br>When saving a translation in the program, all translation files will be saved in the path 'project_folder/.rpgmtranslate/translation'. To save the changes in the project, click save or use the keyboard shortcut Ctrl + S. The program will automatically save your project, and when you run the program again, you can pick up where you left off. To compile your translation into working game files, click the compile button or use the Alt + C keyboard shortcut. Be sure to save the translation before compiling. The program will create fully functional game files with the applied translation in the folder 'project_folder/.rpgmtranslate/output'.<br>You can read this manual again or get help about the program's hotkeys by selecting the 'Help' > 'Help' item in the top menu.";
-                this.hotkeys = "Hotkeys";
-                this.hotkeysText =
-                    "Tab - Open the panel for selecting files<br>Arrow Down/Up - Jump to the next/previous file<br>Ctrl + S - Save the translation files<br>Ctrl + F - Open the search window<br>R - Open the search results panel<br>Alt/Ctrl + Enter - Jump to the textarea below/above the focused respectively<br>LMB on the original text field - copy the text from the original field<br>Ctrl + T, while the textarea is selected: for the first activation, show the preview of machine translation of the original text. For the second, insert the machine translation into the field<br>Esc - If focused element is the textarea, remove the focus, else close the opened file<br>Alt + C, if you are NOT focused on the textarea - Compile translation<br>Alt + C, Alt + W, Alt + R, Alt + T, while you are focused on the search field - toggle case, whole text, regular expressions, and only translation text search respectively<br>LMB on the search result - scroll into the view of the result element<br>RMB on the search result - replace matching text of this element with the one that's currently entered into the replace field<br>LMB on the log result - scroll into the view of the previously changed element<br>RMB on the log result - revert changed element to the original state<br>Ctrl + G - open the 'jump to row' field<br>Ctrl + B - open the bookmarks window<br>Ctrl + R - open the files reading window";
-                break;
-        }
-    }
-}
-
 export class CompileWindowLocalization {
     readonly options: string;
     readonly romanizeOption: string;
@@ -599,7 +571,6 @@ export class ReadWindowLocalization {
 
 export type Localization =
     | MainWindowLocalization
-    | HelpWindowLocalization
     | AboutWindowLocalization
     | ReadWindowLocalization
     | CompileWindowLocalization

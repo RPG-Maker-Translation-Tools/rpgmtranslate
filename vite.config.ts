@@ -32,6 +32,7 @@ export default defineConfig(
                         about: "./src/about.html",
                         compile: "./src/compile.html",
                         read: "./src/read.html",
+                        purge: "./src/purge.html",
                     },
                     plugins: [replaceTws()],
                 },
