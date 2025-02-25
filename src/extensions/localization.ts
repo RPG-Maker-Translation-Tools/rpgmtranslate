@@ -66,6 +66,9 @@ export class MainWindowLocalization {
     readonly selectedFolderMissing: string;
     readonly compileWindowTitle: string;
     readonly readWindowTitle: string;
+    readonly purgeWindowTitle: string;
+    readonly fromLanguage: string;
+    readonly toLanguage: string;
     readonly bookmarksButtonTitle: string;
     readonly readButtonTitle: string;
     readonly directoryAlreadyOpened: string;
@@ -93,6 +96,7 @@ export class MainWindowLocalization {
     readonly couldNotSplitLine: string;
     readonly upToDate: string;
     readonly translationTextAreaUnputtable: string;
+    readonly incorrectLanguageTag: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -166,6 +170,9 @@ export class MainWindowLocalization {
                 this.cannotDetermineEngine = "Не удалось определить тип движка игры.";
                 this.compileWindowTitle = "Настройки компиляции";
                 this.readWindowTitle = "Настройки чтения";
+                this.purgeWindowTitle = "Удаление неиспользуемых строк";
+                this.fromLanguage = "С языка:";
+                this.toLanguage = "На язык:";
                 this.bookmarksButtonTitle = "Закладки (Ctrl + B)";
                 this.readButtonTitle = "Перечитать файлы (Alt + R)";
                 this.directoryAlreadyOpened = "Выбранная директория уже открыта в программе.";
@@ -177,7 +184,7 @@ export class MainWindowLocalization {
                 this.trimFields = "Обрезать пробелы полей";
                 this.translateFields = "Перевести поля";
                 this.wrapFields = "Перенести строки в полях";
-                this.translationLanguagesNotSelected = "Языки перевода не выбраны. Настройте их в настройках.";
+                this.translationLanguagesNotSelected = "Языки перевода не выбраны. Введите их в полях наверху.";
                 this.selectFiles = "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)";
                 this.wrapNumber = "Длина строки для переноса";
                 this.deletingDisabled = "Удаление рядов выключено.";
@@ -193,6 +200,8 @@ export class MainWindowLocalization {
                 this.couldNotSplitLine = "Не удалось разделить линию на позиции в файле:";
                 this.upToDate = "Программа обновлена до последней версии.";
                 this.translationTextAreaUnputtable = "Нельзя вставить текст в поле перевода.";
+                this.incorrectLanguageTag =
+                    "Некорректный тег языка. Тег должен соответствовать BCP-47, например ru или ru-RU";
                 break;
             default:
                 this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
@@ -264,6 +273,9 @@ export class MainWindowLocalization {
                 this.cannotDetermineEngine = "Cannot determine the type of the game's engine.";
                 this.compileWindowTitle = "Compilation settings";
                 this.readWindowTitle = "Read settings";
+                this.purgeWindowTitle = "Purge unused lines";
+                this.fromLanguage = "From language:";
+                this.toLanguage = "To language:";
                 this.bookmarksButtonTitle = "Bookmarks (Ctrl + B)";
                 this.readButtonTitle = "Re-read files (Alt + R)";
                 this.directoryAlreadyOpened = "Selected directory is already opened in the program.";
@@ -276,7 +288,7 @@ export class MainWindowLocalization {
                 this.translateFields = "Translate fields";
                 this.wrapFields = "Wrap lines in fields";
                 this.translationLanguagesNotSelected =
-                    "Translation languages are not selected. Set them in the settings.";
+                    "Translation languages are not selected. Input them to inputs above.";
                 this.selectFiles = "Select files (You can hold LMB and drag to select multiple files)";
                 this.wrapNumber = "Line length for wrapping";
                 this.deletingDisabled = "Deleting is disabled in settings.";
@@ -292,6 +304,8 @@ export class MainWindowLocalization {
                 this.couldNotSplitLine = "Couldn't split line at line in file:";
                 this.upToDate = "Program is up to date.";
                 this.translationTextAreaUnputtable = "You can't put text to a translation textarea.";
+                this.incorrectLanguageTag =
+                    "Incorrect language tag. Tag must correspond to BCP-47, for example en or en-US";
                 break;
         }
     }
@@ -306,9 +320,6 @@ export class SettingsWindowLocalization {
     readonly font: string;
     readonly defaultFont: string;
     readonly translationLanguages: string;
-    readonly fromLanguage: string;
-    readonly toLanguage: string;
-    readonly incorrectLanguageTag: string;
     readonly confirmation: string;
     readonly disabled: string;
     readonly allowed: string;
@@ -327,9 +338,6 @@ export class SettingsWindowLocalization {
                 this.font = "Шрифт";
                 this.defaultFont = "Стандартный";
                 this.translationLanguages = "Языки перевода (для машинного перевода)";
-                this.fromLanguage = "Исходный язык (тег BCP-47, например, en или en-US)";
-                this.toLanguage = "Язык перевода (тег BCP-47, например, ru или ru-RU)";
-                this.incorrectLanguageTag = "Некорректный тег языка";
                 this.delete = "Режим удаления рядов";
                 this.disabled = "Выключить";
                 this.confirmation = "Спрашивать";
@@ -346,9 +354,6 @@ export class SettingsWindowLocalization {
                 this.font = "Font";
                 this.defaultFont = "Default";
                 this.translationLanguages = "Translation languages (for machine translation)";
-                this.fromLanguage = "From language (BCP-47 tag, e.g. ja or ja-JP)";
-                this.toLanguage = "To language (BCP-47 tag, e.g. en or en-US)";
-                this.incorrectLanguageTag = "Incorrect language tag";
                 this.delete = "Row delete mode";
                 this.disabled = "Disabled";
                 this.confirmation = "Ask for confirmation";
@@ -499,6 +504,7 @@ export class ReadWindowLocalization {
     readonly separateMapsMode: string;
     readonly preserveMapsMode: string;
     readonly loggingOption: string;
+    readonly ignore: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -533,6 +539,7 @@ export class ReadWindowLocalization {
                 this.preserveMapsMode = "Сохранять дубликаты";
                 this.loggingOption =
                     "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
+                this.ignore = "Игнорировать строки из файла .rvpacker-ignore";
                 break;
             default:
                 this.mode = "Reading mode:";
@@ -564,6 +571,51 @@ export class ReadWindowLocalization {
                 this.separateMapsMode = "Separate maps text";
                 this.preserveMapsMode = "Preserve duplicates";
                 this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
+                this.ignore = "Ignore entries from .rvpacker-ignore file";
+                break;
+        }
+    }
+}
+
+export class PurgeWindowLocalization {
+    readonly statCheck: string;
+    readonly leaveFilledCheck: string;
+    readonly purgeEmptyCheck: string;
+    readonly createIgnoreCheck: string;
+    readonly purgeButtonText: string;
+    readonly disableProcessing: string;
+    readonly disableMapsProcessingOption: string;
+    readonly disableOtherProcessingOption: string;
+    readonly disableSystemProcessingOption: string;
+    readonly disablePluginsProcessingOption: string;
+
+    constructor(language: Language) {
+        switch (language) {
+            case Language.Russian:
+                this.statCheck = "Вывести статистику в файл stat.txt";
+                this.leaveFilledCheck = "Оставить поля, имеющие перевод";
+                this.purgeEmptyCheck = "Удалить только поля, не имеющие перевода";
+                this.createIgnoreCheck =
+                    "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
+                this.purgeButtonText = "Очистка";
+                this.disableProcessing = "Выключить обработку...";
+                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
+                this.disableOtherProcessingOption = "Выключить обработку файлов other";
+                this.disableSystemProcessingOption = "Выключить обработку файла system";
+                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
+                break;
+            default:
+                this.statCheck = "Output statistics to stat.txt file";
+                this.leaveFilledCheck = "Leave the fields that have the translation";
+                this.purgeEmptyCheck = "Purge only the empty fields";
+                this.createIgnoreCheck =
+                    "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
+                this.purgeButtonText = "Purge";
+                this.disableProcessing = "Disable processing of...";
+                this.disableMapsProcessingOption = "Disable maps processing";
+                this.disableOtherProcessingOption = "Disable other processing";
+                this.disableSystemProcessingOption = "Disable system processing";
+                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
                 break;
         }
     }
@@ -574,4 +626,5 @@ export type Localization =
     | AboutWindowLocalization
     | ReadWindowLocalization
     | CompileWindowLocalization
-    | SettingsWindowLocalization;
+    | SettingsWindowLocalization
+    | PurgeWindowLocalization;
