@@ -12,9 +12,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         [document.getElementById("wtfpl-link") as HTMLAnchorElement, "http://www.wtfpl.net"],
     ]);
 
-    for (const [id, url] of links) {
-        id.addEventListener("click", async () => {
+    document.addEventListener("click", async (event) => {
+        const url = links.get(event.target as HTMLAnchorElement);
+
+        if (url) {
             await openLink(url);
-        });
-    }
+        }
+    });
 });
