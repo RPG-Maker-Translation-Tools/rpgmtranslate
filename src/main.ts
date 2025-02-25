@@ -2887,21 +2887,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
 
-    searchMenu.addEventListener("blur", (event) => {
-        const target = event.target as HTMLElement;
-
-        switch (target.id) {
-            case searchInput.id:
-                searchInput.value = searchInput.value.trim();
-                searchInput.calculateHeight();
-                break;
-            case replaceInput.id:
-                replaceInput.value = replaceInput.value.trim();
-                replaceInput.calculateHeight();
-                break;
-        }
-    });
-
     searchMenu.addEventListener("change", (event) => {
         const target = event.target as HTMLElement;
 
