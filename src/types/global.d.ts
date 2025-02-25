@@ -16,7 +16,7 @@ interface Math {
     clamp(value: number, min: number, max: number): number;
 }
 
-interface Settings {
+interface ISettings {
     language: import("./enums").Language;
     backup: {
         enabled: boolean;
@@ -27,17 +27,13 @@ interface Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
-    translation: {
-        from: Intl.UnicodeBCP47LocaleIdentifier;
-        to: Intl.UnicodeBCP47LocaleIdentifier;
-    };
     engineType: import("./enums").EngineType | null;
     rowDeleteMode: import("./enums").RowDeleteMode;
     displayGhostLines: boolean;
     checkForUpdates: boolean;
 }
 
-interface CompileSettings {
+interface ICompileSettings {
     initialized: boolean;
     customOutputPath: {
         enabled: boolean;
@@ -95,9 +91,9 @@ interface Bookmark {
     description: string;
 }
 
-interface ProjectSettings {
+interface IProjectSettings {
     compileSettings: CompileSettings;
-    engineType: import("./enums").EngineType;
+    engineType: import("./enums").EngineType | null;
     translationLanguages: {
         from: string;
         to: string;

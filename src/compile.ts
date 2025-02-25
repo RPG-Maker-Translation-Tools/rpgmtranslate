@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) as HTMLSpanElement;
     const compileButton = document.getElementById("compile-button") as HTMLButtonElement;
 
-    const compileSettings: CompileSettings = projectSettings.compileSettings;
+    const compileSettings: ICompileSettings = projectSettings.compileSettings;
 
     if (compileSettings.customOutputPath.enabled) {
         customOutputPathCheckbox.innerHTML = "check";

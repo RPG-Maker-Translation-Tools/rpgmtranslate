@@ -10,9 +10,9 @@ const appWindow = getCurrentWebviewWindow();
 
 document.addEventListener("DOMContentLoaded", async () => {
     const [settings, windowLocalization] = (await loadWindow("read")) as [
-        Settings,
+        ISettings,
         ReadWindowLocalization,
-        ProjectSettings,
+        IProjectSettings,
     ];
     const { projectPath, engineType } = settings;
 

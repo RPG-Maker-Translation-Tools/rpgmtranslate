@@ -1,6 +1,6 @@
 import { emit, once } from "@tauri-apps/api/event";
 import { attachConsole } from "@tauri-apps/plugin-log";
-import { EngineType, Language, RowDeleteMode } from "../types/enums";
+import { EngineType } from "../types/enums";
 import {
     AboutWindowLocalization,
     CompileWindowLocalization,
@@ -132,66 +132,11 @@ export function determineExtension(engineType: EngineType): string {
     }
 }
 
-export class CompileSettings {
-    initialized: boolean;
-    customOutputPath: {
-        enabled: boolean;
-        path: string;
-    };
-    disableProcessing: {
-        enabled: boolean;
-        of: {
-            maps: boolean;
-            other: boolean;
-            system: boolean;
-            plugins: boolean;
-        };
-    };
-    doNotAskAgain: boolean;
-
-    constructor() {
-        this.initialized = false;
-        this.customOutputPath = { enabled: false, path: "" };
-        this.disableProcessing = { enabled: false, of: { maps: false, other: false, system: false, plugins: false } };
-        this.doNotAskAgain = true;
-    }
-}
-
-export class Settings {
-    language: Language;
-    backup: {
-        enabled: boolean;
-        period: number;
-        max: number;
-    };
-    theme: string;
-    fontUrl: string;
-    firstLaunch: boolean;
-    projectPath: string;
-    engineType: EngineType | null;
-    rowDeleteMode: RowDeleteMode;
-    displayGhostLines: boolean;
-    checkForUpdates: boolean;
-
-    constructor(language: Language) {
-        this.language = language;
-        this.backup = { enabled: true, period: 60, max: 99 };
-        this.theme = "cool-zinc";
-        this.fontUrl = "";
-        this.firstLaunch = true;
-        this.projectPath = "";
-        this.engineType = null;
-        this.rowDeleteMode = RowDeleteMode.Disabled;
-        this.displayGhostLines = false;
-        this.checkForUpdates = true;
-    }
-}
-
 export async function loadWindow(
     window: "about" | "read" | "compile" | "settings" | "purge",
 ): Promise<
     [
-        Settings,
+        ISettings,
         (
             | AboutWindowLocalization
             | ReadWindowLocalization
@@ -199,13 +144,13 @@ export async function loadWindow(
             | SettingsWindowLocalization
             | PurgeWindowLocalization
         ),
-        ProjectSettings,
+        IProjectSettings,
     ]
 > {
     await attachConsole();
-    let settings!: Settings, theme!: Theme, projectSettings!: ProjectSettings;
+    let settings!: ISettings, theme!: Theme, projectSettings!: IProjectSettings;
 
-    await once<[Settings, Theme, ProjectSettings]>("settings", (data) => {
+    await once<[ISettings, Theme, IProjectSettings]>("settings", (data) => {
         [settings, theme, projectSettings] = data.payload;
     });
 

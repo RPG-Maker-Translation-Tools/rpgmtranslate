@@ -1,12 +1,4 @@
-import {
-    animateProgressText,
-    applyLocalization,
-    applyTheme,
-    CompileSettings,
-    getThemeStyleSheet,
-    join,
-    Settings,
-} from "./extensions/functions";
+import { animateProgressText, applyLocalization, applyTheme, getThemeStyleSheet, join } from "./extensions/functions";
 import "./extensions/htmlelement-extensions";
 import {
     addToScope,
@@ -57,6 +49,7 @@ const Resource = 11;
 const appWindow = getCurrentWebviewWindow();
 
 import XRegExp from "xregexp";
+import { CompileSettings, ProjectSettings, Settings } from "./types/classes";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
@@ -131,7 +124,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         bookmarksMenu.appendChild(bookmarkElement);
     }
 
-    async function createSettings(): Promise<Settings | undefined> {
+    async function createSettings(): Promise<ISettings | undefined> {
         let language: Language;
 
         const locale: string = (await getLocale()) ?? "en";
@@ -1416,7 +1409,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             projectSettings.compileSettings = new CompileSettings();
         }
 
-        const compileSettings: CompileSettings = projectSettings.compileSettings;
+        const compileSettings: ICompileSettings = projectSettings.compileSettings;
 
         if (!compileSettings.initialized || !compileSettings.doNotAskAgain || !silent) {
             const compileWindow = new WebviewWindow("compile", {
@@ -1676,7 +1669,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     fromLanguageInput.value = projectSettings.translationLanguages.from;
                 }
             } else {
-                projectSettings = {} as ProjectSettings;
+                projectSettings = new ProjectSettings();
             }
 
             if (typeof projectSettings.engineType === "number") {
@@ -2153,8 +2146,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let localization!: MainWindowLocalization;
 
-    let settings: Settings = (await exists(settingsPath, { baseDir: Resource }))
-        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as Settings)
+    let settings: ISettings = (await exists(settingsPath, { baseDir: Resource }))
+        ? (JSON.parse(await readTextFile(settingsPath, { baseDir: Resource })) as ISettings)
         : (await createSettings())!;
 
     const themes = JSON.parse(await readTextFile("res/themes.json", { baseDir: Resource })) as ThemeObject;
@@ -2287,7 +2280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let batchWindowAction!: BatchAction;
     let nextBackupNumber: number;
 
-    let projectSettings!: ProjectSettings;
+    let projectSettings!: IProjectSettings;
 
     const batchSelectWindowChecked: HTMLElement[] = [];
 
@@ -2401,7 +2394,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     resizable: false,
                 });
 
-                const settingsUnlisten = await settingsWindow.once<Settings>("get-settings", async (data) => {
+                const settingsUnlisten = await settingsWindow.once<ISettings>("get-settings", async (data) => {
                     settings = data.payload;
 
                     if (settings.backup.enabled && !backupIsActive) {
