@@ -7,12 +7,12 @@
     },
     "bundle": {
         "active": true,
-        "targets": ["msi", "appimage", "deb"],
+        "targets": ["nsis", "msi", "appimage", "deb"],
         "windows": {
             "allowDowngrades": true,
             "certificateThumbprint": null,
             "digestAlgorithm": null,
-            "nsis": null,
+            "nsis": { "languages": ["English", "Russian"], "installMode": "both", "displayLanguageSelector": true },
             "timestampUrl": null,
             "tsp": false,
             "wix": {
