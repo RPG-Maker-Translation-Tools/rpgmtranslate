@@ -2195,7 +2195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (update) {
                 const installUpdate = await ask(
-                    `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}`,
+                    `${localization.newVersionFound}: ${update.version}\n${localization.currentVersion}: ${update.currentVersion}\nRelease notes: https://github.com/savannstm/rpgmtranslate/releases/latest`,
                     { title: localization.updateAvailable, okLabel: localization.installUpdate },
                 );
 
