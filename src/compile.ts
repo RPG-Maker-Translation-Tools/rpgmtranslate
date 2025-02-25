@@ -1,40 +1,22 @@
-import { applyLocalization, applyTheme, getThemeStyleSheet, join } from "./extensions/functions";
-import { CompileWindowLocalization } from "./extensions/localization";
+import { join, loadWindow } from "./extensions/functions";
 
-import { emit, once } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { open as openPath } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { attachConsole } from "@tauri-apps/plugin-log";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 const appWindow = getCurrentWebviewWindow();
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await attachConsole();
-    let settings!: Settings;
-    let theme!: Theme;
-
-    await once<[Settings, Theme]>("settings", (data) => {
-        [settings, theme] = data.payload;
-    });
-
-    await emit("fetch-settings");
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const { projectPath, language } = settings;
-
-    applyTheme(getThemeStyleSheet()!, theme);
-    applyLocalization(new CompileWindowLocalization(language));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [settings, _, projectSettings] = await loadWindow("compile");
+    const { projectPath } = settings;
 
     const settingsContainer = document.getElementById("settings-container") as HTMLDivElement;
-    const romanizeCheckbox = document.getElementById("romanize-checkbox") as HTMLSpanElement;
-    const customProcessingCheckbox = document.getElementById("custom-processing-checkbox") as HTMLSpanElement;
     const customOutputPathCheckbox = document.getElementById("custom-output-path-checkbox") as HTMLSpanElement;
     const customOutputPathSettings = document.getElementById("custom-output-path-settings") as HTMLDivElement;
     const disableProcessingCheckbox = document.getElementById("disable-processing-checkbox") as HTMLSpanElement;
     const disableProcessingSettings = document.getElementById("disable-processing-settings") as HTMLDivElement;
     const doNotAskAgainCheckbox = document.getElementById("dont-ask-again-checkbox") as HTMLSpanElement;
-    const mapsProcessingModeSelect = document.getElementById("maps-processing-mode-select") as HTMLSelectElement;
     const outputPath = document.getElementById("output-path") as HTMLInputElement;
     const disableMapsProcessingCheckbox = document.getElementById(
         "disable-maps-processing-checkbox",
@@ -50,31 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) as HTMLSpanElement;
     const compileButton = document.getElementById("compile-button") as HTMLButtonElement;
 
-    const compileSettings: CompileSettings = JSON.parse(
-        await readTextFile(join(projectPath, ".rpgmtranslate", "compile-settings.json")),
-    ) as CompileSettings;
-
-    if (typeof compileSettings.mapsProcessingMode !== "number") {
-        compileSettings.mapsProcessingMode = 0;
-    }
-
-    if (typeof compileSettings.romanize !== "boolean") {
-        compileSettings.romanize = false;
-    }
-
-    if (typeof compileSettings.disableCustomProcessing !== "boolean") {
-        compileSettings.disableCustomProcessing = false;
-    }
-
-    romanizeCheckbox.innerHTML = compileSettings.romanize ? "check" : "";
-    customProcessingCheckbox.innerHTML = compileSettings.disableCustomProcessing ? "check" : "";
-
-    mapsProcessingModeSelect.value = compileSettings.mapsProcessingMode.toString();
-
-    mapsProcessingModeSelect.addEventListener(
-        "change",
-        () => (compileSettings.mapsProcessingMode = Number.parseInt(mapsProcessingModeSelect.value)),
-    );
+    const compileSettings: CompileSettings = projectSettings.compileSettings;
 
     if (compileSettings.customOutputPath.enabled) {
         customOutputPathCheckbox.innerHTML = "check";

@@ -1,11 +1,10 @@
-import { applyLocalization, applyTheme, getThemeStyleSheet } from "./extensions/functions";
+import { loadWindow } from "./extensions/functions";
 import { addToScope, walkDir } from "./extensions/invokes";
-import { SettingsWindowLocalization } from "./extensions/localization";
 import "./extensions/math-extensions";
 import { RowDeleteMode } from "./types/enums";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { emit, once } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
 const appWindow = getCurrentWebviewWindow();
@@ -35,21 +34,7 @@ async function fetchFonts(): Promise<FontObject> {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    let settings!: Settings;
-    let theme!: Theme;
-
-    await once<[Settings, Theme]>("settings", (data) => {
-        [settings, theme] = data.payload;
-    });
-
-    await emit("fetch-settings");
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    applyTheme(getThemeStyleSheet()!, theme);
-
-    const windowLocalization = new SettingsWindowLocalization(settings.language);
-    applyLocalization(windowLocalization);
+    const [settings] = await loadWindow("settings");
 
     const backupCheck = document.getElementById("backup-check") as HTMLSpanElement;
     const backupSettings = document.getElementById("backup-settings") as HTMLDivElement;

@@ -1,33 +1,20 @@
-import { animateProgressText, applyLocalization, applyTheme, getThemeStyleSheet, join } from "./extensions/functions";
-import { read } from "./extensions/invokes";
+import { animateProgressText, join, loadWindow } from "./extensions/functions";
+import { read, readLastLine } from "./extensions/invokes";
 import { ReadWindowLocalization } from "./extensions/localization";
 import { EngineType, ProcessingMode } from "./types/enums";
 
-import { emit, once } from "@tauri-apps/api/event";
+import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { exists } from "@tauri-apps/plugin-fs";
-import { attachConsole } from "@tauri-apps/plugin-log";
 const appWindow = getCurrentWebviewWindow();
 
 document.addEventListener("DOMContentLoaded", async () => {
-    await attachConsole();
-    let settings!: Settings;
-    let theme!: Theme;
-
-    await once<[Settings, Theme]>("settings", (data) => {
-        [settings, theme] = data.payload;
-    });
-
-    await emit("fetch-settings");
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const { projectPath, language, engineType } = settings;
-
-    applyTheme(getThemeStyleSheet()!, theme);
-
-    const windowLocalization = new ReadWindowLocalization(language);
-    applyLocalization(windowLocalization);
+    const [settings, windowLocalization] = (await loadWindow("read")) as [
+        Settings,
+        ReadWindowLocalization,
+        ProjectSettings,
+    ];
+    const { projectPath, engineType } = settings;
 
     const settingsContainer = document.getElementById("settings-container") as HTMLDivElement;
     const readingModeSelect = document.getElementById("reading-mode-select") as HTMLSelectElement;

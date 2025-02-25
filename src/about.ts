@@ -1,28 +1,8 @@
-import { applyLocalization, applyTheme, getThemeStyleSheet } from "./extensions/functions";
-import { AboutWindowLocalization } from "./extensions/localization";
-
-import { getVersion } from "@tauri-apps/api/app";
-import { emit, once } from "@tauri-apps/api/event";
 import { open as openLink } from "@tauri-apps/plugin-shell";
+import { loadWindow } from "./extensions/functions";
 
 document.addEventListener("DOMContentLoaded", async () => {
-    let settings!: Settings;
-    let theme!: Theme;
-
-    await once<[Settings, Theme]>("settings", (data) => {
-        [settings, theme] = data.payload;
-    });
-
-    await emit("fetch-settings");
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const { language } = settings;
-
-    applyTheme(getThemeStyleSheet()!, theme);
-    applyLocalization(new AboutWindowLocalization(language));
-
-    (document.getElementById("version-number") as HTMLSpanElement).innerHTML = await getVersion();
+    await loadWindow("about");
 
     const links = new Map([
         [document.getElementById("vk-link") as HTMLAnchorElement, "https://vk.com/stivhuis228"],

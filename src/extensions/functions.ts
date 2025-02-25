@@ -1,5 +1,14 @@
+import { emit, once } from "@tauri-apps/api/event";
+import { attachConsole } from "@tauri-apps/plugin-log";
 import { EngineType, Language, RowDeleteMode } from "../types/enums";
-import { Localization } from "./localization";
+import {
+    AboutWindowLocalization,
+    CompileWindowLocalization,
+    Localization,
+    PurgeWindowLocalization,
+    ReadWindowLocalization,
+    SettingsWindowLocalization,
+} from "./localization";
 
 export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]) {
     if (Array.isArray(theme)) {
@@ -125,9 +134,6 @@ export function determineExtension(engineType: EngineType): string {
 
 export class CompileSettings {
     initialized: boolean;
-    romanize: boolean;
-    mapsProcessingMode: number;
-    disableCustomProcessing: boolean;
     customOutputPath: {
         enabled: boolean;
         path: string;
@@ -142,17 +148,12 @@ export class CompileSettings {
         };
     };
     doNotAskAgain: boolean;
-    logging: boolean;
 
     constructor() {
         this.initialized = false;
-        this.romanize = false;
-        this.mapsProcessingMode = 0;
-        this.disableCustomProcessing = false;
         this.customOutputPath = { enabled: false, path: "" };
         this.disableProcessing = { enabled: false, of: { maps: false, other: false, system: false, plugins: false } };
         this.doNotAskAgain = true;
-        this.logging = false;
     }
 }
 
@@ -167,7 +168,6 @@ export class Settings {
     fontUrl: string;
     firstLaunch: boolean;
     projectPath: string;
-    translation: { from: Intl.UnicodeBCP47LocaleIdentifier; to: Intl.UnicodeBCP47LocaleIdentifier };
     engineType: EngineType | null;
     rowDeleteMode: RowDeleteMode;
     displayGhostLines: boolean;
@@ -180,10 +180,61 @@ export class Settings {
         this.fontUrl = "";
         this.firstLaunch = true;
         this.projectPath = "";
-        this.translation = { from: "", to: "" };
         this.engineType = null;
         this.rowDeleteMode = RowDeleteMode.Disabled;
         this.displayGhostLines = false;
         this.checkForUpdates = true;
     }
+}
+
+export async function loadWindow(
+    window: "about" | "read" | "compile" | "settings" | "purge",
+): Promise<
+    [
+        Settings,
+        (
+            | AboutWindowLocalization
+            | ReadWindowLocalization
+            | CompileWindowLocalization
+            | SettingsWindowLocalization
+            | PurgeWindowLocalization
+        ),
+        ProjectSettings,
+    ]
+> {
+    await attachConsole();
+    let settings!: Settings, theme!: Theme, projectSettings!: ProjectSettings;
+
+    await once<[Settings, Theme, ProjectSettings]>("settings", (data) => {
+        [settings, theme, projectSettings] = data.payload;
+    });
+
+    await emit("fetch-settings");
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    applyTheme(getThemeStyleSheet()!, theme);
+
+    let windowLocalization;
+    switch (window) {
+        case "about":
+            windowLocalization = new AboutWindowLocalization(settings.language);
+            break;
+        case "read":
+            windowLocalization = new ReadWindowLocalization(settings.language);
+            break;
+        case "compile":
+            windowLocalization = new CompileWindowLocalization(settings.language);
+            break;
+        case "settings":
+            windowLocalization = new SettingsWindowLocalization(settings.language);
+            break;
+        case "purge":
+            windowLocalization = new PurgeWindowLocalization(settings.language);
+            break;
+    }
+
+    applyLocalization(windowLocalization);
+
+    return [settings, windowLocalization, projectSettings];
 }
