@@ -1,12 +1,54 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ProcessingMode } from "../types/enums";
+import { EngineType, ProcessingMode } from "../types/enums";
 
-export async function read(args: ReadArgs) {
-    await invoke("read", { settings: args });
+export async function read(
+    projectPath: string,
+    originalDir: string,
+    gameTitle: string,
+    mapsProcessingMode: number,
+    romanize: boolean,
+    disableCustomProcessing: boolean,
+    disableProcessing: boolean[],
+    processingMode: ProcessingMode,
+    engineType: EngineType,
+    ignore: boolean,
+) {
+    await invoke("read", {
+        projectPath,
+        originalDir,
+        gameTitle,
+        mapsProcessingMode,
+        romanize,
+        disableCustomProcessing,
+        disableProcessing,
+        processingMode,
+        engineType,
+        ignore,
+    });
 }
 
-export async function compile(args: CompileArgs): Promise<string> {
-    return await invoke<string>("compile", { settings: args });
+export async function compile(
+    projectPath: string,
+    originalDir: string,
+    outputPath: string,
+    gameTitle: string,
+    mapsProcessingMode: number,
+    romanize: boolean,
+    disableCustomProcessing: boolean,
+    disableProcessing: boolean[],
+    engineType: EngineType,
+): Promise<string> {
+    return await invoke<string>("compile", {
+        projectPath,
+        originalDir,
+        outputPath,
+        gameTitle,
+        mapsProcessingMode,
+        romanize,
+        disableCustomProcessing,
+        disableProcessing,
+        engineType,
+    });
 }
 
 export async function escapeText(args: { text: string }): Promise<string> {
@@ -40,4 +82,34 @@ export async function appendToEnd(args: { path: string; text: string }) {
 
 export async function walkDir(dir: string): Promise<string[]> {
     return await invoke("walk_dir", { dir });
+}
+
+export async function purge(
+    projectPath: string,
+    originalDir: string,
+    gameTitle: string,
+    mapsProcessingMode: number,
+    romanize: boolean,
+    disableCustomProcessing: boolean,
+    disableProcessing: boolean[],
+    engineType: EngineType,
+    stat: boolean,
+    leaveFilled: boolean,
+    purgeEmpty: boolean,
+    createIgnore: boolean,
+) {
+    await invoke("purge", {
+        projectPath,
+        originalDir,
+        gameTitle,
+        mapsProcessingMode,
+        romanize,
+        disableCustomProcessing,
+        disableProcessing,
+        engineType,
+        stat,
+        leaveFilled,
+        purgeEmpty,
+        createIgnore,
+    });
 }

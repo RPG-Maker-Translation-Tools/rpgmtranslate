@@ -37,14 +37,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) as HTMLSpanElement;
     const readButton = document.getElementById("read-button") as HTMLButtonElement;
     const mapsProcessingModeSelect = document.getElementById("maps-processing-mode-select") as HTMLSelectElement;
+    const ignoreContainer = document.getElementById("ignore-container") as HTMLDivElement;
+    const ignoreCheckbox = document.getElementById("ignore-checkbox") as HTMLSpanElement;
 
     readingModeSelect.addEventListener("change", () => {
         if (readingModeSelect.value === "append") {
             modeDescription.innerHTML = windowLocalization.appendModeDescription;
+            ignoreContainer.classList.replace("hidden", "flex");
         } else if (readingModeSelect.value === "force") {
             modeDescription.innerHTML = windowLocalization.forceModeDescription;
+            ignoreContainer.classList.replace("flex", "hidden");
         } else {
             modeDescription.innerHTML = "";
+            ignoreContainer.classList.replace("flex", "hidden");
         }
     });
 
@@ -135,55 +140,56 @@ document.addEventListener("DOMContentLoaded", async () => {
             plugins: Boolean(disablePluginsProcessingCheckbox.textContent),
         };
 
-        await once<string[]>("metadata", async (data) => {
-            const gameTitle = data.payload[0];
-
-            let originalDir: string;
-
-            if (await exists(join(projectPath, "original"))) {
-                originalDir = "original";
-            } else if (engineType === EngineType.New) {
-                originalDir = "data";
-            } else {
-                originalDir = "Data";
-            }
-
-            const progressText = document.getElementById("progress-text") as HTMLDivElement;
-
-            let processingMode = ProcessingMode.Default;
-
-            if (readingModeSelect.value === "append") {
-                progressText.innerHTML = windowLocalization.readingInAppendMode;
-                processingMode = ProcessingMode.Append;
-            } else if (readingModeSelect.value === "force") {
-                progressText.innerHTML = windowLocalization.readingInForceMode;
-                processingMode = ProcessingMode.Force;
-            }
-
-            const progressWindow = document.getElementById("progress-window") as HTMLDivElement;
-            progressWindow.classList.remove("hidden");
-
-            animateProgressText(progressText);
-
-            reading = true;
-
-            await read({
-                projectPath,
-                originalDir,
-                gameTitle,
-                mapsProcessingMode: Number.parseInt(mapsProcessingModeSelect.value),
-                romanize: Boolean(romanizeCheckbox.textContent),
-                disableCustomProcessing: Boolean(customProcessingCheckbox.textContent),
-                disableProcessing: Object.values(disableProcessings),
-                processingMode,
-                engineType: engineType!,
-                language: settings.language,
-                logging: true,
-            });
-
-            await emit("restart");
-            await appWindow.close();
+        const gameTitleRow = await readLastLine({
+            filePath: join(settings.projectPath, ".rpgmtranslate", "translation", "system.txt"),
         });
+
+        const gameTitle = gameTitleRow.split("<#>")[0];
+
+        let originalDir: string;
+
+        if (await exists(join(projectPath, "original"))) {
+            originalDir = "original";
+        } else if (engineType === EngineType.New) {
+            originalDir = "data";
+        } else {
+            originalDir = "Data";
+        }
+
+        const progressText = document.getElementById("progress-text") as HTMLDivElement;
+
+        let processingMode = ProcessingMode.Default;
+
+        if (readingModeSelect.value === "append") {
+            progressText.innerHTML = windowLocalization.readingInAppendMode;
+            processingMode = ProcessingMode.Append;
+        } else if (readingModeSelect.value === "force") {
+            progressText.innerHTML = windowLocalization.readingInForceMode;
+            processingMode = ProcessingMode.Force;
+        }
+
+        const progressWindow = document.getElementById("progress-window") as HTMLDivElement;
+        progressWindow.classList.remove("hidden");
+
+        animateProgressText(progressText);
+
+        reading = true;
+
+        await read(
+            projectPath,
+            originalDir,
+            gameTitle,
+            Number.parseInt(mapsProcessingModeSelect.value),
+            Boolean(romanizeCheckbox.textContent),
+            Boolean(customProcessingCheckbox.textContent),
+            Object.values(disableProcessings),
+            processingMode,
+            engineType!,
+            processingMode === ProcessingMode.Append ? Boolean(ignoreCheckbox.textContent) : false,
+        );
+
+        await emit("restart");
+        await appWindow.close();
 
         await emit("fetch");
     });

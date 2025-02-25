@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="material.css" />
+        <link rel="stylesheet" href="theme-styles.css" />
+        <script type="module" src="purge.ts" defer></script>
+    </head>
+    <body class="backgroundDark textPrimary text-lg">
+        <div class="flex flex-col p-8" id="options-menu">
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
+                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="stat-check"></span>
+                <span class="statCheck"></span>
+            </div>
+
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
+                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="leave-filled-check"></span>
+                <span class="leaveFilledCheck"></span>
+            </div>
+
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
+                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="purge-empty-check"></span>
+                <span class="purgeEmptyCheck"></span>
+            </div>
+
+            <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
+                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="create-ignore-check"></span>
+                <span class="createIgnoreCheck"></span>
+            </div>
+
+            <div class="backgroundDark z-50 flex flex-row gap-2 pt-2">
+                <span
+                    class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                    id="disable-processing-checkbox"
+                ></span>
+                <span class="disableProcessing"></span>
+            </div>
+
+            <div class="z-40 flex-col pl-4 transition-transform duration-300" id="disable-processing-settings">
+                <div class="flex flex-row gap-2 pt-2">
+                    <span
+                        class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                        id="disable-maps-processing-checkbox"
+                    ></span>
+                    <span class="disableMapsProcessingOption"></span>
+                </div>
+
+                <div class="flex flex-row gap-2 pt-2">
+                    <span
+                        class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                        id="disable-other-processing-checkbox"
+                    ></span>
+                    <span class="disableOtherProcessingOption"></span>
+                </div>
+
+                <div class="flex flex-row gap-2 pt-2">
+                    <span
+                        class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                        id="disable-system-processing-checkbox"
+                    ></span>
+                    <span class="disableSystemProcessingOption"></span>
+                </div>
+
+                <div class="flex flex-row gap-2 pt-2">
+                    <span
+                        class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
+                    <span class="disablePluginsProcessingOption"></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center pt-4">
+                <button
+                    class="button backgroundPrimaryHovered borderPrimary textThird purgeButtonText h-8 w-48 rounded-md border-2 text-xl"
+                    id="purge-button"
+                ></button>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,14 +1,16 @@
+#![allow(clippy::too_many_arguments)]
+
 use lazy_static::lazy_static;
 use regex::{escape, Regex};
 use rpgmad_lib::Decrypter;
 use rvpacker_lib::{
+    purge::{purge_map, purge_other, purge_plugins, purge_scripts, purge_system},
     read::*,
     types::{EngineType, GameType, MapsProcessingMode, ProcessingMode, ResultExt},
     write::*,
 };
-use serde::Deserialize;
 use std::{
-    fs::{self, create_dir_all, File, OpenOptions},
+    fs::{self, create_dir_all, remove_file, File, OpenOptions},
     io::{Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     time::{Duration, Instant},
@@ -18,36 +20,6 @@ use tauri_plugin_fs::FsExt;
 use tokio::time::sleep;
 use translators::{GoogleTranslator, Translator};
 use walkdir::WalkDir;
-
-#[derive(Deserialize)]
-#[allow(non_snake_case)]
-pub struct CompileSettings<'a> {
-    projectPath: &'a Path,
-    originalDir: &'a Path,
-    outputPath: &'a Path,
-    gameTitle: &'a str,
-    mapsProcessingMode: MapsProcessingMode,
-    romanize: bool,
-    disableCustomProcessing: bool,
-    disableProcessing: [bool; 4],
-    engineType: EngineType,
-    logging: bool,
-}
-
-#[derive(Deserialize)]
-#[allow(non_snake_case)]
-pub struct ReadSettings<'a> {
-    projectPath: &'a Path,
-    originalDir: &'a Path,
-    gameTitle: &'a str,
-    mapsProcessingMode: MapsProcessingMode,
-    romanize: bool,
-    disableCustomProcessing: bool,
-    disableProcessing: [bool; 4],
-    processingMode: ProcessingMode,
-    engineType: EngineType,
-    logging: bool,
-}
 
 lazy_static! {
     pub static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
@@ -85,19 +57,18 @@ pub fn walk_dir(dir: &str) -> Vec<String> {
 }
 
 #[command(async)]
-pub fn compile(settings: CompileSettings) -> f64 {
-    let CompileSettings {
-        projectPath: project_path,
-        originalDir: original_dir,
-        outputPath: output_path,
-        gameTitle: game_title,
-        mapsProcessingMode: maps_processing_mode,
-        romanize,
-        disableCustomProcessing: disable_custom_processing,
-        disableProcessing: disable_processing,
-        engineType: engine_type,
-        logging,
-    } = settings;
+pub fn compile(
+    project_path: &Path,
+    original_dir: &Path,
+    output_path: &Path,
+    game_title: &str,
+    maps_processing_mode: MapsProcessingMode,
+    romanize: bool,
+    disable_custom_processing: bool,
+    disable_processing: [bool; 4],
+    engine_type: EngineType,
+) -> f64 {
+    const LOGGING: bool = true;
 
     let start_time: Instant = Instant::now();
 
@@ -143,7 +114,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
             data_output_path,
             maps_processing_mode,
             romanize,
-            logging,
+            LOGGING,
             game_type,
             engine_type,
         );
@@ -155,7 +126,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
             original_path,
             data_output_path,
             romanize,
-            logging,
+            LOGGING,
             game_type,
             engine_type,
         );
@@ -167,7 +138,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
             translation_path,
             data_output_path,
             romanize,
-            logging,
+            LOGGING,
             engine_type,
         );
     }
@@ -178,7 +149,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
                 &js_path.join("plugins.js"),
                 translation_path,
                 &unsafe { plugins_output_path.unwrap_unchecked() },
-                logging,
+                LOGGING,
                 romanize,
             );
         } else {
@@ -187,7 +158,7 @@ pub fn compile(settings: CompileSettings) -> f64 {
                 translation_path,
                 data_output_path,
                 romanize,
-                logging,
+                LOGGING,
                 engine_type,
             );
         }
@@ -197,19 +168,19 @@ pub fn compile(settings: CompileSettings) -> f64 {
 }
 
 #[command(async)]
-pub fn read(settings: ReadSettings) {
-    let ReadSettings {
-        projectPath: project_path,
-        originalDir: original_dir,
-        gameTitle: game_title,
-        mapsProcessingMode: maps_processing_mode,
-        romanize,
-        disableCustomProcessing: disable_custom_processing,
-        disableProcessing: disable_processing,
-        processingMode: processing_mode,
-        engineType: engine_type,
-        logging,
-    } = settings;
+pub fn read(
+    project_path: &Path,
+    original_dir: &Path,
+    game_title: &str,
+    maps_processing_mode: MapsProcessingMode,
+    romanize: bool,
+    disable_custom_processing: bool,
+    disable_processing: [bool; 4],
+    processing_mode: ProcessingMode,
+    engine_type: EngineType,
+    ignore: bool,
+) {
+    const LOGGING: bool = true;
 
     let processing_mode: ProcessingMode = processing_mode;
     let engine_type: EngineType = engine_type;
@@ -241,10 +212,11 @@ pub fn read(settings: ReadSettings) {
             translation_path,
             maps_processing_mode,
             romanize,
-            logging,
+            LOGGING,
             game_type,
             engine_type,
             processing_mode,
+            ignore,
         );
     }
 
@@ -253,10 +225,11 @@ pub fn read(settings: ReadSettings) {
             original_path,
             translation_path,
             romanize,
-            logging,
+            LOGGING,
             game_type,
             processing_mode,
             engine_type,
+            ignore,
         );
     }
 
@@ -265,9 +238,10 @@ pub fn read(settings: ReadSettings) {
             &original_path.join(String::from("System") + extension),
             translation_path,
             romanize,
-            logging,
+            LOGGING,
             processing_mode,
             engine_type,
+            ignore,
         );
     }
 
@@ -277,16 +251,131 @@ pub fn read(settings: ReadSettings) {
                 js_path.join("plugins.js"),
                 translation_path.to_path_buf(),
                 romanize,
-                logging,
+                LOGGING,
                 processing_mode,
+                ignore,
             );
         } else {
             read_scripts(
                 &original_path.join(String::from("Scripts") + extension),
                 translation_path,
                 romanize,
-                logging,
+                LOGGING,
                 processing_mode,
+                ignore,
+            );
+        }
+    }
+}
+
+#[command]
+pub fn purge(
+    project_path: &Path,
+    original_dir: &Path,
+    game_title: &str,
+    maps_processing_mode: MapsProcessingMode,
+    romanize: bool,
+    disable_custom_processing: bool,
+    disable_processing: [bool; 4],
+    engine_type: EngineType,
+    stat: bool,
+    leave_filled: bool,
+    purge_empty: bool,
+    create_ignore: bool,
+) {
+    const LOGGING: bool = true;
+
+    let extension: &str = match engine_type {
+        EngineType::New => ".json",
+        EngineType::VXAce => ".rvdata2",
+        EngineType::VX => ".rvdata",
+        EngineType::XP => ".rxdata",
+    };
+
+    let game_type: Option<GameType> = if disable_custom_processing {
+        None
+    } else {
+        get_game_type(game_title)
+    };
+
+    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
+    let original_path: &PathBuf = &project_path.join(original_dir);
+    let js_path: &PathBuf = &project_path.join("js");
+    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
+
+    if stat && translation_path.join("stat.txt").exists() {
+        remove_file(translation_path.join("stat.txt")).unwrap_log();
+    }
+
+    create_dir_all(translation_path).unwrap_log();
+
+    if !disable_processing[0] {
+        purge_map(
+            original_path,
+            translation_path,
+            maps_processing_mode,
+            romanize,
+            LOGGING,
+            game_type,
+            engine_type,
+            stat,
+            leave_filled,
+            purge_empty,
+            create_ignore,
+        );
+    }
+
+    if !disable_processing[1] {
+        purge_other(
+            original_path,
+            translation_path,
+            romanize,
+            LOGGING,
+            game_type,
+            engine_type,
+            stat,
+            leave_filled,
+            purge_empty,
+            create_ignore,
+        );
+    }
+
+    if !disable_processing[2] {
+        purge_system(
+            &original_path.join(String::from("System") + extension),
+            translation_path,
+            romanize,
+            LOGGING,
+            engine_type,
+            stat,
+            leave_filled,
+            purge_empty,
+            create_ignore,
+        );
+    }
+
+    if !disable_processing[3] {
+        if engine_type == EngineType::New {
+            purge_plugins(
+                js_path.join("plugins.js"),
+                translation_path.to_path_buf(),
+                romanize,
+                LOGGING,
+                stat,
+                leave_filled,
+                purge_empty,
+                create_ignore,
+            );
+        } else {
+            purge_scripts(
+                &original_path.join(String::from("Scripts") + extension),
+                translation_path,
+                romanize,
+                LOGGING,
+                stat,
+                leave_filled,
+                purge_empty,
+                create_ignore,
             );
         }
     }

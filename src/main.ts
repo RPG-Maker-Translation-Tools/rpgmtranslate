@@ -1401,43 +1401,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             compileButton.firstElementChild!.classList.add("animate-spin");
 
-            let incorrectCompileSettings = false;
-
-            if (typeof compileSettings.mapsProcessingMode !== "number") {
-                compileSettings.mapsProcessingMode = 0;
-                incorrectCompileSettings = true;
-            }
-
-            if (typeof compileSettings.romanize !== "boolean") {
-                compileSettings.romanize = false;
-                incorrectCompileSettings = true;
-            }
-
-            if (typeof compileSettings.disableCustomProcessing !== "boolean") {
-                compileSettings.disableCustomProcessing = false;
-                incorrectCompileSettings = true;
-            }
-
-            if (incorrectCompileSettings) {
-                await writeTextFile(
-                    join(settings.projectPath, programDataDir, "compile-settings.json"),
-                    JSON.stringify(compileSettings),
-                );
-            }
-
-            const executionTime = await compile({
-                projectPath: settings.projectPath,
+            const executionTime = await compile(
+                settings.projectPath,
                 originalDir,
-                outputPath: compileSettings.customOutputPath.path,
-                gameTitle: currentGameTitle.value,
-                mapsProcessingMode: compileSettings.mapsProcessingMode,
-                romanize: compileSettings.romanize,
-                disableCustomProcessing: compileSettings.disableCustomProcessing,
-                disableProcessing: Object.values(compileSettings.disableProcessing.of),
-                engineType: settings.engineType!,
-                logging: true,
-                language: settings.language,
-            });
+                compileSettings.customOutputPath.path,
+                currentGameTitle.value,
+                projectSettings.mapsProcessingMode,
+                projectSettings.romanize,
+                projectSettings.disableCustomProcessing,
+                Object.values(compileSettings.disableProcessing.of),
+                settings.engineType!,
+            );
 
             compileButton.firstElementChild!.classList.remove("animate-spin");
             alert(`${localization.compileSuccess} ${executionTime}`);
@@ -1741,19 +1715,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                     }
 
-                    await read({
-                        projectPath: settings.projectPath,
+                    await read(
+                        settings.projectPath,
                         originalDir,
                         gameTitle,
-                        mapsProcessingMode: 0,
-                        romanize: false,
-                        disableCustomProcessing: false,
-                        disableProcessing: [false, false, false, false],
-                        processingMode: ProcessingMode.Default,
-                        engineType: settings.engineType!,
-                        logging: true,
-                        language: settings.language,
-                    });
+                        1,
+                        false,
+                        false,
+                        [false, false, false, false],
+                        ProcessingMode.Default,
+                        settings.engineType!,
+                        false,
+                    );
 
                     await appendToEnd({
                         path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
@@ -2495,6 +2468,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
                 });
                 break;
+            case "purge-button": {
+                new WebviewWindow("purge", {
+                    title: localization.purgeWindowTitle,
+                    url: "purge.html",
+                    center: true,
+                });
+                break;
+            }
         }
     });
 

@@ -34,7 +34,8 @@ fn main() {
             add_to_scope,
             extract_archive,
             append_to_end,
-            walk_dir
+            walk_dir,
+            purge
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]
