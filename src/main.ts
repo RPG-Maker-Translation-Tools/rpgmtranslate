@@ -2616,7 +2616,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            // TODO: Implement logic for search-button
+            case "search-button":
+                if (searchInput.value.trim()) {
+                    searchPanelFound.innerHTML = "";
+                    await displaySearchResults(searchInput.value, false);
+                }
+                break;
             case "replace-button": {
                 const replacer = replaceInput.value.trim();
                 if (searchInput.value.trim() && replacer) {
