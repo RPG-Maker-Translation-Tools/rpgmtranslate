@@ -12,6 +12,7 @@ import {
 } from "./extensions/invokes";
 import { MainWindowLocalization } from "./extensions/localization";
 import "./extensions/string-extensions";
+import { ProjectSettings, Settings } from "./types/classes";
 import {
     BatchAction,
     EngineType,
@@ -49,7 +50,6 @@ const Resource = 11;
 const appWindow = getCurrentWebviewWindow();
 
 import XRegExp from "xregexp";
-import { CompileSettings, ProjectSettings, Settings } from "./types/classes";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     if (name === tempMapsDir) {
                         await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
-                    } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
+                    } else if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
                 }
@@ -1099,7 +1099,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             } else if (event.altKey) {
                 switch (event.code) {
                     case "KeyC":
-                        await startCompilation(false);
+                        await startCompilation();
                         break;
                     case "F4":
                         await appWindow.close();
@@ -1400,46 +1400,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         tabContent.appendChild(fragment);
     }
 
-    async function startCompilation(silent: boolean) {
+    async function startCompilation(path?: string, disableProcessing?: boolean[]) {
         if (!settings.projectPath) {
             return;
         }
 
-        if (typeof projectSettings.compileSettings !== "object") {
-            projectSettings.compileSettings = new CompileSettings();
-        }
+        compileButton.firstElementChild!.classList.add("animate-spin");
 
-        const compileSettings: ICompileSettings = projectSettings.compileSettings;
+        const executionTime = await compile(
+            settings.projectPath,
+            originalDir,
+            path ?? settings.projectPath,
+            currentGameTitle.value,
+            projectSettings.mapsProcessingMode,
+            projectSettings.romanize,
+            projectSettings.disableCustomProcessing,
+            disableProcessing ?? [false, false, false, false],
+            settings.engineType!,
+        );
 
-        if (!compileSettings.initialized || !compileSettings.doNotAskAgain || !silent) {
-            const compileWindow = new WebviewWindow("compile", {
-                url: "compile.html",
-                title: localization.compileWindowTitle,
-                center: true,
-            });
-
-            const compileUnlisten = await compileWindow.once("compile", async () => {
-                await startCompilation(true);
-            });
-            await compileWindow.once("tauri://destroyed", compileUnlisten);
-        } else {
-            compileButton.firstElementChild!.classList.add("animate-spin");
-
-            const executionTime = await compile(
-                settings.projectPath,
-                originalDir,
-                compileSettings.customOutputPath.path,
-                currentGameTitle.value,
-                projectSettings.mapsProcessingMode,
-                projectSettings.romanize,
-                projectSettings.disableCustomProcessing,
-                Object.values(compileSettings.disableProcessing.of),
-                settings.engineType!,
-            );
-
-            compileButton.firstElementChild!.classList.remove("animate-spin");
-            alert(`${localization.compileSuccess} ${executionTime}`);
-        }
+        compileButton.firstElementChild!.classList.remove("animate-spin");
+        alert(`${localization.compileSuccess} ${executionTime}`);
     }
 
     function getNewLinePositions(textarea: HTMLTextAreaElement): { left: number; top: number }[] {
@@ -2368,7 +2349,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 await save(SaveMode.AllFiles);
                 break;
             case "compile-button":
-                await startCompilation(event.button !== 2);
+                if (event.button === 2) {
+                    const compileWindow = new WebviewWindow("compile", {
+                        url: "compile.html",
+                        title: localization.compileWindowTitle,
+                        center: true,
+                    });
+
+                    await compileWindow.once<[string, boolean[]]>("compile", async (event) => {
+                        await startCompilation(event.payload[0], event.payload[1]);
+                    });
+                } else {
+                    await startCompilation();
+                }
                 break;
             case "open-directory-button": {
                 const directory = await openPath({ directory: true, multiple: false });
@@ -2446,7 +2439,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             await removePath(join(settings.projectPath, programDataDir, tempMapsDir), {
                                 recursive: true,
                             });
-                        } else if (entry.isFile && !["compile-settings.json", logFile, bookmarksFile].includes(name)) {
+                        } else if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
                             await removePath(join(settings.projectPath, programDataDir, name));
                         }
                     }

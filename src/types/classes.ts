@@ -30,33 +30,7 @@ export class Settings implements ISettings {
     }
 }
 
-export class CompileSettings implements ICompileSettings {
-    initialized: boolean;
-    customOutputPath: {
-        enabled: boolean;
-        path: string;
-    };
-    disableProcessing: {
-        enabled: boolean;
-        of: {
-            maps: boolean;
-            other: boolean;
-            system: boolean;
-            plugins: boolean;
-        };
-    };
-    doNotAskAgain: boolean;
-
-    constructor() {
-        this.initialized = false;
-        this.customOutputPath = { enabled: false, path: "" };
-        this.disableProcessing = { enabled: false, of: { maps: false, other: false, system: false, plugins: false } };
-        this.doNotAskAgain = true;
-    }
-}
-
 export class ProjectSettings implements IProjectSettings {
-    compileSettings: CompileSettings;
     engineType: EngineType | null;
     romanize: boolean;
     translationLanguages: { from: string; to: string };
@@ -64,7 +38,6 @@ export class ProjectSettings implements IProjectSettings {
     disableCustomProcessing: boolean;
 
     constructor() {
-        this.compileSettings = new CompileSettings();
         this.engineType = null;
         this.romanize = false;
         this.translationLanguages = {

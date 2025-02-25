@@ -33,24 +33,6 @@ interface ISettings {
     checkForUpdates: boolean;
 }
 
-interface ICompileSettings {
-    initialized: boolean;
-    customOutputPath: {
-        enabled: boolean;
-        path: string;
-    };
-    disableProcessing: {
-        enabled: boolean;
-        of: {
-            maps: boolean;
-            other: boolean;
-            system: boolean;
-            plugins: boolean;
-        };
-    };
-    doNotAskAgain: boolean;
-}
-
 type ThemeObject = Record<string, Theme>;
 
 interface Theme extends Record<string, string> {
@@ -92,7 +74,6 @@ interface Bookmark {
 }
 
 interface IProjectSettings {
-    compileSettings: CompileSettings;
     engineType: import("./enums").EngineType | null;
     translationLanguages: {
         from: string;
