@@ -2043,48 +2043,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function processFile(filename: string, i: number, wrapLength?: number) {
         await sleep(1000);
 
-        filename === currentTab
-            ? await processCurrentTab(i, wrapLength)
-            : await processExternalFile(filename, i, wrapLength);
-    }
-
-    async function processCurrentTab(i: number, wrapLength?: number) {
-        for (const rowContainer of tabContent.children) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const [_, originalField, translationField] = rowContainer.children as HTMLCollectionOf<HTMLTextAreaElement>;
-
-            if (!originalField.textContent?.trim()) {
-                continue;
-            }
-
-            const originalText = originalField.textContent;
-            const translationText = translationField.value.trim();
-            const translationExists = Boolean(translationText);
-            const isComment = originalText.startsWith("<!--");
-            const isMapComment = originalText === "<!-- Map -->";
-
-            switch (batchWindowAction) {
-                case BatchAction.Trim:
-                    if (translationExists) {
-                        translationField.value = translationText.trim();
-                    }
-                    break;
-                case BatchAction.Translate:
-                    if ((isMapComment || !isComment) && !translationExists) {
-                        await translateField(originalText, isComment, isMapComment, translationField);
-                    }
-                    break;
-                case BatchAction.Wrap:
-                    if (!isComment && translationExists && wrapLength) {
-                        translationField.value = wrapText(translationField.value, wrapLength);
-                        translationField.calculateHeight();
-                    }
-                    break;
-            }
+        if (filename === currentTab) {
+            await changeTab(null);
         }
 
-        batchWindowBody.children[i].firstElementChild!.classList.add("text-green-500");
-        await sleep(500);
+        await processExternalFile(filename, i, wrapLength);
     }
 
     async function processExternalFile(filename: string, i: number, wrapLength?: number) {
