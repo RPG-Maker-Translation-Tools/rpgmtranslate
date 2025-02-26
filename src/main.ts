@@ -55,10 +55,10 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const tw = (strings: TemplateStringsArray, ...values: string[]): string => String.raw({ raw: strings }, ...values);
 
 document.addEventListener("DOMContentLoaded", async () => {
-    async function beforeClose(): Promise<boolean> {
+    async function beforeClose(noSave: boolean): Promise<boolean> {
         await awaitSave();
 
-        if (await exitConfirmation()) {
+        if (noSave || (await exitConfirmation())) {
             if (settings.projectPath) {
                 await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
                 await writeTextFile(
@@ -2424,28 +2424,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
 
                 const unlistenRestart = await readWindow.once("restart", async () => {
-                    await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
-                    await writeTextFile(
-                        join(settings.projectPath, programDataDir, bookmarksFile),
-                        JSON.stringify(bookmarks),
-                    );
-
-                    const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
-
-                    for (const entry of dataDirEntries) {
-                        const name = entry.name;
-
-                        if (name === tempMapsDir) {
-                            await removePath(join(settings.projectPath, programDataDir, tempMapsDir), {
-                                recursive: true,
-                            });
-                        } else if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
-                            await removePath(join(settings.projectPath, programDataDir, name));
-                        }
+                    if (await beforeClose(true)) {
+                        location.reload();
                     }
-
-                    await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
-                    location.reload();
                 });
 
                 await readWindow.once("tauri://destroyed", () => {
@@ -2889,7 +2870,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 fileMenu.style.left = `${fileMenuButton.offsetLeft}px`;
                 break;
             case "reload-button":
-                if (await beforeClose()) {
+                if (await beforeClose(false)) {
                     location.reload();
                 }
                 break;
@@ -3116,7 +3097,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     await appWindow.onCloseRequested(async (event) => {
-        if (await beforeClose()) {
+        if (await beforeClose(false)) {
             await exit();
         } else {
             event.preventDefault();
