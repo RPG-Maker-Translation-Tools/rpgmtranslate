@@ -178,9 +178,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
-        if (element.value.includes(settings.fontUrl.slice(settings.fontUrl.lastIndexOf("/") + 1))) {
-            fontSelect.value = element.value;
+    if (settings.fontUrl) {
+        for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+            if (element.value.includes(settings.fontUrl.slice(settings.fontUrl.lastIndexOf("/") + 1))) {
+                fontSelect.value = element.value;
+            }
         }
     }
 
