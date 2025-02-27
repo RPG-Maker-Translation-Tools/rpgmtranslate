@@ -1,6 +1,6 @@
 # Settings
 
-For now, settings include not that much options, but let's walk over them.
+For now, settings include not that many options, but let's walk over them.
 
 ## Backup
 
@@ -16,15 +16,9 @@ You can disable checking for updates not to bother you, but believe me, each new
 
 ## Row delete mode
 
-By default, to not mess everything up you can't delete the row using the button using the X button.
+By default, to not mess everything up you can't delete the row using the X button.
 You can configure that here.
-
-## Translation languages
-
-That's for machine translation. Right now it's global, but still, you can set the "from" and "to" languages for machine translation.
 
 ## Font
 
 Font selection is available, although it won't affect all the interface, only text in the textareas and settings themselves.
-
-Someday there'll be a separate font selector for UI font, but it'll bring compatibility issues, so that's for later.

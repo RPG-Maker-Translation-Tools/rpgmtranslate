@@ -11,9 +11,8 @@ nav:
           - Search Features: en/search.md
           - Text Editing: en/text-editing.md
           - Settings: en/settings.md
-          - Read Window: en/read.md
-          - Compile Window: en/compile.md
-          - Purge Window: en/purge.md
+          - Read Menu: en/read.md
+          - Purge Menu: en/purge.md
     - Building from Source: en/build.md
 
 theme:

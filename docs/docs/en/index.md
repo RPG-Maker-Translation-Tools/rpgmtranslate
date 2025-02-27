@@ -7,6 +7,8 @@ For advanced usage, refer to:
 - [Search Features](search.md)
 - [Text Editing](text-editing.md)
 - [Settings](settings.md)
+- [Read](read.md)
+- [Purge](purge.md)
 
 **Also, help us improve [the docs](https://github.com/savannstm/rpgmtranslate/tree/main/docs/docs/en)!**
 
@@ -45,10 +47,11 @@ The interface includes:
 12. Project info panel
 13. Search panel (R)
 14. Main work area
+15. Machine translation languages inputs
 
 Important terms:
 
-- "Read" refers to re-parsing the translation, either in append mode, to append new text to the translation after game's update, or to force rewrite the translation and start from scratch
+- "Read" refers to reparsing the translation, either in append mode, to append new text to the translation after game's update, or to force rewrite the translation and start from scratch
 - "Compile" refers to writing translations back to initial files
 - "Project" is a directory containing an RPG Maker game
 - "Tab" is an entry from the left menu that opens a specific file
@@ -61,13 +64,14 @@ Hotkeys:
 ## Opening a Project
 
 1.  Click the Open directory button
-2.  Select your RPG Maker game folder (the program handles encrypter `.rgss` archives)
+2.  Select your RPG Maker game folder (the program handles encrypted `.rgss` archives)
 3.  The program creates an `.rpgmtranslate` directory containing:
     - Translation files in plain text format at `.rpgmtranslate/translation`
     - Backup directory at `.rpgmtranslate/backups`
     - Output files when compiling at `.rpgmtranslate/output`
+4.  Optional, but recommended: Initialize git repository and periodically commit changes.
 
-If the game folder already has `translation` folder, its contents will be copied to `.rpgmtranslate/translation`, but not vice-versa. To bring the translation back to `GAME_FOLDER/translation` you'll have to manually copy it.
+If the game folder already has `translation` folder, its contents will be copied to `.rpgmtranslate/translation`, but not vice versa. To bring the translation back to `GAME_FOLDER/translation` you'll have to manually copy it.
 
 The game's title, engine, current opened tab and translation progress will be displayed in the top-right corner of the UI.
 

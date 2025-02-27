@@ -32,7 +32,7 @@ Honestly, you can just fucking open Visual Studio Code and other shit to make su
 But if you want to use regex in the program, here's a quick breakdown:
 
 - The program uses JavaScript implementation of regex. It's not as cool as Perl's, but it is, for example, used in VSCode.
-- The program fully probably supports unicode in regex.
+- The program fully probably supports Unicode in regex.
 - I didn't really think of implementing the substitutions in the program (ones that's annotated with $), so please DON'T use substitutions in replace input, as it will replace LITERALLY.
 
 Example of searching for `\c` pattern:
