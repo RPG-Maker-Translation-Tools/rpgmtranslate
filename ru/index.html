@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
@@ -125,13 +125,13 @@
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/en/" hreflang="en" class="md-select__link">
+            <a href="/rpgmtranslate/en/" hreflang="en" class="md-select__link">
               English
             </a>
           </li>
         
           <li class="md-select__item">
-            <a href="/ru/" hreflang="ru" class="md-select__link">
+            <a href="/rpgmtranslate/ru/" hreflang="ru" class="md-select__link">
               Русский
             </a>
           </li>
@@ -409,6 +409,72 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../en/settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Settings
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../en/read/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Read Menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../en/purge/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Purge Menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -528,11 +594,14 @@
 <ul>
 <li><a href="search/">Функции поиска</a></li>
 <li><a href="text-editing/">Редактирование текста</a></li>
+<li><a href="settings/">Настройки</a></li>
+<li><a href="read/">Чтение</a></li>
+<li><a href="purge/">Чистка</a></li>
 </ul>
 <h2 id="_2">Установка</h2>
 <p>Загрузите последнюю версию с <a href="https://github.com/savannstm/rpgmtranslate/releases/latest">GitHub</a>. Программа доступна в виде:</p>
 <ul>
-<li>Установщика Windows: <code>.msi</code></li>
+<li>Установщика Windows: <code>.nsis</code> или <code>.msi</code> <strong>рекомендуется</strong></li>
 <li>Пакета Linux: <code>.deb</code> или <code>.AppImage</code></li>
 <li>Другие платформы: <a href="build/">Билдинг из исходного кода</a></li>
 </ul>
@@ -560,6 +629,7 @@
 <li>Панель информации о проекте</li>
 <li>Панель поиска (R)</li>
 <li>Основную рабочую область</li>
+<li>Поля ввода для языков машинного перевода</li>
 </ol>
 <p>Важные термины:</p>
 <ul>
@@ -582,7 +652,11 @@
 <li>Папку резервных копий в <code>.rpgmtranslate/backups</code></li>
 </ul>
 </li>
+<li>Опционально, но рекомендуется: Инициализировать git-репозиторий и периодически коммитить файлы.</li>
 </ol>
+<p>Если в папке с игрой уже есть папка <code>translation</code>, её содержимое будет скопировано в <code>.rpgmtranslate/translation</code>, но не наоборот. Чтобы вернуть перевод в <code>ПАПКА_ИГРЫ/translation</code>, вам придется скопировать его вручную.</p>
+<p>Название игры, движок, текущая открытая вкладка и прогресс перевода будут отображаться в правом верхнем углу интерфейса.</p>
+<p>Название доступно для редактирования, оно будет сохранено и правильно скомпилировано.</p>
 <p>Примечание: По умолчанию программа создает резервные копии каждые 60 секунд и сохраняет до 99 резервных копий.</p>
 
 

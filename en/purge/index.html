@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../read/">
       
       
-        <link rel="next" href="../text-editing/">
+        <link rel="next" href="../build/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Search Features - RPGMTranslate Documentation</title>
+        <title>Purge Menu - RPGMTranslate Documentation</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#search-features" class="md-skip">
+        <a href="#purge-menu" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Search Features
+              Purge Menu
             
           </span>
         </div>
@@ -230,7 +230,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../search/" class="md-tabs__link">
           
   
   User Guide
@@ -378,31 +378,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Search Features
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../search/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -412,62 +391,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#search-window-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      Search Window Layout
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implementation-details" class="md-nav__link">
-    <span class="md-ellipsis">
-      Implementation Details
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#regular-expression-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      Regular Expression Support
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#search-results-panel" class="md-nav__link">
-    <span class="md-ellipsis">
-      Search Results Panel
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -543,10 +466,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../purge/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Purge Menu
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -556,6 +500,62 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#output-statistics-to-stattxt-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output statistics to stat.txt file
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#leave-the-fields-that-have-the-translation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Leave the fields that have the translation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#purge-only-the-empty-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      Purge only the empty fields
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-rvpacker-ignore-file-from-purged-lines" class="md-nav__link">
+    <span class="md-ellipsis">
+      Create .rvpacker-ignore file from purged lines
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -616,36 +616,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#search-window-layout" class="md-nav__link">
+  <a href="#output-statistics-to-stattxt-file" class="md-nav__link">
     <span class="md-ellipsis">
-      Search Window Layout
+      Output statistics to stat.txt file
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#implementation-details" class="md-nav__link">
+  <a href="#leave-the-fields-that-have-the-translation" class="md-nav__link">
     <span class="md-ellipsis">
-      Implementation Details
+      Leave the fields that have the translation
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#regular-expression-support" class="md-nav__link">
+  <a href="#purge-only-the-empty-fields" class="md-nav__link">
     <span class="md-ellipsis">
-      Regular Expression Support
+      Purge only the empty fields
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#search-results-panel" class="md-nav__link">
+  <a href="#create-rvpacker-ignore-file-from-purged-lines" class="md-nav__link">
     <span class="md-ellipsis">
-      Search Results Panel
+      Create .rvpacker-ignore file from purged lines
     </span>
   </a>
   
@@ -667,7 +667,7 @@
 
 
   
-    <a href="https://github.com/savannstm/rpgmtranslate/blob/main/docs/docs/en/search.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/savannstm/rpgmtranslate/blob/main/docs/docs/en/purge.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -676,65 +676,27 @@
     
       
     
-    <a href="https://github.com/savannstm/rpgmtranslate/raw/main/docs/docs/en/search.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/savannstm/rpgmtranslate/raw/main/docs/docs/en/purge.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="search-features">Search Features</h1>
-<h2 id="search-window-layout">Search Window Layout</h2>
-<p><img alt="Search window layout" src="../../assets/search-window-layout.png" /></p>
-<p>The search interface contains:</p>
-<ol>
-<li>Search input field (supports multi-line text)</li>
-<li>Replace button for replacing all matches</li>
-<li>Put button for transferring text to translation field</li>
-<li>Replace input field (supports multi-line text)</li>
-<li>Search pattern buttons:<ul>
-<li>Case-sensitive search (Alt + C)</li>
-<li>Whole word search (Alt + W)</li>
-<li>Regex search (Alt + R)</li>
-<li>Current tab only search (Alt + L)</li>
-</ul>
-</li>
-<li>Search mode selector (original or translation text)</li>
-</ol>
-<p>Note: The Put button matches source text as a whole, not line by line.</p>
-<h2 id="implementation-details">Implementation Details</h2>
-<p>The search functionality is optimized with:</p>
-<ul>
-<li>Maximum 1000 search entries in memory</li>
-<li>Results split across multiple files, that you switch in search results panel</li>
-</ul>
-<h2 id="regular-expression-support">Regular Expression Support</h2>
-<p>Honestly, you can just fucking open Visual Studio Code and other shit to make sure you can revert all the damage you did with your shitty regexes, if you want to use them.
-But if you want to use regex in the program, here's a quick breakdown:</p>
-<ul>
-<li>The program uses JavaScript implementation of regex. It's not as cool as Perl's, but it is, for example, used in VSCode.</li>
-<li>The program fully probably supports Unicode in regex.</li>
-<li>I didn't really think of implementing the substitutions in the program (ones that's annotated with $), so please DON'T use substitutions in replace input, as it will replace LITERALLY.</li>
-</ul>
-<p>Example of searching for <code>\c</code> pattern:</p>
-<p><img alt="Regex demonstration" src="../../assets/regex-demonstration.png" /></p>
-<p>Note: When using regex in replace operations, substitutions (like $1) are not supported. The replacement is literal.</p>
-<h2 id="search-results-panel">Search Results Panel</h2>
-<p><img alt="Search results panel" src="../../assets/search-results-panel-layout.png" /></p>
-<p>Panel components:</p>
-<ol>
-<li>Search/log mode toggle</li>
-<li>Match pages navigation</li>
-<li>Matched text and metadata</li>
-<li>Corresponding text and metadata</li>
-</ol>
-<p>Interaction:</p>
-<ul>
-<li>R: Open and close the panel</li>
-<li>Left-click: Navigate to text location</li>
-<li>Right-click: Replace matched text with replace input</li>
-</ul>
-<p>Note: Consider testing search patterns on a small subset before performing large-scale replacements.</p>
+<h1 id="purge-menu">Purge Menu</h1>
+<p>Purge menu allows you to purge lines from translation based on criterias.</p>
+<h2 id="output-statistics-to-stattxt-file">Output statistics to stat.txt file</h2>
+<p>When purging with this option, lines that must be deleted will be output to <code>.rpgmtranslate/translation/stat.txt</code>.</p>
+<p>Translation won't be affected.</p>
+<h2 id="leave-the-fields-that-have-the-translation">Leave the fields that have the translation</h2>
+<p>When purging with this option, lines, that have the translation, won't be purged.</p>
+<p><strong>RECOMMENDED</strong>, so you don't lose your progress.</p>
+<h2 id="purge-only-the-empty-fields">Purge only the empty fields</h2>
+<p>With this option, only the text with empty translation field will be purged.</p>
+<p>Without this option, only the text, that cannot be found in game files, will be purged.</p>
+<h2 id="create-rvpacker-ignore-file-from-purged-lines">Create .rvpacker-ignore file from purged lines</h2>
+<p>Creates a <code>.rpgmtranslate/translation/.rvpacker-ignore</code> file containing purged lines.</p>
+<p>It will be used on read, if ignore checkbox is checked.</p>
 
 
 

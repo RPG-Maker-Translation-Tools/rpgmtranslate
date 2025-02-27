@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.4">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
@@ -127,13 +127,13 @@
       <ul class="md-select__list">
         
           <li class="md-select__item">
-            <a href="/en/" hreflang="en" class="md-select__link">
+            <a href="/rpgmtranslate/en/" hreflang="en" class="md-select__link">
               English
             </a>
           </li>
         
           <li class="md-select__item">
-            <a href="/ru/" hreflang="ru" class="md-select__link">
+            <a href="/rpgmtranslate/ru/" hreflang="ru" class="md-select__link">
               Русский
             </a>
           </li>
@@ -481,6 +481,72 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Settings
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="read/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Read Menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="purge/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Purge Menu
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -600,7 +666,11 @@
 <ul>
 <li><a href="search/">Search Features</a></li>
 <li><a href="text-editing/">Text Editing</a></li>
+<li><a href="settings/">Settings</a></li>
+<li><a href="read/">Read</a></li>
+<li><a href="purge/">Purge</a></li>
 </ul>
+<p><strong>Also, help us improve <a href="https://github.com/savannstm/rpgmtranslate/tree/main/docs/docs/en">the docs</a>!</strong></p>
 <h2 id="installation">Installation</h2>
 <p>Download the latest release from <a href="https://github.com/savannstm/rpgmtranslate/releases/latest">GitHub</a>. The program is available as:</p>
 <ul>
@@ -621,7 +691,7 @@
 <li>Menu bar buttons</li>
 <li>Menu button (Tab)</li>
 <li>Save button (Ctrl + S)</li>
-<li>Compile button (Alt + C)</li>
+<li>Compile button (Alt + C) [RMB to open compilation settings]</li>
 <li>Open directory button</li>
 <li>Settings button</li>
 <li>Themes button</li>
@@ -632,15 +702,16 @@
 <li>Project info panel</li>
 <li>Search panel (R)</li>
 <li>Main work area</li>
+<li>Machine translation languages inputs</li>
 </ol>
 <p>Important terms:</p>
 <ul>
-<li>"Read" refers to re-parsing the translation, either in append mode, to append new text to the translation after game's update, or to force rewrite the translation and start from scratch.</li>
+<li>"Read" refers to reparsing the translation, either in append mode, to append new text to the translation after game's update, or to force rewrite the translation and start from scratch</li>
 <li>"Compile" refers to writing translations back to initial files</li>
 <li>"Project" is a directory containing an RPG Maker game</li>
 <li>"Tab" is an entry from the left menu that opens a specific file</li>
 </ul>
-<p>Shortcuts:</p>
+<p>Hotkeys:</p>
 <ul>
 <li>Ctrl and +: Zoom in</li>
 <li>Ctrl and -: Zoom out</li>
@@ -648,13 +719,18 @@
 <h2 id="opening-a-project">Opening a Project</h2>
 <ol>
 <li>Click the Open directory button</li>
-<li>Select your RPG Maker game folder</li>
+<li>Select your RPG Maker game folder (the program handles encrypted <code>.rgss</code> archives)</li>
 <li>The program creates an <code>.rpgmtranslate</code> directory containing:<ul>
-<li>Translation files in plain text format</li>
+<li>Translation files in plain text format at <code>.rpgmtranslate/translation</code></li>
 <li>Backup directory at <code>.rpgmtranslate/backups</code></li>
+<li>Output files when compiling at <code>.rpgmtranslate/output</code></li>
 </ul>
 </li>
+<li>Optional, but recommended: Initialize git repository and periodically commit changes.</li>
 </ol>
+<p>If the game folder already has <code>translation</code> folder, its contents will be copied to <code>.rpgmtranslate/translation</code>, but not vice versa. To bring the translation back to <code>GAME_FOLDER/translation</code> you'll have to manually copy it.</p>
+<p>The game's title, engine, current opened tab and translation progress will be displayed in the top-right corner of the UI.</p>
+<p>Title is editable, it will be saved and compiled correctly.</p>
 <p>Note: The program, by default, creates backups every 60 seconds and stores up to 99 backups.</p>
 
 

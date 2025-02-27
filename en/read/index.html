@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../settings/">
       
       
-        <link rel="next" href="../text-editing/">
+        <link rel="next" href="../purge/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Search Features - RPGMTranslate Documentation</title>
+        <title>Read Menu - RPGMTranslate Documentation</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#search-features" class="md-skip">
+        <a href="#read-menu" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Search Features
+              Read Menu
             
           </span>
         </div>
@@ -230,7 +230,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../search/" class="md-tabs__link">
           
   
   User Guide
@@ -378,31 +378,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Search Features
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../search/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -412,62 +391,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#search-window-layout" class="md-nav__link">
-    <span class="md-ellipsis">
-      Search Window Layout
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#implementation-details" class="md-nav__link">
-    <span class="md-ellipsis">
-      Implementation Details
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#regular-expression-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      Regular Expression Support
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#search-results-panel" class="md-nav__link">
-    <span class="md-ellipsis">
-      Search Results Panel
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -521,10 +444,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../read/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Read Menu
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -534,6 +478,86 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#reading-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reading mode
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#romanize" class="md-nav__link">
+    <span class="md-ellipsis">
+      Romanize
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disable-custom-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disable custom processing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#maps-processing-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maps processing mode
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maps processing mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#duplicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Duplicates
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ignore-entries-from-rvpacker-ignore-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ignore entries from .rvpacker-ignore file
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -616,36 +640,60 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#search-window-layout" class="md-nav__link">
+  <a href="#reading-mode" class="md-nav__link">
     <span class="md-ellipsis">
-      Search Window Layout
+      Reading mode
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#implementation-details" class="md-nav__link">
+  <a href="#romanize" class="md-nav__link">
     <span class="md-ellipsis">
-      Implementation Details
+      Romanize
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#regular-expression-support" class="md-nav__link">
+  <a href="#disable-custom-processing" class="md-nav__link">
     <span class="md-ellipsis">
-      Regular Expression Support
+      Disable custom processing
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#search-results-panel" class="md-nav__link">
+  <a href="#maps-processing-mode" class="md-nav__link">
     <span class="md-ellipsis">
-      Search Results Panel
+      Maps processing mode
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maps processing mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#duplicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      Duplicates
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ignore-entries-from-rvpacker-ignore-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      Ignore entries from .rvpacker-ignore file
     </span>
   </a>
   
@@ -667,7 +715,7 @@
 
 
   
-    <a href="https://github.com/savannstm/rpgmtranslate/blob/main/docs/docs/en/search.md" title="Edit this page" class="md-content__button md-icon">
+    <a href="https://github.com/savannstm/rpgmtranslate/blob/main/docs/docs/en/read.md" title="Edit this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -676,65 +724,44 @@
     
       
     
-    <a href="https://github.com/savannstm/rpgmtranslate/raw/main/docs/docs/en/search.md" title="View source of this page" class="md-content__button md-icon">
+    <a href="https://github.com/savannstm/rpgmtranslate/raw/main/docs/docs/en/read.md" title="View source of this page" class="md-content__button md-icon">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
     </a>
   
 
 
-<h1 id="search-features">Search Features</h1>
-<h2 id="search-window-layout">Search Window Layout</h2>
-<p><img alt="Search window layout" src="../../assets/search-window-layout.png" /></p>
-<p>The search interface contains:</p>
-<ol>
-<li>Search input field (supports multi-line text)</li>
-<li>Replace button for replacing all matches</li>
-<li>Put button for transferring text to translation field</li>
-<li>Replace input field (supports multi-line text)</li>
-<li>Search pattern buttons:<ul>
-<li>Case-sensitive search (Alt + C)</li>
-<li>Whole word search (Alt + W)</li>
-<li>Regex search (Alt + R)</li>
-<li>Current tab only search (Alt + L)</li>
+<h1 id="read-menu">Read Menu</h1>
+<p>Read menu allows you to re-read the game's files.</p>
+<h2 id="reading-mode">Reading mode</h2>
+<ul>
+<li>Append - this mode will append the new text to the existing files, right where it should be by its order. That means reading in that mode won't append text in the middle of the game to the end of the file.</li>
+<li>Force Rewrite - this mode will forcefully rewrite your files along with the translation.</li>
 </ul>
+<h2 id="romanize">Romanize</h2>
+<p>Replaces Eastern symbols with their Western equivalents. It might be easier to work with text that way.</p>
+<p><strong>Don't use with append mode, if you haven't read game files with it.</strong></p>
+<h2 id="disable-custom-processing">Disable custom processing</h2>
+<p>Currently, custom processing is implemented for LisaRPG games (LISA: The Painful and different fan-mods), and Fear &amp; Hunger 2: Termina. In the future, this list might expand.</p>
+<p>This will probably produce less-readable text with less system things, that you don't actually need for translation.</p>
+<p><strong>Don't use with append mode, if you haven't read game files with it.</strong></p>
+<h2 id="maps-processing-mode">Maps processing mode</h2>
+<ul>
+<li>
+<p>Default - eliminates all duplicates across all maps files.</p>
 </li>
-<li>Search mode selector (original or translation text)</li>
-</ol>
-<p>Note: The Put button matches source text as a whole, not line by line.</p>
-<h2 id="implementation-details">Implementation Details</h2>
-<p>The search functionality is optimized with:</p>
-<ul>
-<li>Maximum 1000 search entries in memory</li>
-<li>Results split across multiple files, that you switch in search results panel</li>
+<li>
+<p>Separate - each map is parsed separately, and only inner duplicates are eliminated. <strong>RECOMMENDED!</strong></p>
+</li>
+<li>
+<p>Preserve - each duplicate is preserved. <strong>WARNING: May bloat your files! For example, Fear &amp; Hunger 2: Termina produces 70k lines with that mode!</strong></p>
+</li>
 </ul>
-<h2 id="regular-expression-support">Regular Expression Support</h2>
-<p>Honestly, you can just fucking open Visual Studio Code and other shit to make sure you can revert all the damage you did with your shitty regexes, if you want to use them.
-But if you want to use regex in the program, here's a quick breakdown:</p>
-<ul>
-<li>The program uses JavaScript implementation of regex. It's not as cool as Perl's, but it is, for example, used in VSCode.</li>
-<li>The program fully probably supports Unicode in regex.</li>
-<li>I didn't really think of implementing the substitutions in the program (ones that's annotated with $), so please DON'T use substitutions in replace input, as it will replace LITERALLY.</li>
-</ul>
-<p>Example of searching for <code>\c</code> pattern:</p>
-<p><img alt="Regex demonstration" src="../../assets/regex-demonstration.png" /></p>
-<p>Note: When using regex in replace operations, substitutions (like $1) are not supported. The replacement is literal.</p>
-<h2 id="search-results-panel">Search Results Panel</h2>
-<p><img alt="Search results panel" src="../../assets/search-results-panel-layout.png" /></p>
-<p>Panel components:</p>
-<ol>
-<li>Search/log mode toggle</li>
-<li>Match pages navigation</li>
-<li>Matched text and metadata</li>
-<li>Corresponding text and metadata</li>
-</ol>
-<p>Interaction:</p>
-<ul>
-<li>R: Open and close the panel</li>
-<li>Left-click: Navigate to text location</li>
-<li>Right-click: Replace matched text with replace input</li>
-</ul>
-<p>Note: Consider testing search patterns on a small subset before performing large-scale replacements.</p>
+<h3 id="duplicates">Duplicates</h3>
+<p>You may encounter a problem, when using default or separate mode would eliminate duplicates, but the exact same line is used in multiple contexts. In that case, <strong>DO NOT</strong> resort to preserve processing mode.</p>
+<p>How to work around this: manually post-edit the files. <a href="https://github.com/savannstm/rvpacker-txt-rs">rvpacker-txt-rs</a> provides the feature to generate <code>.json</code> representation of older engines' files and write it back with changes, and newer engines are directly editable <code>.json</code>. This way your translation will be way cleaner.</p>
+<h2 id="ignore-entries-from-rvpacker-ignore-file">Ignore entries from .rvpacker-ignore file</h2>
+<p>Doesn't read the lines included in <code>.rpgmtranslate/translation/.rvpacker-ignore</code> file. It either can be created when <a href="../purge/">purging</a>, or by hand.</p>
 
 
 
