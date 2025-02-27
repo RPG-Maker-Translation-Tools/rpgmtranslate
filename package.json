@@ -9,7 +9,7 @@
         "preview": "vite preview",
         "tauri": "tauri",
         "tauri-build": "tauri build && bun run ./generate-updater-info.js",
-        "tw": "tailwindcss -i ./input.css -o ./src/style.css -w --minify",
+        "tw": "tailwindcss -i ./input.css -o ./src/assets/style.css -w --minify",
         "update-deps": "bun update; cd ./src-tauri && cargo update"
     },
     "dependencies": {
