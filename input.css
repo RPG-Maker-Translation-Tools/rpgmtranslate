@@ -36,7 +36,7 @@
 }
 
 .dropdown-menu {
-    @apply fixed z-50 h-auto w-auto flex-col rounded-md;
+    @apply fixed z-50 h-auto w-auto flex-col rounded-md border-2;
 }
 
 .menu-bar-button {
@@ -45,4 +45,8 @@
 
 .checkbox {
     @apply font-material flex cursor-pointer items-center justify-center rounded-md border-2 select-none;
+}
+
+.checkbox-container {
+    @apply flex flex-row gap-2;
 }
