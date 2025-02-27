@@ -158,13 +158,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case fontSelect.id:
-                for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
-                    if (element.value === fontSelect.value) {
-                        settings.fontUrl = element.id.replaceAll("\\", "/");
+                if (fontSelect.value === "default") {
+                    settings.fontUrl = "";
+                    document.body.style.fontFamily = "";
+                } else {
+                    for (const element of fontSelect.children as HTMLCollectionOf<HTMLOptionElement>) {
+                        if (element.value === fontSelect.value) {
+                            settings.fontUrl = element.id.replaceAll("\\", "/");
 
-                        const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
-                        document.fonts.add(font);
-                        document.body.style.fontFamily = "font";
+                            const font = await new FontFace("font", `url(${convertFileSrc(settings.fontUrl)})`).load();
+                            document.fonts.add(font);
+                            document.body.style.fontFamily = "font";
+                        }
                     }
                 }
                 break;
