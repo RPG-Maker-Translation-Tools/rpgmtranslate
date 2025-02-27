@@ -2,13 +2,13 @@
 
 ## Общие сведения
 
-Быстрый и легкий графический интерфейс, предназначенный для редактирования и перевода игр на движках RPG Maker XP/VX/VXAce/MV/MZ.
+Быстрый и легкий графический интерфейс, предназначенный для редактирования и перевода игр на движках RPG Maker XP/VX/VX Ace/MV/MZ.
 
 В основе этого графического интерфейса лежат:
 
-- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) для парсинга и записи .json файлов RPG Maker MV/MZ.
-- [marshal-rs](https://github.com/savannstm/marshal-rs) для парсинга и записи файлов RPG Maker XP/VX/VXAce.
-- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) для расшифровки архивов .rgss движков RPG Maker XP/VX/VXAce.
+- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) для парсинга и записи `.json` файлов RPG Maker MV/MZ.
+- [marshal-rs](https://github.com/savannstm/marshal-rs) для парсинга и записи файлов RPG Maker XP/VX/VX Ace.
+- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) для расшифровки архивов `.rgss` движков RPG Maker XP/VX/VX Ace.
 
 Используя эти инструменты, программа парсит текст в `.txt` файлы, позволяет вам редактировать их, а затем записывать обратно в исходный вид с применённым переводом.
 
@@ -24,7 +24,7 @@
 
 - Рантайм C, например, `msvc` или `mingw64` в Windows и `gcc` или `clang` на Linux.
 - `rustup` с установленным Rust тулчейном.
-- На Linux/mingw64 - зависимости Tauri (`gtk`, `webkit2gtk`).
+- На Linux - зависимости Tauri (`gtk`, `webkit2gtk`).
 - Рантайм JavaScript (`nodejs`, `bun`, `deno`).
 
 ### Билдинг

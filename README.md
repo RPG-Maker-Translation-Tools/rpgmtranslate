@@ -4,13 +4,13 @@
 
 ## General
 
-A fast and light graphical interface, designed for editing and translating games based on RPG Maker XP/VX/VXAce/MV/MZ engines.
+A fast and light graphical interface, designed for editing and translating games based on RPG Maker XP/VX/VX Ace/MV/MZ engines.
 
 Under the hood, this GUI uses:
 
-- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse and write RPG Maker MV/MZ .json files.
-- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VXAce files.
-- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) to decrypt .rgss RPG Maker XP/VX/VXAce archives.
+- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse and write RPG Maker MV/MZ `.json` files.
+- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VX Ace files.
+- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
@@ -26,7 +26,7 @@ If you have troubled figuring out the program, check the `Help > Help` top menu 
 
 - C runtime, like `msvc` or `mingw64` on Windows and `gcc` or `clang` on Linux.
 - `rustup` with an installed Rust toolchain.
-- On Linux/mingw64 - Tauri dependencies (`gtk`, `webkit2gtk`).
+- On Linux - Tauri dependencies (`gtk`, `webkit2gtk`).
 - JavaScript runtime (`nodejs`, `bun`, `deno`).
 
 ### Building
