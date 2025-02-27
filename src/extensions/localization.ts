@@ -97,6 +97,45 @@ export class MainWindowLocalization {
     readonly upToDate: string;
     readonly translationTextAreaUnputtable: string;
     readonly incorrectLanguageTag: string;
+    readonly gameFilesDoNotExist: string;
+    readonly options: string;
+    readonly romanizeOption: string;
+    readonly shuffleOption: string;
+    readonly shuffleLevel: string;
+    readonly chooseOptionText: string;
+    readonly shuffleLinesOption: string;
+    readonly shuffleAllOption: string;
+    readonly disableCustomProcessing: string;
+    readonly customOutputPath: string;
+    readonly selectOutputPath: string;
+    readonly disableProcessing: string;
+    readonly disableMapsProcessingOption: string;
+    readonly disableOtherProcessingOption: string;
+    readonly disableSystemProcessingOption: string;
+    readonly disablePluginsProcessingOption: string;
+    readonly dontAskAgain: string;
+    readonly compileButtonText: string;
+    readonly mapsProcessingMode: string;
+    readonly defaultMapsMode: string;
+    readonly separateMapsMode: string;
+    readonly preserveMapsMode: string;
+    readonly mode: string;
+    readonly chooseReadingMode: string;
+    readonly defaultReadingMode: string;
+    readonly appendReadingMode: string;
+    readonly forceReadingMode: string;
+    readonly appendModeDescription: string;
+    readonly forceModeDescription: string;
+    readonly readButtonText: string;
+    readonly readingInAppendMode: string;
+    readonly readingInForceMode: string;
+    readonly readingModeNotSelected: string;
+    readonly ignore: string;
+    readonly statCheck: string;
+    readonly leaveFilledCheck: string;
+    readonly purgeEmptyCheck: string;
+    readonly createIgnoreCheck: string;
+    readonly purgeButtonText: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -202,6 +241,52 @@ export class MainWindowLocalization {
                 this.translationTextAreaUnputtable = "Нельзя вставить текст в поле перевода.";
                 this.incorrectLanguageTag =
                     "Некорректный тег языка. Тег должен соответствовать BCP-47, например ru или ru-RU";
+                this.gameFilesDoNotExist =
+                    "Файлы игры не существуют (нет папки original или data), так что возможно только редактировать и сохранять перевод.";
+                this.options = "Опции:";
+                this.romanizeOption =
+                    "Романизация игрового текста. Используйте эту опцию, лишь если вы прочитали текст с её использованием, чтобы корректно записать все файлы.";
+                this.shuffleOption = "Перемешивание";
+                this.shuffleLevel = "Уровень перемешивания";
+                this.chooseOptionText = "Выберите опцию";
+                this.shuffleLinesOption = "Перемешать линии в строках";
+                this.shuffleAllOption = "Перемешать линии и слова";
+                this.disableCustomProcessing =
+                    "Выключить индивидуальную обработку (используйте лишь если вы прочитали файлы без индивидуальной обработки)";
+                this.customOutputPath = "Другой выходной путь";
+                this.selectOutputPath = "Выбрать выходной путь";
+                this.disableProcessing = "Выключить обработку...";
+                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
+                this.disableOtherProcessingOption = "Выключить обработку файлов other";
+                this.disableSystemProcessingOption = "Выключить обработку файла system";
+                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
+                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
+                this.compileButtonText = "Скомпилировать";
+                this.mapsProcessingMode = "Режим обработки файлов maps";
+                this.defaultMapsMode = "Стандартный";
+                this.separateMapsMode = "Раздельный текст карт";
+                this.preserveMapsMode = "Сохранять дубликаты";
+                this.ignore = "Игнорировать строки из файла .rvpacker-ignore";
+                this.readButtonText = "Прочитать";
+                this.readingInAppendMode = "Читаем в режиме добавления";
+                this.readingInForceMode = "Читаем в режиме принудительной перезаписи";
+                this.readingModeNotSelected = "Режим чтения не выбран.";
+                this.mapsProcessingMode = "Режим обработки файлов maps";
+                this.mode = "Режим чтения:";
+                this.chooseReadingMode = "Выберите режим чтения";
+                this.defaultReadingMode = "Стандартный";
+                this.appendReadingMode = "Добавление";
+                this.forceReadingMode = "Перезапись";
+                this.appendModeDescription =
+                    "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса. Перед чтением, убедитесь, что вы сохранили перевод!";
+                this.forceModeDescription =
+                    "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
+                this.statCheck = "Вывести статистику в файл stat.txt";
+                this.leaveFilledCheck = "Оставить поля, имеющие перевод";
+                this.purgeEmptyCheck = "Удалить только поля, не имеющие перевода";
+                this.createIgnoreCheck =
+                    "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
+                this.purgeButtonText = "Очистка";
                 break;
             default:
                 this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
@@ -306,6 +391,51 @@ export class MainWindowLocalization {
                 this.translationTextAreaUnputtable = "You can't put text to a translation textarea.";
                 this.incorrectLanguageTag =
                     "Incorrect language tag. Tag must correspond to BCP-47, for example en or en-US";
+                this.gameFilesDoNotExist =
+                    "Game files do not exist (no original or data folders), so it's only possible to edit and save translation.";
+                this.options = "Options:";
+                this.romanizeOption =
+                    "Whether to romanize text. Only use this option if you've read text with it, to correctly write all files.";
+                this.shuffleOption = "Shuffle";
+                this.shuffleLevel = "Shuffle level";
+                this.chooseOptionText = "Choose an option";
+                this.shuffleLinesOption = "Shuffle text lines";
+                this.shuffleAllOption = "Shuffle both lines and words";
+                this.disableCustomProcessing =
+                    "Disable custom processing (use only if you've read files without custom processing)";
+                this.customOutputPath = "Custom output path";
+                this.selectOutputPath = "Select output path";
+                this.disableProcessing = "Disable processing of...";
+                this.disableMapsProcessingOption = "Disable maps processing";
+                this.disableOtherProcessingOption = "Disable other processing";
+                this.disableSystemProcessingOption = "Disable system processing";
+                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
+                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
+                this.compileButtonText = "Compile";
+                this.mapsProcessingMode = "Maps processing mode";
+                this.defaultMapsMode = "Default";
+                this.separateMapsMode = "Separate maps text";
+                this.preserveMapsMode = "Preserve duplicates";
+                this.ignore = "Ignore entries from .rvpacker-ignore file";
+                this.readButtonText = "Read";
+                this.readingInAppendMode = "Reading in append mode";
+                this.readingInForceMode = "Reading in force rewrite mode";
+                this.readingModeNotSelected = "Reading mode is not selected.";
+                this.mode = "Reading mode:";
+                this.chooseReadingMode = "Choose reading mode";
+                this.defaultReadingMode = "Default";
+                this.appendReadingMode = "Append";
+                this.forceReadingMode = "Force rewrite";
+                this.appendModeDescription =
+                    "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!";
+                this.forceModeDescription =
+                    "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
+                this.statCheck = "Output statistics to stat.txt file";
+                this.leaveFilledCheck = "Leave the fields that have the translation";
+                this.purgeEmptyCheck = "Purge only the empty fields";
+                this.createIgnoreCheck =
+                    "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
+                this.purgeButtonText = "Purge";
                 break;
         }
     }
@@ -395,236 +525,4 @@ export class AboutWindowLocalization {
     }
 }
 
-export class CompileWindowLocalization {
-    readonly options: string;
-    readonly romanizeOption: string;
-    readonly shuffleOption: string;
-    readonly shuffleLevel: string;
-    readonly chooseOptionText: string;
-    readonly shuffleLinesOption: string;
-    readonly shuffleAllOption: string;
-    readonly disableCustomProcessing: string;
-    readonly customOutputPath: string;
-    readonly selectOutputPath: string;
-    readonly disableProcessing: string;
-    readonly disableMapsProcessingOption: string;
-    readonly disableOtherProcessingOption: string;
-    readonly disableSystemProcessingOption: string;
-    readonly disablePluginsProcessingOption: string;
-    readonly dontAskAgain: string;
-    readonly compileButtonText: string;
-    readonly mapsProcessingMode: string;
-    readonly defaultMapsMode: string;
-    readonly separateMapsMode: string;
-    readonly preserveMapsMode: string;
-    readonly loggingOption: string;
-
-    constructor(language: Language) {
-        switch (language) {
-            case Language.Russian:
-                this.options = "Опции:";
-                this.romanizeOption =
-                    "Романизация игрового текста. Используйте эту опцию, лишь если вы прочитали текст с её использованием, чтобы корректно записать все файлы.";
-                this.shuffleOption = "Перемешивание";
-                this.shuffleLevel = "Уровень перемешивания";
-                this.chooseOptionText = "Выберите опцию";
-                this.shuffleLinesOption = "Перемешать линии в строках";
-                this.shuffleAllOption = "Перемешать линии и слова";
-                this.disableCustomProcessing =
-                    "Выключить индивидуальную обработку (используйте лишь если вы прочитали файлы без индивидуальной обработки)";
-                this.customOutputPath = "Другой выходной путь";
-                this.selectOutputPath = "Выбрать выходной путь";
-                this.disableProcessing = "Выключить обработку...";
-                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
-                this.disableOtherProcessingOption = "Выключить обработку файлов other";
-                this.disableSystemProcessingOption = "Выключить обработку файла system";
-                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
-                this.compileButtonText = "Скомпилировать";
-                this.mapsProcessingMode = "Режим обработки файлов maps";
-                this.defaultMapsMode = "Стандартный";
-                this.separateMapsMode = "Раздельный текст карт";
-                this.preserveMapsMode = "Сохранять дубликаты";
-                this.loggingOption =
-                    "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
-                break;
-            default:
-                this.options = "Options:";
-                this.romanizeOption =
-                    "Whether to romanize text. Only use this option if you've read text with it, to correctly write all files.";
-                this.shuffleOption = "Shuffle";
-                this.shuffleLevel = "Shuffle level";
-                this.chooseOptionText = "Choose an option";
-                this.shuffleLinesOption = "Shuffle text lines";
-                this.shuffleAllOption = "Shuffle both lines and words";
-                this.disableCustomProcessing =
-                    "Disable custom processing (use only if you've read files without custom processing)";
-                this.customOutputPath = "Custom output path";
-                this.selectOutputPath = "Select output path";
-                this.disableProcessing = "Disable processing of...";
-                this.disableMapsProcessingOption = "Disable maps processing";
-                this.disableOtherProcessingOption = "Disable other processing";
-                this.disableSystemProcessingOption = "Disable system processing";
-                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
-                this.compileButtonText = "Compile";
-                this.mapsProcessingMode = "Maps processing mode";
-                this.defaultMapsMode = "Default";
-                this.separateMapsMode = "Separate maps text";
-                this.preserveMapsMode = "Preserve duplicates";
-                this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
-                break;
-        }
-    }
-}
-
-export class ReadWindowLocalization {
-    readonly mode: string;
-    readonly chooseReadingMode: string;
-    readonly defaultReadingMode: string;
-    readonly appendReadingMode: string;
-    readonly forceReadingMode: string;
-    readonly appendModeDescription: string;
-    readonly forceModeDescription: string;
-    readonly options: string;
-    readonly romanizeOption: string;
-    readonly disableCustomProcessing: string;
-    readonly disableProcessing: string;
-    readonly disableMapsProcessingOption: string;
-    readonly disableOtherProcessingOption: string;
-    readonly disableSystemProcessingOption: string;
-    readonly disablePluginsProcessingOption: string;
-    readonly dontAskAgain: string;
-    readonly readButtonText: string;
-    readonly readingInAppendMode: string;
-    readonly readingInForceMode: string;
-    readonly readingModeNotSelected: string;
-    readonly mapsProcessingMode: string;
-    readonly defaultMapsMode: string;
-    readonly separateMapsMode: string;
-    readonly preserveMapsMode: string;
-    readonly loggingOption: string;
-    readonly ignore: string;
-
-    constructor(language: Language) {
-        switch (language) {
-            case Language.Russian:
-                this.mode = "Режим чтения:";
-                this.chooseReadingMode = "Выберите режим чтения";
-                this.defaultReadingMode = "Стандартный";
-                this.appendReadingMode = "Добавление";
-                this.forceReadingMode = "Перезапись";
-                this.appendModeDescription =
-                    "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса. Перед чтением, убедитесь, что вы сохранили перевод!";
-                this.forceModeDescription =
-                    "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
-                this.options = "Опции:";
-                this.romanizeOption =
-                    'Романизация текста. Если вы парсите текст из японской игры, содержащей символы вроде 「」,являющимися обычными японскими кавычками, они будут автоматически заменены на их европейские эквиваленты. (в данном случае, "")';
-                this.disableCustomProcessing =
-                    "Выключить индивидуальную обработку (используйте лишь если вы прочитали файлы без индивидуальной обработки)";
-                this.disableProcessing = "Выключить обработку...";
-                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
-                this.disableOtherProcessingOption = "Выключить обработку файлов other";
-                this.disableSystemProcessingOption = "Выключить обработку файла system";
-                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
-                this.readButtonText = "Прочитать";
-                this.readingInAppendMode = "Читаем в режиме добавления";
-                this.readingInForceMode = "Читаем в режиме принудительной перезаписи";
-                this.readingModeNotSelected = "Режим чтения не выбран.";
-                this.mapsProcessingMode = "Режим обработки файлов maps";
-                this.defaultMapsMode = "Стандартный";
-                this.separateMapsMode = "Раздельный текст карт";
-                this.preserveMapsMode = "Сохранять дубликаты";
-                this.loggingOption =
-                    "Включить логирование (Выводит информацию в консоль программы, F12/ПКМ > Просмотр)";
-                this.ignore = "Игнорировать строки из файла .rvpacker-ignore";
-                break;
-            default:
-                this.mode = "Reading mode:";
-                this.chooseReadingMode = "Choose reading mode";
-                this.defaultReadingMode = "Default";
-                this.appendReadingMode = "Append";
-                this.forceReadingMode = "Force rewrite";
-                this.appendModeDescription =
-                    "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!";
-                this.forceModeDescription =
-                    "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
-                this.options = "Options:";
-                this.romanizeOption =
-                    'Whether to romanize text. If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their roman equivalents. (in this case, "")';
-                this.disableCustomProcessing =
-                    "Disable custom processing (use only if you've read files without custom processing)";
-                this.disableProcessing = "Disable processing of...";
-                this.disableMapsProcessingOption = "Disable maps processing";
-                this.disableOtherProcessingOption = "Disable other processing";
-                this.disableSystemProcessingOption = "Disable system processing";
-                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
-                this.readButtonText = "Read";
-                this.readingInAppendMode = "Reading in append mode";
-                this.readingInForceMode = "Reading in force rewrite mode";
-                this.readingModeNotSelected = "Reading mode is not selected.";
-                this.mapsProcessingMode = "Maps processing mode";
-                this.defaultMapsMode = "Default";
-                this.separateMapsMode = "Separate maps text";
-                this.preserveMapsMode = "Preserve duplicates";
-                this.loggingOption = "Enable logging (Outputs information to the program's console, F12/RMB > Inspect)";
-                this.ignore = "Ignore entries from .rvpacker-ignore file";
-                break;
-        }
-    }
-}
-
-export class PurgeWindowLocalization {
-    readonly statCheck: string;
-    readonly leaveFilledCheck: string;
-    readonly purgeEmptyCheck: string;
-    readonly createIgnoreCheck: string;
-    readonly purgeButtonText: string;
-    readonly disableProcessing: string;
-    readonly disableMapsProcessingOption: string;
-    readonly disableOtherProcessingOption: string;
-    readonly disableSystemProcessingOption: string;
-    readonly disablePluginsProcessingOption: string;
-
-    constructor(language: Language) {
-        switch (language) {
-            case Language.Russian:
-                this.statCheck = "Вывести статистику в файл stat.txt";
-                this.leaveFilledCheck = "Оставить поля, имеющие перевод";
-                this.purgeEmptyCheck = "Удалить только поля, не имеющие перевода";
-                this.createIgnoreCheck =
-                    "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
-                this.purgeButtonText = "Очистка";
-                this.disableProcessing = "Выключить обработку...";
-                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
-                this.disableOtherProcessingOption = "Выключить обработку файлов other";
-                this.disableSystemProcessingOption = "Выключить обработку файла system";
-                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                break;
-            default:
-                this.statCheck = "Output statistics to stat.txt file";
-                this.leaveFilledCheck = "Leave the fields that have the translation";
-                this.purgeEmptyCheck = "Purge only the empty fields";
-                this.createIgnoreCheck =
-                    "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
-                this.purgeButtonText = "Purge";
-                this.disableProcessing = "Disable processing of...";
-                this.disableMapsProcessingOption = "Disable maps processing";
-                this.disableOtherProcessingOption = "Disable other processing";
-                this.disableSystemProcessingOption = "Disable system processing";
-                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                break;
-        }
-    }
-}
-
-export type Localization =
-    | MainWindowLocalization
-    | AboutWindowLocalization
-    | ReadWindowLocalization
-    | CompileWindowLocalization
-    | SettingsWindowLocalization
-    | PurgeWindowLocalization;
+export type Localization = MainWindowLocalization | AboutWindowLocalization | SettingsWindowLocalization;

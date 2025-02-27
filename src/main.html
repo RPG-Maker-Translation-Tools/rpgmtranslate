@@ -3,9 +3,9 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="stylesheet" href="style.css" />
-        <link rel="stylesheet" href="theme-styles.css" />
-        <link rel="stylesheet" href="material.css" />
+        <link rel="stylesheet" href="assets/style.css" />
+        <link rel="stylesheet" href="assets/theme-styles.css" />
+        <link rel="stylesheet" href="assets/material.css" />
         <script type="module" src="main.ts" defer></script>
     </head>
 
@@ -21,13 +21,13 @@
                 <div class="menu-bar-button backgroundSecondHovered">
                     <button class="languageMenu px-2" id="language-menu-button"></button>
                 </div>
-                <div class="dropdown-menu backgroundSecond hidden" id="file-menu">
+                <div class="dropdown-menu borderSecond hidden" id="file-menu">
                     <button
                         class="backgroundPrimary backgroundPrimaryHovered reloadButton p-1.5 text-base"
                         id="reload-button"
                     ></button>
                 </div>
-                <div class="dropdown-menu backgroundSecond hidden" id="help-menu">
+                <div class="dropdown-menu borderSecond hidden" id="help-menu">
                     <button
                         class="backgroundPrimary backgroundPrimaryHovered helpButton p-1.5 text-base"
                         id="help-button"
@@ -37,7 +37,7 @@
                         id="about-button"
                     ></button>
                 </div>
-                <div class="dropdown-menu backgroundSecond hidden" id="language-menu">
+                <div class="dropdown-menu borderSecond hidden" id="language-menu">
                     <button class="backgroundPrimary backgroundPrimaryHovered p-1.5 text-base" id="ru-button">
                         Русский/Russian
                     </button>
@@ -114,7 +114,7 @@
                         class="button backgroundPrimaryHovered textThird readButtonTitle font-material size-16 p-4 outline-hidden"
                         id="read-button"
                     >
-                        menu_book
+                        <div>menu_book</div>
                     </button>
 
                     <button
@@ -127,11 +127,23 @@
                     <div class="flex h-full w-full flex-col gap-2 pl-4 text-base">
                         <div class="flex flex-row">
                             <label class="fromLanguage" for="from-language-input"></label>
-                            <input class="input backgroundSecond textSecond h-6" id="from-language-input" type="text" />
+                            <input
+                                class="input backgroundSecond textSecond h-6"
+                                id="from-language-input"
+                                autocapitalize="off"
+                                autocomplete="off"
+                                type="text"
+                            />
                         </div>
                         <div class="flex flex-row">
                             <label class="toLanguage" for="to-language-input"></label>
-                            <input class="input backgroundSecond textSecond h-6" id="to-language-input" type="text" />
+                            <input
+                                class="input backgroundSecond textSecond h-6"
+                                id="to-language-input"
+                                autocapitalize="off"
+                                autocomplete="off"
+                                type="text"
+                            />
                         </div>
                     </div>
                     <!-- End -->
@@ -271,7 +283,7 @@
             <div class="hidden w-full flex-col" id="replace-content"></div>
         </div>
 
-        <div class="backgroundPrimary fixed z-50 hidden h-auto w-96" id="search-menu">
+        <div class="backgroundPrimary borderSecond fixed z-50 hidden h-auto w-96 border-2" id="search-menu">
             <div class="flex h-auto flex-col">
                 <div class="flex h-auto flex-row items-center p-4" id="search-field">
                     <textarea
@@ -356,7 +368,7 @@
         />
 
         <div
-            class="backgroundPrimary textPrimary outlinePrimary fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 p-2 text-base"
+            class="backgroundPrimary textPrimary outlinePrimary borderSecond fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 border-2 p-2 text-base"
             id="batch-window"
         >
             <div class="selectFiles flex h-8 flex-row items-center justify-center text-lg"></div>
@@ -390,14 +402,14 @@
             </div>
         </div>
 
-        <div class="dropdown-menu backgroundSecond hidden w-16" id="theme-menu">
+        <div class="dropdown-menu borderSecond hidden w-16" id="theme-menu">
             <button
                 class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
                 id="create-theme-menu-button"
             ></button>
         </div>
 
-        <div class="dropdown-menu backgroundSecond hidden w-16" id="tools-menu">
+        <div class="dropdown-menu borderSecond hidden w-16" id="tools-menu">
             <button
                 class="backgroundPrimary backgroundPrimaryHovered trimFields p-2 text-base"
                 id="trim-tools-menu-button"
@@ -410,6 +422,161 @@
                 class="backgroundPrimary backgroundPrimaryHovered wrapFields p-2 text-base"
                 id="wrap-tools-menu-button"
             ></button>
+        </div>
+
+        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="compile-menu">
+            <button
+                class="selectOutputPath backgroundSecond backgroundPrimaryHovered cursor-pointer rounded-xs p-1"
+                id="select-output-path"
+            ></button>
+            <input
+                class="input textSecond backgroundSecond"
+                id="output-path-input"
+                autocapitalize="off"
+                autocomplete="off"
+                type="text"
+            />
+
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span class="disableMapsProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span class="disableOtherProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span class="disableSystemProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span class="disablePluginsProcessingOption"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="read-menu">
+            <div>
+                <span class="mode"></span>
+
+                <select class="backgroundSecond rounded-xs outline-hidden" id="reading-mode-select">
+                    <option class="appendReadingMode" value="append"></option>
+                    <option class="forceReadingMode" value="force"></option>
+                </select>
+
+                <div class="appendModeDescription" id="mode-description"></div>
+            </div>
+
+            <div class="flex flex-row gap-2 pt-2">
+                <span class="mapsProcessingMode"></span>
+                <select class="backgroundSecond rounded-xs outline-hidden" id="maps-processing-mode-select">
+                    <option class="defaultMapsMode" value="0"></option>
+                    <option class="separateMapsMode" value="1"></option>
+                    <option class="preserveMapsMode" value="2"></option>
+                </select>
+
+                <div id="maps-mode-description"></div>
+            </div>
+
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="romanize-checkbox"></span>
+                    <span class="romanizeOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="custom-processing-checkbox"></span>
+                    <span class="disableCustomProcessing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span class="disableMapsProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span class="disableOtherProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span class="disableSystemProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span class="disablePluginsProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container" id="ignore-container">
+                    <span class="checkbox borderPrimary size-8" id="ignore-checkbox"></span>
+                    <span class="ignore"></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center pt-4">
+                <button
+                    class="button backgroundPrimaryHovered borderPrimary textThird readButtonText h-8 w-48 rounded-md border-2"
+                    id="apply-read-button"
+                ></button>
+            </div>
+        </div>
+
+        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="purge-menu">
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="stat-checkbox"></span>
+                    <span class="statCheck"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="leave-filled-checkbox"></span>
+                    <span class="leaveFilledCheck"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="purge-empty-checkbox"></span>
+                    <span class="purgeEmptyCheck"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="create-ignore-checkbox"></span>
+                    <span class="createIgnoreCheck"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span class="disableMapsProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span class="disableOtherProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span class="disableSystemProcessingOption"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span class="disablePluginsProcessingOption"></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center pt-4">
+                <button
+                    class="button backgroundPrimaryHovered borderPrimary textThird purgeButtonText h-8 w-48 rounded-md border-2"
+                    id="apply-purge-button"
+                ></button>
+            </div>
         </div>
     </body>
 </html>

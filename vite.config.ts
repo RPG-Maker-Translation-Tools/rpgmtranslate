@@ -28,11 +28,8 @@ export default defineConfig(
                 rollupOptions: {
                     input: {
                         main: "./src/main.html",
-                        options: "./src/settings.html",
+                        settings: "./src/settings.html",
                         about: "./src/about.html",
-                        compile: "./src/compile.html",
-                        read: "./src/read.html",
-                        purge: "./src/purge.html",
                     },
                     plugins: [replaceTws()],
                 },

@@ -1,14 +1,7 @@
 import { emit, once } from "@tauri-apps/api/event";
 import { attachConsole } from "@tauri-apps/plugin-log";
 import { EngineType } from "../types/enums";
-import {
-    AboutWindowLocalization,
-    CompileWindowLocalization,
-    Localization,
-    PurgeWindowLocalization,
-    ReadWindowLocalization,
-    SettingsWindowLocalization,
-} from "./localization";
+import { AboutWindowLocalization, Localization, SettingsWindowLocalization } from "./localization";
 
 export function applyTheme(sheet: CSSStyleSheet, theme: Theme | [string, string]) {
     if (Array.isArray(theme)) {
@@ -133,20 +126,8 @@ export function determineExtension(engineType: EngineType): string {
 }
 
 export async function loadWindow(
-    window: "about" | "read" | "compile" | "settings" | "purge",
-): Promise<
-    [
-        ISettings,
-        (
-            | AboutWindowLocalization
-            | ReadWindowLocalization
-            | CompileWindowLocalization
-            | SettingsWindowLocalization
-            | PurgeWindowLocalization
-        ),
-        IProjectSettings,
-    ]
-> {
+    window: "about" | "settings",
+): Promise<[ISettings, AboutWindowLocalization | SettingsWindowLocalization, IProjectSettings]> {
     await attachConsole();
     let settings!: ISettings, theme!: Theme, projectSettings!: IProjectSettings;
 
@@ -165,17 +146,8 @@ export async function loadWindow(
         case "about":
             windowLocalization = new AboutWindowLocalization(settings.language);
             break;
-        case "read":
-            windowLocalization = new ReadWindowLocalization(settings.language);
-            break;
-        case "compile":
-            windowLocalization = new CompileWindowLocalization(settings.language);
-            break;
         case "settings":
             windowLocalization = new SettingsWindowLocalization(settings.language);
-            break;
-        case "purge":
-            windowLocalization = new PurgeWindowLocalization(settings.language);
             break;
     }
 

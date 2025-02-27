@@ -6,6 +6,7 @@ import {
     compile,
     escapeText,
     extractArchive,
+    purge,
     read,
     readLastLine,
     translateText,
@@ -1401,10 +1402,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function startCompilation(path?: string, disableProcessing?: boolean[]) {
-        if (!settings.projectPath) {
+        if (!settings.projectPath || !originalDir) {
+            if (!originalDir) {
+                alert(localization.gameFilesDoNotExist);
+            }
             return;
         }
 
+        compileMenu.classList.replace("flex", "hidden");
         compileButton.firstElementChild!.classList.add("animate-spin");
 
         const executionTime = await compile(
@@ -1593,402 +1598,368 @@ document.addEventListener("DOMContentLoaded", async () => {
         settings.theme = newTheme.name;
     }
 
-    async function initializeProject(pathToProject: string) {
-        async function ensureProjectIsValid(pathToProject: string): Promise<boolean> {
-            if (!pathToProject) {
-                return false;
-            }
-
-            if (!(await exists(pathToProject))) {
-                await message(localization.selectedFolderMissing);
-                return false;
-            }
-
-            originalDir = "";
-
-            if (await exists(join(pathToProject, "Data"))) {
-                originalDir = "Data";
-            } else if (await exists(join(pathToProject, "data"))) {
-                originalDir = "data";
-            }
-
-            if (await exists(join(pathToProject, "original"))) {
-                originalDir = "original";
-            }
-
-            if (!originalDir) {
-                for (const archiveName of ["Game.rgssad", "Game.rgss2a", "Game.rgss3a"]) {
-                    const archivePath = join(pathToProject, archiveName);
-
-                    if (await exists(archivePath)) {
-                        await extractArchive({
-                            inputPath: archivePath,
-                            outputPath: pathToProject,
-                            processingMode: ProcessingMode.Default,
-                        });
-                        break;
-                    }
-                }
-
-                originalDir = "Data";
-            }
-
-            gameInfo.classList.replace("hidden", "flex");
-            currentTabDiv.classList.replace("hidden", "flex");
-            progressMeterContainer.classList.replace("hidden", "flex");
-
-            const projectSettingsPath = join(pathToProject, programDataDir, "project-settings.json");
-
-            if (await exists(projectSettingsPath)) {
-                projectSettings = JSON.parse(await readTextFile(projectSettingsPath));
-
-                if (typeof projectSettings.translationLanguages.to === "string") {
-                    toLanguageInput.value = projectSettings.translationLanguages.to;
-                }
-
-                if (typeof projectSettings.translationLanguages.from === "string") {
-                    fromLanguageInput.value = projectSettings.translationLanguages.from;
-                }
-            } else {
-                projectSettings = new ProjectSettings();
-            }
-
-            if (typeof projectSettings.engineType === "number") {
-                settings.engineType = projectSettings.engineType;
-            } else {
-                if (await exists(join(pathToProject, originalDir, "System.rxdata"))) {
-                    settings.engineType = EngineType.XP;
-                } else if (await exists(join(pathToProject, originalDir, "System.rvdata"))) {
-                    settings.engineType = EngineType.VX;
-                } else if (await exists(join(pathToProject, originalDir, "System.rvdata2"))) {
-                    settings.engineType = EngineType.VXAce;
-                } else if (await exists(join(pathToProject, originalDir, "System.json"))) {
-                    settings.engineType = EngineType.New;
-                } else {
-                    await message(localization.cannotDetermineEngine);
-                    await changeTab(null);
-
-                    tabContent.innerHTML = "";
-                    currentGameEngine.innerHTML = "";
-                    currentGameTitle.value = "";
-
-                    gameInfo.classList.replace("flex", "hidden");
-                    currentTabDiv.classList.replace("flex", "hidden");
-                    progressMeterContainer.classList.replace("flex", "hidden");
-
-                    return false;
-                }
-
-                projectSettings.engineType = settings.engineType;
-            }
-
-            switch (settings.engineType) {
-                case EngineType.New:
-                    currentGameEngine.innerHTML = "MV / MZ";
-                    break;
-                case EngineType.VXAce:
-                    currentGameEngine.innerHTML = "VX Ace";
-                    break;
-                case EngineType.VX:
-                    currentGameEngine.innerHTML = "VX";
-                    break;
-                case EngineType.XP:
-                    currentGameEngine.innerHTML = "XP";
-                    break;
-            }
-
-            return true;
+    function createTab(name: string, content: string[], tabIndex: number): HTMLButtonElement | undefined {
+        if (name === "system") {
+            content = content.slice(0, -1);
         }
 
-        await addToScope({ path: pathToProject });
+        let totalLines = content.length;
+        let translatedLines = 0;
 
+        for (const line of content) {
+            if (line.startsWith("<!--")) {
+                totalLines--;
+            } else if (!line.endsWith(LINES_SEPARATOR)) {
+                translatedLines++;
+            }
+        }
+
+        if (totalLines === 0) {
+            return;
+        }
+
+        const buttonElement = document.createElement("button");
+        buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered h-8";
+        buttonElement.id = (tabIndex - 1).toString();
+
+        const stateSpan = document.createElement("span");
+        stateSpan.innerHTML = name;
+        stateSpan.className = "pr-1";
+        buttonElement.appendChild(stateSpan);
+
+        totalAllLines += totalLines;
+        translatedLinesArray.push(translatedLines);
+
+        const percentage = Math.floor((translatedLines / totalLines) * 100);
+        const progressBar = document.createElement("div");
+        const progressMeter = document.createElement("div");
+
+        progressBar.className = tw`backgroundSecond w-full rounded-xs`;
+        progressMeter.className = tw`backgroundThird textPrimary rounded-xs p-0.5 text-center text-xs leading-none font-medium`;
+        progressMeter.style.width = progressMeter.textContent = `${percentage}%`;
+
+        if (percentage === 100) {
+            progressMeter.classList.replace("backgroundThird", "bg-green-600");
+        }
+
+        progressBar.appendChild(progressMeter);
+        buttonElement.appendChild(progressBar);
+
+        const checkboxDiv = document.createElement("div");
+        checkboxDiv.className = tw`flex flex-row items-center gap-1 p-0.5`;
+        checkboxDiv.id = buttonElement.id;
+
+        const checkbox = document.createElement("span");
+        checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 max-w-6 min-w-6`;
+
+        const checkboxLabel = document.createElement("span");
+        checkboxLabel.className = tw`text-base`;
+        checkboxLabel.innerHTML = buttonElement.firstElementChild!.textContent!;
+
+        checkboxDiv.append(checkbox, checkboxLabel);
+        batchWindowBody.appendChild(checkboxDiv);
+
+        return buttonElement;
+    }
+
+    async function ensureProjectIsValid(path: string): Promise<boolean> {
+        if (!path || !(await exists(path))) {
+            if (path) {
+                await message(localization.selectedFolderMissing);
+            }
+            return false;
+        }
+
+        originalDir = "";
+
+        for (const dir of ["Data", "data", "original"]) {
+            if (await exists(join(path, dir))) {
+                originalDir = dir;
+                break;
+            }
+        }
+
+        if (!originalDir) {
+            for (const archive of ["Game.rgssad", "Game.rgss2a", "Game.rgss3a"]) {
+                const archivePath = join(path, archive);
+
+                if (await exists(archivePath)) {
+                    originalDir = "Data";
+
+                    await extractArchive({
+                        inputPath: archivePath,
+                        outputPath: path,
+                        processingMode: ProcessingMode.Default,
+                    });
+                    break;
+                }
+            }
+        }
+
+        for (const e of [gameInfo, currentTabDiv, progressMeterContainer]) {
+            e.classList.replace("hidden", "flex");
+        }
+
+        // Load project settings
+        const projectSettingsPath = join(path, programDataDir, "project-settings.json");
+        if (await exists(projectSettingsPath)) {
+            projectSettings = JSON.parse(await readTextFile(projectSettingsPath));
+
+            if (typeof projectSettings.translationLanguages.to === "string") {
+                toLanguageInput.value = projectSettings.translationLanguages.to;
+            }
+            if (typeof projectSettings.translationLanguages.from === "string") {
+                fromLanguageInput.value = projectSettings.translationLanguages.from;
+            }
+        } else {
+            projectSettings = new ProjectSettings();
+        }
+
+        if (typeof projectSettings.engineType !== "number") {
+            const systemFiles = [
+                [EngineType.XP, "System.rxdata"],
+                [EngineType.VX, "System.rvdata"],
+                [EngineType.VXAce, "System.rvdata2"],
+                [EngineType.New, "System.json"],
+            ];
+
+            let engineDetected = false;
+            for (const [type, file] of systemFiles) {
+                if (await exists(join(path, originalDir, file as string))) {
+                    settings.engineType = type as EngineType;
+                    engineDetected = true;
+                    break;
+                }
+            }
+
+            if (!engineDetected) {
+                await message(localization.cannotDetermineEngine);
+                await changeTab(null);
+                tabContent.innerHTML = currentGameEngine.innerHTML = currentGameTitle.value = "";
+
+                for (const e of [gameInfo, currentTabDiv, progressMeterContainer]) {
+                    e.classList.replace("flex", "hidden");
+                }
+
+                return false;
+            }
+
+            projectSettings.engineType = settings.engineType;
+        } else {
+            settings.engineType = projectSettings.engineType;
+        }
+
+        currentGameEngine.innerHTML = ["MV / MZ", "VX Ace", "VX", "XP"][settings.engineType!] ?? "";
+
+        return true;
+    }
+
+    async function initializeProject(pathToProject: string) {
+        await addToScope({ path: pathToProject });
         projectStatus.innerHTML = localization.loadingProject;
         const interval = animateProgressText(projectStatus);
 
-        const projectIsValid = await ensureProjectIsValid(pathToProject);
-
-        if (!projectIsValid) {
+        if (!(await ensureProjectIsValid(pathToProject))) {
             settings.projectPath = "";
             projectStatus.innerHTML = localization.noProjectSelected;
-        } else {
-            totalAllLines = 0;
-            translatedLinesArray.length = 0;
+            return;
+        }
 
-            settings.projectPath = pathToProject;
+        totalAllLines = 0;
+        translatedLinesArray.length = 0;
+        settings.projectPath = pathToProject;
 
-            // Create program data directory
-            const programDataDirPath = join(settings.projectPath, programDataDir);
-            await addToScope({ path: programDataDirPath });
+        const programDataDirPath = join(settings.projectPath, programDataDir);
+        await addToScope({ path: programDataDirPath });
+        await mkdir(programDataDirPath, { recursive: true });
 
-            if (!(await exists(programDataDirPath))) {
-                await mkdir(programDataDirPath);
-            }
+        const programTranslationPath = join(programDataDirPath, translationDir);
 
-            const translationPath = join(settings.projectPath, programDataDir, translationDir);
-            const parsed = await exists(translationPath);
+        if (!(await exists(programTranslationPath))) {
+            await mkdir(programTranslationPath, { recursive: true });
+            const translationPath = join(settings.projectPath, translationDir);
 
-            if (!parsed) {
-                await mkdir(translationPath, { recursive: true });
-                const rootTranslationPath = join(settings.projectPath, translationDir);
+            if (await exists(translationPath)) {
+                for (const entry of await readDir(translationPath)) {
+                    await copyFile(join(translationPath, entry.name), join(programTranslationPath, entry.name));
+                }
 
-                if (await exists(rootTranslationPath)) {
-                    for (const entry of await readDir(rootTranslationPath)) {
-                        await copyFile(join(rootTranslationPath, entry.name), join(translationPath, entry.name));
-                    }
+                const metadataPath = join(translationPath, ".rvpacker-metadata");
+                if (await exists(metadataPath)) {
+                    const metadata = JSON.parse(await readTextFile(metadataPath)) as {
+                        mapsProcessingMode: MapsProcessingMode;
+                        romanize: boolean;
+                        disableCustomProcessing: boolean;
+                    };
 
-                    const metadataPath = join(rootTranslationPath, ".rvpacker-metadata");
-                    if (await exists(metadataPath)) {
-                        const metadata = JSON.parse(await readTextFile(metadataPath)) as {
-                            mapsProcessingMode: MapsProcessingMode;
-                            romanize: boolean;
-                            disableCustomProcessing: boolean;
-                        };
-
-                        projectSettings.mapsProcessingMode = metadata.mapsProcessingMode;
-                        projectSettings.romanize = metadata.romanize;
-                        projectSettings.disableCustomProcessing = metadata.disableCustomProcessing;
-                    }
-                } else {
-                    let gameTitle!: string;
-
-                    if (settings.engineType === EngineType.New) {
-                        gameTitle = (
-                            JSON.parse(await readTextFile(join(settings.projectPath, originalDir, "System.json"))) as {
-                                gameTitle: string;
-                            }
-                        ).gameTitle;
-                    } else {
-                        for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
-                            if (line.toLowerCase().startsWith("title")) {
-                                gameTitle = line.split("=")[1].trim();
-                            }
-                        }
-                    }
-
-                    await read(
-                        settings.projectPath,
-                        originalDir,
-                        gameTitle,
-                        1,
-                        false,
-                        false,
-                        [false, false, false, false],
-                        ProcessingMode.Default,
-                        settings.engineType!,
-                        false,
-                    );
-
-                    await appendToEnd({
-                        path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
-                        text: `${gameTitle}${LINES_SEPARATOR}`,
+                    Object.assign(projectSettings, {
+                        mapsProcessingMode: metadata.mapsProcessingMode,
+                        romanize: metadata.romanize,
+                        disableCustomProcessing: metadata.disableCustomProcessing,
                     });
                 }
-            }
-
-            const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
-            leftPanel.innerHTML = "";
-
-            let i = 1;
-
-            await mkdir(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
-
-            function createTab(name: string, content: string[], i: number): HTMLButtonElement | undefined {
-                if (name === "system") {
-                    content = content.slice(0, -1);
-                }
-
-                let totalLines = content.length;
-                let translatedLines = 0;
-
-                for (const line of content) {
-                    if (line.startsWith("<!--")) {
-                        totalLines--;
-                    } else if (!line.endsWith(LINES_SEPARATOR)) {
-                        translatedLines++;
-                    }
-                }
-
-                if (totalLines === 0) {
-                    return;
-                }
-
-                const buttonElement = document.createElement("button");
-                buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered h-8";
-                buttonElement.id = (i - 1).toString();
-
-                const stateSpan = document.createElement("span");
-                stateSpan.innerHTML = name;
-                stateSpan.className = "pr-1";
-                buttonElement.appendChild(stateSpan);
-
-                totalAllLines += totalLines;
-                translatedLinesArray.push(translatedLines);
-
-                const percentage = Math.floor((translatedLines / totalLines) * 100);
-                const progressBar = document.createElement("div");
-                const progressMeter = document.createElement("div");
-
-                progressBar.className = tw`backgroundSecond w-full rounded-xs`;
-                progressMeter.className = tw`backgroundThird textPrimary rounded-xs p-0.5 text-center text-xs leading-none font-medium`;
-                progressMeter.style.width = progressMeter.textContent = `${percentage}%`;
-
-                if (percentage === 100) {
-                    progressMeter.classList.replace("backgroundThird", "bg-green-600");
-                }
-
-                progressBar.appendChild(progressMeter);
-                buttonElement.appendChild(progressBar);
-
-                const checkboxDiv = document.createElement("div");
-                checkboxDiv.className = tw`flex flex-row items-center gap-1 p-0.5`;
-                checkboxDiv.id = buttonElement.id;
-
-                const checkbox = document.createElement("span");
-                checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 max-w-6 min-w-6`;
-
-                const checkboxLabel = document.createElement("span");
-                checkboxLabel.className = tw`text-base`;
-                checkboxLabel.innerHTML = buttonElement.firstElementChild!.textContent!;
-
-                checkboxDiv.appendChild(checkbox);
-                checkboxDiv.appendChild(checkboxLabel);
-                batchWindowBody.appendChild(checkboxDiv);
-
-                return buttonElement;
-            }
-
-            batchWindowBody.innerHTML = "";
-
-            for (const entry of translationFiles) {
-                if (!entry.name.endsWith(".txt")) {
-                    continue;
-                }
-
-                const name = entry.name;
-                const content = await readTextFile(join(settings.projectPath, programDataDir, translationDir, name));
-
-                if (!content) {
-                    continue;
-                }
-
-                const split = content.split("\n");
-
-                if (name.startsWith("maps")) {
-                    if (split.length === 1) {
-                        continue;
-                    }
-
-                    const result: string[] = [];
-                    const mapsNumbers: number[] = [];
-
-                    for (let l = 0; l <= split.length; l++) {
-                        const line = split[l];
-
-                        if (l === split.length || line.startsWith("<!-- Map -->")) {
-                            if (l !== split.length) {
-                                mapsNumbers.push(Number.parseInt(line.slice(line.lastIndexOf("<#>") + 3)));
-                            }
-
-                            if (!result.length) {
-                                result.push(line);
-                                continue;
-                            }
-
-                            const mapsNumber = mapsNumbers.shift();
-                            const joined = result.join("\n");
-                            await writeTextFile(
-                                join(settings.projectPath, programDataDir, tempMapsDir, `maps${mapsNumber}.txt`),
-                                joined,
-                            );
-
-                            const tab = createTab(`maps${mapsNumber}`, result, i);
-
-                            if (tab) {
-                                leftPanel.appendChild(tab);
-                                i++;
-                            }
-
-                            result.length = 0;
-                        }
-
-                        result.push(line);
-                    }
-                } else {
-                    const tab = createTab(name.slice(0, -4), split, i);
-
-                    if (tab) {
-                        leftPanel.appendChild(tab);
-                        i++;
-                    }
-                }
-            }
-
-            updateProgressMeter(
-                totalAllLines,
-                translatedLinesArray.reduce((a, b) => a + b, 0),
-            );
-
-            // Create log file
-            const logFilePath = join(settings.projectPath, programDataDir, logFile);
-            if (!(await exists(logFilePath))) {
-                await writeTextFile(logFilePath, "{}");
-            }
-
-            // Initialize themes
-            for (const themeName of Object.keys(themes)) {
-                const themeButton = document.createElement("button");
-                themeButton.id = themeButton.innerHTML = themeName;
-                themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
-
-                themeMenu.insertBefore(themeButton, createThemeMenuButton);
-            }
-
-            const backupPath = join(programDataDirPath, "backups");
-            if (!(await exists(backupPath))) {
-                await mkdir(backupPath);
-            }
-
-            nextBackupNumber = (await readDir(backupPath))
-                .map((entry) => Number.parseInt(entry.name.slice(0, -2)))
-                .sort((a, b) => a - b)[0];
-
-            if (!nextBackupNumber) {
-                nextBackupNumber = 0;
-            }
-
-            if (settings.backup.enabled) {
-                backup();
-            }
-
-            if (settings.firstLaunch) {
-                new WebviewWindow("help", {
-                    url: "https://savannstm.github.io/rpgmtranslate/",
-                    title: localization.helpButton,
-                    center: true,
-                });
-
-                settings.firstLaunch = false;
-            }
-
-            const [originalTitle, translatedTitle] = (
-                await readLastLine({
-                    filePath: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
-                })
-            ).split(LINES_SEPARATOR);
-
-            currentGameTitle.setAttribute("original-title", originalTitle);
-
-            if (translatedTitle) {
-                currentGameTitle.value = translatedTitle;
             } else {
-                currentGameTitle.value = originalTitle;
-            }
+                let gameTitle!: string;
 
-            if (projectStatus.textContent) {
-                projectStatus.innerHTML = "";
+                if (settings.engineType === EngineType.New) {
+                    gameTitle = JSON.parse(
+                        await readTextFile(join(settings.projectPath, originalDir, "System.json")),
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    ).gameTitle;
+                } else {
+                    for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
+                        if (line.toLowerCase().startsWith("title")) {
+                            gameTitle = line.split("=")[1].trim();
+                            break;
+                        }
+                    }
+                }
+
+                await read(
+                    settings.projectPath,
+                    originalDir,
+                    gameTitle,
+                    1,
+                    false,
+                    false,
+                    [false, false, false, false],
+                    ProcessingMode.Default,
+                    settings.engineType!,
+                    false,
+                );
+
+                await appendToEnd({
+                    path: join(settings.projectPath, programDataDir, translationDir, "system.txt"),
+                    text: `${gameTitle}${LINES_SEPARATOR}`,
+                });
             }
         }
 
+        leftPanel.innerHTML = "";
+        batchWindowBody.innerHTML = "";
+
+        const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
+        await mkdir(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
+
+        // Parse translation
+        let tabIndex = 1;
+        for (const entry of translationFiles) {
+            if (!entry.name.endsWith(".txt")) {
+                continue;
+            }
+
+            const basename = entry.name.slice(0, -4);
+            const content = await readTextFile(join(settings.projectPath, programDataDir, translationDir, entry.name));
+
+            if (!content) {
+                continue;
+            }
+
+            const split = content.split("\n");
+
+            if (basename.startsWith("maps")) {
+                if (split.length === 1) {
+                    continue;
+                }
+
+                const result: string[] = [];
+                const mapsNumbers: number[] = [];
+
+                for (let l = 0; l <= split.length; l++) {
+                    const line = split[l];
+
+                    if (l === split.length || line.startsWith("<!-- Map -->")) {
+                        if (l !== split.length) {
+                            mapsNumbers.push(Number.parseInt(line.slice(line.lastIndexOf("<#>") + 3)));
+                        }
+
+                        if (!result.length) {
+                            result.push(line);
+                            continue;
+                        }
+
+                        const mapsNumber = mapsNumbers.shift();
+                        await writeTextFile(
+                            join(settings.projectPath, programDataDir, tempMapsDir, `maps${mapsNumber}.txt`),
+                            result.join("\n"),
+                        );
+
+                        const tab = createTab(`maps${mapsNumber}`, result, tabIndex);
+                        if (tab) {
+                            leftPanel.appendChild(tab);
+                            tabIndex++;
+                        }
+
+                        result.length = 0;
+                    }
+
+                    if (l < split.length) {
+                        result.push(line);
+                    }
+                }
+            } else {
+                const tab = createTab(basename, split, tabIndex);
+
+                if (tab) {
+                    leftPanel.appendChild(tab);
+                    tabIndex++;
+                }
+            }
+        }
+
+        updateProgressMeter(
+            totalAllLines,
+            translatedLinesArray.reduce((a, b) => a + b, 0),
+        );
+
+        // Parse theme
+        for (const themeName of Object.keys(themes)) {
+            const themeButton = document.createElement("button");
+            themeButton.id = themeButton.innerHTML = themeName;
+            themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
+            themeMenu.insertBefore(themeButton, createThemeMenuButton);
+        }
+
+        // Backup
+        const backupPath = join(programDataDirPath, "backups");
+        await mkdir(backupPath, { recursive: true });
+
+        const backupFiles = await readDir(backupPath);
+        nextBackupNumber = backupFiles.length
+            ? Math.max(...backupFiles.map((entry) => Number.parseInt(entry.name.slice(0, -2)))) + 1
+            : 0;
+
+        if (settings.backup.enabled) {
+            backup();
+        }
+
+        // Create log file
+        const logFilePath = join(settings.projectPath, programDataDir, logFile);
+
+        if (!(await exists(logFilePath))) {
+            await writeTextFile(logFilePath, "{}");
+        }
+
+        // Upon the first launch, show docs
+        if (settings.firstLaunch) {
+            new WebviewWindow("help", {
+                url: "https://savannstm.github.io/rpgmtranslate/",
+                title: localization.helpButton,
+                center: true,
+            });
+            settings.firstLaunch = false;
+        }
+
+        // Set game title
+        const systemFilePath = join(settings.projectPath, programDataDir, translationDir, "system.txt");
+        const [originalTitle, translatedTitle] = (await readLastLine({ filePath: systemFilePath })).split(
+            LINES_SEPARATOR,
+        );
+        currentGameTitle.setAttribute("original-title", originalTitle);
+        currentGameTitle.value = translatedTitle || originalTitle;
+
+        // Reset project status
+        projectStatus.innerHTML = "";
         clearInterval(interval);
     }
 
@@ -2210,6 +2181,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const themeMenu = document.getElementById("theme-menu")! as HTMLDivElement;
     const toolsButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#tools-button")!;
     const toolsMenu = document.getElementById("tools-menu")! as HTMLDivElement;
+    const readButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#read-button")!;
+    const purgeButton: HTMLButtonElement = topPanelButtonsDiv.querySelector("#purge-button")!;
     const searchCaseButton = document.getElementById("case-button") as HTMLButtonElement;
     const searchWholeButton = document.getElementById("whole-button") as HTMLButtonElement;
     const searchRegexButton = document.getElementById("regex-button") as HTMLButtonElement;
@@ -2243,8 +2216,64 @@ document.addEventListener("DOMContentLoaded", async () => {
     const createThemeButton: HTMLButtonElement = themeWindow.querySelector("#create-theme")!;
     const closeButton: HTMLButtonElement = themeWindow.querySelector("#close-button")!;
     const searchSwitch = document.getElementById("switch-search-content") as HTMLDivElement;
-    const fromLanguageInput = document.getElementById("from-language-input") as HTMLInputElement;
-    const toLanguageInput = document.getElementById("to-language-input") as HTMLInputElement;
+    const fromLanguageInput: HTMLInputElement = topPanel.querySelector("#from-language-input")!;
+    const toLanguageInput: HTMLInputElement = topPanel.querySelector("#to-language-input")!;
+
+    const compileMenu = document.getElementById("compile-menu") as HTMLDivElement;
+    const outputPathButton: HTMLButtonElement = compileMenu.querySelector("#select-output-path")!;
+    const outputPathInput: HTMLInputElement = compileMenu.querySelector("#output-path-input")!;
+    const cDisableMapsProcessingCheckbox: HTMLSpanElement = compileMenu.querySelector(
+        "#disable-maps-processing-checkbox",
+    )!;
+    const cDisableOtherProcessingCheckbox: HTMLSpanElement = compileMenu.querySelector(
+        "#disable-other-processing-checkbox",
+    )!;
+    const cDisableSystemProcessingCheckbox: HTMLSpanElement = compileMenu.querySelector(
+        "#disable-system-processing-checkbox",
+    )!;
+    const cDisablePluginsProcessingCheckbox: HTMLSpanElement = compileMenu.querySelector(
+        "#disable-plugins-processing-checkbox",
+    )!;
+
+    const readMenu = document.getElementById("read-menu") as HTMLDivElement;
+    const readingModeSelect: HTMLSelectElement = readMenu.querySelector("#reading-mode-select")!;
+    const readingModeDescription: HTMLDivElement = readMenu.querySelector("#mode-description")!;
+    const mapsProcessingModeSelect: HTMLSelectElement = readMenu.querySelector("#maps-processing-mode-select")!;
+    const romanizeCheckbox: HTMLSpanElement = readMenu.querySelector("#romanize-checkbox")!;
+    const disableCustomProcessingCheckbox: HTMLSpanElement = readMenu.querySelector("#custom-processing-checkbox")!;
+    const rDisableMapsProcessingCheckbox: HTMLSpanElement = readMenu.querySelector(
+        "#disable-maps-processing-checkbox",
+    )!;
+    const rDisableOtherProcessingCheckbox: HTMLSpanElement = readMenu.querySelector(
+        "#disable-other-processing-checkbox",
+    )!;
+    const rDisableSystemProcessingCheckbox: HTMLSpanElement = readMenu.querySelector(
+        "#disable-system-processing-checkbox",
+    )!;
+    const rDisablePluginsProcessingCheckbox: HTMLSpanElement = readMenu.querySelector(
+        "#disable-plugins-processing-checkbox",
+    )!;
+    const ignoreCheckbox: HTMLSpanElement = readMenu.querySelector("#ignore-checkbox")!;
+    const applyReadButton: HTMLDivElement = readMenu.querySelector("#apply-read-button")!;
+
+    const purgeMenu = document.getElementById("purge-menu") as HTMLDivElement;
+    const statCheckbox: HTMLSpanElement = purgeMenu.querySelector("#stat-checkbox")!;
+    const leaveFilledCheckbox: HTMLSpanElement = purgeMenu.querySelector("#leave-filled-checkbox")!;
+    const purgeEmptyCheckbox: HTMLSpanElement = purgeMenu.querySelector("#purge-empty-checkbox")!;
+    const createIgnoreCheckbox: HTMLSpanElement = purgeMenu.querySelector("#create-ignore-checkbox")!;
+    const pDisableMapsProcessingCheckbox: HTMLSpanElement = purgeMenu.querySelector(
+        "#disable-maps-processing-checkbox",
+    )!;
+    const pDisableOtherProcessingCheckbox: HTMLSpanElement = purgeMenu.querySelector(
+        "#disable-other-processing-checkbox",
+    )!;
+    const pDisableSystemProcessingCheckbox: HTMLSpanElement = purgeMenu.querySelector(
+        "#disable-system-processing-checkbox",
+    )!;
+    const pDisablePluginsProcessingCheckbox: HTMLSpanElement = purgeMenu.querySelector(
+        "#disable-plugins-processing-checkbox",
+    )!;
+    const applyPurgeButton: HTMLDivElement = purgeMenu.querySelector("#apply-purge-button")!;
     // #endregion
 
     let backupIsActive: number | null = null;
@@ -2311,20 +2340,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // #endregion
 
     // #region Event listeners
-    leftPanel.addEventListener("click", async (event) => {
-        let target: HTMLElement | null = event.target as HTMLElement;
-        const leftPanelChildren = Array.from(leftPanel.children);
-
-        if (leftPanel.contains(target)) {
-            while (target && !leftPanelChildren.includes(target)) {
-                target = target.parentElement;
-            }
-
-            if (target) {
-                await changeTab(target.firstElementChild!.textContent, Number.parseInt(target.id));
-            }
-        }
-    });
 
     topPanelButtonsDiv.addEventListener("contextmenu", (event) => {
         event.preventDefault();
@@ -2348,21 +2363,37 @@ document.addEventListener("DOMContentLoaded", async () => {
             case saveButton.id:
                 await save(SaveMode.AllFiles);
                 break;
-            case "compile-button":
+            case "compile-button": {
                 if (event.button === 2) {
-                    const compileWindow = new WebviewWindow("compile", {
-                        url: "compile.html",
-                        title: localization.compileWindowTitle,
-                        center: true,
-                    });
+                    compileMenu.toggleMultiple("hidden", "flex");
 
-                    await compileWindow.once<[string, boolean[]]>("compile", async (event) => {
-                        await startCompilation(event.payload[0], event.payload[1]);
-                    });
+                    if (compileMenu.classList.contains("flex")) {
+                        requestAnimationFrame(() => {
+                            compileMenu.style.left = `${compileButton.offsetLeft}px`;
+                            compileMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
+                        });
+
+                        outputPathInput.value = join(settings.projectPath, programDataDir);
+                        cDisableMapsProcessingCheckbox.innerHTML =
+                            cDisableOtherProcessingCheckbox.innerHTML =
+                            cDisableSystemProcessingCheckbox.innerHTML =
+                            cDisablePluginsProcessingCheckbox.innerHTML =
+                                "";
+                    }
                 } else {
-                    await startCompilation();
+                    if (compileButton.classList.contains("flex")) {
+                        await startCompilation(outputPathInput.value, [
+                            Boolean(cDisableMapsProcessingCheckbox.textContent),
+                            Boolean(cDisableOtherProcessingCheckbox.textContent),
+                            Boolean(cDisableSystemProcessingCheckbox.textContent),
+                            Boolean(cDisablePluginsProcessingCheckbox.textContent),
+                        ]);
+                    } else {
+                        await startCompilation();
+                    }
                 }
                 break;
+            }
             case "open-directory-button": {
                 const directory = await openPath({ directory: true, multiple: false });
 
@@ -2416,22 +2447,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                     bookmarksMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
                 });
                 break;
-            case "read-button": {
-                const readWindow = new WebviewWindow("read", {
-                    title: localization.readWindowTitle,
-                    url: "read.html",
-                    center: true,
-                });
+            case readButton.id: {
+                if (!originalDir) {
+                    alert(localization.gameFilesDoNotExist);
+                    return;
+                }
 
-                const unlistenRestart = await readWindow.once("restart", async () => {
-                    if (await beforeClose(true)) {
-                        location.reload();
-                    }
-                });
+                readMenu.toggleMultiple("hidden", "flex");
 
-                await readWindow.once("tauri://destroyed", () => {
-                    unlistenRestart();
-                });
+                if (readMenu.classList.contains("flex")) {
+                    requestAnimationFrame(() => {
+                        readMenu.style.left = `${readButton.offsetLeft}px`;
+                        readMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
+                    });
+                }
+
                 break;
             }
             case "search-button":
@@ -2453,93 +2483,26 @@ document.addEventListener("DOMContentLoaded", async () => {
                     toolsMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
                 });
                 break;
-            case "purge-button": {
-                new WebviewWindow("purge", {
-                    title: localization.purgeWindowTitle,
-                    url: "purge.html",
-                    center: true,
-                });
+            case purgeButton.id: {
+                if (!originalDir) {
+                    alert(localization.gameFilesDoNotExist);
+                    return;
+                }
+
+                purgeMenu.toggleMultiple("hidden", "flex");
+
+                if (purgeMenu.classList.contains("flex")) {
+                    requestAnimationFrame(() => {
+                        purgeMenu.style.left = `${purgeButton.offsetLeft}px`;
+                        purgeMenu.style.top = `${menuBar.clientHeight + topPanel.clientHeight}px`;
+                    });
+                }
                 break;
             }
         }
     });
 
     searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
-
-    searchPanel.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
-
-        switch (target.id) {
-            case searchSwitch.id: {
-                searchPanelFound.classList.toggle("hidden");
-                searchPanelReplaced.classList.toggle("hidden");
-
-                if (target.innerHTML.trim() === "search") {
-                    target.innerHTML = "menu_book";
-
-                    for (const [key, value] of Object.entries(replaced)) {
-                        const replacedContainer = document.createElement("div");
-                        replacedContainer.className = tw`textSecond backgroundSecond borderPrimary my-1 cursor-pointer border-2 p-1 text-base`;
-                        replacedContainer.setAttribute("reverted", "0");
-
-                        replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material">arrow_downward</div><div>${value.new}</div>`;
-
-                        searchPanelReplaced.appendChild(replacedContainer);
-                    }
-                } else {
-                    target.innerHTML = "search";
-                    searchPanelReplaced.innerHTML = "";
-                }
-                break;
-            }
-            case "previous-page-button": {
-                const page = Number.parseInt(searchCurrentPage.textContent!);
-
-                if (page > 0) {
-                    searchCurrentPage.textContent = (page - 1).toString();
-                    searchPanelFound.innerHTML = "";
-
-                    const matches = JSON.parse(
-                        await readTextFile(
-                            join(settings.projectPath, programDataDir, `matches-${searchCurrentPage.textContent}.json`),
-                        ),
-                    ) as object;
-
-                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-                        if (Array.isArray(result)) {
-                            appendMatch(id, result[0] as string, result[1] as string);
-                        } else {
-                            appendMatch(id, result);
-                        }
-                    }
-                }
-                break;
-            }
-            case "next-page-button": {
-                const page = Number.parseInt(searchCurrentPage.textContent!);
-
-                if (page < Number.parseInt(searchTotalPages.textContent!)) {
-                    searchCurrentPage.textContent = (page + 1).toString();
-                    searchPanelFound.innerHTML = "";
-
-                    const matches = JSON.parse(
-                        await readTextFile(
-                            join(settings.projectPath, programDataDir, `matches-${searchCurrentPage.textContent}.json`),
-                        ),
-                    ) as object;
-
-                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
-                        if (Array.isArray(result)) {
-                            appendMatch(id, result[0] as string, result[1] as string);
-                        } else {
-                            appendMatch(id, result);
-                        }
-                    }
-                }
-                break;
-            }
-        }
-    });
 
     document.body.addEventListener("keydown", handleKeypress);
     document.body.addEventListener("keyup", (event) => {
@@ -2548,64 +2511,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    searchMenu.addEventListener("click", async (event) => {
-        if (!settings.projectPath) {
-            return;
-        }
-
-        const target = event.target as HTMLElement;
-
-        switch (target.id) {
-            case "search-button":
-                if (searchInput.value.trim()) {
-                    searchPanelFound.innerHTML = "";
-                    await displaySearchResults(searchInput.value, false);
-                }
-                break;
-            case "replace-button": {
-                const replacer = replaceInput.value.trim();
-                if (searchInput.value.trim() && replacer) {
-                    await replaceText(searchInput.value, replacer, ReplaceMode.Replace);
-                }
-                break;
-            }
-            case "put-button": {
-                const replacer = replaceInput.value.trim();
-                if (searchInput.value.trim() && replacer) {
-                    await replaceText(searchInput.value, replacer, ReplaceMode.Put);
-                }
-                break;
-            }
-            case "case-button":
-                searchCaseButton.classList.toggle("backgroundThird");
-                break;
-            case "whole-button":
-                searchWholeButton.classList.toggle("backgroundThird");
-                break;
-            case "regex-button":
-                searchRegexButton.classList.toggle("backgroundThird");
-                break;
-            case "location-button":
-                searchLocationButton.classList.toggle("backgroundThird");
-                break;
-        }
-    });
-
     tabContent.addEventListener("focus", handleFocus, true);
     tabContent.addEventListener("blur", handleBlur, true);
-    tabContent.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.tagName === "DIV") {
-            const rowContainer = target.parentElement;
-
-            if (rowContainer) {
-                if (/\d$/.test(rowContainer.id)) {
-                    await writeText(target.textContent!);
-                }
-            }
-        }
-    });
 
     tabContent.addEventListener("mousedown", async (event) => {
         const target = event.target as HTMLElement;
@@ -2805,22 +2712,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    bookmarksMenu.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
-
-        if (target.id === bookmarksMenu.id) {
-            return;
-        }
-
-        const [file, row] = target.textContent!.split("-");
-
-        await changeTab(file);
-        tabContent.children[Number.parseInt(row)].scrollIntoView({
-            inline: "center",
-            block: "center",
-        });
-    });
-
     searchPanel.addEventListener("transitionend", () => {
         if (searchSwitch.innerHTML.trim() === "search") {
             searchPanelFound.toggleMultiple("hidden", "flex");
@@ -2857,10 +2748,226 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    menuBar.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
+    themeWindow.addEventListener("input", (event) => {
+        const target = event.target as HTMLInputElement;
+
+        if (target.type === "color") {
+            applyTheme(sheet, [target.id, target.value]);
+            return;
+        }
+    });
+
+    batchWindow.addEventListener("mousemove", (event) => {
+        if (event.buttons === 1) {
+            const target = event.target as HTMLElement;
+            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
+                target.textContent = target.textContent ? "" : "check";
+                batchSelectWindowChecked.push(target);
+            }
+        }
+    });
+
+    batchWindow.addEventListener("mouseup", () => {
+        batchSelectWindowChecked.length = 0;
+    });
+
+    document.addEventListener("click", async (event) => {
+        const target = event.target as HTMLElement | null;
+
+        if (!target) {
+            return;
+        }
+
+        if (tabContent.contains(target)) {
+            if (target.tagName === "DIV") {
+                const rowContainer = target.parentElement;
+
+                if (rowContainer) {
+                    if (/\d$/.test(rowContainer.id)) {
+                        await writeText(target.textContent!);
+                    }
+                }
+            }
+        }
+
+        if (target.id.includes("checkbox")) {
+            target.innerHTML = !target.textContent ? "check" : "";
+        }
+
+        if (toolsMenu.contains(target)) {
+            if (batchWindow.classList.contains("flex")) {
+                batchWindow.classList.replace("flex", "hidden");
+                return;
+            }
+
+            switch (target.id) {
+                case "translate-tools-menu-button":
+                    if (!areLanguageTagsValid()) {
+                        return;
+                    }
+
+                    batchWindowAction = BatchAction.Translate;
+                    initializeBatchWindow(target);
+                    break;
+                case "trim-tools-menu-button":
+                    batchWindowAction = BatchAction.Trim;
+                    initializeBatchWindow(target);
+                    break;
+                case "wrap-tools-menu-button":
+                    batchWindowAction = BatchAction.Wrap;
+                    initializeBatchWindow(target);
+                    break;
+            }
+            return;
+        }
+
+        if (batchWindow.contains(target)) {
+            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
+                target.textContent = target.textContent ? "" : "check";
+                batchSelectWindowChecked.push(target);
+            }
+
+            switch (target.id) {
+                case "select-all-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "check";
+                    }
+                    break;
+                case "deselect-all-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+                    break;
+                case "apply-button": {
+                    const filenames: [string, number][] = [];
+
+                    for (const element of batchWindowBody.children) {
+                        if (element.firstElementChild!.textContent) {
+                            filenames.push([element.lastElementChild!.textContent!, Number.parseInt(element.id)]);
+                        }
+                    }
+
+                    for (const [filename, i] of filenames) {
+                        await processFile(
+                            filename,
+                            i,
+                            Number.parseInt(
+                                (batchWindowFooter.firstElementChild!.firstElementChild! as HTMLInputElement).value,
+                            ),
+                        );
+                    }
+
+                    saved = false;
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+
+                    batchWindow.classList.replace("flex", "hidden");
+                    break;
+                }
+                case "cancel-button":
+                    for (const element of batchWindowBody.children) {
+                        element.firstElementChild!.textContent = "";
+                    }
+
+                    batchWindow.classList.replace("flex", "hidden");
+                    break;
+            }
+            return;
+        }
+
+        if (themeMenu.contains(target)) {
+            if (target.id === "create-theme-menu-button") {
+                themeWindow.classList.remove("hidden");
+                themeWindow.style.left = `${(document.body.clientWidth - themeWindow.clientWidth) / 2}px`;
+
+                const themeColors = Object.values(theme);
+                let colorIndex = 1;
+
+                for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
+                    for (const subdiv of div.children) {
+                        (subdiv.firstElementChild as HTMLInputElement).value = themeColors[colorIndex++];
+                    }
+                }
+            } else {
+                setTheme(themes[target.id]);
+            }
+            return;
+        }
+
+        if (bookmarksMenu.contains(target)) {
+            if (target.id === bookmarksMenu.id) {
+                return;
+            }
+
+            const [file, row] = target.textContent!.split("-");
+
+            await changeTab(file);
+            tabContent.children[Number.parseInt(row)].scrollIntoView({
+                inline: "center",
+                block: "center",
+            });
+            return;
+        }
+
+        if (searchMenu.contains(target)) {
+            if (!settings.projectPath) {
+                return;
+            }
+        }
+
+        // Left panel
+        if (leftPanel.contains(target)) {
+            const leftPanelChildren = Array.from(leftPanel.children);
+            let innerTarget: HTMLElement | null = target;
+
+            while (innerTarget && !leftPanelChildren.includes(innerTarget)) {
+                innerTarget = innerTarget.parentElement;
+            }
+
+            if (innerTarget) {
+                await changeTab(innerTarget.firstElementChild!.textContent, Number.parseInt(innerTarget.id));
+            }
+            return;
+        }
+
+        if (target.classList.contains("dropdown-menu")) {
+            for (const element of document.querySelectorAll(".dropdown-menu")) {
+                element.classList.replace("flex", "hidden");
+            }
+        }
 
         switch (target.id) {
+            // Theme window
+            case createThemeButton.id: {
+                const themeNameInput: HTMLInputElement = themeWindow.querySelector("#theme-name-input")!;
+                const themeName = themeNameInput.value.trim();
+
+                if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
+                    await message(`${localization.invalidThemeName} ${localization.allowedThemeNameCharacters}`);
+                    return;
+                }
+
+                const newTheme = { name: themeName } as Theme;
+                for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
+                    for (const subdiv of div.children) {
+                        const input = subdiv.firstElementChild as HTMLInputElement;
+                        newTheme[input.id] = input.value;
+                    }
+                }
+
+                themes[themeName] = newTheme;
+                await writeTextFile("res/themes.json", JSON.stringify(themes), { baseDir: Resource });
+
+                const newThemeButton = document.createElement("button");
+                newThemeButton.id = newThemeButton.textContent = themeName;
+                themeMenu.insertBefore(newThemeButton, themeMenu.lastElementChild);
+                break;
+            }
+            case closeButton.id:
+                themeWindow.classList.add("hidden");
+                break;
+            // Menu bar
             case fileMenuButton.id:
                 fileMenu.toggleMultiple("hidden", "flex");
                 helpMenu.classList.replace("flex", "hidden");
@@ -2917,177 +3024,186 @@ document.addEventListener("DOMContentLoaded", async () => {
                     applyLocalization(localization, theme);
                 }
                 break;
-        }
-    });
+            // Search panel
+            case searchSwitch.id: {
+                searchPanelFound.classList.toggle("hidden");
+                searchPanelReplaced.classList.toggle("hidden");
 
-    themeWindow.addEventListener("input", (event) => {
-        const target = event.target as HTMLInputElement;
+                if (target.innerHTML.trim() === "search") {
+                    target.innerHTML = "menu_book";
 
-        if (target.type === "color") {
-            applyTheme(sheet, [target.id, target.value]);
-            return;
-        }
-    });
+                    for (const [key, value] of Object.entries(replaced)) {
+                        const replacedContainer = document.createElement("div");
+                        replacedContainer.className = tw`textSecond backgroundSecond borderPrimary my-1 cursor-pointer border-2 p-1 text-base`;
+                        replacedContainer.setAttribute("reverted", "0");
 
-    themeWindow.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement;
+                        replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material">arrow_downward</div><div>${value.new}</div>`;
 
-        switch (target.id) {
-            case createThemeButton.id: {
-                const themeNameInput: HTMLInputElement = themeWindow.querySelector("#theme-name-input")!;
-                const themeName = themeNameInput.value.trim();
-
-                if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
-                    await message(`${localization.invalidThemeName} ${localization.allowedThemeNameCharacters}`);
-                    return;
-                }
-
-                const newTheme = { name: themeName } as Theme;
-                for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
-                    for (const subdiv of div.children) {
-                        const input = subdiv.firstElementChild as HTMLInputElement;
-                        newTheme[input.id] = input.value;
+                        searchPanelReplaced.appendChild(replacedContainer);
                     }
+                } else {
+                    target.innerHTML = "search";
+                    searchPanelReplaced.innerHTML = "";
                 }
-
-                themes[themeName] = newTheme;
-                await writeTextFile("res/themes.json", JSON.stringify(themes), { baseDir: Resource });
-
-                const newThemeButton = document.createElement("button");
-                newThemeButton.id = newThemeButton.textContent = themeName;
-                themeMenu.insertBefore(newThemeButton, themeMenu.lastElementChild);
                 break;
             }
-            case closeButton.id:
-                themeWindow.classList.add("hidden");
-                break;
-        }
-    });
+            case "previous-page-button": {
+                const page = Number.parseInt(searchCurrentPage.textContent!);
 
-    themeMenu.addEventListener("click", (event: MouseEvent) => {
-        const target = event.target as HTMLButtonElement;
+                if (page > 0) {
+                    searchCurrentPage.textContent = (page - 1).toString();
+                    searchPanelFound.innerHTML = "";
 
-        if (!themeMenu.contains(target)) {
-            return;
-        }
+                    const matches = JSON.parse(
+                        await readTextFile(
+                            join(settings.projectPath, programDataDir, `matches-${searchCurrentPage.textContent}.json`),
+                        ),
+                    ) as object;
 
-        if (target.id === "create-theme-menu-button") {
-            themeWindow.classList.remove("hidden");
-            themeWindow.style.left = `${(document.body.clientWidth - themeWindow.clientWidth) / 2}px`;
-
-            const themeColors = Object.values(theme);
-            let colorIndex = 1;
-
-            for (const div of themeWindowBody.children as HTMLCollectionOf<HTMLDivElement>) {
-                for (const subdiv of div.children) {
-                    (subdiv.firstElementChild as HTMLInputElement).value = themeColors[colorIndex++];
-                }
-            }
-        } else {
-            setTheme(themes[target.id]);
-        }
-    });
-
-    batchWindow.addEventListener("click", async (event) => {
-        const target = event.target as HTMLElement | null;
-
-        if (target && batchWindow.contains(target)) {
-            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
-                target.textContent = target.textContent ? "" : "check";
-                batchSelectWindowChecked.push(target);
-            }
-
-            switch (target.id) {
-                case "select-all-button":
-                    for (const element of batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "check";
-                    }
-                    break;
-                case "deselect-all-button":
-                    for (const element of batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "";
-                    }
-                    break;
-                case "apply-button": {
-                    const filenames: [string, number][] = [];
-
-                    for (const element of batchWindowBody.children) {
-                        if (element.firstElementChild!.textContent) {
-                            filenames.push([element.lastElementChild!.textContent!, Number.parseInt(element.id)]);
+                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
+                        if (Array.isArray(result)) {
+                            appendMatch(id, result[0] as string, result[1] as string);
+                        } else {
+                            appendMatch(id, result);
                         }
                     }
-
-                    for (const [filename, i] of filenames) {
-                        await processFile(
-                            filename,
-                            i,
-                            Number.parseInt(
-                                (batchWindowFooter.firstElementChild!.firstElementChild! as HTMLInputElement).value,
-                            ),
-                        );
-                    }
-
-                    saved = false;
-                    for (const element of batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "";
-                    }
-
-                    batchWindow.classList.replace("flex", "hidden");
-                    break;
                 }
-                case "cancel-button":
-                    for (const element of batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "";
+                break;
+            }
+            case "next-page-button": {
+                const page = Number.parseInt(searchCurrentPage.textContent!);
+
+                if (page < Number.parseInt(searchTotalPages.textContent!)) {
+                    searchCurrentPage.textContent = (page + 1).toString();
+                    searchPanelFound.innerHTML = "";
+
+                    const matches = JSON.parse(
+                        await readTextFile(
+                            join(settings.projectPath, programDataDir, `matches-${searchCurrentPage.textContent}.json`),
+                        ),
+                    ) as object;
+
+                    for (const [id, result] of Object.entries(matches) as [string, string | [string, string]]) {
+                        if (Array.isArray(result)) {
+                            appendMatch(id, result[0] as string, result[1] as string);
+                        } else {
+                            appendMatch(id, result);
+                        }
                     }
-
-                    batchWindow.classList.replace("flex", "hidden");
-                    break;
-            }
-        }
-    });
-
-    batchWindow.addEventListener("mousemove", (event) => {
-        if (event.buttons === 1) {
-            const target = event.target as HTMLElement;
-            if (target.classList.contains("checkbox") && !batchSelectWindowChecked.includes(target)) {
-                target.textContent = target.textContent ? "" : "check";
-                batchSelectWindowChecked.push(target);
-            }
-        }
-    });
-
-    batchWindow.addEventListener("mouseup", () => {
-        batchSelectWindowChecked.length = 0;
-    });
-
-    toolsMenu.addEventListener("click", (event: MouseEvent) => {
-        const target = event.target as HTMLButtonElement;
-
-        if (!toolsMenu.contains(target)) {
-            return;
-        }
-
-        if (batchWindow.classList.contains("flex")) {
-            batchWindow.classList.replace("flex", "hidden");
-            return;
-        }
-
-        switch (target.id) {
-            case "translate-tools-menu-button":
-                if (!areLanguageTagsValid()) {
-                    return;
                 }
+                break;
+            }
+            // Search menu
+            case "search-button":
+                if (searchInput.value.trim()) {
+                    searchPanelFound.innerHTML = "";
+                    await displaySearchResults(searchInput.value, false);
+                }
+                break;
+            case "replace-button": {
+                const replacer = replaceInput.value.trim();
+                if (searchInput.value.trim() && replacer) {
+                    await replaceText(searchInput.value, replacer, ReplaceMode.Replace);
+                }
+                break;
+            }
+            case "put-button": {
+                const replacer = replaceInput.value.trim();
+                if (searchInput.value.trim() && replacer) {
+                    await replaceText(searchInput.value, replacer, ReplaceMode.Put);
+                }
+                break;
+            }
+            case "case-button":
+                searchCaseButton.classList.toggle("backgroundThird");
+                break;
+            case "whole-button":
+                searchWholeButton.classList.toggle("backgroundThird");
+                break;
+            case "regex-button":
+                searchRegexButton.classList.toggle("backgroundThird");
+                break;
+            case "location-button":
+                searchLocationButton.classList.toggle("backgroundThird");
+                break;
+            // Compile menu
+            case outputPathButton.id: {
+                const directory = (await openPath({ directory: true, multiple: false }))!;
 
-                batchWindowAction = BatchAction.Translate;
-                initializeBatchWindow(target);
+                if (directory) {
+                    outputPathInput.value = directory;
+                }
                 break;
-            case "trim-tools-menu-button":
-                batchWindowAction = BatchAction.Trim;
-                initializeBatchWindow(target);
+            }
+            // Read menu
+            case readingModeSelect.id:
+                switch (readingModeSelect.value) {
+                    case "append":
+                        readingModeDescription.innerHTML = localization.appendModeDescription;
+                        break;
+                    case "force":
+                        readingModeDescription.innerHTML = localization.forceModeDescription;
+                        break;
+                }
                 break;
-            case "wrap-tools-menu-button":
-                batchWindowAction = BatchAction.Wrap;
-                initializeBatchWindow(target);
+            case applyReadButton.id:
+                await save(SaveMode.AllFiles);
+
+                readButton.firstElementChild!.classList.add("animate-spin");
+
+                await read(
+                    settings.projectPath,
+                    originalDir,
+                    currentGameTitle.getAttribute("original-title")!,
+                    Number(mapsProcessingModeSelect.value),
+                    Boolean(romanizeCheckbox.textContent),
+                    Boolean(disableCustomProcessingCheckbox.textContent),
+                    [
+                        Boolean(rDisableMapsProcessingCheckbox.textContent),
+                        Boolean(rDisableOtherProcessingCheckbox.textContent),
+                        Boolean(rDisableSystemProcessingCheckbox.textContent),
+                        Boolean(rDisablePluginsProcessingCheckbox.textContent),
+                    ],
+                    Number(mapsProcessingModeSelect.value),
+                    projectSettings.engineType!,
+                    Boolean(ignoreCheckbox.textContent),
+                );
+
+                if (await beforeClose(true)) {
+                    location.reload();
+                }
+                break;
+            // Purge menu
+            case applyPurgeButton.id:
+                await save(SaveMode.AllFiles);
+
+                purgeButton.firstElementChild!.classList.add("animate-spin");
+
+                await purge(
+                    settings.projectPath,
+                    originalDir,
+                    currentGameTitle.getAttribute("original-title")!,
+                    projectSettings.mapsProcessingMode,
+                    projectSettings.romanize,
+                    projectSettings.disableCustomProcessing,
+                    [
+                        Boolean(pDisableMapsProcessingCheckbox.textContent),
+                        Boolean(pDisableOtherProcessingCheckbox.textContent),
+                        Boolean(pDisableSystemProcessingCheckbox.textContent),
+                        Boolean(pDisablePluginsProcessingCheckbox.textContent),
+                    ],
+                    projectSettings.engineType!,
+                    Boolean(statCheckbox.textContent),
+                    Boolean(leaveFilledCheckbox.textContent),
+                    Boolean(purgeEmptyCheckbox.textContent),
+                    Boolean(createIgnoreCheckbox.textContent),
+                );
+
+                purgeButton.firstElementChild!.classList.remove("animate-spin");
+
+                if (!statCheckbox.textContent && (await beforeClose(true))) {
+                    location.reload();
+                }
                 break;
         }
     });
