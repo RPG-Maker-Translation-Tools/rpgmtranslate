@@ -2469,7 +2469,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 break;
             }
-            case "search-button":
+            case searchButton.id:
                 if (searchMenu.classList.contains("hidden")) {
                     searchMenu.classList.remove("hidden");
                     requestAnimationFrame(() => {
@@ -3099,7 +3099,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             }
             // Search menu
-            case "search-button":
+            case "apply-search-button":
                 if (searchInput.value.trim()) {
                     searchPanelFound.innerHTML = "";
                     await displaySearchResults(searchInput.value, false);
