@@ -4,14 +4,14 @@ use lazy_static::lazy_static;
 use regex::{escape, Regex};
 use rpgmad_lib::Decrypter;
 use rvpacker_lib::{
-    purge::{purge_map, purge_other, purge_plugins, purge_scripts, purge_system},
+    purge::{purge_map, purge_other, purge_plugins, purge_scripts, purge_system, write_ignore, write_stat},
     read::*,
-    types::{EngineType, GameType, MapsProcessingMode, ProcessingMode, ResultExt},
+    types::{EngineType, GameType, IgnoreMap, MapsProcessingMode, ProcessingMode, ResultExt},
     write::*,
 };
 use std::{
-    fs::{self, create_dir_all, remove_file, File, OpenOptions},
-    io::{Read, Seek, SeekFrom, Write},
+    fs::{self, create_dir_all, read_dir, read_to_string, remove_file, write, File, OpenOptions},
+    io::{BufRead, BufReader, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -290,6 +290,7 @@ pub fn read(
                 translation_path,
                 romanize,
                 LOGGING,
+                engine_type,
                 processing_mode,
                 ignore,
             );
@@ -338,6 +339,9 @@ pub fn purge(
 
     create_dir_all(translation_path).unwrap_log();
 
+    let mut ignore_map = IgnoreMap::default();
+    let mut stat_vec = Vec::new();
+
     if !disable_processing[0] {
         purge_map(
             original_path,
@@ -351,6 +355,8 @@ pub fn purge(
             leave_filled,
             purge_empty,
             create_ignore,
+            &mut ignore_map,
+            &mut stat_vec,
         );
     }
 
@@ -366,6 +372,8 @@ pub fn purge(
             leave_filled,
             purge_empty,
             create_ignore,
+            &mut ignore_map,
+            &mut stat_vec,
         );
     }
 
@@ -380,6 +388,8 @@ pub fn purge(
             leave_filled,
             purge_empty,
             create_ignore,
+            &mut ignore_map,
+            &mut stat_vec,
         );
     }
 
@@ -394,6 +404,8 @@ pub fn purge(
                 leave_filled,
                 purge_empty,
                 create_ignore,
+                &mut ignore_map,
+                &mut stat_vec,
             );
         } else {
             purge_scripts(
@@ -405,8 +417,18 @@ pub fn purge(
                 leave_filled,
                 purge_empty,
                 create_ignore,
+                &mut ignore_map,
+                &mut stat_vec,
             );
         }
+    }
+
+    if create_ignore {
+        write_ignore(ignore_map, translation_path);
+    }
+
+    if stat {
+        write_stat(stat_vec, translation_path);
     }
 }
 
