@@ -1784,6 +1784,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     await copyFile(join(translationPath, entry.name), join(programTranslationPath, entry.name));
                 }
 
+                // The only case when files must be converted to LF
+                // is when they're cloned from Windows machine
+                await convertToLF(programTranslationPath);
+
                 const metadataPath = join(translationPath, ".rvpacker-metadata");
                 if (await exists(metadataPath)) {
                     const metadata = JSON.parse(await readTextFile(metadataPath)) as {
