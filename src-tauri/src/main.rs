@@ -35,7 +35,8 @@ fn main() {
             extract_archive,
             append_to_end,
             walk_dir,
-            purge
+            purge,
+            convert_to_lf
         ])
         .setup(|_app: &mut App| {
             #[cfg(debug_assertions)]

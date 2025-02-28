@@ -38,6 +38,35 @@ fn get_game_type(game_title: &str) -> Option<GameType> {
     }
 }
 
+fn is_crlf(file_path: &Path) -> bool {
+    let file: File = File::open(file_path).unwrap_log();
+    let mut reader: BufReader<File> = BufReader::new(file);
+    let mut line: String = String::new();
+    let _ = reader.read_line(&mut line);
+
+    line.contains('\r')
+}
+
+fn replace_crlf(file_path: &Path) {
+    let content: String = read_to_string(file_path).unwrap_log();
+    write(file_path, content.replace('\r', "")).unwrap_log();
+}
+
+#[command]
+pub fn convert_to_lf(translation_path: &str) {
+    for entry in read_dir(translation_path).unwrap_log().flatten() {
+        let path = entry.path();
+
+        if !path.is_file() {
+            continue;
+        }
+
+        if is_crlf(&path) {
+            replace_crlf(&path);
+        }
+    }
+}
+
 #[command]
 pub fn escape_text(text: &str) -> String {
     escape(text)

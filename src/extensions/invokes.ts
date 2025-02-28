@@ -113,3 +113,9 @@ export async function purge(
         createIgnore,
     });
 }
+
+export async function convertToLF(translationPath: string) {
+    await invoke("convert_to_lf", {
+        translationPath,
+    });
+}
