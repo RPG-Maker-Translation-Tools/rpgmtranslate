@@ -1755,7 +1755,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return true;
     }
 
-    async function initializeProject(pathToProject: string) {
+    async function initializeProject(pathToProject: string, openingNew: boolean) {
         await addToScope({ path: pathToProject });
 
         if (!(await isProjectValid(pathToProject))) {
@@ -1764,9 +1764,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        await save(SaveMode.AllFiles);
-        await beforeClose(true);
-        await changeTab(null);
+        if (openingNew) {
+            await save(SaveMode.AllFiles);
+            await beforeClose(true);
+            await changeTab(null);
+        }
+
         currentGameTitle.innerHTML = "";
         totalAllLines = 0;
         translatedLinesArray.length = 0;
@@ -2307,7 +2310,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let totalAllLines = 0;
     const translatedLinesArray: number[] = [];
 
-    await initializeProject(settings.projectPath);
+    await initializeProject(settings.projectPath, false);
 
     // Load the font
     const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
@@ -2413,7 +2416,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         return;
                     }
 
-                    await initializeProject(directory);
+                    await initializeProject(directory, true);
                 }
                 break;
             }
