@@ -61,36 +61,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (noSave || (await exitConfirmation())) {
             if (settings.projectPath) {
+                const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
+
+                await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
+
+                for (const entry of dataDirEntries) {
+                    const name = entry.name;
+
+                    if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
+                        await removePath(join(settings.projectPath, programDataDir, name));
+                    }
+                }
+
                 await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
                 await writeTextFile(
                     join(settings.projectPath, programDataDir, bookmarksFile),
                     JSON.stringify(bookmarks),
                 );
 
-                const dataDirEntries = await readDir(join(settings.projectPath, programDataDir));
+                projectSettings.translationLanguages = {
+                    from: fromLanguageInput.value,
+                    to: toLanguageInput.value,
+                };
 
-                for (const entry of dataDirEntries) {
-                    const name = entry.name;
-
-                    if (name === tempMapsDir) {
-                        await removePath(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
-                    } else if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
-                        await removePath(join(settings.projectPath, programDataDir, name));
-                    }
-                }
+                await writeTextFile(
+                    join(settings.projectPath, programDataDir, "project-settings.json"),
+                    JSON.stringify(projectSettings),
+                );
             }
 
             await writeTextFile(settingsPath, JSON.stringify(settings), { baseDir: Resource });
 
-            projectSettings.translationLanguages = {
-                from: fromLanguageInput.value,
-                to: toLanguageInput.value,
-            };
-
-            await writeTextFile(
-                join(settings.projectPath, programDataDir, "project-settings.json"),
-                JSON.stringify(projectSettings),
-            );
             return true;
         } else {
             return false;
