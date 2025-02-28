@@ -4,6 +4,7 @@ import {
     addToScope,
     appendToEnd,
     compile,
+    convertToLF,
     escapeText,
     extractArchive,
     purge,
@@ -1663,7 +1664,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return buttonElement;
     }
 
-    async function ensureProjectIsValid(path: string): Promise<boolean> {
+    async function isProjectValid(path: string): Promise<boolean> {
         if (!path || !(await exists(path))) {
             if (path) {
                 await message(localization.selectedFolderMissing);
@@ -1751,24 +1752,28 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         currentGameEngine.innerHTML = ["MV / MZ", "VX Ace", "VX", "XP"][settings.engineType!] ?? "";
-
         return true;
     }
 
     async function initializeProject(pathToProject: string) {
         await addToScope({ path: pathToProject });
-        projectStatus.innerHTML = localization.loadingProject;
-        const interval = animateProgressText(projectStatus);
 
-        if (!(await ensureProjectIsValid(pathToProject))) {
+        if (!(await isProjectValid(pathToProject))) {
             settings.projectPath = "";
             projectStatus.innerHTML = localization.noProjectSelected;
             return;
         }
 
+        await save(SaveMode.AllFiles);
+        await beforeClose(true);
+        await changeTab(null);
+        currentGameTitle.innerHTML = "";
         totalAllLines = 0;
         translatedLinesArray.length = 0;
         settings.projectPath = pathToProject;
+
+        projectStatus.innerHTML = localization.loadingProject;
+        const interval = animateProgressText(projectStatus);
 
         const programDataDirPath = join(settings.projectPath, programDataDir);
         await addToScope({ path: programDataDirPath });
@@ -2407,9 +2412,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                         await message(localization.directoryAlreadyOpened);
                         return;
                     }
-
-                    await changeTab(null);
-                    currentGameTitle.innerHTML = "";
 
                     await initializeProject(directory);
                 }
