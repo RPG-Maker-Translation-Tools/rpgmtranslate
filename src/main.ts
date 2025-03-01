@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         resultContainer.appendChild(originalInfo);
 
         const arrow = document.createElement("div");
-        arrow.className = tw`textSecond font-material flex items-center justify-center text-xl`;
+        arrow.className = tw`textSecond font-material content-center text-xl`;
         arrow.innerHTML = "arrow_downward";
         resultContainer.appendChild(arrow);
 
@@ -451,7 +451,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             }
         } else if (replaceMode === ReplaceMode.Search) {
-            searchPanelFound.innerHTML = `<div id="no-results" class="flex justify-center items-center h-full">${localization.noMatches}</div>`;
+            searchPanelFound.innerHTML = `<div id="no-results" class="content-center h-full">${localization.noMatches}</div>`;
             showSearchPanel(false);
         }
 
@@ -1357,10 +1357,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             rowNumberSpan.textContent = added.toString();
 
             const rowNumberButtonDiv = document.createElement("div");
-            rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end p-0.5 text-xl`;
+            rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end gap-0.5 p-0.5 text-lg`;
 
             const bookmarkButton = document.createElement("button");
-            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 items-center justify-center rounded-md border-2`;
+            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
             bookmarkButton.textContent = "bookmark";
 
             if (bookmarks.some((obj) => obj.title === textParent.id)) {
@@ -1368,11 +1368,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const deleteButton = document.createElement("button");
-            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 items-center justify-center rounded-md border-2`;
+            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 content-center items-center justify-center rounded-md border-2`;
             deleteButton.textContent = "close";
 
-            rowNumberButtonDiv.appendChild(bookmarkButton);
             rowNumberButtonDiv.appendChild(deleteButton);
+            rowNumberButtonDiv.appendChild(bookmarkButton);
             rowNumberContainer.appendChild(rowNumberSpan);
             rowNumberContainer.appendChild(rowNumberButtonDiv);
 
@@ -1621,7 +1621,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const buttonElement = document.createElement("button");
-        buttonElement.className = "menu-button backgroundPrimary backgroundPrimaryHovered h-8";
+        buttonElement.className = tw`backgroundPrimary backgroundPrimaryHovered flex h-8 w-full cursor-pointer flex-row justify-center p-1`;
         buttonElement.id = (tabIndex - 1).toString();
 
         const stateSpan = document.createElement("span");
@@ -1929,7 +1929,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         for (const themeName of Object.keys(themes)) {
             const themeButton = document.createElement("button");
             themeButton.id = themeButton.innerHTML = themeName;
-            themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered p-2 text-base`;
+            themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered h-8 p-1 text-base`;
             themeMenu.insertBefore(themeButton, createThemeMenuButton);
         }
 

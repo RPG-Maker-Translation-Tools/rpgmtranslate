@@ -12,36 +12,42 @@
     <body class="textPrimary backgroundDark overflow-x-hidden text-2xl">
         <header class="sticky top-0 z-40">
             <div class="backgroundPrimary mr-2 flex h-6 w-full items-center text-sm" id="menu-bar">
-                <div class="menu-bar-button backgroundSecondHovered">
+                <div class="backgroundSecondHovered content-center">
                     <button class="fileMenu px-2" id="file-menu-button"></button>
                 </div>
-                <div class="menu-bar-button backgroundSecondHovered">
+                <div class="backgroundSecondHovered content-center">
                     <button class="helpMenu px-2" id="help-menu-button"></button>
                 </div>
-                <div class="menu-bar-button backgroundSecondHovered">
+                <div class="backgroundSecondHovered content-center">
                     <button class="languageMenu px-2" id="language-menu-button"></button>
                 </div>
                 <div class="dropdown-menu borderSecond hidden" id="file-menu">
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered reloadButton p-1.5 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered reloadButton h-8 content-center p-1 text-base"
                         id="reload-button"
                     ></button>
                 </div>
                 <div class="dropdown-menu borderSecond hidden" id="help-menu">
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered helpButton p-1.5 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered helpButton h-8 content-center p-1 text-base"
                         id="help-button"
                     ></button>
                     <button
-                        class="backgroundPrimary backgroundPrimaryHovered aboutButton p-1.5 text-base"
+                        class="backgroundPrimary backgroundPrimaryHovered aboutButton h-8 content-center p-1 text-base"
                         id="about-button"
                     ></button>
                 </div>
                 <div class="dropdown-menu borderSecond hidden" id="language-menu">
-                    <button class="backgroundPrimary backgroundPrimaryHovered p-1.5 text-base" id="ru-button">
+                    <button
+                        class="backgroundPrimary backgroundPrimaryHovered h-8 content-center p-1 text-base"
+                        id="ru-button"
+                    >
                         Русский/Russian
                     </button>
-                    <button class="backgroundPrimary backgroundPrimaryHovered p-1.5 text-base" id="en-button">
+                    <button
+                        class="backgroundPrimary backgroundPrimaryHovered h-8 content-center p-1 text-base"
+                        id="en-button"
+                    >
                         English/Английский
                     </button>
                 </div>
@@ -125,7 +131,7 @@
                     </button>
 
                     <div class="flex h-full w-full flex-col gap-2 pl-4 text-base">
-                        <div class="flex flex-row">
+                        <div class="flex flex-row gap-2">
                             <label class="fromLanguage" for="from-language-input"></label>
                             <input
                                 class="input backgroundSecond textSecond h-6"
@@ -135,7 +141,7 @@
                                 type="text"
                             />
                         </div>
-                        <div class="flex flex-row">
+                        <div class="flex flex-row gap-2">
                             <label class="toLanguage" for="to-language-input"></label>
                             <input
                                 class="input backgroundSecond textSecond h-6"
@@ -149,7 +155,7 @@
                     <!-- End -->
 
                     <div class="hidden h-full w-full content-end justify-end pr-4" id="progress-meter-container">
-                        <div class="flex w-32 items-center justify-center">
+                        <div class="w-32 content-center">
                             <div class="backgroundSecond w-full rounded-xs">
                                 <div
                                     class="backgroundThird textPrimary rounded-xs p-0.5 text-center text-xs leading-none font-medium"
@@ -157,7 +163,7 @@
                                 ></div>
                             </div>
                         </div>
-                        <div class="hidden min-w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
+                        <div class="hidden w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
                         <div class="hidden flex-col items-center justify-center text-sm" id="game-info">
                             <input
                                 class="input textSecond backgroundSecond min-h-8 w-96"
@@ -267,7 +273,7 @@
             id="search-results"
         >
             <button
-                class="backgroundPrimaryHovered font-material mb-2 flex h-12 w-full cursor-pointer items-center justify-center text-3xl select-none"
+                class="backgroundPrimaryHovered font-material mb-2 h-12 w-full content-center text-3xl select-none"
                 id="switch-search-content"
             >
                 search
@@ -294,7 +300,7 @@
                         placeholder="Search input"
                     ></textarea>
                 </div>
-                <div class="font-material flex flex-row items-center justify-center">
+                <div class="font-material flex flex-row content-center">
                     <button
                         class="button backgroundPrimaryHovered textThird searchButtonTitle w-16"
                         id="apply-search-button"
@@ -349,7 +355,7 @@
                 </button>
             </div>
 
-            <div class="flex items-center justify-center p-2 text-base">
+            <div class="content-center p-2 text-base">
                 <span class="searchMode pr-2"></span>
                 <select class="backgroundSecond rounded-xs outline-hidden" id="search-mode">
                     <option class="searchAll" value="0"></option>
@@ -374,16 +380,16 @@
             class="backgroundPrimary textPrimary outlinePrimary borderSecond fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 border-2 p-2 text-base"
             id="batch-window"
         >
-            <div class="selectFiles flex h-8 flex-row items-center justify-center text-lg"></div>
+            <div class="selectFiles h-8 flex-row content-center text-lg"></div>
             <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
-            <div class="flex flex-col items-center justify-center gap-2">
-                <div class="hidden flex-row items-center justify-center gap-2">
+            <div class="flex flex-col content-center gap-2">
+                <div class="hidden flex-row content-center gap-2">
                     <input class="input backgroundSecond h-8" type="text" />
                     <span class="wrapNumber text-base"></span>
                 </div>
             </div>
 
-            <div class="flex w-auto flex-row items-center justify-center gap-4">
+            <div class="flex w-auto flex-row content-center gap-4">
                 <button
                     class="button borderPrimary backgroundPrimaryHovered backgroundPrimary selectAll h-8 w-32 rounded-md border-2 p-1"
                     id="select-all-button"
@@ -393,7 +399,7 @@
                     id="deselect-all-button"
                 ></button>
             </div>
-            <div class="flex flex-row items-center justify-center gap-4">
+            <div class="flex flex-row content-center gap-4">
                 <button
                     class="backgroundPrimary button backgroundPrimaryHovered borderPrimary apply h-8 w-32 rounded-md border-2 p-1"
                     id="apply-button"
@@ -405,31 +411,31 @@
             </div>
         </div>
 
-        <div class="dropdown-menu borderSecond hidden w-16" id="theme-menu">
+        <div class="dropdown-menu borderSecond hidden" id="theme-menu">
             <button
-                class="backgroundPrimary backgroundPrimaryHovered createTheme p-2 text-base"
+                class="backgroundPrimary backgroundPrimaryHovered createTheme h-8 content-center p-1 text-base"
                 id="create-theme-menu-button"
             ></button>
         </div>
 
-        <div class="dropdown-menu borderSecond hidden w-16" id="tools-menu">
+        <div class="dropdown-menu borderSecond hidden text-base" id="tools-menu">
             <button
-                class="backgroundPrimary backgroundPrimaryHovered trimFields p-2 text-base"
+                class="backgroundPrimary backgroundPrimaryHovered trimFields h-8 content-center p-1"
                 id="trim-tools-menu-button"
             ></button>
             <button
-                class="backgroundPrimary backgroundPrimaryHovered translateFields p-2 text-base"
+                class="backgroundPrimary backgroundPrimaryHovered translateFields h-8 content-center p-1"
                 id="translate-tools-menu-button"
             ></button>
             <button
-                class="backgroundPrimary backgroundPrimaryHovered wrapFields p-2 text-base"
+                class="backgroundPrimary backgroundPrimaryHovered wrapFields flex h-8 content-center p-1"
                 id="wrap-tools-menu-button"
             ></button>
         </div>
 
         <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="compile-menu">
             <button
-                class="selectOutputPath backgroundSecond backgroundPrimaryHovered cursor-pointer rounded-xs p-1"
+                class="selectOutputPath backgroundSecond backgroundPrimaryHovered h-8 content-center rounded-xs p-1"
                 id="select-output-path"
             ></button>
             <input
@@ -523,7 +529,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-center pt-4">
+            <div class="content-center pt-4">
                 <button
                     class="button backgroundPrimaryHovered borderPrimary textThird readButtonText h-8 w-48 rounded-md border-2"
                     id="apply-read-button"
@@ -574,7 +580,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-center pt-4">
+            <div class="content-center pt-4">
                 <button
                     class="button backgroundPrimaryHovered borderPrimary textThird purgeButtonText h-8 w-48 rounded-md border-2"
                     id="apply-purge-button"
