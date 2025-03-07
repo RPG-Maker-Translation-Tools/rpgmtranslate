@@ -1,8 +1,10 @@
+import { getVersion } from "@tauri-apps/api/app";
 import { open as openLink } from "@tauri-apps/plugin-shell";
 import { loadWindow } from "./extensions/functions";
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadWindow("about");
+    document.getElementById("version-number")!.innerHTML = await getVersion();
 
     const links = new Map([
         [document.getElementById("vk-link") as HTMLAnchorElement, "https://vk.com/stivhuis228"],
