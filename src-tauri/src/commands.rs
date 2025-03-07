@@ -4,6 +4,7 @@ use lazy_static::lazy_static;
 use regex::{escape, Regex};
 use rpgmad_lib::Decrypter;
 use rvpacker_lib::{
+    parse_ignore,
     purge::{purge_map, purge_other, purge_plugins, purge_scripts, purge_system, write_ignore, write_stat},
     read::*,
     types::{EngineType, GameType, IgnoreMap, MapsProcessingMode, ProcessingMode, ResultExt},
@@ -339,8 +340,13 @@ pub fn purge(
 
     create_dir_all(translation_path).unwrap_log();
 
-    let mut ignore_map = IgnoreMap::default();
-    let mut stat_vec = Vec::new();
+    let mut ignore_map: IgnoreMap = IgnoreMap::default();
+
+    if create_ignore && translation_path.join(".rvpacker-ignore").exists() {
+        ignore_map = parse_ignore(translation_path.join(".rvpacker-ignore"));
+    }
+
+    let mut stat_vec: Vec<(String, String)> = Vec::new();
 
     if !disable_processing[0] {
         purge_map(
