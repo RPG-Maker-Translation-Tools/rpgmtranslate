@@ -16,7 +16,7 @@ For advanced usage, refer to:
 
 Download the latest release from [GitHub](https://github.com/savannstm/rpgmtranslate/releases/latest). The program is available as:
 
-- Windows: `.msi` installer
+- Windows: `.msi` (preferable) or `.exe` installer
 - Linux: `.deb` package or `.AppImage`
 - Other platforms: [Build from source](build.md)
 

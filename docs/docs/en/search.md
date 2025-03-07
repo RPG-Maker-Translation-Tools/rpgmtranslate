@@ -56,6 +56,6 @@ Interaction:
 
 - R: Open and close the panel
 - Left-click: Navigate to text location
-- Right-click: Replace matched text with replace input
+- Right-click: Replace matched text with replace input's text
 
 Note: Consider testing search patterns on a small subset before performing large-scale replacements.
