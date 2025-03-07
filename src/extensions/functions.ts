@@ -125,9 +125,7 @@ export function determineExtension(engineType: EngineType): string {
     }
 }
 
-export async function loadWindow(
-    window: "about" | "settings",
-): Promise<[ISettings, AboutWindowLocalization | SettingsWindowLocalization, IProjectSettings]> {
+export async function loadWindow(window: "about" | "settings"): Promise<[ISettings, Localization, IProjectSettings]> {
     await attachConsole();
     let settings!: ISettings, theme!: Theme, projectSettings!: IProjectSettings;
 
@@ -141,7 +139,7 @@ export async function loadWindow(
 
     applyTheme(getThemeStyleSheet()!, theme);
 
-    let windowLocalization;
+    let windowLocalization: Localization;
     switch (window) {
         case "about":
             windowLocalization = new AboutWindowLocalization(settings.language);
@@ -152,6 +150,5 @@ export async function loadWindow(
     }
 
     applyLocalization(windowLocalization);
-
     return [settings, windowLocalization, projectSettings];
 }
