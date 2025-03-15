@@ -5,7 +5,7 @@ use regex::{escape, Regex};
 use rpgmad_lib::Decrypter;
 use rvpacker_lib::{
     parse_ignore,
-    purge::{purge_map, purge_other, purge_plugins, purge_scripts, purge_system, write_ignore, write_stat},
+    purge::*,
     read::*,
     types::{EngineType, GameType, IgnoreMap, MapsProcessingMode, ProcessingMode, ResultExt},
     write::*,
@@ -138,59 +138,51 @@ pub fn compile(
     };
 
     if !disable_processing[0] {
-        write_maps(
-            translation_path,
-            original_path,
-            data_output_path,
-            maps_processing_mode,
-            romanize,
-            LOGGING,
-            game_type,
-            engine_type,
-        );
+        MapWriter::new(original_path, translation_path, data_output_path, engine_type)
+            .maps_processing_mode(maps_processing_mode)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .write();
     }
 
     if !disable_processing[1] {
-        write_other(
-            translation_path,
-            original_path,
-            data_output_path,
-            romanize,
-            LOGGING,
-            game_type,
-            engine_type,
-        );
+        OtherWriter::new(original_path, translation_path, data_output_path, engine_type)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .write();
     }
 
     if !disable_processing[2] {
-        write_system(
+        SystemWriter::new(
             &original_path.join(String::from("System") + extension),
             translation_path,
             data_output_path,
-            romanize,
-            LOGGING,
             engine_type,
-        );
+        )
+        .romanize(romanize)
+        .logging(LOGGING)
+        .write();
     }
 
     if !disable_processing[3] {
         if engine_type == EngineType::New {
-            write_plugins(
-                &js_path.join("plugins.js"),
-                translation_path,
-                &unsafe { plugins_output_path.unwrap_unchecked() },
-                LOGGING,
-                romanize,
-            );
+            PluginWriter::new(&js_path.join("plugins.js"), translation_path, &unsafe {
+                plugins_output_path.unwrap_unchecked()
+            })
+            .romanize(romanize)
+            .logging(LOGGING)
+            .write();
         } else {
-            write_scripts(
+            ScriptWriter::new(
                 &original_path.join(String::from("Scripts") + extension),
                 translation_path,
                 data_output_path,
-                romanize,
-                LOGGING,
-                engine_type,
-            );
+            )
+            .romanize(romanize)
+            .logging(LOGGING)
+            .write();
         }
     }
 
@@ -237,64 +229,57 @@ pub fn read(
     create_dir_all(translation_path).unwrap_log();
 
     if !disable_processing[0] {
-        read_map(
-            original_path,
-            translation_path,
-            maps_processing_mode,
-            romanize,
-            LOGGING,
-            game_type,
-            engine_type,
-            processing_mode,
-            ignore,
-        );
+        MapReader::new(original_path, translation_path, engine_type)
+            .maps_processing_mode(maps_processing_mode)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .processing_mode(processing_mode)
+            .ignore(ignore)
+            .read();
     }
 
     if !disable_processing[1] {
-        read_other(
-            original_path,
-            translation_path,
-            romanize,
-            LOGGING,
-            game_type,
-            processing_mode,
-            engine_type,
-            ignore,
-        );
+        OtherReader::new(original_path, translation_path, engine_type)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .processing_mode(processing_mode)
+            .ignore(ignore)
+            .read();
     }
 
     if !disable_processing[2] {
-        read_system(
+        SystemReader::new(
             &original_path.join(String::from("System") + extension),
             translation_path,
-            romanize,
-            LOGGING,
-            processing_mode,
             engine_type,
-            ignore,
-        );
+        )
+        .romanize(romanize)
+        .logging(LOGGING)
+        .processing_mode(processing_mode)
+        .ignore(ignore)
+        .read();
     }
 
     if !disable_processing[3] {
         if engine_type == EngineType::New {
-            read_plugins(
-                js_path.join("plugins.js"),
-                translation_path.to_path_buf(),
-                romanize,
-                LOGGING,
-                processing_mode,
-                ignore,
-            );
+            PluginReader::new(&js_path.join("plugins.js"), translation_path)
+                .romanize(romanize)
+                .logging(LOGGING)
+                .processing_mode(processing_mode)
+                .ignore(ignore)
+                .read();
         } else {
-            read_scripts(
+            ScriptReader::new(
                 &original_path.join(String::from("Scripts") + extension),
                 translation_path,
-                romanize,
-                LOGGING,
-                engine_type,
-                processing_mode,
-                ignore,
-            );
+            )
+            .romanize(romanize)
+            .logging(LOGGING)
+            .processing_mode(processing_mode)
+            .ignore(ignore)
+            .read();
         }
     }
 }
@@ -349,83 +334,67 @@ pub fn purge(
     let mut stat_vec: Vec<(String, String)> = Vec::new();
 
     if !disable_processing[0] {
-        purge_map(
-            original_path,
-            translation_path,
-            maps_processing_mode,
-            romanize,
-            LOGGING,
-            game_type,
-            engine_type,
-            stat,
-            leave_filled,
-            purge_empty,
-            create_ignore,
-            &mut ignore_map,
-            &mut stat_vec,
-        );
+        MapPurger::new(original_path, translation_path, engine_type)
+            .maps_processing_mode(maps_processing_mode)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .stat(stat)
+            .leave_filled(leave_filled)
+            .purge_empty(purge_empty)
+            .create_ignore(create_ignore)
+            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 
     if !disable_processing[1] {
-        purge_other(
-            original_path,
-            translation_path,
-            romanize,
-            LOGGING,
-            game_type,
-            engine_type,
-            stat,
-            leave_filled,
-            purge_empty,
-            create_ignore,
-            &mut ignore_map,
-            &mut stat_vec,
-        );
+        OtherPurger::new(original_path, translation_path, engine_type)
+            .romanize(romanize)
+            .logging(LOGGING)
+            .game_type(game_type)
+            .stat(stat)
+            .leave_filled(leave_filled)
+            .purge_empty(purge_empty)
+            .create_ignore(create_ignore)
+            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 
     if !disable_processing[2] {
-        purge_system(
+        SystemPurger::new(
             &original_path.join(String::from("System") + extension),
             translation_path,
-            romanize,
-            LOGGING,
             engine_type,
-            stat,
-            leave_filled,
-            purge_empty,
-            create_ignore,
-            &mut ignore_map,
-            &mut stat_vec,
-        );
+        )
+        .romanize(romanize)
+        .logging(LOGGING)
+        .stat(stat)
+        .leave_filled(leave_filled)
+        .purge_empty(purge_empty)
+        .create_ignore(create_ignore)
+        .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 
     if !disable_processing[3] {
         if engine_type == EngineType::New {
-            purge_plugins(
-                js_path.join("plugins.js"),
-                translation_path.to_path_buf(),
-                romanize,
-                LOGGING,
-                stat,
-                leave_filled,
-                purge_empty,
-                create_ignore,
-                &mut ignore_map,
-                &mut stat_vec,
-            );
+            PluginPurger::new(&js_path.join("plugins.js"), translation_path)
+                .romanize(romanize)
+                .logging(LOGGING)
+                .stat(stat)
+                .leave_filled(leave_filled)
+                .purge_empty(purge_empty)
+                .create_ignore(create_ignore)
+                .purge(Some(&mut ignore_map), Some(&mut stat_vec));
         } else {
-            purge_scripts(
+            ScriptPurger::new(
                 &original_path.join(String::from("Scripts") + extension),
                 translation_path,
-                romanize,
-                LOGGING,
-                stat,
-                leave_filled,
-                purge_empty,
-                create_ignore,
-                &mut ignore_map,
-                &mut stat_vec,
-            );
+            )
+            .romanize(romanize)
+            .logging(LOGGING)
+            .stat(stat)
+            .leave_filled(leave_filled)
+            .purge_empty(purge_empty)
+            .create_ignore(create_ignore)
+            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
         }
     }
 
@@ -496,7 +465,7 @@ pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: P
         .unwrap();
 }
 
-#[tauri::command]
+#[command]
 pub fn append_to_end(path: &Path, text: &str) {
     let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log();
     write!(file, "\n{text}").unwrap_log();
