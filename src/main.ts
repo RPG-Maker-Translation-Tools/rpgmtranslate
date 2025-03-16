@@ -3173,28 +3173,37 @@ document.addEventListener("DOMContentLoaded", async () => {
                         break;
                 }
                 break;
-            case applyReadButton.id:
+            case applyReadButton.id: {
                 await save(SaveMode.AllFiles);
 
                 readButton.firstElementChild!.classList.add("animate-spin");
+
+                const readingMode = Number(readingModeSelect.value) as ProcessingMode;
+                console.log(readingModeSelect.value);
 
                 await read(
                     settings.projectPath,
                     originalDir,
                     currentGameTitle.getAttribute("original-title")!,
-                    Number(mapsProcessingModeSelect.value),
-                    Boolean(romanizeCheckbox.textContent) || projectSettings.romanize,
-                    Boolean(disableCustomProcessingCheckbox.textContent) || projectSettings.disableCustomProcessing,
+                    readingMode === ProcessingMode.Append
+                        ? projectSettings.mapsProcessingMode
+                        : Number(mapsProcessingModeSelect.value),
+                    readingMode === ProcessingMode.Append
+                        ? projectSettings.romanize
+                        : Boolean(romanizeCheckbox.textContent),
+                    readingMode === ProcessingMode.Append
+                        ? projectSettings.disableCustomProcessing
+                        : Boolean(disableCustomProcessingCheckbox.textContent),
                     [
                         Boolean(rDisableMapsProcessingCheckbox.textContent),
                         Boolean(rDisableOtherProcessingCheckbox.textContent),
                         Boolean(rDisableSystemProcessingCheckbox.textContent),
                         Boolean(rDisablePluginsProcessingCheckbox.textContent),
                     ],
-                    Number(readingModeSelect.value),
+                    readingMode,
                     projectSettings.engineType!,
                     Boolean(ignoreCheckbox.textContent),
-                    Boolean(trimCheckbox.textContent) || projectSettings.trim,
+                    readingMode === ProcessingMode.Append ? projectSettings.trim : Boolean(trimCheckbox.textContent),
                     Boolean(sortCheckbox.textContent),
                 );
 
@@ -3202,6 +3211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     location.reload();
                 }
                 break;
+            }
             // Purge menu
             case applyPurgeButton.id:
                 await save(SaveMode.AllFiles);
