@@ -97,6 +97,7 @@ pub fn compile(
     disable_custom_processing: bool,
     disable_processing: [bool; 4],
     engine_type: EngineType,
+    trim: bool,
 ) -> f64 {
     const LOGGING: bool = true;
 
@@ -143,6 +144,7 @@ pub fn compile(
             .romanize(romanize)
             .logging(LOGGING)
             .game_type(game_type)
+            .trim(trim)
             .write();
     }
 
@@ -151,6 +153,7 @@ pub fn compile(
             .romanize(romanize)
             .logging(LOGGING)
             .game_type(game_type)
+            .trim(trim)
             .write();
     }
 
@@ -163,6 +166,7 @@ pub fn compile(
         )
         .romanize(romanize)
         .logging(LOGGING)
+        .trim(trim)
         .write();
     }
 
@@ -201,6 +205,8 @@ pub fn read(
     processing_mode: ProcessingMode,
     engine_type: EngineType,
     ignore: bool,
+    trim: bool,
+    sort: bool,
 ) {
     const LOGGING: bool = true;
 
@@ -236,6 +242,8 @@ pub fn read(
             .game_type(game_type)
             .processing_mode(processing_mode)
             .ignore(ignore)
+            .trim(trim)
+            .sort(sort)
             .read();
     }
 
@@ -246,6 +254,8 @@ pub fn read(
             .game_type(game_type)
             .processing_mode(processing_mode)
             .ignore(ignore)
+            .trim(trim)
+            .sort(sort)
             .read();
     }
 
@@ -259,6 +269,8 @@ pub fn read(
         .logging(LOGGING)
         .processing_mode(processing_mode)
         .ignore(ignore)
+        .trim(trim)
+        .sort(sort)
         .read();
     }
 
@@ -269,6 +281,7 @@ pub fn read(
                 .logging(LOGGING)
                 .processing_mode(processing_mode)
                 .ignore(ignore)
+                .sort(sort)
                 .read();
         } else {
             ScriptReader::new(
@@ -279,6 +292,7 @@ pub fn read(
             .logging(LOGGING)
             .processing_mode(processing_mode)
             .ignore(ignore)
+            .sort(sort)
             .read();
         }
     }
@@ -298,6 +312,7 @@ pub fn purge(
     leave_filled: bool,
     purge_empty: bool,
     create_ignore: bool,
+    trim: bool,
 ) {
     const LOGGING: bool = true;
 
@@ -343,6 +358,7 @@ pub fn purge(
             .leave_filled(leave_filled)
             .purge_empty(purge_empty)
             .create_ignore(create_ignore)
+            .trim(trim)
             .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 
@@ -355,6 +371,7 @@ pub fn purge(
             .leave_filled(leave_filled)
             .purge_empty(purge_empty)
             .create_ignore(create_ignore)
+            .trim(trim)
             .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 
@@ -370,6 +387,7 @@ pub fn purge(
         .leave_filled(leave_filled)
         .purge_empty(purge_empty)
         .create_ignore(create_ignore)
+        .trim(trim)
         .purge(Some(&mut ignore_map), Some(&mut stat_vec));
     }
 

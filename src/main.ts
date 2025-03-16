@@ -1424,6 +1424,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             projectSettings.disableCustomProcessing,
             disableProcessing ?? [false, false, false, false],
             settings.engineType!,
+            projectSettings.trim,
         );
 
         compileButton.firstElementChild!.classList.remove("animate-spin");
@@ -1710,6 +1711,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (typeof projectSettings.translationLanguages.to === "string") {
                 toLanguageInput.value = projectSettings.translationLanguages.to;
             }
+
             if (typeof projectSettings.translationLanguages.from === "string") {
                 fromLanguageInput.value = projectSettings.translationLanguages.from;
             }
@@ -1750,6 +1752,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             settings.engineType = projectSettings.engineType;
         }
+
+        if (typeof projectSettings.trim !== "boolean") {
+            projectSettings.trim = true;
+        }
+
+        trimCheckbox.textContent = projectSettings.trim ? "check" : "";
+        romanizeCheckbox.textContent = projectSettings.romanize ? "check" : "";
+        disableCustomProcessingCheckbox.textContent = projectSettings.disableCustomProcessing ? "check" : "";
+        mapsProcessingModeSelect.value = projectSettings.mapsProcessingMode.toString();
 
         currentGameEngine.innerHTML = ["MV / MZ", "VX Ace", "VX", "XP"][settings.engineType!] ?? "";
         return true;
@@ -1803,12 +1814,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         mapsProcessingMode: MapsProcessingMode;
                         romanize: boolean;
                         disableCustomProcessing: boolean;
+                        trim: boolean;
                     };
 
                     Object.assign(projectSettings, {
                         mapsProcessingMode: metadata.mapsProcessingMode,
                         romanize: metadata.romanize,
                         disableCustomProcessing: metadata.disableCustomProcessing,
+                        trim: metadata.trim,
                     });
                 }
             } else {
@@ -1838,6 +1851,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     [false, false, false, false],
                     ProcessingMode.Default,
                     settings.engineType!,
+                    false,
+                    false,
                     false,
                 );
 
@@ -2267,6 +2282,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         "#disable-plugins-processing-checkbox",
     )!;
     const ignoreCheckbox: HTMLSpanElement = readMenu.querySelector("#ignore-checkbox")!;
+    const trimCheckbox: HTMLSpanElement = readMenu.querySelector("#trim-checkbox")!;
+    const sortCheckbox: HTMLSpanElement = readMenu.querySelector("#sort-checkbox")!;
     const applyReadButton: HTMLDivElement = readMenu.querySelector("#apply-read-button")!;
 
     const purgeMenu = document.getElementById("purge-menu") as HTMLDivElement;
@@ -3166,17 +3183,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                     originalDir,
                     currentGameTitle.getAttribute("original-title")!,
                     Number(mapsProcessingModeSelect.value),
-                    Boolean(romanizeCheckbox.textContent),
-                    Boolean(disableCustomProcessingCheckbox.textContent),
+                    Boolean(romanizeCheckbox.textContent) || projectSettings.romanize,
+                    Boolean(disableCustomProcessingCheckbox.textContent) || projectSettings.disableCustomProcessing,
                     [
                         Boolean(rDisableMapsProcessingCheckbox.textContent),
                         Boolean(rDisableOtherProcessingCheckbox.textContent),
                         Boolean(rDisableSystemProcessingCheckbox.textContent),
                         Boolean(rDisablePluginsProcessingCheckbox.textContent),
                     ],
-                    Number(mapsProcessingModeSelect.value),
+                    Number(readingModeSelect.value),
                     projectSettings.engineType!,
                     Boolean(ignoreCheckbox.textContent),
+                    Boolean(trimCheckbox.textContent) || projectSettings.trim,
+                    Boolean(sortCheckbox.textContent),
                 );
 
                 if (await beforeClose(true)) {
@@ -3207,6 +3226,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     Boolean(leaveFilledCheckbox.textContent),
                     Boolean(purgeEmptyCheckbox.textContent),
                     Boolean(createIgnoreCheckbox.textContent),
+                    projectSettings.trim,
                 );
 
                 purgeButton.firstElementChild!.classList.remove("animate-spin");

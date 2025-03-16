@@ -82,6 +82,7 @@ interface IProjectSettings {
     mapsProcessingMode: import("./enums").MapsProcessingMode;
     romanize: boolean;
     disableCustomProcessing: boolean;
+    trim: boolean;
 }
 
 type ReplacementLog = Record<string, { old: string; new: string }>;

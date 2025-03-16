@@ -12,6 +12,8 @@ export async function read(
     processingMode: ProcessingMode,
     engineType: EngineType,
     ignore: boolean,
+    trim: boolean,
+    sort: boolean,
 ) {
     await invoke("read", {
         projectPath,
@@ -24,6 +26,8 @@ export async function read(
         processingMode,
         engineType,
         ignore,
+        trim,
+        sort,
     });
 }
 
@@ -37,6 +41,7 @@ export async function compile(
     disableCustomProcessing: boolean,
     disableProcessing: boolean[],
     engineType: EngineType,
+    trim: boolean,
 ): Promise<string> {
     return await invoke<string>("compile", {
         projectPath,
@@ -48,6 +53,7 @@ export async function compile(
         disableCustomProcessing,
         disableProcessing,
         engineType,
+        trim,
     });
 }
 
@@ -97,6 +103,7 @@ export async function purge(
     leaveFilled: boolean,
     purgeEmpty: boolean,
     createIgnore: boolean,
+    trim: boolean,
 ) {
     await invoke("purge", {
         projectPath,
@@ -111,6 +118,7 @@ export async function purge(
         leaveFilled,
         purgeEmpty,
         createIgnore,
+        trim,
     });
 }
 

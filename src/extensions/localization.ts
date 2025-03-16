@@ -136,6 +136,8 @@ export class MainWindowLocalization {
     readonly purgeEmptyCheck: string;
     readonly createIgnoreCheck: string;
     readonly purgeButtonText: string;
+    readonly trim: string;
+    readonly sort: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -287,6 +289,10 @@ export class MainWindowLocalization {
                 this.createIgnoreCheck =
                     "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
                 this.purgeButtonText = "Очистка";
+                this.trim =
+                    "Удалить лишние начальные и конечные пробелы из распарсенного текста. Может привести к нерабочей или некорректной записи текста.";
+                this.sort =
+                    "Отсортировать строки перевода в соответствии с их порядком в игре. Работает только с режимом добавления текста.";
                 break;
             default:
                 this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
@@ -436,6 +442,10 @@ export class MainWindowLocalization {
                 this.createIgnoreCheck =
                     "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
                 this.purgeButtonText = "Purge";
+                this.sort =
+                    "Sort the translation entries according to their order in game. Works only with append mode.";
+                this.trim =
+                    "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing.";
                 break;
         }
     }

@@ -36,6 +36,7 @@ export class ProjectSettings implements IProjectSettings {
     translationLanguages: { from: string; to: string };
     mapsProcessingMode: MapsProcessingMode;
     disableCustomProcessing: boolean;
+    trim: boolean;
 
     constructor() {
         this.engineType = null;
@@ -46,5 +47,6 @@ export class ProjectSettings implements IProjectSettings {
         };
         this.mapsProcessingMode = MapsProcessingMode.Default;
         this.disableCustomProcessing = false;
+        this.trim = false;
     }
 }
