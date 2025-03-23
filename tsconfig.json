@@ -22,5 +22,5 @@
 
         "esModuleInterop": true
     },
-    "include": ["src", "*.config.ts"]
+    "include": ["src", "*.ts", "*.js"]
 }
