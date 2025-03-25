@@ -3064,7 +3064,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         replacedContainer.className = tw`textSecond backgroundSecond borderPrimary my-1 cursor-pointer border-2 p-1 text-base`;
                         replacedContainer.setAttribute("reverted", "0");
 
-                        replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material">arrow_downward</div><div>${value.new}</div>`;
+                        replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material w-full">arrow_downward</div><div>${value.new}</div>`;
 
                         searchPanelReplaced.appendChild(replacedContainer);
                     }
