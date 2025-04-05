@@ -2319,6 +2319,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentTabIndex: number | null = null;
     let batchWindowAction!: BatchAction;
     let nextBackupNumber: number;
+    let lastChars = "";
+    let lastSubChar: { char: string; pos: number } | null = null;
 
     let projectSettings!: IProjectSettings;
 
@@ -3247,6 +3249,91 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
         }
     });
+
+    const charSubstitutions: Record<string, string> = {
+        "<<": "«",
+        ">>": "»",
+        "--": "—",
+        ",,": "„",
+        "''": "“",
+    };
+
+    const interruptingKeys = ["Delete", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Enter", "Escape"];
+
+    tabContent.addEventListener(
+        "keydown",
+        (event) => {
+            const textarea = event.target as HTMLTextAreaElement;
+            if (textarea.tagName !== "TEXTAREA") {
+                return;
+            }
+
+            const key = event.key;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+
+            if (key === "Backspace") {
+                if (
+                    lastSubChar &&
+                    start === end &&
+                    start === lastSubChar.pos + 1 &&
+                    textarea.value[start - 1] === lastSubChar.char
+                ) {
+                    event.preventDefault();
+
+                    const original = Object.entries(charSubstitutions).find(
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ([_, subChar]) => subChar === lastSubChar!.char,
+                    )?.[0];
+
+                    if (original) {
+                        const value = textarea.value;
+                        textarea.value = value.slice(0, start - 1) + original + value.slice(start);
+                        textarea.setSelectionRange(start + 1, start + 1);
+                    }
+
+                    lastSubChar = null;
+                } else {
+                    lastChars = "";
+                    lastSubChar = null;
+                }
+                return;
+            }
+
+            if (interruptingKeys.includes(key)) {
+                lastChars = "";
+                lastSubChar = null;
+                return;
+            }
+
+            if (key.length === 1) {
+                lastChars += key;
+
+                const match = Object.keys(charSubstitutions).find((seq) => lastChars.endsWith(seq));
+                if (match) {
+                    event.preventDefault();
+
+                    const sub = charSubstitutions[match];
+                    const before = textarea.value.slice(0, start - match.length + 1);
+                    const after = textarea.value.slice(end);
+
+                    textarea.value = before + sub + after;
+
+                    const newPos = before.length + 1;
+                    textarea.setSelectionRange(newPos, newPos);
+
+                    lastSubChar = { char: sub, pos: before.length };
+                    lastChars = "";
+                } else if (lastChars.length > Math.max(...Object.keys(charSubstitutions).map((k) => k.length))) {
+                    lastChars = lastChars.slice(-2);
+                }
+            } else {
+                lastChars = "";
+                lastSubChar = null;
+            }
+        },
+        true,
+    );
 
     await listen("fetch-settings", async () => {
         await emit("settings", [settings, theme, projectSettings]);
