@@ -69,16 +69,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (const entry of dataDirEntries) {
                     const name = entry.name;
 
-                    if (entry.isFile && !["project-settings.json", logFile, bookmarksFile].includes(name)) {
+                    if (entry.isFile && !["project-settings.json", logFile].includes(name)) {
                         await removePath(join(settings.projectPath, programDataDir, name));
                     }
                 }
 
                 await writeTextFile(join(settings.projectPath, programDataDir, logFile), JSON.stringify(replaced));
-                await writeTextFile(
-                    join(settings.projectPath, programDataDir, bookmarksFile),
-                    JSON.stringify(bookmarks),
-                );
 
                 projectSettings.translationLanguages = {
                     from: fromLanguageInput.value,
@@ -1287,6 +1283,84 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    function createRow(original: string, translation: string[], tabName: string, i: number) {
+        const textParent = document.createElement("div");
+        textParent.id = `${tabName}-${i}`;
+        textParent.className = tw`flex w-full flex-row justify-around py-[1px]`;
+
+        const originalTextDiv = document.createElement("div");
+        originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
+
+        if (settings.fontUrl) {
+            originalTextDiv.style.fontFamily = "font";
+        }
+
+        originalTextDiv.textContent = original;
+
+        const translationTextArea = document.createElement("textarea");
+        translationTextArea.rows = translation.length;
+        translationTextArea.className = tw`outlinePrimary outlineFocused backgroundPrimary font w-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
+        translationTextArea.spellcheck = false;
+        translationTextArea.autocomplete = "off";
+        translationTextArea.autocapitalize = "off";
+        translationTextArea.autofocus = false;
+
+        if (settings.fontUrl) {
+            translationTextArea.style.fontFamily = "font";
+        }
+
+        translationTextArea.value = translation.join("\n");
+
+        const rowNumberContainer = document.createElement("div");
+        rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-52 flex-row p-1 outline outline-2`;
+
+        const rowNumberSpan = document.createElement("span");
+        rowNumberSpan.textContent = i.toString();
+
+        const rowNumberButtonDiv = document.createElement("div");
+        rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end gap-0.5 p-0.5 text-lg`;
+
+        const bookmarkButton = document.createElement("button");
+        bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
+        bookmarkButton.textContent = "bookmark";
+
+        if (bookmarks.some((obj) => obj.title === textParent.id)) {
+            bookmarkButton.classList.add("backgroundThird");
+        }
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 content-center items-center justify-center rounded-md border-2`;
+        deleteButton.textContent = "close";
+
+        rowNumberButtonDiv.appendChild(deleteButton);
+        rowNumberButtonDiv.appendChild(bookmarkButton);
+        rowNumberContainer.appendChild(rowNumberSpan);
+        rowNumberContainer.appendChild(rowNumberButtonDiv);
+
+        originalTextDiv.classList.add("text-lg");
+        document.body.appendChild(originalTextDiv);
+
+        const { lineHeight, paddingTop } = window.getComputedStyle(originalTextDiv);
+        const minHeight =
+            (originalTextDiv.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) + Number.parseInt(paddingTop) * 2;
+
+        document.body.removeChild(originalTextDiv);
+        originalTextDiv.classList.remove("text-lg");
+
+        textParent.style.minHeight =
+            rowNumberContainer.style.minHeight =
+            originalTextDiv.style.minHeight =
+            translationTextArea.style.minHeight =
+            textParent.style.minHeight =
+                `${minHeight}px`;
+
+        textParent.appendChild(rowNumberContainer);
+        textParent.appendChild(originalTextDiv);
+        textParent.appendChild(translationTextArea);
+
+        return textParent;
+    }
+
     async function createTabContent(state: string) {
         const programDataDirPath = join(settings.projectPath, programDataDir);
         const translationPath = join(programDataDirPath, translationDir);
@@ -1323,81 +1397,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const originalTextSplit = originalText.replaceAll(NEW_LINE, "\n");
             const translationTextSplit = translationText.split(NEW_LINE);
 
-            const textParent = document.createElement("div");
-            textParent.id = `${contentName}-${added}`;
-            textParent.className = tw`flex w-full flex-row justify-around py-[1px]`;
+            const row = createRow(originalTextSplit, translationTextSplit, contentName, added);
 
-            const originalTextDiv = document.createElement("div");
-            originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
-
-            if (settings.fontUrl) {
-                originalTextDiv.style.fontFamily = "font";
-            }
-
-            originalTextDiv.textContent = originalTextSplit;
-
-            const translationTextArea = document.createElement("textarea");
-            translationTextArea.rows = translationTextSplit.length;
-            translationTextArea.className = tw`outlinePrimary outlineFocused backgroundPrimary font w-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
-            translationTextArea.spellcheck = false;
-            translationTextArea.autocomplete = "off";
-            translationTextArea.autocapitalize = "off";
-            translationTextArea.autofocus = false;
-
-            if (settings.fontUrl) {
-                translationTextArea.style.fontFamily = "font";
-            }
-
-            translationTextArea.value = translationTextSplit.join("\n");
-
-            const rowNumberContainer = document.createElement("div");
-            rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-52 flex-row p-1 outline outline-2`;
-
-            const rowNumberSpan = document.createElement("span");
-            rowNumberSpan.textContent = added.toString();
-
-            const rowNumberButtonDiv = document.createElement("div");
-            rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end gap-0.5 p-0.5 text-lg`;
-
-            const bookmarkButton = document.createElement("button");
-            bookmarkButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
-            bookmarkButton.textContent = "bookmark";
-
-            if (bookmarks.some((obj) => obj.title === textParent.id)) {
-                bookmarkButton.classList.add("backgroundThird");
-            }
-
-            const deleteButton = document.createElement("button");
-            deleteButton.className = tw`borderPrimary backgroundPrimaryHovered font-material flex max-h-6 max-w-6 content-center items-center justify-center rounded-md border-2`;
-            deleteButton.textContent = "close";
-
-            rowNumberButtonDiv.appendChild(deleteButton);
-            rowNumberButtonDiv.appendChild(bookmarkButton);
-            rowNumberContainer.appendChild(rowNumberSpan);
-            rowNumberContainer.appendChild(rowNumberButtonDiv);
-
-            originalTextDiv.classList.add("text-lg");
-            document.body.appendChild(originalTextDiv);
-
-            const { lineHeight, paddingTop } = window.getComputedStyle(originalTextDiv);
-            const minHeight =
-                (originalTextDiv.innerHTML.count("\n") + 1) * Number.parseInt(lineHeight) +
-                Number.parseInt(paddingTop) * 2;
-
-            document.body.removeChild(originalTextDiv);
-            originalTextDiv.classList.remove("text-lg");
-
-            textParent.style.minHeight =
-                rowNumberContainer.style.minHeight =
-                originalTextDiv.style.minHeight =
-                translationTextArea.style.minHeight =
-                textParent.style.minHeight =
-                    `${minHeight}px`;
-
-            textParent.appendChild(rowNumberContainer);
-            textParent.appendChild(originalTextDiv);
-            textParent.appendChild(translationTextArea);
-            fragment.appendChild(textParent);
+            fragment.appendChild(row);
         }
 
         tabContent.appendChild(fragment);
@@ -1869,7 +1871,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const translationFiles = await readDir(join(settings.projectPath, programDataDir, translationDir));
         await mkdir(join(settings.projectPath, programDataDir, tempMapsDir), { recursive: true });
 
-        // Parse translation
         let tabIndex = 1;
         for (const entry of translationFiles) {
             if (!entry.name.endsWith(".txt")) {
@@ -1896,9 +1897,18 @@ document.addEventListener("DOMContentLoaded", async () => {
                 for (let l = 0; l <= split.length; l++) {
                     const line = split[l];
 
-                    if (l === split.length || line.startsWith("<!-- Map -->")) {
+                    if (l === split.length || line.startsWith("<!-- Map -->") || line.startsWith("<!-- Bookmark")) {
                         if (l !== split.length) {
-                            mapsNumbers.push(Number.parseInt(line.slice(line.lastIndexOf("<#>") + 3)));
+                            mapsNumbers.push(Number(line.slice(line.lastIndexOf("<#>") + 3)));
+                        }
+
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                        if (line?.startsWith("<!-- Bookmark")) {
+                            addBookmark({
+                                title: `${basename}-${l + 1}`,
+                                description: line.slice(line.lastIndexOf("<#>") + 3),
+                            });
+                            continue;
                         }
 
                         if (!result.length) {
@@ -1926,6 +1936,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
             } else {
+                for (const [l, line] of split.entries()) {
+                    if (line.startsWith("<!-- Bookmark")) {
+                        addBookmark({
+                            title: `${basename}-${l + 1}`,
+                            description: line.slice(line.lastIndexOf("<#>") + 3),
+                        });
+                    }
+                }
+
                 const tab = createTab(basename, split, tabIndex);
 
                 if (tab) {
@@ -2190,7 +2209,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const tempMapsDir = "temp-maps";
 
     const logFile = "replacement-log.json";
-    const bookmarksFile = "bookmarks.json";
 
     const tabContent = document.getElementById("tab-content") as HTMLDivElement;
     const searchInput = document.getElementById("search-input") as HTMLTextAreaElement;
@@ -2328,6 +2346,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let totalAllLines = 0;
     const translatedLinesArray: number[] = [];
+    const bookmarks: Bookmark[] = [];
 
     await initializeProject(settings.projectPath, false);
 
@@ -2341,21 +2360,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const selectedTextareas = new Map<number, string>();
     const replacedTextareas = new Map<number, string>();
-
-    const bookmarks: Bookmark[] = [];
-
-    {
-        const bookmarksFilePath = join(settings.projectPath, programDataDir, bookmarksFile);
-        await addToScope({ path: bookmarksFilePath });
-
-        if (await exists(bookmarksFilePath)) {
-            const bookmarkEntries = JSON.parse(await readTextFile(bookmarksFilePath)) as Bookmark[];
-
-            for (const bookmark of bookmarkEntries) {
-                addBookmark(bookmark);
-            }
-        }
-    }
 
     let saved = true;
     let saving = false;
@@ -2543,6 +2547,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     tabContent.addEventListener("focus", handleFocus, true);
     tabContent.addEventListener("blur", handleBlur, true);
 
+    function updateRowIds(startIndex: number) {
+        const children = tabContent.children;
+
+        for (let i = startIndex; i < children.length; i++) {
+            const element = children[i];
+            const rowNumberElement = element.firstElementChild!.firstElementChild!;
+            const newRowNumber = (i + 1).toString();
+
+            rowNumberElement.textContent = newRowNumber;
+            element.id = element.id.replace(/\d+$/, newRowNumber);
+        }
+    }
+
     tabContent.addEventListener("mousedown", async (event) => {
         const target = event.target as HTMLElement;
 
@@ -2577,7 +2594,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const description = bookmarkDescriptionInput.value;
                         bookmarkDescriptionInput.remove();
 
-                        addBookmark({ title: rowContainerId, description });
+                        const rowContainerIdParts = rowContainerId.split("-");
+                        const rowNumber = Number(rowContainerIdParts[1]);
+                        const row = createRow(`<!-- Bookmark: ${rowNumber} -->`, [description], currentTab!, rowNumber);
+
+                        tabContent.insertBefore(row, target.parentElement!.parentElement!.parentElement);
+                        updateRowIds(rowNumber);
+                        addBookmark({ title: rowContainerIdParts.join("-"), description });
                         target.classList.add("backgroundThird");
                     } else if (event.key === "Escape") {
                         requestAnimationFrame(() => {
@@ -2601,22 +2624,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             const rowContainer = target.closest(`[id^="${currentTab}"]`)!;
             const position = Number.parseInt(rowContainer.firstElementChild!.textContent!);
 
-            const children = tabContent.children as HTMLCollectionOf<HTMLDivElement>;
-
             rowContainer.remove();
 
-            for (let i = position - 1; i < children.length; i++) {
-                const element = children[i];
-
-                const rowNumberElement = element.firstElementChild!.firstElementChild!;
-                const newRowNumber = (i + 1).toString();
-
-                rowNumberElement.textContent = newRowNumber;
-                element.id = element.id.replace(/\d+$/, newRowNumber);
-            }
+            updateRowIds(position - 1);
 
             totalAllLines -= 1;
-            rowContainer.remove();
         } else if (event.button === 0) {
             if (shiftPressed) {
                 if (tabContent.contains(document.activeElement) && document.activeElement?.tagName === "TEXTAREA") {
