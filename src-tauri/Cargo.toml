@@ -6,20 +6,20 @@ authors = ["savannstm <savannstm@gmail.com>"]
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2.1.1", features = [] }
+tauri-build = { version = "2.2.0", features = [] }
 
 [dependencies]
-tauri = { version = "2.4.1", features = ["protocol-asset", "devtools"] }
+tauri = { version = "2.5.1", features = ["protocol-asset", "devtools"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 rayon = "1.10.0"
 regex = "1.11.1"
 indexmap = "2.9.0"
 xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
-sonic-rs = "0.4.1"
+sonic-rs = "0.5.1"
 fastrand = "2.3.0"
 lazy_static = "1.5.0"
-marshal-rs = { version = "0.3.4", features = ["sonic"] }
+marshal-rs = { version = "0.3.5", features = ["sonic"] }
 flate2 = "1.1.1"
 encoding_rs = "0.8.35"
 tauri-plugin-process = "2.2.1"
@@ -29,11 +29,11 @@ tauri-plugin-dialog = "2.2.1"
 tauri-plugin-shell = "2.2.1"
 tauri-plugin-persisted-scope = "2.2.1"
 translators = { version = "0.1.5", features = ["all"] }
-tauri-plugin-log = "2.3.1"
+tauri-plugin-log = "2.4.0"
 log = "0.4.27"
-tokio = "1.44.2"
+tokio = "1.45.0"
 rpgmad-lib = { version = "1.0.2", features = ["rayon"] }
-rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "5.1.5", features = ["log", "serde"] }
+rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "5.1.6", features = ["log", "serde"] }
 tauri-plugin-clipboard-manager = "2.2.2"
 walkdir = "2.5.0"
 
@@ -42,4 +42,4 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2.2.3"
-tauri-plugin-updater = "2.7.0"
+tauri-plugin-updater = "2.7.1"
