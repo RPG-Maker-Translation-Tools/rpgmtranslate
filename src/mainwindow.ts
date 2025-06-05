@@ -2559,7 +2559,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case "about-button":
                 // eslint-disable-next-line sonarjs/constructor-for-side-effects
                 new WebviewWindow("about", {
-                    url: "about.html",
+                    url: "aboutwindow.html",
                     title: localization.aboutButton,
                     center: true,
                     resizable: false,
@@ -2931,7 +2931,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             case "settings-button": {
                 const settingsWindow = new WebviewWindow("settings", {
-                    url: "settings.html",
+                    url: "settingswindow.html",
                     title: localization.settingsButtonTitle,
                     center: true,
                     resizable: false,
