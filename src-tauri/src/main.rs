@@ -33,7 +33,6 @@ fn main() {
             translate_text,
             add_to_scope,
             extract_archive,
-            append_to_end,
             walk_dir,
             purge,
             convert_to_lf

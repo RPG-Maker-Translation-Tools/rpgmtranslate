@@ -7,6 +7,7 @@ use rvpacker_lib::{
     parse_ignore,
     purge::*,
     read::*,
+    statics::LINES_SEPARATOR,
     types::{EngineType, GameType, IgnoreMap, MapsProcessingMode, ProcessingMode, ResultExt},
     write::*,
 };
@@ -25,6 +26,8 @@ use walkdir::WalkDir;
 lazy_static! {
     pub static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
 }
+
+const LOGGING: bool = true;
 
 #[inline(always)]
 fn get_game_type(game_title: &str) -> Option<GameType> {
@@ -79,7 +82,7 @@ pub fn walk_dir(dir: &str) -> Vec<String> {
 
     for entry in WalkDir::new(dir).into_iter().flatten() {
         if entry.file_type().is_file() {
-            entries.push(entry.path().to_str().unwrap().to_string())
+            entries.push(entry.path().to_string_lossy().to_string())
         }
     }
 
@@ -99,12 +102,7 @@ pub fn compile(
     engine_type: EngineType,
     trim: bool,
 ) -> f64 {
-    const LOGGING: bool = true;
-
     let start_time: Instant = Instant::now();
-
-    let maps_processing_mode: MapsProcessingMode = maps_processing_mode;
-    let engine_type: EngineType = engine_type;
 
     let extension: &str = match engine_type {
         EngineType::New => ".json",
@@ -197,7 +195,6 @@ pub fn compile(
 pub fn read(
     project_path: &Path,
     original_dir: &Path,
-    game_title: &str,
     maps_processing_mode: MapsProcessingMode,
     romanize: bool,
     disable_custom_processing: bool,
@@ -208,11 +205,49 @@ pub fn read(
     trim: bool,
     sort: bool,
 ) {
-    const LOGGING: bool = true;
+    /*
+    let gameTitle!: string;
 
-    let processing_mode: ProcessingMode = processing_mode;
-    let engine_type: EngineType = engine_type;
-    let maps_processing_mode: MapsProcessingMode = maps_processing_mode;
+    if (settings.engineType === EngineType.New) {
+        gameTitle = JSON.parse(
+            await readTextFile(join(settings.projectPath, originalDir, "System.json")),
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        ).gameTitle;
+    } else {
+        for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
+            if (line.toLowerCase().startsWith("title")) {
+                gameTitle = line.split("=")[1].trim();
+                break;
+            }
+        }
+    }
+    */
+
+    let game_title: String = match engine_type {
+        EngineType::New => {
+            let system_file_content: String =
+                fs::read_to_string(PathBuf::from(project_path).join(original_dir).join("System.json")).unwrap();
+
+            let game_title_start_index: usize = system_file_content.find("gameTitle").unwrap();
+            let from_title_start: &str = &system_file_content[game_title_start_index..];
+            let column_position: usize = from_title_start.find(':').unwrap();
+            let title: &str =
+                &from_title_start[column_position + 1..from_title_start[column_position + 1..].find('"').unwrap()];
+
+            title.to_owned()
+        }
+        _ => {
+            let ini_file_content: String = fs::read_to_string(PathBuf::from(project_path).join("Game.ini")).unwrap();
+            let title_line_start_index: usize = ini_file_content.find("title").unwrap();
+
+            let from_title_line_start: &str = &ini_file_content[title_line_start_index..];
+            let title: &str = from_title_line_start
+                [from_title_line_start.find('=').unwrap() + 1..from_title_line_start.find('\n').unwrap()]
+                .trim();
+
+            title.to_string()
+        }
+    };
 
     let extension: &str = match engine_type {
         EngineType::New => ".json",
@@ -224,7 +259,7 @@ pub fn read(
     let game_type: Option<GameType> = if disable_custom_processing {
         None
     } else {
-        get_game_type(game_title)
+        get_game_type(&game_title)
     };
 
     let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
@@ -296,6 +331,11 @@ pub fn read(
             .read();
         }
     }
+
+    append_to_end(
+        &PathBuf::from(translation_path).join("system.txt"),
+        &format!("{game_title}{LINES_SEPARATOR}"),
+    );
 }
 
 #[command]
@@ -314,8 +354,6 @@ pub fn purge(
     create_ignore: bool,
     trim: bool,
 ) {
-    const LOGGING: bool = true;
-
     let extension: &str = match engine_type {
         EngineType::New => ".json",
         EngineType::VXAce => ".rvdata2",
@@ -483,7 +521,6 @@ pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: P
         .unwrap();
 }
 
-#[command]
 pub fn append_to_end(path: &Path, text: &str) {
     let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log();
     write!(file, "\n{text}").unwrap_log();

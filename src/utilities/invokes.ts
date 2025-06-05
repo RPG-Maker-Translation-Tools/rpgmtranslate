@@ -1,10 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import { EngineType, ProcessingMode } from "../types/enums";
 
-export async function read(
+export async function invokeRead(
     projectPath: string,
     originalDir: string,
-    gameTitle: string,
     mapsProcessingMode: number,
     romanize: boolean,
     disableCustomProcessing: boolean,
@@ -18,7 +17,6 @@ export async function read(
     await invoke("read", {
         projectPath,
         originalDir,
-        gameTitle,
         mapsProcessingMode,
         romanize,
         disableCustomProcessing,
@@ -31,7 +29,7 @@ export async function read(
     });
 }
 
-export async function compile(
+export async function invokeCompile(
     projectPath: string,
     originalDir: string,
     outputPath: string,
@@ -57,19 +55,23 @@ export async function compile(
     });
 }
 
-export async function escapeText(args: { text: string }): Promise<string> {
+export async function invokeEscapeText(args: {
+    text: string;
+}): Promise<string> {
     return await invoke<string>("escape_text", args);
 }
 
-export async function readLastLine(args: { filePath: string }): Promise<string> {
+export async function invokeReadLastLine(args: {
+    filePath: string;
+}): Promise<string> {
     return await invoke<string>("read_last_line", args);
 }
 
-export async function addToScope(args: { path: string }) {
+export async function invokeAddToScope(args: { path: string }) {
     await invoke("add_to_scope", args);
 }
 
-export async function translateText(args: {
+export async function invokeTranslateText(args: {
     text: string;
     to: Intl.UnicodeBCP47LocaleIdentifier;
     from: Intl.UnicodeBCP47LocaleIdentifier;
@@ -78,19 +80,19 @@ export async function translateText(args: {
     return await invoke<string>("translate_text", args);
 }
 
-export async function extractArchive(args: { inputPath: string; outputPath: string; processingMode: ProcessingMode }) {
+export async function invokeExtractArchive(args: {
+    inputPath: string;
+    outputPath: string;
+    processingMode: ProcessingMode;
+}) {
     await invoke("extract_archive", args);
 }
 
-export async function appendToEnd(args: { path: string; text: string }) {
-    await invoke("append_to_end", args);
-}
-
-export async function walkDir(dir: string): Promise<string[]> {
+export async function invokeWalkDir(dir: string): Promise<string[]> {
     return await invoke("walk_dir", { dir });
 }
 
-export async function purge(
+export async function invokePurge(
     projectPath: string,
     originalDir: string,
     gameTitle: string,
@@ -122,7 +124,7 @@ export async function purge(
     });
 }
 
-export async function convertToLF(translationPath: string) {
+export async function invokeConvertToLF(translationPath: string) {
     await invoke("convert_to_lf", {
         translationPath,
     });

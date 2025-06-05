@@ -6,28 +6,44 @@
         <link rel="stylesheet" href="assets/style.css" />
         <link rel="stylesheet" href="assets/material.css" />
         <link rel="stylesheet" href="assets/theme-styles.css" />
-        <script type="module" src="settings.ts" defer></script>
+        <script type="module" src="settingswindow.ts" defer></script>
     </head>
     <body class="backgroundDark textPrimary text-lg">
         <div class="flex flex-col p-8" id="options-menu">
             <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
-                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="backup-check">check</span>
+                <span
+                    class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                    id="backup-check"
+                    >check</span
+                >
                 <span class="backup" id="backup"></span>
             </div>
 
             <div class="overflow-hidden">
-                <div class="z-30 flex-col transition-all duration-300" id="backup-settings">
+                <div
+                    class="z-30 flex-col transition-all duration-300"
+                    id="backup-settings"
+                >
                     <div class="flex flex-row py-4" id="backup-period">
-                        <span class="backupPeriodLabel mr-2" id="backup-period-label"></span>
+                        <span
+                            class="backupPeriodLabel mr-2"
+                            id="backup-period-label"
+                        ></span>
                         <input
                             class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-hidden"
                             id="backup-period-input"
                         />
-                        <span class="backupPeriodNote" id="backup-period-note"></span>
+                        <span
+                            class="backupPeriodNote"
+                            id="backup-period-note"
+                        ></span>
                     </div>
 
                     <div class="flex flex-row py-4" id="backup-max">
-                        <span class="backupMaxLabel mr-2" id="backup-max-label"></span>
+                        <span
+                            class="backupMaxLabel mr-2"
+                            id="backup-max-label"
+                        ></span>
                         <input
                             class="backgroundSecond mr-2 h-8 w-auto rounded-md p-2 text-xl outline-hidden"
                             id="backup-max-input"
@@ -38,14 +54,18 @@
             </div>
 
             <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
-                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="display-ghost-lines-check"
+                <span
+                    class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                    id="display-ghost-lines-check"
                     >check</span
                 >
                 <span class="displayGhostLines"></span>
             </div>
 
             <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
-                <span class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl" id="check-for-updates-check"
+                <span
+                    class="checkbox borderPrimary size-8 min-h-8 min-w-8 text-xl"
+                    id="check-for-updates-check"
                     >check</span
                 >
                 <span class="checkForUpdates"></span>
@@ -53,7 +73,10 @@
 
             <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
                 <span class="delete"></span>
-                <select class="backgroundSecond rounded-xs outline-hidden" id="row-delete-mode-select">
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="row-delete-mode-select"
+                >
                     <option class="disabled" value="0"></option>
                     <option class="confirmation" value="1"></option>
                     <option class="allowed" value="2"></option>
@@ -62,7 +85,10 @@
 
             <div class="backgroundDark z-50 flex flex-row gap-2 py-4">
                 <span class="font"></span>
-                <select class="backgroundSecond rounded-xs outline-hidden" id="font-select">
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="font-select"
+                >
                     <option class="defaultFont" value="default"></option>
                 </select>
             </div>

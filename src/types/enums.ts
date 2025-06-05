@@ -1,3 +1,4 @@
+/* eslint-disable no-magic-numbers */
 export const enum EngineType {
     New,
     VXAce,
@@ -55,4 +56,20 @@ export const enum ReplaceMode {
     Replace,
     Put,
     Search,
+}
+
+export const enum SearchFlags {
+    None = 0,
+    WholeWord = 1,
+    CaseSensitive = 2,
+    RegExp = 4,
+    OnlyLocal = 8,
+}
+
+export const enum MouseButton {
+    Left = 0,
+    Center = 1,
+    Right = 2,
+    Back = 3,
+    Forward = 4,
 }

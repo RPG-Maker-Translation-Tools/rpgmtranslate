@@ -27,9 +27,9 @@ export default defineConfig(
                 cssCodeSplit: true,
                 rollupOptions: {
                     input: {
-                        main: "./src/main.html",
-                        settings: "./src/settings.html",
-                        about: "./src/about.html",
+                        main: "./src/mainwindow.html",
+                        settings: "./src/settingswindow.html",
+                        about: "./src/aboutwindow.html",
                     },
                     plugins: [replaceTws()],
                 },

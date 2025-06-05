@@ -1,7 +1,3 @@
-String.prototype.replaceAllMultiple = function (replacementObj) {
-    return this.replaceAll(Object.keys(replacementObj).join("|"), (match) => replacementObj[match]);
-};
-
 String.prototype.count = function (char) {
     let occurrences = 0;
 

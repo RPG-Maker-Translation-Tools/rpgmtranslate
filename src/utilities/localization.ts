@@ -2,10 +2,8 @@ import { Language } from "../types/enums";
 
 export class MainWindowLocalization {
     readonly askCreateSettings: string;
-    readonly createdSettings: string;
     readonly unsavedChanges: string;
     readonly originalTextIrreplacable: string;
-    readonly invalidRegexp: string;
     readonly textReverted: string;
     readonly reloadButton: string;
     readonly helpButton: string;
@@ -93,7 +91,6 @@ export class MainWindowLocalization {
     readonly currentVersion: string;
     readonly updateAvailable: string;
     readonly installUpdate: string;
-    readonly couldNotSplitLine: string;
     readonly upToDate: string;
     readonly translationTextAreaUnputtable: string;
     readonly incorrectLanguageTag: string;
@@ -142,12 +139,12 @@ export class MainWindowLocalization {
     constructor(language: Language) {
         switch (language) {
             case Language.Russian:
-                this.askCreateSettings = "Не удалось найти файл настроек программы.\nСоздать настройки?";
-                this.createdSettings =
-                    "Настройки созданы.\nРезервное копирование: Включено\nПериод копирования: 60 сек.\nМаксимальное число копий: 99.\nТема: Классный цинк";
-                this.unsavedChanges = "У вас остались несохранённые изменения. Сохранить прогресс и выйти?";
-                this.originalTextIrreplacable = "Оригинальные строки не могут быть заменены.";
-                this.invalidRegexp = "Некорректное регулярное выражение";
+                this.askCreateSettings =
+                    "Не удалось найти файл настроек программы.\nСоздать настройки?";
+                this.unsavedChanges =
+                    "У вас остались несохранённые изменения. Сохранить прогресс и выйти?";
+                this.originalTextIrreplacable =
+                    "Оригинальные строки не могут быть заменены.";
                 this.textReverted = "Текст был возвращён к исходному значению";
                 this.reloadButton = "Перезагрузить (F5)";
                 this.helpButton = "Помощь";
@@ -165,18 +162,24 @@ export class MainWindowLocalization {
                 this.searchInputTitle = "Поиск";
                 this.replaceButtonTitle = "Заменить все совпадения на";
                 this.replaceInputTitle = "Замена";
-                this.putButtonTitle = "Вставить текст в поле перевода совпадающего оригинального текста";
+                this.putButtonTitle =
+                    "Вставить текст в поле перевода совпадающего оригинального текста";
                 this.caseButtonTitle = "Учитывать регистр (Alt + C)";
                 this.wholeButtonTitle = "Искать слова целиком (Alt + W)";
-                this.regexButtonTitle = "Поиск по регулярным выражениям (Alt + R)";
-                this.translationButtonTitle = "Поиск только по переводу (Alt + T)";
-                this.locationButtonTitle = "Поиск только в текущем файле (Alt + L)";
+                this.regexButtonTitle =
+                    "Поиск по регулярным выражениям (Alt + R)";
+                this.translationButtonTitle =
+                    "Поиск только по переводу (Alt + T)";
+                this.locationButtonTitle =
+                    "Поиск только в текущем файле (Alt + L)";
                 this.noMatches = "Нет совпадений";
                 this.currentPage = "Нет";
                 this.separator = "из";
                 this.goToRow = "Перейти к строке... от 1 до";
-                this.missingTranslationDir = 'Директория "translation" отсутствует. Проект не будет инициализирован.';
-                this.missingOriginalDir = 'Директория "data" отсутствует. Проект не будет инициализирован.';
+                this.missingTranslationDir =
+                    'Директория "translation" отсутствует. Проект не будет инициализирован.';
+                this.missingOriginalDir =
+                    'Директория "data" отсутствует. Проект не будет инициализирован.';
                 this.missingTranslationSubdirs =
                     'Поддиректории "maps" и "other" директории "translation" отсутствуют. Проект не будет инициализирован.';
                 this.noProjectSelected =
@@ -192,23 +195,29 @@ export class MainWindowLocalization {
                 this.bdPrimary = "Основной цвет границы";
                 this.bdSecond = "Второстепенный цвет границы";
                 this.bdFocused = "Цвет границы при фокусировке";
-                this.bgPrimaryHovered = "Основной цвет фона при наведении курсора";
-                this.bgSecondHovered = "Второстепенный цвет фона при наведении курсора";
+                this.bgPrimaryHovered =
+                    "Основной цвет фона при наведении курсора";
+                this.bgSecondHovered =
+                    "Второстепенный цвет фона при наведении курсора";
                 this.txtPrimary = "Основной цвет текста";
                 this.txtSecond = "Второстепенный цвет текста";
                 this.txtThird = "Третий цвет текста";
                 this.createTheme = "Создать тему";
-                this.allowedThemeNameCharacters = "Разрешенные символы: a-z, A-Z, 0-9, -, _.";
+                this.allowedThemeNameCharacters =
+                    "Разрешенные символы: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Название темы недопустимо.";
                 this.themeName = "Название темы:";
-                this.compileSuccess = "Все файлы записаны успешно.\nПотрачено (в секундах):";
+                this.compileSuccess =
+                    "Все файлы записаны успешно.\nПотрачено (в секундах):";
                 this.themeButtonTitle = "Меню тем";
                 this.openButtonTitle = "Открыть папку";
                 this.loadingProject = "Загружаем проект";
-                this.selectedFolderMissing = "Выбранная папка не существует. Проект не будет инициализирован.";
+                this.selectedFolderMissing =
+                    "Выбранная папка не существует. Проект не будет инициализирован.";
                 this.missingFileText =
                     "Текст выбранного файла отсутствует. Скорее всего, этот файл и/или его _trans версия отсутствуют.";
-                this.cannotDetermineEngine = "Не удалось определить тип движка игры.";
+                this.cannotDetermineEngine =
+                    "Не удалось определить тип движка игры.";
                 this.compileWindowTitle = "Настройки компиляции";
                 this.readWindowTitle = "Настройки чтения";
                 this.purgeWindowTitle = "Удаление неиспользуемых строк";
@@ -216,7 +225,8 @@ export class MainWindowLocalization {
                 this.toLanguage = "На язык:";
                 this.bookmarksButtonTitle = "Закладки (Ctrl + B)";
                 this.readButtonTitle = "Перечитать файлы (Alt + R)";
-                this.directoryAlreadyOpened = "Выбранная директория уже открыта в программе.";
+                this.directoryAlreadyOpened =
+                    "Выбранная директория уже открыта в программе.";
                 this.errorOccurred = "Произошла ошибка:";
                 this.searchMode = "Режим поиска";
                 this.searchAll = "Искать везде";
@@ -225,11 +235,14 @@ export class MainWindowLocalization {
                 this.trimFields = "Обрезать пробелы полей";
                 this.translateFields = "Перевести поля";
                 this.wrapFields = "Перенести строки в полях";
-                this.translationLanguagesNotSelected = "Языки перевода не выбраны. Введите их в полях наверху.";
-                this.selectFiles = "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)";
+                this.translationLanguagesNotSelected =
+                    "Языки перевода не выбраны. Введите их в полях наверху.";
+                this.selectFiles =
+                    "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)";
                 this.wrapNumber = "Длина строки для переноса";
                 this.deletingDisabled = "Удаление рядов выключено.";
-                this.deletingConfirmation = "Вы действительно хотите удалить этот ряд? Это действие необратимо!";
+                this.deletingConfirmation =
+                    "Вы действительно хотите удалить этот ряд? Это действие необратимо!";
                 this.selectAll = "Выбрать всё";
                 this.deselectAll = "Убрать всё";
                 this.apply = "Применить";
@@ -238,9 +251,9 @@ export class MainWindowLocalization {
                 this.currentVersion = "Текущая версия";
                 this.updateAvailable = "Доступно обновление!";
                 this.installUpdate = "Установить обновление";
-                this.couldNotSplitLine = "Не удалось разделить линию на позиции в файле:";
                 this.upToDate = "Программа обновлена до последней версии.";
-                this.translationTextAreaUnputtable = "Нельзя вставить текст в поле перевода.";
+                this.translationTextAreaUnputtable =
+                    "Нельзя вставить текст в поле перевода.";
                 this.incorrectLanguageTag =
                     "Некорректный тег языка. Тег должен соответствовать BCP-47, например ru или ru-RU";
                 this.gameFilesDoNotExist =
@@ -258,11 +271,16 @@ export class MainWindowLocalization {
                 this.customOutputPath = "Другой выходной путь";
                 this.selectOutputPath = "Выбрать выходной путь";
                 this.disableProcessing = "Выключить обработку...";
-                this.disableMapsProcessingOption = "Выключить обработку файлов maps";
-                this.disableOtherProcessingOption = "Выключить обработку файлов other";
-                this.disableSystemProcessingOption = "Выключить обработку файла system";
-                this.disablePluginsProcessingOption = "Выключить обработку файла plugins/scripts";
-                this.dontAskAgain = "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
+                this.disableMapsProcessingOption =
+                    "Выключить обработку файлов maps";
+                this.disableOtherProcessingOption =
+                    "Выключить обработку файлов other";
+                this.disableSystemProcessingOption =
+                    "Выключить обработку файла system";
+                this.disablePluginsProcessingOption =
+                    "Выключить обработку файла plugins/scripts";
+                this.dontAskAgain =
+                    "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
                 this.compileButtonText = "Скомпилировать";
                 this.mapsProcessingMode = "Режим обработки файлов maps";
                 this.defaultMapsMode = "Стандартный";
@@ -271,7 +289,8 @@ export class MainWindowLocalization {
                 this.ignore = "Игнорировать строки из файла .rvpacker-ignore";
                 this.readButtonText = "Прочитать";
                 this.readingInAppendMode = "Читаем в режиме добавления";
-                this.readingInForceMode = "Читаем в режиме принудительной перезаписи";
+                this.readingInForceMode =
+                    "Читаем в режиме принудительной перезаписи";
                 this.readingModeNotSelected = "Режим чтения не выбран.";
                 this.mapsProcessingMode = "Режим обработки файлов maps";
                 this.mode = "Режим чтения:";
@@ -285,7 +304,8 @@ export class MainWindowLocalization {
                     "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
                 this.statCheck = "Вывести статистику в файл stat.txt";
                 this.leaveFilledCheck = "Оставить поля, имеющие перевод";
-                this.purgeEmptyCheck = "Удалить только поля, не имеющие перевода";
+                this.purgeEmptyCheck =
+                    "Удалить только поля, не имеющие перевода";
                 this.createIgnoreCheck =
                     "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
                 this.purgeButtonText = "Очистка";
@@ -294,13 +314,14 @@ export class MainWindowLocalization {
                 this.sort =
                     "Отсортировать строки перевода в соответствии с их порядком в игре. Работает только с режимом добавления текста.";
                 break;
+            case Language.English:
             default:
-                this.askCreateSettings = "Cannot find program's settings.\nCreate settings?";
-                this.createdSettings =
-                    "Settings created.\nBackups: Enabled\nBackup period: 60 secs.\nMaximum backups: 99.\nTheme: Cool Zinc";
-                this.unsavedChanges = "You have unsaved changes. Save progress and quit?";
-                this.originalTextIrreplacable = "Original text is irreplacable.";
-                this.invalidRegexp = "Invalid regular expression.";
+                this.askCreateSettings =
+                    "Cannot find program's settings.\nCreate settings?";
+                this.unsavedChanges =
+                    "You have unsaved changes. Save progress and quit?";
+                this.originalTextIrreplacable =
+                    "Original text is irreplacable.";
                 this.textReverted = "Text was reverted to the original state";
                 this.reloadButton = "Reload (F5)";
                 this.helpButton = "Help";
@@ -318,18 +339,24 @@ export class MainWindowLocalization {
                 this.searchInputTitle = "Search";
                 this.replaceButtonTitle = "Replace all matches with";
                 this.replaceInputTitle = "Replace";
-                this.putButtonTitle = "Put text to matching original text's translation textarea";
+                this.putButtonTitle =
+                    "Put text to matching original text's translation textarea";
                 this.caseButtonTitle = "Consider case (Alt + C)";
                 this.wholeButtonTitle = "Search the whole text (Alt + W)";
-                this.regexButtonTitle = "Search by regular expressions (Alt + R)";
-                this.translationButtonTitle = "Search only by translation (Alt + T)";
-                this.locationButtonTitle = "Search only in the current file (Alt + L)";
+                this.regexButtonTitle =
+                    "Search by regular expressions (Alt + R)";
+                this.translationButtonTitle =
+                    "Search only by translation (Alt + T)";
+                this.locationButtonTitle =
+                    "Search only in the current file (Alt + L)";
                 this.noMatches = "No matches";
                 this.currentPage = "None";
                 this.separator = "of";
                 this.goToRow = "Go to row... from 1 to";
-                this.missingTranslationDir = "'translation' directory is missing. Project won't be initialized.";
-                this.missingOriginalDir = "'data' directory is missing. Project won't be initialized.";
+                this.missingTranslationDir =
+                    "'translation' directory is missing. Project won't be initialized.";
+                this.missingOriginalDir =
+                    "'data' directory is missing. Project won't be initialized.";
                 this.missingTranslationSubdirs =
                     "'translation' directory's subdirectories 'maps', 'other' and/or 'plugins' are missing. Project won't be initialized.";
                 this.noProjectSelected =
@@ -351,17 +378,21 @@ export class MainWindowLocalization {
                 this.txtSecond = "Second text color";
                 this.txtThird = "Third text color";
                 this.createTheme = "Create theme";
-                this.allowedThemeNameCharacters = "Allowed characters: a-z, A-Z, 0-9, -, _.";
+                this.allowedThemeNameCharacters =
+                    "Allowed characters: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Theme name is invalid.";
                 this.themeName = "Theme name:";
-                this.compileSuccess = "All files were written successfully.\nTime spent (in seconds):";
+                this.compileSuccess =
+                    "All files were written successfully.\nTime spent (in seconds):";
                 this.themeButtonTitle = "Themes menu";
                 this.openButtonTitle = "Open folder";
                 this.loadingProject = "Loading project";
-                this.selectedFolderMissing = "Selected folder is missing. Project won't be initialized.";
+                this.selectedFolderMissing =
+                    "Selected folder is missing. Project won't be initialized.";
                 this.missingFileText =
                     "Text of the selected file missing. Probably, it and it's _trans version don't exist for some reason.";
-                this.cannotDetermineEngine = "Cannot determine the type of the game's engine.";
+                this.cannotDetermineEngine =
+                    "Cannot determine the type of the game's engine.";
                 this.compileWindowTitle = "Compilation settings";
                 this.readWindowTitle = "Read settings";
                 this.purgeWindowTitle = "Purge unused lines";
@@ -369,7 +400,8 @@ export class MainWindowLocalization {
                 this.toLanguage = "To language:";
                 this.bookmarksButtonTitle = "Bookmarks (Ctrl + B)";
                 this.readButtonTitle = "Re-read files (Alt + R)";
-                this.directoryAlreadyOpened = "Selected directory is already opened in the program.";
+                this.directoryAlreadyOpened =
+                    "Selected directory is already opened in the program.";
                 this.errorOccurred = "An error has occurred:";
                 this.searchMode = "Search mode";
                 this.searchAll = "Search everywhere";
@@ -380,10 +412,12 @@ export class MainWindowLocalization {
                 this.wrapFields = "Wrap lines in fields";
                 this.translationLanguagesNotSelected =
                     "Translation languages are not selected. Input them to inputs above.";
-                this.selectFiles = "Select files (You can hold LMB and drag to select multiple files)";
+                this.selectFiles =
+                    "Select files (You can hold LMB and drag to select multiple files)";
                 this.wrapNumber = "Line length for wrapping";
                 this.deletingDisabled = "Deleting is disabled in settings.";
-                this.deletingConfirmation = "Do you really want to delete this row? This action is irreversible!";
+                this.deletingConfirmation =
+                    "Do you really want to delete this row? This action is irreversible!";
                 this.selectAll = "Select all";
                 this.deselectAll = "Deselect all";
                 this.apply = "Apply";
@@ -392,9 +426,9 @@ export class MainWindowLocalization {
                 this.currentVersion = "Current version";
                 this.updateAvailable = "Update available!";
                 this.installUpdate = "Install update";
-                this.couldNotSplitLine = "Couldn't split line at line in file:";
                 this.upToDate = "Program is up to date.";
-                this.translationTextAreaUnputtable = "You can't put text to a translation textarea.";
+                this.translationTextAreaUnputtable =
+                    "You can't put text to a translation textarea.";
                 this.incorrectLanguageTag =
                     "Incorrect language tag. Tag must correspond to BCP-47, for example en or en-US";
                 this.gameFilesDoNotExist =
@@ -414,9 +448,12 @@ export class MainWindowLocalization {
                 this.disableProcessing = "Disable processing of...";
                 this.disableMapsProcessingOption = "Disable maps processing";
                 this.disableOtherProcessingOption = "Disable other processing";
-                this.disableSystemProcessingOption = "Disable system processing";
-                this.disablePluginsProcessingOption = "Disable plugins/scripts processing";
-                this.dontAskAgain = "Don't ask again (you can open this window again by right-clicking compile button)";
+                this.disableSystemProcessingOption =
+                    "Disable system processing";
+                this.disablePluginsProcessingOption =
+                    "Disable plugins/scripts processing";
+                this.dontAskAgain =
+                    "Don't ask again (you can open this window again by right-clicking compile button)";
                 this.compileButtonText = "Compile";
                 this.mapsProcessingMode = "Maps processing mode";
                 this.defaultMapsMode = "Default";
@@ -437,7 +474,8 @@ export class MainWindowLocalization {
                 this.forceModeDescription =
                     "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
                 this.statCheck = "Output statistics to stat.txt file";
-                this.leaveFilledCheck = "Leave the fields that have the translation";
+                this.leaveFilledCheck =
+                    "Leave the fields that have the translation";
                 this.purgeEmptyCheck = "Purge only the empty fields";
                 this.createIgnoreCheck =
                     "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
@@ -472,19 +510,23 @@ export class SettingsWindowLocalization {
             case Language.Russian:
                 this.backupPeriodLabel = "Создавать резервные копии каждые:";
                 this.backupPeriodNote = "секунд (минимум 60, максимум 3600)";
-                this.backupMaxLabel = "Максимальное количество резервных копий:";
+                this.backupMaxLabel =
+                    "Максимальное количество резервных копий:";
                 this.backupMaxNote = "(минимум 1, максимум 99)";
                 this.backup = "Резервное копирование";
                 this.font = "Шрифт";
                 this.defaultFont = "Стандартный";
-                this.translationLanguages = "Языки перевода (для машинного перевода)";
+                this.translationLanguages =
+                    "Языки перевода (для машинного перевода)";
                 this.delete = "Режим удаления рядов";
                 this.disabled = "Выключить";
                 this.confirmation = "Спрашивать";
                 this.allowed = "Разрешить";
-                this.displayGhostLines = "Отображать переносы строк в текстовых полях";
+                this.displayGhostLines =
+                    "Отображать переносы строк в текстовых полях";
                 this.checkForUpdates = "Проверять наличие обновлений";
                 break;
+            case Language.English:
             default:
                 this.backupPeriodLabel = "Create backup every:";
                 this.backupPeriodNote = "seconds (min 60, max 3600)";
@@ -493,7 +535,8 @@ export class SettingsWindowLocalization {
                 this.backup = "Backup";
                 this.font = "Font";
                 this.defaultFont = "Default";
-                this.translationLanguages = "Translation languages (for machine translation)";
+                this.translationLanguages =
+                    "Translation languages (for machine translation)";
                 this.delete = "Row delete mode";
                 this.disabled = "Disabled";
                 this.confirmation = "Ask for confirmation";
@@ -523,6 +566,7 @@ export class AboutWindowLocalization {
                 this.repoLink = "Репозиторий программы";
                 this.license = "Лицензия";
                 break;
+            case Language.English:
             default:
                 this.version = "Version";
                 this.contacts = "Contacts:";
@@ -535,4 +579,7 @@ export class AboutWindowLocalization {
     }
 }
 
-export type Localization = MainWindowLocalization | AboutWindowLocalization | SettingsWindowLocalization;
+export type Localization =
+    | MainWindowLocalization
+    | AboutWindowLocalization
+    | SettingsWindowLocalization;

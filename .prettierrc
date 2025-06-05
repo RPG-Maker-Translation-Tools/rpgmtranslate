@@ -4,7 +4,7 @@
     "singleQuote": false,
     "tabWidth": 4,
     "useTabs": false,
-    "printWidth": 120,
+    "printWidth": 80,
     "trailingComma": "all",
     "plugins": [
         "prettier-plugin-organize-attributes",

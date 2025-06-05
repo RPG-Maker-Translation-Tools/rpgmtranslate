@@ -23,15 +23,15 @@ marshal-rs = { version = "0.3.5", features = ["sonic"] }
 flate2 = "1.1.1"
 encoding_rs = "0.8.35"
 tauri-plugin-process = "2.2.1"
-tauri-plugin-fs = "2.2.1"
+tauri-plugin-fs = "2.3.0"
 tauri-plugin-os = "2.2.1"
-tauri-plugin-dialog = "2.2.1"
+tauri-plugin-dialog = "2.2.2"
 tauri-plugin-shell = "2.2.1"
-tauri-plugin-persisted-scope = "2.2.1"
+tauri-plugin-persisted-scope = "2.2.2"
 translators = { version = "0.1.5", features = ["all"] }
 tauri-plugin-log = "2.4.0"
 log = "0.4.27"
-tokio = "1.45.0"
+tokio = "1.45.1"
 rpgmad-lib = { version = "1.0.2", features = ["rayon"] }
 rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "5.1.6", features = ["log", "serde"] }
 tauri-plugin-clipboard-manager = "2.2.2"
@@ -41,5 +41,5 @@ walkdir = "2.5.0"
 custom-protocol = ["tauri/custom-protocol"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = "2.2.3"
+tauri-plugin-single-instance = "2.2.4"
 tauri-plugin-updater = "2.7.1"

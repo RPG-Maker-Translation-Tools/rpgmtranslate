@@ -1,6 +1,7 @@
 // @ts-check
 
 import eslint from "@eslint/js";
+import sonarjs from "eslint-plugin-sonarjs";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config({
@@ -17,6 +18,7 @@ export default tseslint.config({
                 },
             },
         },
+        sonarjs.configs.recommended,
     ],
     rules: {
         "@typescript-eslint/no-floating-promises": "error",
@@ -25,6 +27,16 @@ export default tseslint.config({
         "@typescript-eslint/restrict-template-expressions": "off",
         "@typescript-eslint/no-unsafe-assignment": "off",
         "@typescript-eslint/no-dynamic-delete": "off",
-        "@typescript-eslint/no-unused-expressions": "off",
+        "@typescript-eslint/no-unused-expressions": "warn",
+        "no-magic-numbers": [
+            "error",
+            {
+                ignore: [0, 1, 2, 3, 4, 5, -1, -2, -3, -4, -5],
+                ignoreArrayIndexes: true,
+                enforceConst: true,
+                detectObjects: true,
+            },
+        ],
+        "sonarjs/cognitive-complexity": ["error", 25],
     },
 });

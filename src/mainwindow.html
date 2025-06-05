@@ -6,20 +6,32 @@
         <link rel="stylesheet" href="assets/style.css" />
         <link rel="stylesheet" href="assets/theme-styles.css" />
         <link rel="stylesheet" href="assets/material.css" />
-        <script type="module" src="main.ts" defer></script>
+        <script type="module" src="mainwindow.ts" defer></script>
     </head>
 
     <body class="textPrimary backgroundDark overflow-x-hidden text-2xl">
         <header class="sticky top-0 z-40">
-            <div class="backgroundPrimary mr-2 flex h-6 w-full items-center text-sm" id="menu-bar">
+            <div
+                class="backgroundPrimary mr-2 flex h-6 w-full items-center text-sm"
+                id="menu-bar"
+            >
                 <div class="backgroundSecondHovered content-center">
-                    <button class="fileMenu px-2" id="file-menu-button"></button>
+                    <button
+                        class="fileMenu px-2"
+                        id="file-menu-button"
+                    ></button>
                 </div>
                 <div class="backgroundSecondHovered content-center">
-                    <button class="helpMenu px-2" id="help-menu-button"></button>
+                    <button
+                        class="helpMenu px-2"
+                        id="help-menu-button"
+                    ></button>
                 </div>
                 <div class="backgroundSecondHovered content-center">
-                    <button class="languageMenu px-2" id="language-menu-button"></button>
+                    <button
+                        class="languageMenu px-2"
+                        id="language-menu-button"
+                    ></button>
                 </div>
                 <div class="dropdown-menu borderSecond hidden" id="file-menu">
                     <button
@@ -37,7 +49,10 @@
                         id="about-button"
                     ></button>
                 </div>
-                <div class="dropdown-menu borderSecond hidden" id="language-menu">
+                <div
+                    class="dropdown-menu borderSecond hidden"
+                    id="language-menu"
+                >
                     <button
                         class="backgroundPrimary backgroundPrimaryHovered h-8 content-center p-1 text-base"
                         id="ru-button"
@@ -52,8 +67,14 @@
                     </button>
                 </div>
             </div>
-            <div class="backgroundPrimary flex h-16 w-full items-center" id="top-panel">
-                <div class="flex h-full w-full items-center text-3xl" id="top-panel-buttons">
+            <div
+                class="backgroundPrimary flex h-16 w-full items-center"
+                id="top-panel"
+            >
+                <div
+                    class="flex h-full w-full items-center text-3xl"
+                    id="top-panel-buttons"
+                >
                     <button
                         class="button backgroundPrimaryHovered textThird menuButtonTitle font-material size-16 p-4 outline-hidden"
                         id="menu-button"
@@ -130,9 +151,14 @@
                         mop
                     </button>
 
-                    <div class="flex h-full w-full flex-col gap-2 pl-4 text-base">
+                    <div
+                        class="flex h-full w-full flex-col gap-2 pl-4 text-base"
+                    >
                         <div class="flex flex-row gap-2">
-                            <label class="fromLanguage" for="from-language-input"></label>
+                            <label
+                                class="fromLanguage"
+                                for="from-language-input"
+                            ></label>
                             <input
                                 class="input backgroundSecond textSecond h-6"
                                 id="from-language-input"
@@ -142,7 +168,10 @@
                             />
                         </div>
                         <div class="flex flex-row gap-2">
-                            <label class="toLanguage" for="to-language-input"></label>
+                            <label
+                                class="toLanguage"
+                                for="to-language-input"
+                            ></label>
                             <input
                                 class="input backgroundSecond textSecond h-6"
                                 id="to-language-input"
@@ -154,7 +183,10 @@
                     </div>
                     <!-- End -->
 
-                    <div class="hidden h-full w-full content-end justify-end pr-4" id="progress-meter-container">
+                    <div
+                        class="hidden h-full w-full content-end justify-end pr-4"
+                        id="progress-meter-container"
+                    >
                         <div class="w-32 content-center">
                             <div class="backgroundSecond w-full rounded-xs">
                                 <div
@@ -163,8 +195,14 @@
                                 ></div>
                             </div>
                         </div>
-                        <div class="hidden w-32 items-center justify-center p-4 text-sm" id="current-tab"></div>
-                        <div class="hidden flex-col items-center justify-center text-sm" id="game-info">
+                        <div
+                            class="hidden w-32 items-center justify-center p-4 text-sm"
+                            id="current-tab"
+                        ></div>
+                        <div
+                            class="hidden flex-col items-center justify-center text-sm"
+                            id="game-info"
+                        >
                             <input
                                 class="input textSecond backgroundSecond min-h-8 w-96"
                                 id="game-title"
@@ -179,47 +217,62 @@
             </div>
         </header>
 
-        <main class="flex w-full flex-col justify-start p-8 text-lg" id="tab-content"></main>
+        <main
+            class="flex w-full flex-col justify-start p-8 text-lg"
+            id="tab-content"
+        ></main>
 
         <div class="absolute px-8" id="project-status"></div>
 
-        <div class="backgroundPrimary fixed bottom-0 z-50 hidden text-lg" id="theme-window">
+        <div
+            class="backgroundPrimary fixed bottom-0 z-50 hidden text-lg"
+            id="theme-window"
+        >
             <div class="flex items-end justify-end pr-2">
                 <button class="font-material" id="close-button">close</button>
             </div>
             <div class="flex flex-row gap-4 p-4">
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-row gap-2">
-                        <input id="backgroundDark" type="color" /> <label class="bgDark" for="backgroundDark"></label>
+                        <input id="backgroundDark" type="color" />
+                        <label class="bgDark" for="backgroundDark"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundPrimary" type="color" />
-                        <label class="bgPrimary" for="backgroundPrimary"></label>
+                        <label
+                            class="bgPrimary"
+                            for="backgroundPrimary"
+                        ></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="outlinePrimary" type="color" />
                         <label class="outPrimary" for="outlinePrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlineSecond" type="color" /> <label class="outSecond" for="outlineSecond"></label>
+                        <input id="outlineSecond" type="color" />
+                        <label class="outSecond" for="outlineSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="outlineThird" type="color" /> <label class="outThird" for="outlineThird"></label>
+                        <input id="outlineThird" type="color" />
+                        <label class="outThird" for="outlineThird"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="outlineFocused" type="color" />
                         <label class="outFocused" for="outlineFocused"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="borderPrimary" type="color" /> <label class="bdPrimary" for="borderPrimary"></label>
+                        <input id="borderPrimary" type="color" />
+                        <label class="bdPrimary" for="borderPrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="borderSecond" type="color" /> <label class="bdSecond" for="borderSecond"></label>
+                        <input id="borderSecond" type="color" />
+                        <label class="bdSecond" for="borderSecond"></label>
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
                     <div class="flex flex-row gap-2">
-                        <input id="borderFocused" type="color" /> <label class="bdFocused" for="borderFocused"></label>
+                        <input id="borderFocused" type="color" />
+                        <label class="bdFocused" for="borderFocused"></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundSecond" type="color" />
@@ -227,20 +280,32 @@
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundPrimaryHovered" type="color" />
-                        <label class="bgPrimaryHovered" for="backgroundPrimaryHovered"></label>
+                        <label
+                            class="bgPrimaryHovered"
+                            for="backgroundPrimaryHovered"
+                        ></label>
                     </div>
                     <div class="flex flex-row gap-2">
                         <input id="backgroundSecondHovered" type="color" />
-                        <label class="bgSecondHovered" for="backgroundSecondHovered"></label>
+                        <label
+                            class="bgSecondHovered"
+                            for="backgroundSecondHovered"
+                        ></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="textPrimary" type="color" /> <label class="txtPrimary" for="textPrimary"></label>
+                        <input id="textPrimary" type="color" />
+                        <label class="txtPrimary" for="textPrimary"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input id="textSecond" type="color" /> <label class="txtSecond" for="textSecond"></label>
+                        <input id="textSecond" type="color" />
+                        <label class="txtSecond" for="textSecond"></label>
                     </div>
                     <div class="flex flex-row gap-2">
-                        <input class="appearance-none border-none outline-hidden" id="textThird" type="color" />
+                        <input
+                            class="appearance-none border-none outline-hidden"
+                            id="textThird"
+                            type="color"
+                        />
                         <label class="txtThird" for="textThird"></label>
                     </div>
                     <div class="flex flex-row gap-2">
@@ -252,10 +317,17 @@
             <div class="flex flex-col items-center justify-center pb-4">
                 <div class="flex flex-row gap-2">
                     <label class="themeName" for="theme-name-input"></label>
-                    <input class="input textSecond backgroundSecond h-8 text-base" id="theme-name-input" type="text" />
+                    <input
+                        class="input textSecond backgroundSecond h-8 text-base"
+                        id="theme-name-input"
+                        type="text"
+                    />
                 </div>
 
-                <label class="allowedThemeNameCharacters" for="create-theme"></label>
+                <label
+                    class="allowedThemeNameCharacters"
+                    for="create-theme"
+                ></label>
                 <button
                     class="backgroundSecond backgroundPrimaryHovered createTheme h-8 w-32 rounded-lg"
                     id="create-theme"
@@ -279,19 +351,29 @@
                 search
             </button>
             <div class="flex h-12 w-full items-center justify-evenly">
-                <button class="font-material" id="previous-page-button">chevron_left</button>
+                <button class="font-material" id="previous-page-button">
+                    chevron_left
+                </button>
                 <span class="currentPage" id="search-current-page"></span>
                 <span class="separator" id="search-separator"></span>
                 <span id="search-total-pages"></span>
-                <button class="font-material" id="next-page-button">chevron_right</button>
+                <button class="font-material" id="next-page-button">
+                    chevron_right
+                </button>
             </div>
             <div class="hidden w-full flex-col" id="search-content"></div>
             <div class="hidden w-full flex-col" id="replace-content"></div>
         </div>
 
-        <div class="backgroundPrimary borderSecond fixed z-50 hidden h-auto w-96 border-2" id="search-menu">
+        <div
+            class="backgroundPrimary borderSecond fixed z-50 hidden h-auto w-96 border-2"
+            id="search-menu"
+        >
             <div class="flex h-auto flex-col">
-                <div class="flex h-auto flex-row items-center p-4" id="search-field">
+                <div
+                    class="flex h-auto flex-row items-center p-4"
+                    id="search-field"
+                >
                     <textarea
                         class="input textSecond backgroundSecond h-auto text-base"
                         id="search-input"
@@ -300,7 +382,9 @@
                         placeholder="Search input"
                     ></textarea>
                 </div>
-                <div class="font-material flex flex-row items-center justify-center">
+                <div
+                    class="font-material flex flex-row items-center justify-center"
+                >
                     <button
                         class="button backgroundPrimaryHovered textThird searchButtonTitle w-16"
                         id="apply-search-button"
@@ -313,7 +397,10 @@
                     >
                         arrow_downward
                     </button>
-                    <button class="button backgroundPrimaryHovered textThird putButtonTitle w-16" id="put-button">
+                    <button
+                        class="button backgroundPrimaryHovered textThird putButtonTitle w-16"
+                        id="put-button"
+                    >
                         swipe_left
                     </button>
                 </div>
@@ -357,7 +444,10 @@
 
             <div class="flex items-center justify-center p-2 text-base">
                 <span class="searchMode pr-2"></span>
-                <select class="backgroundSecond rounded-xs outline-hidden" id="search-mode">
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="search-mode"
+                >
                     <option class="searchAll" value="0"></option>
                     <option class="searchOnlyOriginal" value="1"></option>
                     <option class="searchOnlyTranslation" value="2"></option>
@@ -380,7 +470,9 @@
             class="backgroundPrimary textPrimary outlinePrimary borderSecond fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 border-2 p-2 text-base"
             id="batch-window"
         >
-            <div class="selectFiles flex h-8 flex-row items-center justify-center text-lg"></div>
+            <div
+                class="selectFiles flex h-8 flex-row items-center justify-center text-lg"
+            ></div>
             <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
             <div class="flex flex-col items-center justify-center gap-2">
                 <div class="hidden flex-row gap-2">
@@ -418,7 +510,10 @@
             ></button>
         </div>
 
-        <div class="dropdown-menu borderSecond hidden text-base" id="tools-menu">
+        <div
+            class="dropdown-menu borderSecond hidden text-base"
+            id="tools-menu"
+        >
             <button
                 class="backgroundPrimary backgroundPrimaryHovered trimFields h-8 content-center p-1"
                 id="trim-tools-menu-button"
@@ -433,7 +528,10 @@
             ></button>
         </div>
 
-        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="compile-menu">
+        <div
+            class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base"
+            id="compile-menu"
+        >
             <button
                 class="selectOutputPath backgroundSecond backgroundPrimaryHovered h-8 content-center rounded-xs p-1"
                 id="select-output-path"
@@ -448,32 +546,50 @@
 
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-maps-processing-checkbox"
+                    ></span>
                     <span class="disableMapsProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
                     <span class="disableOtherProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
                     <span class="disableSystemProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
                     <span class="disablePluginsProcessingOption"></span>
                 </div>
             </div>
         </div>
 
-        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="read-menu">
+        <div
+            class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base"
+            id="read-menu"
+        >
             <div>
                 <span class="mode"></span>
 
-                <select class="backgroundSecond rounded-xs outline-hidden" id="reading-mode-select">
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="reading-mode-select"
+                >
                     <option class="appendReadingMode" value="1"></option>
                     <option class="forceReadingMode" value="2"></option>
                 </select>
@@ -483,7 +599,10 @@
 
             <div class="flex flex-row gap-2 pt-2">
                 <span class="mapsProcessingMode"></span>
-                <select class="backgroundSecond rounded-xs outline-hidden" id="maps-processing-mode-select">
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="maps-processing-mode-select"
+                >
                     <option class="defaultMapsMode" value="0"></option>
                     <option class="separateMapsMode" value="1"></option>
                     <option class="preserveMapsMode" value="2"></option>
@@ -494,47 +613,74 @@
 
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="romanize-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="romanize-checkbox"
+                    ></span>
                     <span class="romanizeOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="custom-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="custom-processing-checkbox"
+                    ></span>
                     <span class="disableCustomProcessing"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-maps-processing-checkbox"
+                    ></span>
                     <span class="disableMapsProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
                     <span class="disableOtherProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
                     <span class="disableSystemProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
                     <span class="disablePluginsProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container" id="ignore-container">
-                    <span class="checkbox borderPrimary size-8" id="ignore-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="ignore-checkbox"
+                    ></span>
                     <span class="ignore"></span>
                 </div>
 
                 <div class="checkbox-container" id="trim-container">
-                    <span class="checkbox borderPrimary size-8 min-h-8 min-w-8" id="trim-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8 min-h-8 min-w-8"
+                        id="trim-checkbox"
+                    ></span>
                     <span class="trim"></span>
                 </div>
 
                 <div class="checkbox-container" id="sort-container">
-                    <span class="checkbox borderPrimary size-8" id="sort-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="sort-checkbox"
+                    ></span>
                     <span class="sort"></span>
                 </div>
             </div>
@@ -547,45 +693,72 @@
             </div>
         </div>
 
-        <div class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base" id="purge-menu">
+        <div
+            class="dropdown-menu borderSecond backgroundPrimary hidden max-w-3xl p-2 text-base"
+            id="purge-menu"
+        >
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="stat-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="stat-checkbox"
+                    ></span>
                     <span class="statCheck"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="leave-filled-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="leave-filled-checkbox"
+                    ></span>
                     <span class="leaveFilledCheck"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="purge-empty-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="purge-empty-checkbox"
+                    ></span>
                     <span class="purgeEmptyCheck"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="create-ignore-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="create-ignore-checkbox"
+                    ></span>
                     <span class="createIgnoreCheck"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-maps-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-maps-processing-checkbox"
+                    ></span>
                     <span class="disableMapsProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-other-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
                     <span class="disableOtherProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-system-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
                     <span class="disableSystemProcessingOption"></span>
                 </div>
 
                 <div class="checkbox-container">
-                    <span class="checkbox borderPrimary size-8" id="disable-plugins-processing-checkbox"></span>
+                    <span
+                        class="checkbox borderPrimary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
                     <span class="disablePluginsProcessingOption"></span>
                 </div>
             </div>
