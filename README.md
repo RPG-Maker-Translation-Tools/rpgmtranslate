@@ -8,8 +8,8 @@ A fast and light graphical interface, designed for editing and translating games
 
 Under the hood, this GUI uses:
 
-- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse and write RPG Maker MV/MZ `.json` files.
-- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse and write RPG Maker XP/VX/VX Ace files.
+- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse text from RPG Maker files and apply the translation.
+- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse RPG Maker XP/VX/VX Ace files to JSON.
 - [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
@@ -24,20 +24,38 @@ If you have troubled figuring out the program, check the `Help > Help` top menu 
 
 ### Prerequisites
 
-- C runtime, like `msvc` or `mingw64` on Windows and `gcc` or `clang` on Linux.
 - `rustup` with an installed Rust toolchain.
-- On Linux - Tauri dependencies (`gtk`, `webkit2gtk`).
+- Tauri prerequisites (https://v2.tauri.app/start/prerequisites);
 - JavaScript runtime (`nodejs`, `bun`, `deno`).
 
 ### Building
 
-Clone the repository: `git clone https://github.com/savannstm/rpgmtranslate.git`.
+Clone the repository:
 
-`cd` to the repository and install all required Node.js dependencies: `npm install`.
+```bash
+git clone https://github.com/savannstm/rpgmtranslate.git
+```
 
-Run `npm run tauri dev`, to run the program in dev mode, or `npm run tauri build`, to build the program for your current OS.
+Install JavaScript dependencies:
 
-You can edit frontend's program source code in `src` directory, and backend source code in `src-tauri/src` directory.
+```bash
+cd rpgmtranslate
+
+# Use your favorite flavor
+npm install # npm
+bun install # bun
+# etc.
+```
+
+Run/build the program:
+
+```bash
+# Run in development mode
+npm run tauri dev
+
+# Build for release
+npm run tauri build
+```
 
 After the build, `target` directory will be created in the `gui/src-tauri` path, containing binary file with program build and distributable bundled packages in the `target/bundle` directory.
 

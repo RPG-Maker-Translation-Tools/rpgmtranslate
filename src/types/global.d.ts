@@ -1,5 +1,16 @@
 interface String {
     count(char: string): number;
+    countLines(): number;
+    lines(): string[];
+    stripSuffix(suffix: string): string;
+    /**
+     * Normalizes default LINE FEED `\n` line breaks to custom NEW_LINE `\#` line breaks.
+     */
+    nnormalize(): string;
+    /**
+     * Denormalizes custom NEW_LINE `\#` line breaks back to default LINE FEED `\n`.
+     */
+    denormalize(): string;
 }
 
 interface HTMLElement {
@@ -16,7 +27,7 @@ interface Math {
 
 type ThemeObject = Record<string, Theme>;
 
-interface Theme extends Record<string, string> {
+interface Theme {
     name: string;
     backgroundDark: string;
     backgroundPrimary: string;
@@ -41,32 +52,27 @@ interface CSSRule {
     selectorText: string;
 }
 
-interface TextAreaPropertiesMemo extends Record<string, string | number> {
-    lineHeight?: number;
-    padding?: number;
-    lineBreaks?: number;
-    fontSize?: string;
-    fontFamily?: string;
-}
-
 interface Bookmark {
     title: string;
     description: string;
 }
 
-type ReplacementLog = Record<string, { old: string; new: string }>;
+type LogEntry = Record<string, [string, string]>;
+type ReplacementLog = Record<string, LogEntry>;
+
+interface TranslationLanguages {
+    from: string;
+    to: string;
+}
 
 interface ProjectSettingsOptions {
     engineType?: import("./enums").EngineType | null;
-    translationLanguages?: {
-        from: string;
-        to: string;
-    };
-    mapsProcessingMode?: MapsProcessingMode;
+    translationLanguages?: TranslationLanguages;
+    duplicateMode?: import("./enums").DuplicateMode;
     romanize?: boolean;
     disableCustomProcessing?: boolean;
     trim?: boolean;
-    originalDirectory?: string;
+    sourceDirectory?: string;
 }
 
 type MatchObject = Record<string, string[]>;
@@ -92,14 +98,16 @@ interface MainWindowUI {
     replaceInput: HTMLTextAreaElement;
     leftPanel: HTMLDivElement;
     searchPanel: HTMLDivElement;
-    searchPanelFound: HTMLDivElement;
-    searchPanelReplaced: HTMLDivElement;
+    searchPanelContent: HTMLDivElement;
     searchCurrentPage: HTMLSpanElement;
     searchTotalPages: HTMLSpanElement;
+    searchSwitch: HTMLDivElement;
+    pageSelectContainer: HTMLDivElement;
+    logFileSelect: HTMLSelectElement;
     topPanel: HTMLDivElement;
     topPanelButtonsDiv: HTMLDivElement;
     saveButton: HTMLButtonElement;
-    compileButton: HTMLButtonElement;
+    writeButton: HTMLButtonElement;
     themeButton: HTMLButtonElement;
     themeMenu: HTMLDivElement;
     toolsButton: HTMLButtonElement;
@@ -136,39 +144,26 @@ interface MainWindowUI {
     themeWindowBody: Element;
     createThemeButton: HTMLButtonElement;
     closeButton: HTMLButtonElement;
-    searchSwitch: HTMLDivElement;
     fromLanguageInput: HTMLInputElement;
     toLanguageInput: HTMLInputElement;
-    compileMenu: HTMLDivElement;
+    writeMenu: HTMLDivElement;
     outputPathButton: HTMLButtonElement;
     outputPathInput: HTMLInputElement;
-    cDisableMapsProcessingCheckbox: HTMLSpanElement;
-    cDisableOtherProcessingCheckbox: HTMLSpanElement;
-    cDisableSystemProcessingCheckbox: HTMLSpanElement;
-    cDisablePluginsProcessingCheckbox: HTMLSpanElement;
+    disableMapProcessingCheckbox: HTMLSpanElement;
+    disableOtherProcessingCheckbox: HTMLSpanElement;
+    disableSystemProcessingCheckbox: HTMLSpanElement;
+    disablePluginProcessingCheckbox: HTMLSpanElement;
     readMenu: HTMLDivElement;
-    readingModeSelect: HTMLSelectElement;
-    readingModeDescription: HTMLDivElement;
-    mapsProcessingModeSelect: HTMLSelectElement;
+    readModeSelect: HTMLSelectElement;
+    readModeDescription: HTMLDivElement;
+    duplicateModeSelect: HTMLSelectElement;
     romanizeCheckbox: HTMLSpanElement;
     disableCustomProcessingCheckbox: HTMLSpanElement;
-    rDisableMapsProcessingCheckbox: HTMLSpanElement;
-    rDisableOtherProcessingCheckbox: HTMLSpanElement;
-    rDisableSystemProcessingCheckbox: HTMLSpanElement;
-    rDisablePluginsProcessingCheckbox: HTMLSpanElement;
     ignoreCheckbox: HTMLSpanElement;
     trimCheckbox: HTMLSpanElement;
-    sortCheckbox: HTMLSpanElement;
     applyReadButton: HTMLDivElement;
     purgeMenu: HTMLDivElement;
-    statCheckbox: HTMLSpanElement;
-    leaveFilledCheckbox: HTMLSpanElement;
-    purgeEmptyCheckbox: HTMLSpanElement;
     createIgnoreCheckbox: HTMLSpanElement;
-    pDisableMapsProcessingCheckbox: HTMLSpanElement;
-    pDisableOtherProcessingCheckbox: HTMLSpanElement;
-    pDisableSystemProcessingCheckbox: HTMLSpanElement;
-    pDisablePluginsProcessingCheckbox: HTMLSpanElement;
     applyPurgeButton: HTMLDivElement;
 }
 
@@ -181,4 +176,31 @@ interface SettingsWindowUI {
     rowDeleteModeSelect: HTMLSelectElement;
     displayGhostLinesCheck: HTMLSpanElement;
     checkForUpdatesCheck: HTMLSpanElement;
+}
+
+interface OptionsBase extends Record<string, unknown> {
+    sourcePath: string;
+    translationPath: string;
+    engineType: import("./enums").EngineType;
+    duplicateMode: import("./enums").DuplicateMode;
+    romanize: boolean;
+    disableCustomProcessing: boolean;
+    disableProcessing: import("./enums").FileFlags;
+    trim: boolean;
+}
+
+interface ReadOptions extends OptionsBase {
+    readMode: import("./enums").ReadMode;
+    projectPath: string;
+    ignore: boolean;
+}
+
+interface WriteOptions extends OptionsBase {
+    outputPath: string;
+    gameTitle: string;
+}
+
+interface PurgeOptions extends OptionsBase {
+    gameTitle: string;
+    createIgnore: boolean;
 }

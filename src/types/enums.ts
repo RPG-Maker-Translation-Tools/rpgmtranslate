@@ -6,16 +6,15 @@ export const enum EngineType {
     XP,
 }
 
-export const enum ProcessingMode {
+export const enum ReadMode {
     Default,
     Append,
     Force,
 }
 
-export const enum MapsProcessingMode {
-    Default,
-    Separate,
-    Preserve,
+export const enum DuplicateMode {
+    Allow,
+    Remove,
 }
 
 export const enum Language {
@@ -23,19 +22,14 @@ export const enum Language {
     Russian,
 }
 
-export const enum SaveMode {
-    Backup,
-    SingleFile,
-    AllFiles,
-}
-
 export const enum SearchMode {
-    AllText,
-    OnlyOriginal,
-    OnlyTranslation,
+    All,
+    Source,
+    Translation,
 }
 
 export const enum BatchAction {
+    None,
     Trim,
     Translate,
     Wrap,
@@ -52,10 +46,11 @@ export const enum RowDeleteMode {
     Allowed,
 }
 
-export const enum ReplaceMode {
+export const enum SearchAction {
+    None,
+    Search,
     Replace,
     Put,
-    Search,
 }
 
 export const enum SearchFlags {
@@ -63,7 +58,7 @@ export const enum SearchFlags {
     WholeWord = 1,
     CaseSensitive = 2,
     RegExp = 4,
-    OnlyLocal = 8,
+    OnlyCurrentTab = 8,
 }
 
 export const enum MouseButton {
@@ -72,4 +67,18 @@ export const enum MouseButton {
     Right = 2,
     Back = 3,
     Forward = 4,
+}
+
+export const enum WindowType {
+    Main,
+    Settings,
+}
+
+export const enum FileFlags {
+    None = 0,
+    Map = 1,
+    Other = 2,
+    System = 4,
+    Scripts = 8,
+    All = 15,
 }

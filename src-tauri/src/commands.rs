@@ -1,72 +1,80 @@
 #![allow(clippy::too_many_arguments)]
-
-use lazy_static::lazy_static;
-use regex::{escape, Regex};
-use rpgmad_lib::Decrypter;
+use log::error;
+use regex::{Regex, escape};
+use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_lib::{
-    parse_ignore,
-    purge::*,
-    read::*,
-    statics::LINES_SEPARATOR,
-    types::{EngineType, GameType, IgnoreMap, MapsProcessingMode, ProcessingMode, ResultExt},
-    write::*,
+    DuplicateMode, EngineType, FileFlags, GameType, PurgerBuilder, ReadMode,
+    ReaderBuilder, WriterBuilder,
+    constants::{NEW_LINE, SEPARATOR},
+    get_ini_title, get_system_title,
 };
+use serde::{Deserialize, Serialize, Serializer};
 use std::{
-    fs::{self, create_dir_all, read_dir, read_to_string, remove_file, write, File, OpenOptions},
-    io::{BufRead, BufReader, Read, Seek, SeekFrom, Write},
+    fs::{self, File, OpenOptions, create_dir_all, read_to_string},
+    io::{self, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
+    sync::LazyLock,
     time::{Duration, Instant},
 };
-use tauri::{command, Manager, Runtime, Scopes, Window};
+use tauri::{AppHandle, command};
 use tauri_plugin_fs::FsExt;
+use thiserror::Error;
 use tokio::time::sleep;
 use translators::{GoogleTranslator, Translator};
 use walkdir::WalkDir;
 
-lazy_static! {
-    pub static ref GOOGLE_TRANS: GoogleTranslator = GoogleTranslator::default();
+#[derive(Serialize, Deserialize, Clone, Copy)]
+pub enum Language {
+    English,
+    Russian,
 }
 
-const LOGGING: bool = true;
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("{0}: IO error occurred: {1}")]
+    Io(PathBuf, io::Error),
+    #[error(transparent)]
+    Rvpacker(#[from] rvpacker_lib::Error),
+    #[error(transparent)]
+    Extract(#[from] ExtractError),
+    #[error(transparent)]
+    Translators(#[from] translators::Error),
+    #[error(transparent)]
+    Tauri(#[from] tauri::Error),
+}
 
-#[inline(always)]
-fn get_game_type(game_title: &str) -> Option<GameType> {
-    let lowercased: String = game_title.to_lowercase();
-
-    if Regex::new(r"\btermina\b").unwrap_log().is_match(&lowercased) {
-        Some(GameType::Termina)
-    } else if Regex::new(r"\blisa\b").unwrap_log().is_match(&lowercased) {
-        Some(GameType::LisaRPG)
-    } else {
-        None
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.to_string().serialize(serializer)
     }
 }
 
-fn is_crlf(file_path: &Path) -> bool {
-    let file: File = File::open(file_path).unwrap_log();
-    let mut reader: BufReader<File> = BufReader::new(file);
-    let mut line: String = String::new();
-    let _ = reader.read_line(&mut line);
+static GOOGLE_TRANS: LazyLock<GoogleTranslator> =
+    LazyLock::new(GoogleTranslator::default);
 
-    line.contains('\r')
-}
+#[inline(always)]
+fn get_game_type(
+    game_title: &str,
+    disable_custom_processing: bool,
+) -> GameType {
+    if disable_custom_processing {
+        GameType::None
+    } else {
+        let lowercased = game_title.to_lowercase();
 
-fn replace_crlf(file_path: &Path) {
-    let content: String = read_to_string(file_path).unwrap_log();
-    write(file_path, content.replace('\r', "")).unwrap_log();
-}
-
-#[command]
-pub fn convert_to_lf(translation_path: &str) {
-    for entry in read_dir(translation_path).unwrap_log().flatten() {
-        let path = entry.path();
-
-        if !path.is_file() {
-            continue;
-        }
-
-        if is_crlf(&path) {
-            replace_crlf(&path);
+        if unsafe { Regex::new(r"\btermina\b").unwrap_unchecked() }
+            .is_match(&lowercased)
+        {
+            GameType::Termina
+        } else if unsafe { Regex::new(r"\blisa\b").unwrap_unchecked() }
+            .is_match(&lowercased)
+        {
+            GameType::LisaRPG
+        } else {
+            GameType::None
         }
     }
 }
@@ -78,11 +86,13 @@ pub fn escape_text(text: &str) -> String {
 
 #[command]
 pub fn walk_dir(dir: &str) -> Vec<String> {
-    let mut entries: Vec<String> = Vec::new();
+    let mut entries = Vec::new();
 
     for entry in WalkDir::new(dir).into_iter().flatten() {
         if entry.file_type().is_file() {
-            entries.push(entry.path().to_string_lossy().to_string())
+            if let Some(str) = entry.path().to_str() {
+                entries.push(str.into())
+            }
         }
     }
 
@@ -90,392 +100,134 @@ pub fn walk_dir(dir: &str) -> Vec<String> {
 }
 
 #[command(async)]
-pub fn compile(
-    project_path: &Path,
-    original_dir: &Path,
+pub fn write(
+    source_path: &Path,
+    translation_path: &Path,
     output_path: &Path,
+    engine_type: EngineType,
+    duplicate_mode: DuplicateMode,
     game_title: &str,
-    maps_processing_mode: MapsProcessingMode,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: [bool; 4],
-    engine_type: EngineType,
+    disable_processing: FileFlags,
     trim: bool,
-) -> f64 {
-    let start_time: Instant = Instant::now();
-
-    let extension: &str = match engine_type {
-        EngineType::New => ".json",
-        EngineType::VXAce => ".rvdata2",
-        EngineType::VX => ".rvdata",
-        EngineType::XP => ".rxdata",
-    };
-
-    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
-    let original_path: &PathBuf = &project_path.join(original_dir);
-    let js_path: &PathBuf = &project_path.join("js");
-    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
-
-    let (data_output_path, plugins_output_path) = if engine_type == EngineType::New {
-        let plugins_output_path: PathBuf = output_path.join(data_dir).join("output/js");
-        create_dir_all(&plugins_output_path).unwrap_log();
-
-        (
-            &output_path.join(data_dir).join("output/data"),
-            Some(plugins_output_path),
-        )
-    } else {
-        (&output_path.join(data_dir).join("output/Data"), None)
-    };
-
-    create_dir_all(data_output_path).unwrap_log();
-
-    let game_type: Option<GameType> = if disable_custom_processing {
-        None
-    } else {
-        get_game_type(game_title)
-    };
-
-    if !disable_processing[0] {
-        MapWriter::new(original_path, translation_path, data_output_path, engine_type)
-            .maps_processing_mode(maps_processing_mode)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .trim(trim)
-            .write();
-    }
-
-    if !disable_processing[1] {
-        OtherWriter::new(original_path, translation_path, data_output_path, engine_type)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .trim(trim)
-            .write();
-    }
-
-    if !disable_processing[2] {
-        SystemWriter::new(
-            &original_path.join(String::from("System") + extension),
-            translation_path,
-            data_output_path,
-            engine_type,
-        )
+) -> Result<String, Error> {
+    let start_time = Instant::now();
+    let game_type = get_game_type(game_title, disable_custom_processing);
+    let file_flags = get_file_flags(disable_processing);
+    let mut writer = WriterBuilder::new()
+        .with_flags(file_flags)
         .romanize(romanize)
-        .logging(LOGGING)
+        .game_type(game_type)
         .trim(trim)
-        .write();
-    }
+        .duplicate_mode(duplicate_mode)
+        .build();
 
-    if !disable_processing[3] {
-        if engine_type == EngineType::New {
-            PluginWriter::new(&js_path.join("plugins.js"), translation_path, &unsafe {
-                plugins_output_path.unwrap_unchecked()
-            })
-            .romanize(romanize)
-            .logging(LOGGING)
-            .write();
-        } else {
-            ScriptWriter::new(
-                &original_path.join(String::from("Scripts") + extension),
-                translation_path,
-                data_output_path,
-            )
-            .romanize(romanize)
-            .logging(LOGGING)
-            .write();
-        }
-    }
+    writer.write(source_path, translation_path, output_path, engine_type)?;
 
-    start_time.elapsed().as_secs_f64()
+    Ok(format!("{:.2}", start_time.elapsed().as_secs_f32()))
+}
+
+pub fn get_file_flags(disable_processing: FileFlags) -> FileFlags {
+    let mut file_flags = FileFlags::all();
+    file_flags.remove(disable_processing);
+    file_flags
 }
 
 #[command(async)]
 pub fn read(
     project_path: &Path,
-    original_dir: &Path,
-    maps_processing_mode: MapsProcessingMode,
+    source_path: &Path,
+    translation_path: &Path,
+    read_mode: ReadMode,
+    engine_type: EngineType,
+    duplicate_mode: DuplicateMode,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: [bool; 4],
-    processing_mode: ProcessingMode,
-    engine_type: EngineType,
+    disable_processing: FileFlags,
     ignore: bool,
     trim: bool,
-    sort: bool,
-) {
-    /*
-    let gameTitle!: string;
-
-    if (settings.engineType === EngineType.New) {
-        gameTitle = JSON.parse(
-            await readTextFile(join(settings.projectPath, originalDir, "System.json")),
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        ).gameTitle;
+) -> Result<(), Error> {
+    let game_title: String = if engine_type.is_new() {
+        let system_file_path = source_path.join("System.json");
+        let system_file_content = read_to_string(&system_file_path)
+            .map_err(|err| Error::Io(system_file_path, err))?;
+        get_system_title(&system_file_content)?
     } else {
-        for await (const line of await readTextFileLines(join(settings.projectPath, "Game.ini"))) {
-            if (line.toLowerCase().startsWith("title")) {
-                gameTitle = line.split("=")[1].trim();
-                break;
-            }
-        }
-    }
-    */
-
-    let game_title: String = match engine_type {
-        EngineType::New => {
-            let system_file_content: String =
-                fs::read_to_string(PathBuf::from(project_path).join(original_dir).join("System.json")).unwrap();
-
-            let game_title_start_index: usize = system_file_content.find("gameTitle").unwrap();
-            let from_title_start: &str = &system_file_content[game_title_start_index..];
-            let column_position: usize = from_title_start.find(':').unwrap();
-            let title: &str =
-                &from_title_start[column_position + 1..from_title_start[column_position + 1..].find('"').unwrap()];
-
-            title.to_owned()
-        }
-        _ => {
-            let ini_file_content: String = fs::read_to_string(PathBuf::from(project_path).join("Game.ini")).unwrap();
-            let title_line_start_index: usize = ini_file_content.find("title").unwrap();
-
-            let from_title_line_start: &str = &ini_file_content[title_line_start_index..];
-            let title: &str = from_title_line_start
-                [from_title_line_start.find('=').unwrap() + 1..from_title_line_start.find('\n').unwrap()]
-                .trim();
-
-            title.to_string()
-        }
+        let ini_file_path = Path::new(project_path).join("Game.ini");
+        let ini_file_content = fs::read(&ini_file_path)
+            .map_err(|err| Error::Io(ini_file_path, err))?;
+        let title = get_ini_title(&ini_file_content)?;
+        String::from_utf8_lossy(&title).into_owned()
     };
 
-    let extension: &str = match engine_type {
-        EngineType::New => ".json",
-        EngineType::VXAce => ".rvdata2",
-        EngineType::VX => ".rvdata",
-        EngineType::XP => ".rxdata",
-    };
+    let game_type = get_game_type(&game_title, disable_custom_processing);
+    let file_flags = get_file_flags(disable_processing);
 
-    let game_type: Option<GameType> = if disable_custom_processing {
-        None
-    } else {
-        get_game_type(&game_title)
-    };
-
-    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
-    let original_path: &PathBuf = &project_path.join(original_dir);
-    let js_path: &PathBuf = &project_path.join("js");
-    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
-
-    create_dir_all(translation_path).unwrap_log();
-
-    if !disable_processing[0] {
-        MapReader::new(original_path, translation_path, engine_type)
-            .maps_processing_mode(maps_processing_mode)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .processing_mode(processing_mode)
-            .ignore(ignore)
-            .trim(trim)
-            .sort(sort)
-            .read();
-    }
-
-    if !disable_processing[1] {
-        OtherReader::new(original_path, translation_path, engine_type)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .processing_mode(processing_mode)
-            .ignore(ignore)
-            .trim(trim)
-            .sort(sort)
-            .read();
-    }
-
-    if !disable_processing[2] {
-        SystemReader::new(
-            &original_path.join(String::from("System") + extension),
-            translation_path,
-            engine_type,
-        )
+    let mut reader = ReaderBuilder::new()
+        .with_flags(file_flags)
         .romanize(romanize)
-        .logging(LOGGING)
-        .processing_mode(processing_mode)
+        .game_type(game_type)
+        .read_mode(read_mode)
         .ignore(ignore)
         .trim(trim)
-        .sort(sort)
-        .read();
-    }
+        .duplicate_mode(duplicate_mode)
+        .build();
 
-    if !disable_processing[3] {
-        if engine_type == EngineType::New {
-            PluginReader::new(&js_path.join("plugins.js"), translation_path)
-                .romanize(romanize)
-                .logging(LOGGING)
-                .processing_mode(processing_mode)
-                .ignore(ignore)
-                .sort(sort)
-                .read();
-        } else {
-            ScriptReader::new(
-                &original_path.join(String::from("Scripts") + extension),
-                translation_path,
-            )
-            .romanize(romanize)
-            .logging(LOGGING)
-            .processing_mode(processing_mode)
-            .ignore(ignore)
-            .sort(sort)
-            .read();
-        }
-    }
+    reader.read(source_path, translation_path, engine_type)?;
 
     append_to_end(
-        &PathBuf::from(translation_path).join("system.txt"),
-        &format!("{game_title}{LINES_SEPARATOR}"),
-    );
+        &Path::new(translation_path).join("system.txt"),
+        &format!("{game_title}{SEPARATOR}"),
+    )?;
+
+    Ok(())
 }
 
 #[command]
 pub fn purge(
-    project_path: &Path,
-    original_dir: &Path,
+    source_path: &Path,
+    translation_path: &Path,
+    engine_type: EngineType,
+    duplicate_mode: DuplicateMode,
     game_title: &str,
-    maps_processing_mode: MapsProcessingMode,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: [bool; 4],
-    engine_type: EngineType,
-    stat: bool,
-    leave_filled: bool,
-    purge_empty: bool,
+    disable_processing: FileFlags,
     create_ignore: bool,
     trim: bool,
-) {
-    let extension: &str = match engine_type {
-        EngineType::New => ".json",
-        EngineType::VXAce => ".rvdata2",
-        EngineType::VX => ".rvdata",
-        EngineType::XP => ".rxdata",
-    };
+) -> Result<(), Error> {
+    let game_type = get_game_type(game_title, disable_custom_processing);
+    let file_flags = get_file_flags(disable_processing);
 
-    let game_type: Option<GameType> = if disable_custom_processing {
-        None
-    } else {
-        get_game_type(game_title)
-    };
-
-    let data_dir: &PathBuf = &PathBuf::from(".rpgmtranslate");
-    let original_path: &PathBuf = &project_path.join(original_dir);
-    let js_path: &PathBuf = &project_path.join("js");
-    let translation_path: &PathBuf = &project_path.join(data_dir).join("translation");
-
-    if stat && translation_path.join("stat.txt").exists() {
-        remove_file(translation_path.join("stat.txt")).unwrap_log();
-    }
-
-    create_dir_all(translation_path).unwrap_log();
-
-    let mut ignore_map: IgnoreMap = IgnoreMap::default();
-
-    if create_ignore && translation_path.join(".rvpacker-ignore").exists() {
-        ignore_map = parse_ignore(translation_path.join(".rvpacker-ignore"));
-    }
-
-    let mut stat_vec: Vec<(String, String)> = Vec::new();
-
-    if !disable_processing[0] {
-        MapPurger::new(original_path, translation_path, engine_type)
-            .maps_processing_mode(maps_processing_mode)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .stat(stat)
-            .leave_filled(leave_filled)
-            .purge_empty(purge_empty)
-            .create_ignore(create_ignore)
-            .trim(trim)
-            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
-    }
-
-    if !disable_processing[1] {
-        OtherPurger::new(original_path, translation_path, engine_type)
-            .romanize(romanize)
-            .logging(LOGGING)
-            .game_type(game_type)
-            .stat(stat)
-            .leave_filled(leave_filled)
-            .purge_empty(purge_empty)
-            .create_ignore(create_ignore)
-            .trim(trim)
-            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
-    }
-
-    if !disable_processing[2] {
-        SystemPurger::new(
-            &original_path.join(String::from("System") + extension),
-            translation_path,
-            engine_type,
-        )
+    PurgerBuilder::new()
+        .with_flags(file_flags)
         .romanize(romanize)
-        .logging(LOGGING)
-        .stat(stat)
-        .leave_filled(leave_filled)
-        .purge_empty(purge_empty)
+        .game_type(game_type)
         .create_ignore(create_ignore)
         .trim(trim)
-        .purge(Some(&mut ignore_map), Some(&mut stat_vec));
-    }
+        .duplicate_mode(duplicate_mode)
+        .build()
+        .purge(source_path, translation_path, engine_type)?;
 
-    if !disable_processing[3] {
-        if engine_type == EngineType::New {
-            PluginPurger::new(&js_path.join("plugins.js"), translation_path)
-                .romanize(romanize)
-                .logging(LOGGING)
-                .stat(stat)
-                .leave_filled(leave_filled)
-                .purge_empty(purge_empty)
-                .create_ignore(create_ignore)
-                .purge(Some(&mut ignore_map), Some(&mut stat_vec));
-        } else {
-            ScriptPurger::new(
-                &original_path.join(String::from("Scripts") + extension),
-                translation_path,
-            )
-            .romanize(romanize)
-            .logging(LOGGING)
-            .stat(stat)
-            .leave_filled(leave_filled)
-            .purge_empty(purge_empty)
-            .create_ignore(create_ignore)
-            .purge(Some(&mut ignore_map), Some(&mut stat_vec));
-        }
-    }
-
-    if create_ignore {
-        write_ignore(ignore_map, translation_path);
-    }
-
-    if stat {
-        write_stat(stat_vec, translation_path);
-    }
+    Ok(())
 }
 
 #[command]
-pub fn read_last_line(file_path: &Path) -> String {
-    let mut file: File = File::open(file_path).unwrap_log();
-    let mut buffer: Vec<u8> = Vec::new();
+pub fn read_last_line(file_path: &Path) -> Result<String, Error> {
+    let mut file = File::open(file_path)
+        .map_err(|err| Error::Io(file_path.to_path_buf(), err))?;
+    let mut buffer = Vec::new();
 
-    let mut position: u64 = file.seek(SeekFrom::End(0)).unwrap_log();
+    let mut position =
+        unsafe { file.seek(SeekFrom::End(0)).unwrap_unchecked() };
 
     while position > 0 {
         position -= 1;
-        file.seek(SeekFrom::Start(position)).unwrap_log();
+        unsafe { file.seek(SeekFrom::Start(position)).unwrap_unchecked() };
 
-        let mut byte: [u8; 1] = [0; 1];
-        file.read_exact(&mut byte).unwrap_log();
+        let mut byte = [0];
+        unsafe { file.read_exact(&mut byte).unwrap_unchecked() };
 
         if byte[0] == b'\n' && !buffer.is_empty() {
             break;
@@ -485,43 +237,68 @@ pub fn read_last_line(file_path: &Path) -> String {
     }
 
     buffer.reverse();
-    unsafe { String::from_utf8_unchecked(buffer) }
+    Ok(unsafe { String::from_utf8_unchecked(buffer) })
 }
 
 #[command]
-pub async fn translate_text(text: String, from: String, to: String, replace: bool) -> String {
+pub async fn translate_text(
+    text: String,
+    from: String,
+    to: String,
+    normalize: bool,
+) -> Result<String, Error> {
     sleep(Duration::from_millis(5)).await;
 
-    let mut translated: String = GOOGLE_TRANS.translate_async(&text, &from, &to).await.unwrap_log();
+    let mut translated =
+        GOOGLE_TRANS.translate_async(&text, &from, &to).await?;
 
-    if replace {
-        translated = translated.replace('\n', r"\#");
+    if normalize {
+        translated = translated.replace('\n', NEW_LINE);
     }
 
-    translated
+    Ok(translated)
 }
 
 #[command]
-pub fn add_to_scope<R: Runtime>(window: Window<R>, path: &str) {
-    let tauri_scope = window.state::<Scopes>();
-
-    if let Some(s) = window.try_fs_scope() {
-        s.allow_directory(path, true).unwrap_log();
-    }
-
-    tauri_scope.allow_directory(path, true).unwrap_log();
+pub fn expand_scope(app_handle: AppHandle, dir: PathBuf) -> Result<(), Error> {
+    app_handle.fs_scope().allow_directory(&dir, true)?;
+    Ok(())
 }
 
 #[command]
-pub fn extract_archive(input_path: &Path, output_path: &Path, processing_mode: ProcessingMode) {
-    let bytes: Vec<u8> = fs::read(input_path).unwrap();
-    let mut decrypter: Decrypter = Decrypter::new(bytes);
-    decrypter
-        .extract(output_path, processing_mode == ProcessingMode::Force)
-        .unwrap();
+pub fn extract_archive(
+    input_path: &Path,
+    output_path: &Path,
+) -> Result<(), Error> {
+    let bytes = fs::read(input_path)
+        .map_err(|err| Error::Io(input_path.to_path_buf(), err))?;
+
+    let decrypted_files = Decrypter::new().decrypt(&bytes)?;
+
+    for file in decrypted_files {
+        let path = String::from_utf8_lossy(&file.path);
+        let output_file_path = output_path.join(path.as_ref());
+
+        if let Some(parent) = output_file_path.parent() {
+            create_dir_all(parent)
+                .map_err(|err| Error::Io(parent.to_path_buf(), err))?;
+        }
+
+        fs::write(&output_file_path, file.content)
+            .map_err(|err| Error::Io(output_file_path, err))?;
+    }
+
+    Ok(())
 }
 
-pub fn append_to_end(path: &Path, text: &str) {
-    let mut file: File = OpenOptions::new().append(true).open(path).unwrap_log();
-    write!(file, "\n{text}").unwrap_log();
+pub fn append_to_end(path: &Path, text: &str) -> Result<(), Error> {
+    let mut file = OpenOptions::new()
+        .append(true)
+        .open(path)
+        .map_err(|err| Error::Io(path.to_path_buf(), err))?;
+
+    write!(file, "\n{text}")
+        .map_err(|err| Error::Io(path.to_path_buf(), err))?;
+
+    Ok(())
 }

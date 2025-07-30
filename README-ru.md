@@ -22,9 +22,8 @@
 
 ### Предварительные требования
 
-- Рантайм C, например, `msvc` или `mingw64` в Windows и `gcc` или `clang` на Linux.
 - `rustup` с установленным Rust тулчейном.
-- На Linux - зависимости Tauri (`gtk`, `webkit2gtk`).
+- Зависимости Tauri (https://v2.tauri.app/start/prerequisites).
 - Рантайм JavaScript (`nodejs`, `bun`, `deno`).
 
 ### Билдинг

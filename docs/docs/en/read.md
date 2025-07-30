@@ -15,25 +15,22 @@ Replaces Eastern symbols with their Western equivalents. It might be easier to w
 
 ## Disable custom processing
 
-Currently, custom processing is implemented for LisaRPG games (LISA: The Painful and different fan-mods), and Fear & Hunger 2: Termina. In the future, this list might expand.
+Currently, custom processing is implemented for LISA: The Painful and derivatives, and Fear & Hunger 2: Termina. In the future, this list might expand.
 
-This will probably produce less-readable text with less system things, that you don't actually need for translation.
+This will probably produce more readable text with less system things, that you don't actually need for translation.
 
 **Don't use with append mode, if you haven't read game files with it.**
 
-## Maps processing mode
+## Duplicate mode
 
-- Default - eliminates all duplicates across all maps files.
-
-- Separate - each map is parsed separately, and only inner duplicates are eliminated. **RECOMMENDED!**
-
-- Preserve - each duplicate is preserved. **WARNING: May bloat your files! For example, Fear & Hunger 2: Termina produces 70k lines with that mode!**
+- Allow - each map/event is parsed separately, and only inner duplicates are eliminated. **RECOMMENDED!**
+- Remove - eliminates all duplicates across all maps files. Use, if `Allow` causes too much bloat.
 
 ### Duplicates
 
-You may encounter a problem, when using default or separate mode would eliminate duplicates, but the exact same line is used in multiple contexts. In that case, **DO NOT** resort to preserve processing mode.
+You may encounter a problem, when exact the same translation of one line is written to multiple places in-game, because some duplicates are eliminated.
 
-How to work around this: manually post-edit the files. [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) provides the feature to generate `.json` representation of older engines' files and write it back with changes, and newer engines are directly editable `.json`. This way your translation will be way cleaner.
+How to work around this: manually post-edit the files. [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) provides the feature to generate `.json` representation of older engines' files and write them back with changes, and newer engines are directly editable `.json`. This way your translation will be way cleaner.
 
 ## Ignore entries from .rvpacker-ignore file
 

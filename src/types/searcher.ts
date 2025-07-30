@@ -5,16 +5,15 @@ import {
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import {
-    LINES_SEPARATOR,
     MAX_FILE_MATCHES,
-    NEW_LINE,
+    SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
     TXT_EXTENSION,
     TXT_EXTENSION_LENGTH,
 } from "../utilities/constants";
-import { createRegExp, escapeHTML, join } from "../utilities/functions";
-import { ReplaceMode, SearchFlags, SearchMode } from "./enums";
+import { createRegExp, join } from "../utilities/functions";
+import { SearchAction, SearchFlags, SearchMode } from "./enums";
 import { Settings } from "./settings";
 
 export class Searcher {
@@ -23,42 +22,39 @@ export class Searcher {
     #matchPagesCount = -1;
     #regexp?: RegExp;
     #searchMode?: SearchMode;
-    #replaceMode?: ReplaceMode;
+    #searchAction?: SearchAction;
 
-    constructor(
+    public constructor(
         private readonly settings: Settings,
         private readonly searchFlags: SearchFlagsObject,
         private readonly currentTab: CurrentTab,
     ) {}
 
-    private createMatchesContainer(
-        elementText: string,
-        matches: string[],
-    ): string {
+    #createMatchesContainer(elementText: string, matches: string[]): string {
         const result: string[] = [];
         let lastIndex = 0;
 
         for (const match of matches) {
-            const start = elementText.indexOf(match, lastIndex);
-            const end = start + match.length;
+            const beforeMatchIndex = elementText.indexOf(match, lastIndex);
+            const beforeMatch = elementText.slice(lastIndex, beforeMatchIndex);
 
-            const matchDiv = `${elementText.slice(lastIndex, start)}<span class="backgroundThird">${match}</span>`;
-            result.push(matchDiv);
+            const matchElement = `${beforeMatch}<span class="backgroundThird">${match}</span>`;
+            result.push(matchElement);
 
-            lastIndex = end;
+            lastIndex = beforeMatchIndex + match.length;
         }
 
-        const afterDiv = elementText.slice(lastIndex);
-        result.push(afterDiv);
+        const afterMatch = elementText.slice(lastIndex);
+        result.push(afterMatch);
 
         return result.join("");
     }
 
-    private appendSearchMatch(
+    #appendSearchMatch(
         text: string,
-        counterpartIsOriginal: boolean,
         filename: string,
         rowNumber: string,
+        counterpartIsSource: boolean,
         counterpartText = "",
     ) {
         // Regexp.exec fucks up matches by including capturing groups
@@ -69,16 +65,14 @@ export class Searcher {
             return;
         }
 
-        text = escapeHTML(text);
-
-        if (this.#replaceMode === ReplaceMode.Search) {
+        if (this.#searchAction === SearchAction.Search) {
             if (filename.endsWith(TXT_EXTENSION)) {
                 filename = filename.slice(0, -TXT_EXTENSION_LENGTH);
             }
 
-            const matchKey = `${filename}-${counterpartIsOriginal ? "translated" : "original"}-${rowNumber}`;
+            const matchKey = `${filename}-${counterpartIsSource ? "translation" : "source"}-${rowNumber}`;
             const matchValue = [
-                this.createMatchesContainer(text, matches),
+                this.#createMatchesContainer(text, matches),
                 counterpartText,
             ];
 
@@ -92,34 +86,40 @@ export class Searcher {
         }
     }
 
-    private async writeMatches(drain = false): Promise<void> {
-        if (
-            this.#matchesObject.size < MAX_FILE_MATCHES ||
-            !drain ||
-            this.#matchesObject.size == 0
-        ) {
+    async #writeMatches(drain = false): Promise<void> {
+        if (this.#matchesObject.size === 0) {
             return;
         }
 
-        this.#matchPagesCount++;
+        if (this.#matchesObject.size < MAX_FILE_MATCHES && !drain) {
+            return;
+        }
 
-        const filePath = join(
-            this.settings.programDataPath,
-            `matches-${this.#matchPagesCount}.json`,
-        );
-        await writeTextFile(
-            filePath,
-            JSON.stringify(Object.fromEntries(this.#matchesObject)),
-        );
+        const entries = Array.from(this.#matchesObject.entries());
+
+        while (entries.length > 0) {
+            const chunk = entries.splice(0, MAX_FILE_MATCHES);
+            this.#matchPagesCount++;
+
+            const filePath = join(
+                this.settings.programDataPath,
+                `match${this.#matchPagesCount}.json`,
+            );
+
+            await writeTextFile(
+                filePath,
+                JSON.stringify(Object.fromEntries(chunk)),
+            );
+        }
 
         this.#matchesObject.clear();
     }
 
-    private async removeOldMatches() {
+    async #removeOldMatches() {
         const files = await readDir(this.settings.programDataPath);
 
         for (const file of files) {
-            if (file.name.startsWith("matches-")) {
+            if (file.name.startsWith("match")) {
                 await removePath(
                     join(this.settings.programDataPath, file.name),
                 );
@@ -127,42 +127,63 @@ export class Searcher {
         }
     }
 
-    private async searchCurrentTab() {
+    async #searchCurrentTab() {
         for (const rowContainer of this.currentTab.content.children) {
+            const searchSource =
+                this.#searchMode !== SearchMode.Translation &&
+                this.#searchAction !== SearchAction.Replace;
             const searchTranslation =
-                this.#searchMode !== SearchMode.OnlyOriginal &&
-                this.#replaceMode !== ReplaceMode.Put;
-            const shouldAppend =
-                searchTranslation ||
-                (this.#searchMode !== SearchMode.OnlyTranslation &&
-                    this.#replaceMode !== ReplaceMode.Replace);
+                this.#searchMode !== SearchMode.Source &&
+                this.#searchAction !== SearchAction.Put;
+            const search = searchSource || searchTranslation;
 
-            if (!shouldAppend) {
+            if (!search) {
                 continue;
             }
 
-            const text = searchTranslation
-                ? (rowContainer.children[2] as HTMLTextAreaElement).value
-                : (rowContainer.children[1] as HTMLDivElement).innerHTML;
+            const sourceText = (rowContainer.children[1] as HTMLDivElement)
+                .innerHTML;
+            const translationText = (
+                rowContainer.children[2] as HTMLTextAreaElement
+            ).value;
 
             const [name, row] = rowContainer.id.split("-");
 
-            this.appendSearchMatch(text, searchTranslation, name, row);
-            await this.writeMatches();
+            if (searchSource) {
+                this.#appendSearchMatch(
+                    sourceText,
+                    name,
+                    row,
+                    false,
+                    translationText,
+                );
+            }
+
+            if (searchTranslation) {
+                this.#appendSearchMatch(
+                    translationText,
+                    name,
+                    row,
+                    true,
+                    sourceText,
+                );
+            }
         }
+
+        await this.#writeMatches(true);
     }
 
-    private async searchGlobal() {
-        const [mapsEntries, otherEntries] = await Promise.all([
+    async #searchGlobal() {
+        const [mapEntries, otherEntries] = await Promise.all([
             readDir(join(this.settings.tempMapsPath)),
             readDir(join(this.settings.translationPath)),
         ]);
 
-        mapsEntries.sort(
-            (a, b) => Number(a.name.slice(4, -4)) - Number(b.name.slice(4, -4)),
+        mapEntries.sort(
+            (a, b) => Number(a.name.slice(3, -4)) - Number(b.name.slice(3, -4)),
         );
 
-        const entries = [mapsEntries, otherEntries]
+        const entries = [mapEntries, otherEntries]
             .flat()
             .filter(
                 (entry) =>
@@ -172,93 +193,103 @@ export class Searcher {
             );
 
         for (const entry of entries) {
-            const fileName = entry.name;
-            const isTempMap = !Number.isNaN(Number.parseInt(fileName[4]));
+            const filename = entry.name;
+            const isTempMap = filename.startsWith("map");
 
             const filePath = join(
                 this.settings.programDataPath,
                 isTempMap ? TEMP_MAPS_DIRECTORY : TRANSLATION_DIRECTORY,
-                fileName,
+                filename,
             );
 
             const fileContent = await readTextFile(filePath);
-            const lines = fileContent.split("\n");
+            const lines = fileContent.lines();
 
             for (const [lineNumber, line] of lines.entries()) {
                 if (!line.trim()) {
                     continue;
                 }
 
-                let [original, translation] = line.split(LINES_SEPARATOR);
+                let [source, translation] = line.split(SEPARATOR);
 
                 if ((translation as string | undefined) === undefined) {
                     console.error(
-                        "Couldn't split line at line in file:",
-                        lineNumber + 1,
-                        fileName,
+                        `Couldn't split line in file ${filename} at line ${lineNumber + 1}`,
                     );
                     continue;
                 }
 
-                original = original.replaceAll(NEW_LINE, "\n").trim();
-                translation = translation.replaceAll(NEW_LINE, "\n").trim();
+                source = source.denormalize().trim();
+                translation = translation.denormalize().trim();
 
-                const matchOriginal =
-                    this.#searchMode !== SearchMode.OnlyTranslation &&
-                    this.#replaceMode !== ReplaceMode.Replace;
-                const matchTranslation =
-                    this.#searchMode !== SearchMode.OnlyOriginal &&
-                    this.#replaceMode !== ReplaceMode.Put &&
+                const searchInSource =
+                    this.#searchMode !== SearchMode.Translation &&
+                    this.#searchAction !== SearchAction.Replace;
+                const searchInTranslation =
+                    this.#searchMode !== SearchMode.Source &&
+                    this.#searchAction !== SearchAction.Put &&
                     translation;
 
-                if (!matchOriginal && !matchTranslation) {
+                if (!searchInSource && !searchInTranslation) {
                     continue;
                 }
 
-                this.appendSearchMatch(
-                    matchOriginal ? original : translation,
-                    matchOriginal,
-                    fileName,
-                    lineNumber.toString(),
-                    matchOriginal ? translation : original,
-                );
+                if (searchInSource) {
+                    this.#appendSearchMatch(
+                        source,
+                        filename,
+                        lineNumber.toString(),
+                        false,
+                        translation,
+                    );
+                }
+
+                if (searchInTranslation) {
+                    this.#appendSearchMatch(
+                        translation,
+                        filename,
+                        lineNumber.toString(),
+                        true,
+                        source,
+                    );
+                }
             }
 
-            await this.writeMatches();
+            await this.#writeMatches();
         }
     }
 
-    private reset() {
+    #reset() {
         this.#matchesResult.clear();
         this.#matchesObject.clear();
-        this.#matchPagesCount = 0;
+        this.#matchPagesCount = -1;
     }
 
     public async search(
         text: string,
         searchMode: SearchMode,
-        replaceMode: ReplaceMode,
+        searchAction: SearchAction,
     ): Promise<[Map<string, number[]>, number]> {
-        const regexp = await createRegExp(text, this.searchFlags);
+        const regexp = await createRegExp(text, this.searchFlags, searchAction);
 
         if (!regexp) {
             return [new Map<string, number[]>(), 0];
         }
 
-        this.reset();
+        this.#reset();
 
         this.#searchMode = searchMode;
-        this.#replaceMode = replaceMode;
+        this.#searchAction = searchAction;
         this.#regexp = regexp;
 
-        await this.removeOldMatches();
-        await this.searchCurrentTab();
+        await this.#removeOldMatches();
+        await this.#searchCurrentTab();
 
-        if (!(this.searchFlags.flags & SearchFlags.OnlyLocal)) {
-            await this.searchGlobal();
+        if (!(this.searchFlags.flags & SearchFlags.OnlyCurrentTab)) {
+            await this.#searchGlobal();
         }
 
-        await this.writeMatches(true);
+        await this.#writeMatches(true);
         return [this.#matchesResult, this.#matchPagesCount];
     }
 }

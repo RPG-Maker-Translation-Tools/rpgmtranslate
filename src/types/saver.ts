@@ -7,46 +7,49 @@ import {
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import {
-    LINES_SEPARATOR,
-    NEW_LINE,
+    SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
     TXT_EXTENSION,
+    TXT_EXTENSION_LENGTH,
 } from "../utilities/constants";
 import { join } from "../utilities/functions";
-import { SaveMode } from "./enums";
 import { Settings } from "./settings";
+
+// TODO: Filter empty maps
 
 export class Saver {
     #outputArray: string[] = [];
     #saving = false;
+    public saved = true;
 
-    constructor(
+    public constructor(
         private readonly settings: Settings,
         private readonly currentTab: CurrentTab,
         private readonly currentGameTitle: HTMLInputElement,
+        private readonly saveIcon: Element,
     ) {}
 
-    private async saveCurrentTab(): Promise<void> {
+    public async saveSingle() {
         for (const rowContainer of this.currentTab.content.children) {
-            const originalTextDiv = rowContainer.children[1] as HTMLDivElement;
+            const sourceTextDiv = rowContainer.children[1] as HTMLDivElement;
             const translationTextArea = rowContainer
                 .children[2] as HTMLTextAreaElement;
 
             this.#outputArray.push(
-                originalTextDiv.textContent!.replaceAll("\n", NEW_LINE) +
-                    LINES_SEPARATOR +
-                    translationTextArea.value.replaceAll("\n", NEW_LINE),
+                sourceTextDiv.textContent!.nnormalize() +
+                    SEPARATOR +
+                    translationTextArea.value.nnormalize(),
             );
         }
 
         if (this.currentTab.name === "system") {
-            const originalTitle =
-                this.currentGameTitle.getAttribute("original-title")!;
+            const sourceTitle =
+                this.currentGameTitle.getAttribute("source-title")!;
             const output =
-                originalTitle +
-                LINES_SEPARATOR +
-                (originalTitle === this.currentGameTitle.value
+                sourceTitle +
+                SEPARATOR +
+                (sourceTitle === this.currentGameTitle.value
                     ? ""
                     : this.currentGameTitle.value);
             this.#outputArray.push(output);
@@ -54,16 +57,22 @@ export class Saver {
 
         const filePath = `${this.currentTab.name}${TXT_EXTENSION}`;
         const savePath = join(
-            this.currentTab.name!.startsWith("maps")
+            this.currentTab.name!.startsWith("map")
                 ? this.settings.tempMapsPath
                 : this.settings.translationPath,
             filePath,
         );
 
         await writeTextFile(savePath, this.#outputArray.join("\n"));
+        this.#outputArray.length = 0;
     }
 
-    private async saveBackup(): Promise<void> {
+    public async saveBackup() {
+        if (this.#saving) {
+            return;
+        }
+
+        this.#saving = true;
         const backupFolderEntries = await readDir(this.settings.backupPath);
 
         if (backupFolderEntries.length >= this.settings.backup.max) {
@@ -108,20 +117,27 @@ export class Saver {
                 join(backupDirectoryPath, TEMP_MAPS_DIRECTORY, entry.name),
             );
         }
+
+        this.#saving = false;
+        this.#outputArray.length = 0;
     }
 
-    private async saveFile(mode: SaveMode): Promise<void> {
-        if (this.currentTab.name) {
-            await this.saveCurrentTab();
+    public async saveAll() {
+        if (this.#saving) {
             return;
         }
 
-        if (mode !== SaveMode.AllFiles) {
-            return;
+        this.saveIcon.classList.add("animate-spin");
+        this.#saving = true;
+
+        if (this.currentTab.name) {
+            await this.saveSingle();
         }
 
         const entries = (await readDir(this.settings.tempMapsPath)).sort(
-            (a, b) => Number(a.name.slice(4, -4)) - Number(b.name.slice(4, -4)),
+            (a, b) =>
+                Number(a.name.slice("map".length, -TXT_EXTENSION_LENGTH)) -
+                Number(b.name.slice("map".length, -TXT_EXTENSION_LENGTH)),
         );
 
         for (const entry of entries) {
@@ -136,25 +152,14 @@ export class Saver {
             join(this.settings.translationPath, "maps.txt"),
             this.#outputArray.join("\n"),
         );
-    }
 
-    get saving(): boolean {
-        return this.#saving;
-    }
-
-    public async save(mode: SaveMode): Promise<boolean> {
-        this.#saving = true;
-        let saved = false;
-
-        if (mode === SaveMode.Backup) {
-            await this.saveBackup();
-        } else {
-            await this.saveFile(mode);
-            saved = true;
-        }
-
-        this.#outputArray.length = 0;
+        this.saveIcon.classList.remove("animate-spin");
         this.#saving = false;
-        return saved;
+        this.#outputArray.length = 0;
+        this.saved = true;
+    }
+
+    public get saving() {
+        return this.#saving;
     }
 }

@@ -3,7 +3,7 @@ import { Language } from "../types/enums";
 export class MainWindowLocalization {
     readonly askCreateSettings: string;
     readonly unsavedChanges: string;
-    readonly originalTextIrreplacable: string;
+    readonly sourceTextIrreplacable: string;
     readonly textReverted: string;
     readonly reloadButton: string;
     readonly helpButton: string;
@@ -15,7 +15,7 @@ export class MainWindowLocalization {
     readonly languageMenu: string;
     readonly menuButtonTitle: string;
     readonly saveButtonTitle: string;
-    readonly compileButtonTitle: string;
+    readonly writeButtonTitle: string;
     readonly settingsButtonTitle: string;
     readonly searchButtonTitle: string;
     readonly searchInputTitle: string;
@@ -31,8 +31,8 @@ export class MainWindowLocalization {
     readonly currentPage: string;
     readonly separator: string;
     readonly goToRow: string;
-    readonly missingTranslationDir: string;
-    readonly missingOriginalDir: string;
+    readonly missingTranslationDirectory: string;
+    readonly missingSourceDirectory: string;
     readonly missingTranslationSubdirs: string;
     readonly noProjectSelected: string;
     readonly bgDark: string;
@@ -55,14 +55,14 @@ export class MainWindowLocalization {
     readonly allowedThemeNameCharacters: string;
     readonly invalidThemeName: string;
     readonly themeName: string;
-    readonly compileSuccess: string;
+    readonly writeSuccess: string;
     readonly themeButtonTitle: string;
     readonly openButtonTitle: string;
     readonly loadingProject: string;
     readonly missingFileText: string;
     readonly cannotDetermineEngine: string;
     readonly selectedFolderMissing: string;
-    readonly compileWindowTitle: string;
+    readonly writeWindowTitle: string;
     readonly readWindowTitle: string;
     readonly purgeWindowTitle: string;
     readonly fromLanguage: string;
@@ -74,7 +74,7 @@ export class MainWindowLocalization {
     readonly searchMode: string;
     readonly searchAll: string;
     readonly searchOnlyTranslation: string;
-    readonly searchOnlyOriginal: string;
+    readonly searchOnlySource: string;
     readonly trimFields: string;
     readonly translateFields: string;
     readonly wrapFields: string;
@@ -106,35 +106,31 @@ export class MainWindowLocalization {
     readonly customOutputPath: string;
     readonly selectOutputPath: string;
     readonly disableProcessing: string;
-    readonly disableMapsProcessingOption: string;
+    readonly disableMapProcessingOption: string;
     readonly disableOtherProcessingOption: string;
     readonly disableSystemProcessingOption: string;
-    readonly disablePluginsProcessingOption: string;
+    readonly disablePluginProcessingOption: string;
     readonly dontAskAgain: string;
-    readonly compileButtonText: string;
-    readonly mapsProcessingMode: string;
-    readonly defaultMapsMode: string;
-    readonly separateMapsMode: string;
-    readonly preserveMapsMode: string;
+    readonly writeButtonText: string;
+    readonly duplicateMode: string;
+    readonly removeMode: string;
+    readonly allowMode: string;
     readonly mode: string;
-    readonly chooseReadingMode: string;
-    readonly defaultReadingMode: string;
-    readonly appendReadingMode: string;
-    readonly forceReadingMode: string;
+    readonly chooseReadMode: string;
+    readonly defaultReadMode: string;
+    readonly appendReadMode: string;
+    readonly forceReadMode: string;
     readonly appendModeDescription: string;
     readonly forceModeDescription: string;
     readonly readButtonText: string;
     readonly readingInAppendMode: string;
     readonly readingInForceMode: string;
-    readonly readingModeNotSelected: string;
+    readonly readModeUnselected: string;
     readonly ignore: string;
-    readonly statCheck: string;
-    readonly leaveFilledCheck: string;
-    readonly purgeEmptyCheck: string;
     readonly createIgnoreCheck: string;
     readonly purgeButtonText: string;
     readonly trim: string;
-    readonly sort: string;
+    readonly putConflictsWithRegexp: string;
 
     constructor(language: Language) {
         switch (language) {
@@ -143,7 +139,7 @@ export class MainWindowLocalization {
                     "Не удалось найти файл настроек программы.\nСоздать настройки?";
                 this.unsavedChanges =
                     "У вас остались несохранённые изменения. Сохранить прогресс и выйти?";
-                this.originalTextIrreplacable =
+                this.sourceTextIrreplacable =
                     "Оригинальные строки не могут быть заменены.";
                 this.textReverted = "Текст был возвращён к исходному значению";
                 this.reloadButton = "Перезагрузить (F5)";
@@ -156,14 +152,14 @@ export class MainWindowLocalization {
                 this.languageMenu = "Язык";
                 this.menuButtonTitle = "Вкладки (Tab)";
                 this.saveButtonTitle = "Сохранить файлы перевода (Ctrl + S)";
-                this.compileButtonTitle = "Скомпилировать (Alt + C)";
+                this.writeButtonTitle = "Скомпилировать (Alt + C)";
                 this.settingsButtonTitle = "Настройки";
                 this.searchButtonTitle = "Поиск (Ctrl + F)";
                 this.searchInputTitle = "Поиск";
                 this.replaceButtonTitle = "Заменить все совпадения на";
                 this.replaceInputTitle = "Замена";
                 this.putButtonTitle =
-                    "Вставить текст в поле перевода совпадающего оригинального текста";
+                    "Заместить текст в поле перевода, если текст в поле исходного текста совпадает с искомым.";
                 this.caseButtonTitle = "Учитывать регистр (Alt + C)";
                 this.wholeButtonTitle = "Искать слова целиком (Alt + W)";
                 this.regexButtonTitle =
@@ -176,9 +172,9 @@ export class MainWindowLocalization {
                 this.currentPage = "Нет";
                 this.separator = "из";
                 this.goToRow = "Перейти к строке... от 1 до";
-                this.missingTranslationDir =
+                this.missingTranslationDirectory =
                     'Директория "translation" отсутствует. Проект не будет инициализирован.';
-                this.missingOriginalDir =
+                this.missingSourceDirectory =
                     'Директория "data" отсутствует. Проект не будет инициализирован.';
                 this.missingTranslationSubdirs =
                     'Поддиректории "maps" и "other" директории "translation" отсутствуют. Проект не будет инициализирован.';
@@ -207,7 +203,7 @@ export class MainWindowLocalization {
                     "Разрешенные символы: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Название темы недопустимо.";
                 this.themeName = "Название темы:";
-                this.compileSuccess =
+                this.writeSuccess =
                     "Все файлы записаны успешно.\nПотрачено (в секундах):";
                 this.themeButtonTitle = "Меню тем";
                 this.openButtonTitle = "Открыть папку";
@@ -218,7 +214,7 @@ export class MainWindowLocalization {
                     "Текст выбранного файла отсутствует. Скорее всего, этот файл и/или его _trans версия отсутствуют.";
                 this.cannotDetermineEngine =
                     "Не удалось определить тип движка игры.";
-                this.compileWindowTitle = "Настройки компиляции";
+                this.writeWindowTitle = "Настройки компиляции";
                 this.readWindowTitle = "Настройки чтения";
                 this.purgeWindowTitle = "Удаление неиспользуемых строк";
                 this.fromLanguage = "С языка:";
@@ -230,7 +226,7 @@ export class MainWindowLocalization {
                 this.errorOccurred = "Произошла ошибка:";
                 this.searchMode = "Режим поиска";
                 this.searchAll = "Искать везде";
-                this.searchOnlyOriginal = "Искать только в ориг. тексте";
+                this.searchOnlySource = "Искать только в ориг. тексте";
                 this.searchOnlyTranslation = "Искать только в переводе";
                 this.trimFields = "Обрезать пробелы полей";
                 this.translateFields = "Перевести поля";
@@ -271,48 +267,43 @@ export class MainWindowLocalization {
                 this.customOutputPath = "Другой выходной путь";
                 this.selectOutputPath = "Выбрать выходной путь";
                 this.disableProcessing = "Выключить обработку...";
-                this.disableMapsProcessingOption =
+                this.disableMapProcessingOption =
                     "Выключить обработку файлов maps";
                 this.disableOtherProcessingOption =
                     "Выключить обработку файлов other";
                 this.disableSystemProcessingOption =
                     "Выключить обработку файла system";
-                this.disablePluginsProcessingOption =
+                this.disablePluginProcessingOption =
                     "Выключить обработку файла plugins/scripts";
                 this.dontAskAgain =
                     "Больше не спрашивать (вы можете вновь открыть это окно правой кнопкой мыши)";
-                this.compileButtonText = "Скомпилировать";
-                this.mapsProcessingMode = "Режим обработки файлов maps";
-                this.defaultMapsMode = "Стандартный";
-                this.separateMapsMode = "Раздельный текст карт";
-                this.preserveMapsMode = "Сохранять дубликаты";
+                this.writeButtonText = "Скомпилировать";
+                this.duplicateMode = "Режим обработки файлов maps";
+                this.removeMode = "Стандартный";
+                this.allowMode = "Раздельный текст карт";
                 this.ignore = "Игнорировать строки из файла .rvpacker-ignore";
                 this.readButtonText = "Прочитать";
                 this.readingInAppendMode = "Читаем в режиме добавления";
                 this.readingInForceMode =
                     "Читаем в режиме принудительной перезаписи";
-                this.readingModeNotSelected = "Режим чтения не выбран.";
-                this.mapsProcessingMode = "Режим обработки файлов maps";
+                this.readModeUnselected = "Режим чтения не выбран.";
+                this.duplicateMode = "Режим обработки файлов maps";
                 this.mode = "Режим чтения:";
-                this.chooseReadingMode = "Выберите режим чтения";
-                this.defaultReadingMode = "Стандартный";
-                this.appendReadingMode = "Добавление";
-                this.forceReadingMode = "Перезапись";
+                this.chooseReadMode = "Выберите режим чтения";
+                this.defaultReadMode = "Стандартный";
+                this.appendReadMode = "Добавление";
+                this.forceReadMode = "Перезапись";
                 this.appendModeDescription =
                     "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса. Перед чтением, убедитесь, что вы сохранили перевод!";
                 this.forceModeDescription =
                     "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками.";
-                this.statCheck = "Вывести статистику в файл stat.txt";
-                this.leaveFilledCheck = "Оставить поля, имеющие перевод";
-                this.purgeEmptyCheck =
-                    "Удалить только поля, не имеющие перевода";
                 this.createIgnoreCheck =
                     "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах";
                 this.purgeButtonText = "Очистка";
                 this.trim =
                     "Удалить лишние начальные и конечные пробелы из распарсенного текста. Может привести к нерабочей или некорректной записи текста.";
-                this.sort =
-                    "Отсортировать строки перевода в соответствии с их порядком в игре. Работает только с режимом добавления текста.";
+                this.putConflictsWithRegexp =
+                    "Поиск по регулярным выражениям не может быть использован с глобальным замещением.";
                 break;
             case Language.English:
             default:
@@ -320,8 +311,7 @@ export class MainWindowLocalization {
                     "Cannot find program's settings.\nCreate settings?";
                 this.unsavedChanges =
                     "You have unsaved changes. Save progress and quit?";
-                this.originalTextIrreplacable =
-                    "Original text is irreplacable.";
+                this.sourceTextIrreplacable = "Source text cannot be replaced.";
                 this.textReverted = "Text was reverted to the original state";
                 this.reloadButton = "Reload (F5)";
                 this.helpButton = "Help";
@@ -333,14 +323,14 @@ export class MainWindowLocalization {
                 this.languageMenu = "Language";
                 this.menuButtonTitle = "Tabs (Tab)";
                 this.saveButtonTitle = "Save the translation files (Ctrl + S)";
-                this.compileButtonTitle = "Compile (Alt + C)";
+                this.writeButtonTitle = "Write (Alt + C)";
                 this.settingsButtonTitle = "Settings";
                 this.searchButtonTitle = "Search (Ctrl + F)";
                 this.searchInputTitle = "Search";
                 this.replaceButtonTitle = "Replace all matches with";
                 this.replaceInputTitle = "Replace";
                 this.putButtonTitle =
-                    "Put text to matching original text's translation textarea";
+                    "Put text to translation textarea of matching source text.";
                 this.caseButtonTitle = "Consider case (Alt + C)";
                 this.wholeButtonTitle = "Search the whole text (Alt + W)";
                 this.regexButtonTitle =
@@ -353,9 +343,9 @@ export class MainWindowLocalization {
                 this.currentPage = "None";
                 this.separator = "of";
                 this.goToRow = "Go to row... from 1 to";
-                this.missingTranslationDir =
+                this.missingTranslationDirectory =
                     "'translation' directory is missing. Project won't be initialized.";
-                this.missingOriginalDir =
+                this.missingSourceDirectory =
                     "'data' directory is missing. Project won't be initialized.";
                 this.missingTranslationSubdirs =
                     "'translation' directory's subdirectories 'maps', 'other' and/or 'plugins' are missing. Project won't be initialized.";
@@ -382,7 +372,7 @@ export class MainWindowLocalization {
                     "Allowed characters: a-z, A-Z, 0-9, -, _.";
                 this.invalidThemeName = "Theme name is invalid.";
                 this.themeName = "Theme name:";
-                this.compileSuccess =
+                this.writeSuccess =
                     "All files were written successfully.\nTime spent (in seconds):";
                 this.themeButtonTitle = "Themes menu";
                 this.openButtonTitle = "Open folder";
@@ -393,7 +383,7 @@ export class MainWindowLocalization {
                     "Text of the selected file missing. Probably, it and it's _trans version don't exist for some reason.";
                 this.cannotDetermineEngine =
                     "Cannot determine the type of the game's engine.";
-                this.compileWindowTitle = "Compilation settings";
+                this.writeWindowTitle = "Compilation settings";
                 this.readWindowTitle = "Read settings";
                 this.purgeWindowTitle = "Purge unused lines";
                 this.fromLanguage = "From language:";
@@ -405,7 +395,7 @@ export class MainWindowLocalization {
                 this.errorOccurred = "An error has occurred:";
                 this.searchMode = "Search mode";
                 this.searchAll = "Search everywhere";
-                this.searchOnlyOriginal = "Search only in original text";
+                this.searchOnlySource = "Search only in source text";
                 this.searchOnlyTranslation = "Search only in translation";
                 this.trimFields = "Trim fields";
                 this.translateFields = "Translate fields";
@@ -432,7 +422,7 @@ export class MainWindowLocalization {
                 this.incorrectLanguageTag =
                     "Incorrect language tag. Tag must correspond to BCP-47, for example en or en-US";
                 this.gameFilesDoNotExist =
-                    "Game files do not exist (no original or data folders), so it's only possible to edit and save translation.";
+                    "Game files do not exist (no original or data directories), so it's only possible to edit and save translation.";
                 this.options = "Options:";
                 this.romanizeOption =
                     "Whether to romanize text. Only use this option if you've read text with it, to correctly write all files.";
@@ -446,44 +436,39 @@ export class MainWindowLocalization {
                 this.customOutputPath = "Custom output path";
                 this.selectOutputPath = "Select output path";
                 this.disableProcessing = "Disable processing of...";
-                this.disableMapsProcessingOption = "Disable maps processing";
+                this.disableMapProcessingOption = "Disable maps processing";
                 this.disableOtherProcessingOption = "Disable other processing";
                 this.disableSystemProcessingOption =
                     "Disable system processing";
-                this.disablePluginsProcessingOption =
+                this.disablePluginProcessingOption =
                     "Disable plugins/scripts processing";
                 this.dontAskAgain =
-                    "Don't ask again (you can open this window again by right-clicking compile button)";
-                this.compileButtonText = "Compile";
-                this.mapsProcessingMode = "Maps processing mode";
-                this.defaultMapsMode = "Default";
-                this.separateMapsMode = "Separate maps text";
-                this.preserveMapsMode = "Preserve duplicates";
+                    "Don't ask again (you can open this window again by right-clicking write button)";
+                this.writeButtonText = "Write";
+                this.duplicateMode = "Duplicate mode";
+                this.removeMode = "Default";
+                this.allowMode = "Separate maps text";
                 this.ignore = "Ignore entries from .rvpacker-ignore file";
                 this.readButtonText = "Read";
                 this.readingInAppendMode = "Reading in append mode";
                 this.readingInForceMode = "Reading in force rewrite mode";
-                this.readingModeNotSelected = "Reading mode is not selected.";
-                this.mode = "Reading mode:";
-                this.chooseReadingMode = "Choose reading mode";
-                this.defaultReadingMode = "Default";
-                this.appendReadingMode = "Append";
-                this.forceReadingMode = "Force rewrite";
+                this.readModeUnselected = "Read mode is not selected.";
+                this.mode = "Read mode:";
+                this.chooseReadMode = "Read mode";
+                this.defaultReadMode = "Default";
+                this.appendReadMode = "Append";
+                this.forceReadMode = "Force rewrite";
                 this.appendModeDescription =
                     "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!";
                 this.forceModeDescription =
                     "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings.";
-                this.statCheck = "Output statistics to stat.txt file";
-                this.leaveFilledCheck =
-                    "Leave the fields that have the translation";
-                this.purgeEmptyCheck = "Purge only the empty fields";
                 this.createIgnoreCheck =
                     "Create .rvpacker-ignore file from purged lines to prevent their further appearance";
                 this.purgeButtonText = "Purge";
-                this.sort =
-                    "Sort the translation entries according to their order in game. Works only with append mode.";
                 this.trim =
                     "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing.";
+                this.putConflictsWithRegexp =
+                    "Global put conflicts with regexp search.";
                 break;
         }
     }

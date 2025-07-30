@@ -1,24 +1,25 @@
 import {
     BatchAction,
+    DuplicateMode,
+    FileFlags,
     JumpDirection,
     Language,
-    MapsProcessingMode,
     MouseButton,
-    ProcessingMode,
-    ReplaceMode,
+    ReadMode,
     RowDeleteMode,
-    SaveMode,
+    SearchAction,
     SearchFlags,
+    WindowType,
 } from "./types/enums";
 import {
     BOOKMARK_COMMENT_PREFIX,
     CHARACTER_SUBSTITUTIONS,
+    CLIPBOARD_SEPARATOR,
     COMMENT_PREFIX,
     COMMENT_SUFFIX_LENGTH,
     ENGINE_NAMES,
     INTERRUPTING_KEYS,
     JSON_EXTENSION,
-    LINES_SEPARATOR,
     LOG_FILE,
     MAP_COMMENT,
     MAP_DISPLAY_NAME_COMMENT_PREFIX,
@@ -32,39 +33,37 @@ import {
     RESOURCE_DIRECTORY,
     RVPACKER_METADATA_FILE,
     SECOND_MS,
+    SEPARATOR,
     SETTINGS_PATH,
-    TEMP_MAPS_DIRECTORY,
     THEME_FILE_PATH,
     TRANSLATION_DIRECTORY,
     TXT_EXTENSION,
     TXT_EXTENSION_LENGTH,
     ZOOM_STEP,
 } from "./utilities/constants";
+import "./utilities/extensions";
 import {
     animateProgressText,
     applyLocalization,
     applyTheme,
-    createRegExp,
     escapeHTML,
     getThemeStyleSheet,
     join,
+    logErrorIO,
     setupUi,
     sleep,
     tw,
 } from "./utilities/functions";
-import "./utilities/htmlelement-extensions";
 import {
-    invokeAddToScope,
-    invokeCompile,
-    invokeConvertToLF,
+    expandScope,
     invokeExtractArchive,
     invokePurge,
     invokeRead,
     invokeReadLastLine,
     invokeTranslateText,
+    invokeWrite,
 } from "./utilities/invokes";
 import { MainWindowLocalization } from "./utilities/localization";
-import "./utilities/string-extensions";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit, listen } from "@tauri-apps/api/event";
@@ -83,7 +82,7 @@ import {
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
-import { attachConsole } from "@tauri-apps/plugin-log";
+import { attachConsole, error } from "@tauri-apps/plugin-log";
 import { exit, relaunch } from "@tauri-apps/plugin-process";
 import { check as checkVersion } from "@tauri-apps/plugin-updater";
 import { BatchWindow } from "./types/batchwindow";
@@ -94,7 +93,32 @@ import { Searcher } from "./types/searcher";
 import { Settings } from "./types/settings";
 const APP_WINDOW = getCurrentWebviewWindow();
 
+// TODO: Add listener for log file select.
+// TODO: Reimplement logic for filling/interacting with log entries.
+
 document.addEventListener("DOMContentLoaded", async () => {
+    function getFileFlags(): FileFlags {
+        let fileFlags = FileFlags.All;
+
+        if (UI.disableMapProcessingCheckbox.textContent) {
+            fileFlags &= ~FileFlags.Map;
+        }
+
+        if (UI.disableOtherProcessingCheckbox.textContent) {
+            fileFlags &= ~FileFlags.Other;
+        }
+
+        if (UI.disableSystemProcessingCheckbox.textContent) {
+            fileFlags &= ~FileFlags.System;
+        }
+
+        if (UI.disablePluginProcessingCheckbox.textContent) {
+            fileFlags &= ~FileFlags.Scripts;
+        }
+
+        return fileFlags;
+    }
+
     function handleTabContentKeydown(event: KeyboardEvent) {
         const textarea = event.target as HTMLTextAreaElement;
         if (textarea.tagName !== "TEXTAREA") {
@@ -194,24 +218,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         result: string,
         customCounterpartText?: string,
     ): HTMLDivElement {
-        const [file, type, row] = metadata.split("-");
+        const [filename, type, row] = metadata.split("-");
         const isTranslation = type.startsWith("t");
         let rowNumber = Number(row);
 
         // External files are 0-indexed
-        if (file !== currentTab.name) {
+        if (filename !== currentTab.name) {
             rowNumber += 1;
         }
 
-        const reverseType = isTranslation ? "original" : "translation";
+        const reverseType = isTranslation ? "source" : "translation";
 
         const resultContainer = document.createElement("div");
         resultContainer.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-base`;
 
         const rowContainer =
-            file !== currentTab.name
+            filename !== currentTab.name
                 ? null
-                : (ui.tabContent.children[rowNumber - 1] as HTMLDivElement);
+                : (UI.tabContent.children[rowNumber - 1] as HTMLDivElement);
         const counterpartElement = rowContainer?.children[
             isTranslation ? 1 : 2
         ] as HTMLElement | null;
@@ -220,11 +244,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         resultDiv.innerHTML = result;
         resultContainer.appendChild(resultDiv);
 
-        const originalInfo = document.createElement("div");
-        originalInfo.className = tw`textThird text-xs`;
+        const sourceInfo = document.createElement("div");
+        sourceInfo.className = tw`textThird text-xs`;
 
-        originalInfo.innerHTML = `${file} - ${type} - ${rowNumber}`;
-        resultContainer.appendChild(originalInfo);
+        sourceInfo.innerHTML = `${filename} - ${type} - ${rowNumber}`;
+        resultContainer.appendChild(sourceInfo);
 
         const arrow = document.createElement("div");
         arrow.className = tw`textSecond font-material content-center text-xl`;
@@ -251,28 +275,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         const counterpartInfo = document.createElement("div");
         counterpartInfo.className = tw`textThird text-xs`;
 
-        counterpartInfo.innerHTML = `${file} - ${reverseType} - ${rowNumber}`;
+        counterpartInfo.innerHTML = `${filename} - ${reverseType} - ${rowNumber}`;
         resultContainer.appendChild(counterpartInfo);
 
-        resultContainer.setAttribute("data", `${file}-${type}-${rowNumber}`);
+        resultContainer.setAttribute(
+            "data",
+            `${filename}-${type}-${rowNumber}`,
+        );
         return resultContainer;
     }
 
     async function loadMatchObject(matchIndex: number) {
-        ui.searchCurrentPage.textContent = matchIndex.toString();
-        ui.searchPanelFound.innerHTML = "";
+        UI.searchCurrentPage.textContent = matchIndex.toString();
+        UI.searchPanelContent.innerHTML = "";
 
         const matchFile = join(
             settings.programDataPath,
-            `matches-${matchIndex}${JSON_EXTENSION}`,
+            `match${matchIndex}${JSON_EXTENSION}`,
         );
 
-        const matchObject = JSON.parse(
-            await readTextFile(matchFile),
-        ) as MatchObject;
+        const matchContent = await readTextFile(matchFile);
+        const matchObject = JSON.parse(matchContent) as MatchObject;
 
         for (const [id, matches] of Object.entries(matchObject)) {
-            ui.searchPanelFound.appendChild(
+            UI.searchPanelContent.appendChild(
                 constructMatchElement(
                     id,
                     matches[0],
@@ -290,7 +316,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (settings.projectPath) {
-            const dataDirEntries = await readDir(settings.programDataPath);
+            const dataDirEntries = await readDir(
+                settings.programDataPath,
+            ).catch((err) => {
+                logErrorIO(settings.programDataPath, err);
+            });
+
+            if (!dataDirEntries) {
+                return false;
+            }
 
             await removePath(settings.tempMapsPath, {
                 recursive: true,
@@ -310,47 +344,48 @@ document.addEventListener("DOMContentLoaded", async () => {
             await writeTextFile(
                 settings.logPath,
                 JSON.stringify(replacementLog),
-            );
+            ).catch((err) => {
+                logErrorIO(settings.logPath, err);
+            });
 
             projectSettings.translationLanguages = {
-                from: ui.fromLanguageInput.value,
-                to: ui.toLanguageInput.value,
+                from: UI.fromLanguageInput.value,
+                to: UI.toLanguageInput.value,
             };
 
             await writeTextFile(
                 settings.projectSettingsPath,
                 JSON.stringify(projectSettings),
-            );
+            ).catch((err) => {
+                logErrorIO(settings.projectSettingsPath, err);
+            });
         }
 
         await writeTextFile(SETTINGS_PATH, JSON.stringify(settings), {
             baseDir: RESOURCE_DIRECTORY,
+        }).catch((err) => {
+            logErrorIO(SETTINGS_PATH, err);
         });
 
         return true;
     }
 
-    async function fetchReplacementLog(): Promise<ReplacementLog> {
-        const replaced: ReplacementLog = {};
-
+    async function loadReplacementLog(): Promise<ReplacementLog> {
         if (settings.projectPath && (await exists(settings.logPath))) {
-            Object.assign(
-                replaced,
-                JSON.parse(
-                    await readTextFile(settings.logPath),
-                ) as ReplacementLog,
-            );
+            return JSON.parse(
+                await readTextFile(settings.logPath),
+            ) as ReplacementLog;
         }
 
-        return replaced;
+        return {};
     }
 
     function updateProgressMeter() {
         const total = totalRows;
         const translated = translatedRowsArray.reduce((a, b) => a + b, 0);
 
-        ui.globalProgressMeter.style.width = `${Math.round((translated / total) * PERCENT_MULTIPLIER)}%`;
-        ui.globalProgressMeter.innerHTML = `${translated} / ${total}`;
+        UI.globalProgressMeter.style.width = `${Math.round((translated / total) * PERCENT_MULTIPLIER)}%`;
+        UI.globalProgressMeter.innerHTML = `${translated} / ${total}`;
     }
 
     function addBookmark(bookmark: Bookmark) {
@@ -359,7 +394,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         bookmarkElement.innerHTML = `${bookmark.title}<br>${bookmark.description}`;
 
         bookmarks.push(bookmark);
-        ui.bookmarksMenu.appendChild(bookmarkElement);
+        UI.bookmarksMenu.appendChild(bookmarkElement);
     }
 
     async function loadSettings(): Promise<Settings> {
@@ -375,9 +410,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const settings = new Settings();
 
-        await invokeAddToScope({ path: SETTINGS_PATH });
+        await expandScope(SETTINGS_PATH);
         await writeTextFile(SETTINGS_PATH, JSON.stringify(settings), {
             baseDir: RESOURCE_DIRECTORY,
+        }).catch((err) => {
+            logErrorIO(SETTINGS_PATH, err);
         });
 
         return settings;
@@ -388,244 +425,151 @@ document.addEventListener("DOMContentLoaded", async () => {
         Object.assign(localization, new MainWindowLocalization(language));
     }
 
-    async function handleReplacedClick(event: MouseEvent) {
-        const target = event.target as HTMLElement;
-        const element = target.closest("[reverted]")!;
-
-        if (
-            element.getAttribute("reverted") === "1" ||
-            !ui.searchPanelReplaced.contains(element)
-        ) {
-            return;
-        }
-
-        const rowContainerId = element.firstElementChild!.textContent!;
-        const [file, row] = rowContainerId.split("-");
-        const rowNumber = Number(row) - 1;
-
-        const button = event.button as MouseButton;
-
-        if (button === MouseButton.Left) {
-            await changeTab(file);
-
-            ui.tabContent.children[rowNumber].scrollIntoView({
-                block: "center",
-                inline: "center",
-            });
-        } else if (button === MouseButton.Right) {
-            if (currentTab.name === file) {
-                const textarea = ui.tabContent.children[rowNumber]
-                    .lastElementChild! as HTMLTextAreaElement;
-                textarea.value = element.children[1].textContent!;
-            } else {
-                const filePath = join(
-                    settings.programDataPath,
-                    file.startsWith("maps")
-                        ? TEMP_MAPS_DIRECTORY
-                        : TRANSLATION_DIRECTORY,
-                    `${file}${TXT_EXTENSION}`,
-                );
-
-                const fileLines = (await readTextFile(filePath)).split("\n");
-
-                const neededLineSplit =
-                    fileLines[rowNumber].split(LINES_SEPARATOR);
-                neededLineSplit[1] =
-                    element.children[1].textContent!.replaceAll("\n", NEW_LINE);
-
-                fileLines[rowNumber] = neededLineSplit.join(LINES_SEPARATOR);
-
-                await writeTextFile(filePath, fileLines.join("\n"));
-            }
-
-            element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${localization.textReverted}<div>${element.children[1].textContent!}</div>`;
-            element.setAttribute("reverted", "1");
-            delete replacementLog[rowContainerId];
-        }
-    }
-
     function showSearchPanel() {
-        ui.searchPanel.classList.replace("translate-x-full", "translate-x-0");
+        UI.searchPanel.classList.replace("translate-x-full", "translate-x-0");
     }
 
     function toggleSearchPanel() {
-        ui.searchPanel.toggleMultiple("translate-x-0", "translate-x-full");
+        UI.searchPanel.toggleMultiple("translate-x-0", "translate-x-full");
     }
 
-    async function replaceOrPut(
-        replacerText: string,
-        file: string,
-        rowNumber: number,
-        replaceMode: ReplaceMode,
-    ): Promise<string | undefined> {
-        let newText = "";
+    // const target = event.target as HTMLElement;
+    //     const element = target.closest("[reverted]")!;
 
-        if (file === currentTab.name) {
-            const textarea = ui.tabContent.children[rowNumber]
-                .lastElementChild! as HTMLTextAreaElement;
+    //     if (element.getAttribute("reverted") === "1") {
+    //         return;
+    //     }
 
-            newText = (await replacer.replaceTextHTML(
-                textarea,
-                replacerText,
-                replaceMode,
-            ))!;
-        } else {
-            const regexp = await createRegExp(
-                ui.searchInput.value,
-                searchFlags,
-            );
+    //     const rowContainerID = element.firstElementChild!.textContent!;
+    //     const [filename, row] = rowContainerID.split("-");
+    //     const rowNumber = Number(row) - 1;
 
-            if (!regexp) {
-                return;
-            }
+    //     const button = event.button as MouseButton;
 
-            const normalizedFilename = `${file}${TXT_EXTENSION}`;
-            const pathToFile = join(
-                settings.programDataPath,
-                normalizedFilename.startsWith("maps")
-                    ? TEMP_MAPS_DIRECTORY
-                    : TRANSLATION_DIRECTORY,
-                normalizedFilename,
-            );
+    //     if (button === MouseButton.Left) {
+    //         await changeTab(filename);
 
-            const content = (await readTextFile(pathToFile)).split("\n");
+    //         UI.tabContent.children[rowNumber].scrollIntoView({
+    //             block: "center",
+    //             inline: "center",
+    //         });
+    //     } else if (button === MouseButton.Right) {
+    //         // FIXME: Rewrite for the new replacement log layout
+    //         if (currentTab.name === filename) {
+    //             const textarea = UI.tabContent.children[rowNumber]
+    //                 .lastElementChild! as HTMLTextAreaElement;
+    //             textarea.value = element.children[1].textContent!;
+    //         } else {
+    //             const filePath = join(
+    //                 settings.programDataPath,
+    //                 filename.startsWith("map")
+    //                     ? TEMP_MAPS_DIRECTORY
+    //                     : TRANSLATION_DIRECTORY,
+    //                 `${filename}${TXT_EXTENSION}`,
+    //             );
 
-            const requiredLine = content[rowNumber];
+    //             const fileContent = await readTextFile(filePath).catch(
+    //                 (err) => {
+    //                     logErrorIO(filePath, err);
+    //                     return null;
+    //                 },
+    //             );
 
-            const [original, translation] = requiredLine.split(LINES_SEPARATOR);
+    //             if (fileContent === null) {
+    //                 return;
+    //             }
 
-            if (replaceMode === ReplaceMode.Put) {
-                const replacerTextNormalized = replacerText.replaceAll(
-                    "\n",
-                    NEW_LINE,
-                );
-                content[rowNumber] =
-                    `${original}${LINES_SEPARATOR}${replacerTextNormalized}`;
+    //             const fileLines = fileContent.lines();
+    //             const requiredLineParts = fileLines[rowNumber].split(SEPARATOR);
+    //             requiredLineParts[1] =
+    //                 element.children[1].textContent!.nnormalize();
 
-                newText = `<span class="bg-red-600">${replacerText}</span>`;
-            } else {
-                const translationNormalized = translation
-                    .replaceAll(NEW_LINE, "\n")
-                    .trim();
+    //             fileLines[rowNumber] = requiredLineParts.join(SEPARATOR);
 
-                const translationReplaced = translationNormalized
-                    .split(regexp)
-                    .flatMap((part, i, arr) => [
-                        part,
-                        i < arr.length - 1
-                            ? `<span class="bg-red-600">${replacerText}</span>`
-                            : "",
-                    ])
-                    .join("");
+    //             await writeTextFile(filePath, fileLines.join("\n")).catch(
+    //                 (err) => {
+    //                     logErrorIO(filePath, err);
+    //                 },
+    //             );
+    //         }
 
-                const translationReplacedNormalized =
-                    translationReplaced.replaceAll(/<span(.*?)>|<\/span>/g, "");
-
-                replacementLog[`${file}-${rowNumber}`] = {
-                    old: translationNormalized,
-                    new: translationReplacedNormalized,
-                };
-
-                content[rowNumber] =
-                    `${original}${LINES_SEPARATOR}${translationReplacedNormalized.replaceAll("\n", NEW_LINE)}`;
-
-                newText = translationReplaced;
-            }
-
-            await writeTextFile(pathToFile, content.join("\n"));
-        }
-
-        return newText;
-    }
+    //         element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${localization.textReverted}<div>${element.children[1].textContent!}</div>`;
+    //         element.setAttribute("reverted", "1");
+    //         delete replacementLog[rowContainerID];
+    //     }
 
     async function handleResultClick(event: MouseEvent) {
         const target = event.target as HTMLDivElement;
         const resultElement = target.closest("[data]")!;
 
-        if (!ui.searchPanelFound.contains(resultElement)) {
+        if (!UI.searchPanelContent.contains(resultElement)) {
             return;
         }
 
-        const button = event.button as MouseButton;
-
         const elementId = resultElement.getAttribute("data")!;
-        const [file, type, row] = elementId.split("-");
+        const [filename, type, row] = elementId.split("-");
         const isTranslation = type.startsWith("t");
         const rowNumber = Number(row) - 1;
 
-        let replaceMode: ReplaceMode | null = null;
+        let searchAction: SearchAction;
 
-        switch (button) {
+        switch (event.button as MouseButton) {
             case MouseButton.Left:
-                replaceMode = ReplaceMode.Search;
+                searchAction = SearchAction.Search;
                 break;
             case MouseButton.Center:
-                replaceMode = ReplaceMode.Put;
+                searchAction = SearchAction.Put;
                 break;
             case MouseButton.Right:
-                replaceMode = ReplaceMode.Replace;
+                searchAction = SearchAction.Replace;
                 break;
+            default:
+                return;
         }
 
-        if (replaceMode === null) {
-            return;
-        }
+        if (searchAction === SearchAction.Search) {
+            await changeTab(filename);
 
-        if (replaceMode === ReplaceMode.Search) {
-            await changeTab(file);
-
-            ui.tabContent.children[rowNumber].scrollIntoView({
+            UI.tabContent.children[rowNumber].scrollIntoView({
                 block: "center",
                 inline: "center",
             });
         } else {
-            if (!isTranslation) {
-                alert(localization.originalTextIrreplacable);
+            if (searchAction === SearchAction.Replace) {
+                if (!isTranslation) {
+                    alert(localization.sourceTextIrreplacable);
+                    return;
+                }
+            }
+
+            const searchText = UI.searchInput.value;
+
+            if (!searchText.trim()) {
                 return;
             }
 
-            const replacerText = ui.replaceInput.value;
-
-            if (!replacerText.trim()) {
-                return;
-            }
-
-            const newText = await replaceOrPut(
+            const replacerText = UI.replaceInput.value;
+            const replacedText = await replacer.replaceSingle(
+                searchText,
                 replacerText,
-                file,
+                filename,
                 rowNumber,
-                replaceMode,
+                searchAction,
             );
 
-            if (!newText) {
+            if (!replacedText) {
                 return;
             }
 
-            saved = false;
+            saver.saved = false;
 
-            if (replaceMode === ReplaceMode.Put) {
+            if (searchAction === SearchAction.Replace) {
                 resultElement.firstElementChild!.children[0].innerHTML =
-                    newText;
+                    replacedText;
             } else {
-                resultElement.children[3].innerHTML = newText;
+                resultElement.children[3].innerHTML = replacedText;
             }
         }
-    }
-
-    async function save(mode: SaveMode) {
-        if (mode !== SaveMode.Backup && saver.saving) {
-            return;
-        }
-
-        if (mode !== SaveMode.SingleFile) {
-            ui.saveButton.firstElementChild!.classList.add("animate-spin");
-        }
-
-        if (await saver.save(mode)) {
-            saved = true;
-        }
-
-        ui.saveButton.firstElementChild!.classList.remove("animate-spin");
     }
 
     function backup() {
@@ -635,7 +579,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         backupIsActive = setInterval(async () => {
             if (settings.backup.enabled) {
-                await save(SaveMode.Backup);
+                await saver.saveBackup();
             } else {
                 clearInterval(backupIsActive!);
             }
@@ -643,26 +587,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function calculateRows(
-        forCurrentTab: boolean,
+        onlyCurrentTab: boolean,
         rows?: string[],
     ): [number, number, number] {
         let totalRows: number;
         let translatedRows = 0;
 
-        if (forCurrentTab) {
-            totalRows = ui.tabContent.children.length;
+        if (onlyCurrentTab) {
+            totalRows = UI.tabContent.children.length;
 
             if (totalRows === 0) {
                 return [0, 0, 0];
             }
 
-            for (const rowContainer of ui.tabContent.children) {
-                const originalTextDiv = rowContainer
+            for (const rowContainer of UI.tabContent.children) {
+                const sourceTextDiv = rowContainer
                     .children[1] as HTMLDivElement;
                 const translationTextArea = rowContainer
                     .children[2] as HTMLTextAreaElement;
 
-                if (originalTextDiv.textContent!.startsWith(COMMENT_PREFIX)) {
+                if (sourceTextDiv.textContent!.startsWith(COMMENT_PREFIX)) {
                     totalRows--;
                 } else if (translationTextArea.value) {
                     translatedRows++;
@@ -678,7 +622,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             for (const line of rows!) {
                 if (line.startsWith(COMMENT_PREFIX)) {
                     totalRows--;
-                } else if (!line.endsWith(LINES_SEPARATOR)) {
+                } else if (!line.endsWith(SEPARATOR)) {
                     translatedRows++;
                 }
             }
@@ -696,23 +640,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         translatedRows: number,
         percentage: number,
     ) {
-        if (progressBar) {
-            translatedRowsArray[currentTab.index!] = translatedRows;
-            updateProgressMeter();
+        if (!progressBar) {
+            return;
+        }
 
-            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
+        translatedRowsArray[currentTab.index!] = translatedRows;
+        updateProgressMeter();
 
-            if (percentage === PERCENT_MULTIPLIER) {
-                progressBar.classList.replace(
-                    "backgroundThird",
-                    "bg-green-600",
-                );
-            } else {
-                progressBar.classList.replace(
-                    "bg-green-600",
-                    "backgroundThird",
-                );
-            }
+        progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
+
+        if (percentage === PERCENT_MULTIPLIER) {
+            progressBar.classList.replace("backgroundThird", "bg-green-600");
+        } else {
+            progressBar.classList.replace("bg-green-600", "backgroundThird");
         }
     }
 
@@ -724,12 +664,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         await awaitSave();
 
         if (currentTab.name) {
-            await save(SaveMode.SingleFile);
+            await saver.saveSingle();
             const calculated = calculateRows(true);
             const translatedRows = calculated[1];
             const percentage = calculated[2];
 
-            const selectedTab = ui.leftPanel.children[currentTab.index!];
+            const selectedTab = UI.leftPanel.children[currentTab.index!];
 
             const progressBar = selectedTab.lastElementChild
                 ?.firstElementChild as HTMLSpanElement | null;
@@ -742,15 +682,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
         }
 
-        ui.tabContent.innerHTML = "";
+        UI.tabContent.innerHTML = "";
 
         if (filename) {
-            ui.currentTabDiv.innerHTML = currentTab.name = filename;
+            UI.currentTabDiv.innerHTML = currentTab.name = filename;
 
             if (!newTabIndex) {
                 let i = 0;
 
-                for (const element of ui.leftPanel.children) {
+                for (const element of UI.leftPanel.children) {
                     if (element.firstElementChild!.textContent === filename) {
                         newTabIndex = i;
                         break;
@@ -762,7 +702,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             currentTab.index = newTabIndex!;
 
-            const selectedTab = ui.leftPanel.children[currentTab.index];
+            const selectedTab = UI.leftPanel.children[currentTab.index];
             selectedTab.classList.replace(
                 "backgroundPrimary",
                 "backgroundThird",
@@ -771,7 +711,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await createTabContent(filename);
         } else {
             currentTab.name = null;
-            ui.currentTabDiv.innerHTML = "";
+            UI.currentTabDiv.innerHTML = "";
         }
 
         changeTimer = setTimeout(() => {
@@ -786,7 +726,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
         if (event.code === "Enter") {
             const targetRow = document.getElementById(
-                `${currentTab.name!}-${ui.goToRowInput.value}`,
+                `${currentTab.name!}-${UI.goToRowInput.value}`,
             ) as HTMLDivElement | null;
 
             if (targetRow) {
@@ -796,17 +736,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 });
             }
 
-            ui.goToRowInput.value = "";
-            ui.goToRowInput.classList.add("hidden");
+            UI.goToRowInput.value = "";
+            UI.goToRowInput.classList.add("hidden");
         } else if (event.code === "Escape") {
-            ui.goToRowInput.value = "";
-            ui.goToRowInput.classList.add("hidden");
+            UI.goToRowInput.value = "";
+            UI.goToRowInput.classList.add("hidden");
         }
     }
 
     function areLanguageTagsValid(): boolean {
-        const from = ui.fromLanguageInput.value.trim();
-        const to = ui.toLanguageInput.value.trim();
+        const from = UI.fromLanguageInput.value.trim();
+        const to = UI.toLanguageInput.value.trim();
 
         if (!from || !to) {
             alert(localization.translationLanguagesNotSelected);
@@ -830,7 +770,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 event.preventDefault();
 
                 for (const [rowNumber, value] of selectedTextareas.entries()) {
-                    const rowContainer = ui.tabContent.children[
+                    const rowContainer = UI.tabContent.children[
                         rowNumber
                     ] as HTMLDivElement;
                     const translationTextArea =
@@ -839,7 +779,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 for (const [rowNumber, value] of replacedTextareas.entries()) {
-                    const rowContainer = ui.tabContent.children[
+                    const rowContainer = UI.tabContent.children[
                         rowNumber
                     ] as HTMLDivElement;
                     const translationTextArea =
@@ -851,36 +791,36 @@ document.addEventListener("DOMContentLoaded", async () => {
                 replacedTextareas.clear();
                 break;
             case "KeyS":
-                await save(SaveMode.AllFiles);
+                await saver.saveAll();
                 break;
             case "KeyG":
                 event.preventDefault();
 
                 if (currentTab.name) {
-                    if (ui.goToRowInput.classList.contains("hidden")) {
-                        ui.goToRowInput.classList.remove("hidden");
-                        ui.goToRowInput.focus();
+                    if (UI.goToRowInput.classList.contains("hidden")) {
+                        UI.goToRowInput.classList.remove("hidden");
+                        UI.goToRowInput.focus();
 
                         const lastRow =
-                            ui.tabContent.lastElementChild!.id.split("-")[1];
-                        ui.goToRowInput.placeholder = `${localization.goToRow} ${lastRow}`;
+                            UI.tabContent.lastElementChild!.id.split("-")[1];
+                        UI.goToRowInput.placeholder = `${localization.goToRow} ${lastRow}`;
                     } else {
-                        ui.goToRowInput.classList.add("hidden");
+                        UI.goToRowInput.classList.add("hidden");
                     }
                 }
                 break;
             case "KeyF":
                 event.preventDefault();
 
-                ui.searchMenu.classList.replace("hidden", "flex");
-                ui.searchInput.focus();
+                UI.searchMenu.classList.replace("hidden", "flex");
+                UI.searchInput.focus();
                 break;
             case "KeyB":
-                ui.bookmarksMenu.toggleMultiple("hidden", "flex");
+                UI.bookmarksMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
-                    ui.bookmarksMenu.style.left = `${ui.bookmarksButton.offsetLeft}px`;
-                    ui.bookmarksMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.bookmarksMenu.style.left = `${UI.bookmarksButton.offsetLeft}px`;
+                    UI.bookmarksMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
             case "Equal":
@@ -904,7 +844,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function jumpToRow(direction: JumpDirection) {
         const focusedElement = document.activeElement as HTMLElement;
         if (
-            !ui.tabContent.contains(focusedElement) &&
+            !UI.tabContent.contains(focusedElement) &&
             focusedElement.tagName !== "TEXTAREA"
         ) {
             return;
@@ -918,7 +858,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (
             Number.isNaN(rowNumber) ||
             (rowNumber === 1 && direction === JumpDirection.Previous) ||
-            (rowNumber === ui.tabContent.children.length &&
+            (rowNumber === UI.tabContent.children.length &&
                 direction === JumpDirection.Next)
         ) {
             return;
@@ -945,7 +885,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (event.altKey) {
             switch (event.code) {
                 case "KeyC":
-                    await startCompilation();
+                    await write();
                     break;
                 case "F4":
                     await APP_WINDOW.close();
@@ -957,7 +897,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     await changeTab(null);
                     break;
                 case "Tab":
-                    ui.leftPanel.toggleMultiple(
+                    UI.leftPanel.toggleMultiple(
                         "translate-x-0",
                         "-translate-x-full",
                     );
@@ -969,10 +909,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (currentTab.index !== null) {
                         const newStateIndex =
                             (currentTab.index + 1) %
-                            ui.leftPanel.children.length;
+                            UI.leftPanel.children.length;
 
                         await changeTab(
-                            ui.leftPanel.children[newStateIndex]
+                            UI.leftPanel.children[newStateIndex]
                                 .firstElementChild!.textContent,
                             newStateIndex,
                         );
@@ -983,10 +923,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const newStateIndex =
                             (currentTab.index -
                                 1 +
-                                ui.leftPanel.children.length) %
-                            ui.leftPanel.children.length;
+                                UI.leftPanel.children.length) %
+                            UI.leftPanel.children.length;
                         await changeTab(
-                            ui.leftPanel.children[newStateIndex]
+                            UI.leftPanel.children[newStateIndex]
                                 .firstElementChild!.textContent,
                             newStateIndex,
                         );
@@ -1033,27 +973,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                         return;
                     }
 
-                    const originalTextDiv = selectedTextArea.parentElement!
+                    const sourceTextDiv = selectedTextArea.parentElement!
                         .children[1] as HTMLDivElement;
-                    let originalText = originalTextDiv.textContent!;
+                    let sourceText = sourceTextDiv.textContent!;
 
                     if (
-                        originalText.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX)
+                        sourceText.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX)
                     ) {
-                        originalText = originalText.slice(
+                        sourceText = sourceText.slice(
                             MAP_DISPLAY_NAME_COMMENT_PREFIX_LENGTH,
                             -COMMENT_SUFFIX_LENGTH,
                         );
                     }
 
                     const translation = await invokeTranslateText({
-                        text: originalText,
-                        to: ui.toLanguageInput.value.trim(),
-                        from: ui.fromLanguageInput.value.trim(),
-                        replace: false,
+                        text: sourceText,
+                        to: UI.toLanguageInput.value.trim(),
+                        from: UI.fromLanguageInput.value.trim(),
+                        normalize: false,
                     });
 
-                    selectedTextArea.placeholder = translation;
+                    if (translation) {
+                        selectedTextArea.placeholder = translation;
+                    }
                     break;
                 }
         }
@@ -1080,64 +1022,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function toggleCaseSensitive() {
-        const toggled = ui.searchCaseButton.classList.toggle("backgroundThird");
-
-        if (toggled) {
-            searchFlags.flags |= SearchFlags.CaseSensitive;
-        } else {
-            searchFlags.flags &= ~SearchFlags.CaseSensitive;
-        }
+        UI.searchCaseButton.classList.toggle("backgroundThird");
+        searchFlags.flags ^= SearchFlags.CaseSensitive;
     }
 
     function toggleWholeWordSearch() {
-        const toggled =
-            ui.searchWholeButton.classList.toggle("backgroundThird");
-
-        if (toggled) {
-            searchFlags.flags |= SearchFlags.WholeWord;
-        } else {
-            searchFlags.flags &= ~SearchFlags.WholeWord;
-        }
+        UI.searchWholeButton.classList.toggle("backgroundThird");
+        searchFlags.flags ^= SearchFlags.WholeWord;
     }
 
     function toggleRegExpSearch() {
-        const toggled =
-            ui.searchRegexButton.classList.toggle("backgroundThird");
-
-        if (toggled) {
-            searchFlags.flags |= SearchFlags.RegExp;
-        } else {
-            searchFlags.flags &= ~SearchFlags.RegExp;
-        }
+        UI.searchRegexButton.classList.toggle("backgroundThird");
+        searchFlags.flags ^= SearchFlags.RegExp;
     }
 
     function toggleLocalSearch() {
-        const toggled =
-            ui.searchLocationButton.classList.toggle("backgroundThird");
-
-        if (toggled) {
-            searchFlags.flags |= SearchFlags.OnlyLocal;
-        } else {
-            searchFlags.flags &= ~SearchFlags.OnlyLocal;
-        }
+        UI.searchLocationButton.classList.toggle("backgroundThird");
+        searchFlags.flags ^= SearchFlags.OnlyCurrentTab;
     }
 
-    async function searchText(predicate: string, replaceMode: ReplaceMode) {
+    async function searchText(predicate: string, searchAction: SearchAction) {
         const matchPageCount = (
             await searcher.search(
                 predicate,
-                Number(ui.searchModeSelect.value),
-                replaceMode,
+                Number(UI.searchModeSelect.value),
+                searchAction,
             )
         )[1];
 
-        ui.searchTotalPages.innerHTML = matchPageCount.toString();
-        ui.searchCurrentPage.innerHTML = "0";
+        UI.searchCurrentPage.innerHTML = "0";
 
-        if (replaceMode === ReplaceMode.Search) {
+        if (searchAction === SearchAction.Search) {
             if (matchPageCount === -1) {
-                ui.searchPanelFound.innerHTML = `<div id="no-results" class="content-center h-full">${localization.noMatches}</div>`;
+                UI.searchTotalPages.innerHTML = "0";
+                UI.searchPanelContent.innerHTML = `<div id="no-results" class="content-center h-full">${localization.noMatches}</div>`;
             } else {
+                UI.searchTotalPages.innerHTML = matchPageCount.toString();
                 void loadMatchObject(0);
             }
 
@@ -1153,14 +1073,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             if (event.ctrlKey) {
-                ui.searchInput.value += "\n";
+                UI.searchInput.value += "\n";
+                UI.searchInput.calculateHeight();
                 return;
             }
 
-            const predicate = ui.searchInput.value;
+            const predicate = UI.searchInput.value;
 
             if (predicate.trim()) {
-                await searchText(predicate, ReplaceMode.Search);
+                await searchText(predicate, SearchAction.Search);
             }
         } else if (event.altKey) {
             switch (event.code) {
@@ -1180,7 +1101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         requestAnimationFrame(() => {
-            ui.searchInput.calculateHeight();
+            UI.searchInput.calculateHeight();
         });
     }
 
@@ -1193,34 +1114,34 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
 
             if (event.ctrlKey) {
-                ui.replaceInput.value += "\n";
-                ui.replaceInput.calculateHeight();
+                UI.replaceInput.value += "\n";
+                UI.replaceInput.calculateHeight();
             }
         } else if (event.code === "Backspace") {
             requestAnimationFrame(() => {
-                ui.replaceInput.calculateHeight();
+                UI.replaceInput.calculateHeight();
             });
         }
     }
 
     function createRow(
-        original: string,
+        source: string,
         translation: string[],
         tabName: string,
-        i: number,
+        row: number,
     ) {
         const textParent = document.createElement("div");
-        textParent.id = `${tabName}-${i}`;
+        textParent.id = `${tabName}-${row}`;
         textParent.className = tw`flex w-full flex-row justify-around py-[1px]`;
 
-        const originalTextDiv = document.createElement("div");
-        originalTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
+        const sourceTextDiv = document.createElement("div");
+        sourceTextDiv.className = tw`outlinePrimary backgroundPrimary font inline-block w-full cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
 
         if (settings.fontUrl) {
-            originalTextDiv.style.fontFamily = "font";
+            sourceTextDiv.style.fontFamily = "font";
         }
 
-        originalTextDiv.textContent = original;
+        sourceTextDiv.textContent = source;
 
         const translationTextArea = document.createElement("textarea");
         translationTextArea.rows = translation.length;
@@ -1240,7 +1161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         rowNumberContainer.className = tw`outlinePrimary backgroundPrimary flex w-52 flex-row p-1 outline outline-2`;
 
         const rowNumberSpan = document.createElement("span");
-        rowNumberSpan.textContent = i.toString();
+        rowNumberSpan.textContent = row.toString();
 
         const rowNumberButtonDiv = document.createElement("div");
         rowNumberButtonDiv.className = tw`textThird flex w-full items-start justify-end gap-0.5 p-0.5 text-lg`;
@@ -1262,142 +1183,128 @@ document.addEventListener("DOMContentLoaded", async () => {
         rowNumberContainer.appendChild(rowNumberSpan);
         rowNumberContainer.appendChild(rowNumberButtonDiv);
 
-        originalTextDiv.classList.add("text-lg");
-        document.body.appendChild(originalTextDiv);
+        sourceTextDiv.classList.add("text-lg");
+        document.body.appendChild(sourceTextDiv);
 
         const { lineHeight, paddingTop } =
-            window.getComputedStyle(originalTextDiv);
+            window.getComputedStyle(sourceTextDiv);
         const minHeight =
-            (originalTextDiv.innerHTML.count("\n") + 1) *
+            (sourceTextDiv.innerHTML.count("\n") + 1) *
                 Number.parseInt(lineHeight) +
             Number.parseInt(paddingTop) * 2;
 
-        document.body.removeChild(originalTextDiv);
-        originalTextDiv.classList.remove("text-lg");
+        document.body.removeChild(sourceTextDiv);
+        sourceTextDiv.classList.remove("text-lg");
 
         textParent.style.minHeight =
             rowNumberContainer.style.minHeight =
-            originalTextDiv.style.minHeight =
+            sourceTextDiv.style.minHeight =
             translationTextArea.style.minHeight =
             textParent.style.minHeight =
                 `${minHeight}px`;
 
         textParent.appendChild(rowNumberContainer);
-        textParent.appendChild(originalTextDiv);
+        textParent.appendChild(sourceTextDiv);
         textParent.appendChild(translationTextArea);
 
         return textParent;
     }
 
-    async function createTabContent(state: string) {
-        const contentName = state.toString();
-        const formattedFilename = `${contentName}${TXT_EXTENSION}`;
+    async function createTabContent(filename: string) {
+        const formatted = `${filename}${TXT_EXTENSION}`;
+        let contentPath = join(settings.translationPath, formatted);
 
-        let pathToContent = join(settings.translationPath, formattedFilename);
-
-        if (
-            contentName.startsWith("plugins") &&
-            !(await exists(pathToContent))
-        ) {
+        if (filename.startsWith("plugins") && !(await exists(contentPath))) {
             if (await exists(join(settings.translationPath, "scripts.txt"))) {
-                pathToContent = join(
-                    settings.translationPath,
-                    formattedFilename,
-                );
+                contentPath = join(settings.translationPath, formatted);
             }
-        } else if (contentName.startsWith("maps")) {
-            pathToContent = join(settings.tempMapsPath, formattedFilename);
+        } else if (filename.startsWith("map")) {
+            contentPath = join(settings.tempMapsPath, formatted);
         }
 
-        const content = (await readTextFile(pathToContent)).split("\n");
+        const content = await readTextFile(contentPath).catch((err) => {
+            logErrorIO(contentPath, err);
+            return null;
+        });
 
-        if (contentName === "system") {
-            content.pop();
+        if (content === null) {
+            return;
+        }
+
+        const contentLines = content.lines();
+
+        if (filename === "system") {
+            contentLines.pop();
         }
 
         const fragment = document.createDocumentFragment();
 
-        for (let i = 0; i < content.length; i++) {
-            if (content[i].trim() === "") {
+        for (const [row, line] of contentLines.entries()) {
+            if (!line) {
                 continue;
             }
 
-            const [originalText, translationText] =
-                content[i].split(LINES_SEPARATOR);
-            const added = i + 1;
+            const [source_, translation_] = line.split(SEPARATOR);
+            const actualRow = row + 1;
 
-            const originalTextSplit = originalText.replaceAll(NEW_LINE, "\n");
-            const translationTextSplit = translationText.split(NEW_LINE);
-
-            const row = createRow(
-                originalTextSplit,
-                translationTextSplit,
-                contentName,
-                added,
+            const source = source_.denormalize();
+            const translationLines = translation_.split(NEW_LINE);
+            const rowDiv = createRow(
+                source,
+                translationLines,
+                filename,
+                actualRow,
             );
 
-            fragment.appendChild(row);
+            fragment.appendChild(rowDiv);
         }
 
-        ui.tabContent.appendChild(fragment);
+        UI.tabContent.appendChild(fragment);
     }
 
-    async function startCompilation(
-        path?: string,
-        disableProcessing?: boolean[],
+    async function write(
+        outputPath = settings.outputPath,
+        disableProcessing = FileFlags.None,
     ) {
-        if (!settings.projectPath || !projectSettings.originalDirectory) {
-            if (!projectSettings.originalDirectory) {
+        if (!settings.projectPath || !projectSettings.sourceDirectory) {
+            if (!projectSettings.sourceDirectory) {
                 alert(localization.gameFilesDoNotExist);
             }
             return;
         }
 
-        ui.compileMenu.classList.replace("flex", "hidden");
-        ui.compileButton.firstElementChild!.classList.add("animate-spin");
+        UI.writeMenu.classList.replace("flex", "hidden");
+        UI.writeButton.firstElementChild!.classList.add("animate-spin");
 
-        const executionTime = await invokeCompile(
-            settings.projectPath,
-            projectSettings.originalDirectory,
-            path ?? settings.projectPath,
-            ui.currentGameTitle.value,
-            projectSettings.mapsProcessingMode,
-            projectSettings.romanize,
-            projectSettings.disableCustomProcessing,
-            disableProcessing ?? [false, false, false, false],
-            settings.engineType,
-            projectSettings.trim,
-        );
-
-        ui.compileButton.firstElementChild!.classList.remove("animate-spin");
-        alert(`${localization.compileSuccess} ${executionTime}`);
+        await invokeWrite({
+            sourcePath: settings.sourcePath,
+            translationPath: settings.translationPath,
+            outputPath,
+            engineType: settings.engineType,
+            duplicateMode: projectSettings.duplicateMode,
+            gameTitle: UI.currentGameTitle.value,
+            romanize: projectSettings.romanize,
+            disableCustomProcessing: projectSettings.disableCustomProcessing,
+            disableProcessing,
+            trim: projectSettings.trim,
+        })
+            .then((executionTime: string) => {
+                UI.writeButton.firstElementChild!.classList.remove(
+                    "animate-spin",
+                );
+                alert(`${localization.writeSuccess} ${executionTime}`);
+            })
+            .catch(error);
     }
 
     function getNewLinePositions(
         textarea: HTMLTextAreaElement,
     ): { left: number; top: number }[] {
         const positions: { left: number; top: number }[] = [];
-        const lines = textarea.value.split("\n");
+        const lines = textarea.value.lines();
 
-        if (
-            !textAreaPropertiesMemo.lineHeight ||
-            !textAreaPropertiesMemo.padding ||
-            !textAreaPropertiesMemo.fontSize ||
-            !textAreaPropertiesMemo.fontFamily
-        ) {
-            const computedStyles = window.getComputedStyle(textarea);
-            textAreaPropertiesMemo.lineHeight = Number.parseInt(
-                computedStyles.lineHeight,
-            );
-            textAreaPropertiesMemo.padding = Number.parseInt(
-                computedStyles.paddingTop,
-            );
-            textAreaPropertiesMemo.fontSize = computedStyles.fontSize;
-            textAreaPropertiesMemo.fontFamily = computedStyles.fontFamily;
-        }
-
-        const { lineHeight, fontSize, fontFamily } = textAreaPropertiesMemo;
-
+        const { lineHeight, fontSize, fontFamily } =
+            window.getComputedStyle(textarea);
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d")!;
         context.font = `${fontSize} ${fontFamily}`;
@@ -1410,7 +1317,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const left = textarea.offsetLeft + textWidth;
 
             positions.push({ left, top });
-            top += lineHeight;
+            top += Number(lineHeight);
         }
 
         return positions;
@@ -1439,29 +1346,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function calculateHeight(event: Event) {
         const target = event.target as HTMLTextAreaElement;
-        const lineBreaks = target.value.split("\n").length;
+        const lines = target.value.count("\n");
 
-        if (textAreaPropertiesMemo.lineBreaks === lineBreaks) {
-            return;
-        }
-
-        textAreaPropertiesMemo.lineBreaks = lineBreaks;
-
-        if (
-            !textAreaPropertiesMemo.lineHeight ||
-            !textAreaPropertiesMemo.padding
-        ) {
-            const computedStyles = window.getComputedStyle(target);
-            textAreaPropertiesMemo.lineHeight = Number.parseInt(
-                computedStyles.lineHeight,
-            );
-            textAreaPropertiesMemo.padding = Number.parseInt(
-                computedStyles.paddingTop,
-            );
-        }
-
-        const { lineHeight, padding } = textAreaPropertiesMemo;
-        const newHeight = lineBreaks * lineHeight + padding * 2;
+        const { lineHeight, padding } = window.getComputedStyle(target);
+        const newHeight = lines * Number(lineHeight) + Number(padding) * 2;
 
         const parent = target.parentElement;
 
@@ -1476,7 +1364,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLTextAreaElement;
 
         if (
-            ui.tabContent.contains(target) &&
+            UI.tabContent.contains(target) &&
             target.tagName === "TEXTAREA" &&
             target.id !== currentFocusedElement[0]
         ) {
@@ -1493,8 +1381,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (target.id == currentFocusedElement[0]) {
-            if (saved && currentFocusedElement[1] !== target.value) {
-                saved = false;
+            if (saver.saved && currentFocusedElement[1] !== target.value) {
+                saver.saved = false;
             }
 
             currentFocusedElement.length = 0;
@@ -1503,8 +1391,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadFont(fontUrl: string) {
         if (!fontUrl) {
-            textAreaPropertiesMemo.fontFamily = document.body.style.fontFamily;
-
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
             for (const element of document.querySelectorAll(
                 ".font",
@@ -1514,15 +1400,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        await invokeAddToScope({ path: fontUrl });
+        await expandScope(fontUrl);
 
         const font = await new FontFace(
             "font",
             `url(${convertFileSrc(fontUrl)})`,
         ).load();
         document.fonts.add(font);
-
-        textAreaPropertiesMemo.fontFamily = "font";
 
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         for (const element of document.querySelectorAll(
@@ -1533,7 +1417,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function exitConfirmation(): Promise<boolean> {
-        if (saved) {
+        if (saver.saved) {
             return true;
         }
 
@@ -1544,7 +1428,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return exitRequested;
         }
 
-        await save(SaveMode.AllFiles);
+        await saver.saveAll();
         return true;
     }
 
@@ -1561,7 +1445,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         [currentTheme, theme] = [newTheme.name, newTheme];
 
-        applyTheme(sheet, theme);
+        applyTheme(STYLE_SHEET, theme);
         settings.theme = newTheme.name;
     }
 
@@ -1632,11 +1516,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const archivePath = join(projectPath, archive);
 
             if (await exists(archivePath)) {
-                await invokeExtractArchive({
-                    inputPath: archivePath,
-                    outputPath: projectPath,
-                    processingMode: ProcessingMode.Default,
-                });
+                await invokeExtractArchive(archivePath, projectPath);
 
                 extracted = true;
                 break;
@@ -1656,10 +1536,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         projectSettings = new ProjectSettings();
-        const originalDirectoryFound =
-            await projectSettings.findOriginalDirectory(projectPath);
+        const sourceDirectoryFound =
+            await projectSettings.findSourceDirectory(projectPath);
 
-        if (!originalDirectoryFound) {
+        if (!sourceDirectoryFound) {
             const extracted = await extractArchive(projectPath);
 
             if (!extracted) {
@@ -1675,10 +1555,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
 
         if (await exists(projectSettingsPath)) {
+            const projectSettingsContent =
+                await readTextFile(projectSettingsPath);
+
             projectSettings = new ProjectSettings(
-                JSON.parse(
-                    await readTextFile(projectSettingsPath),
-                ) as ProjectSettingsOptions,
+                JSON.parse(projectSettingsContent) as ProjectSettingsOptions,
             );
         }
 
@@ -1688,9 +1569,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!engineTypeFound) {
             await message(localization.cannotDetermineEngine);
             await changeTab(null);
-            ui.tabContent.innerHTML =
-                ui.currentGameEngine.innerHTML =
-                ui.currentGameTitle.value =
+            UI.tabContent.innerHTML =
+                UI.currentGameEngine.innerHTML =
+                UI.currentGameTitle.value =
                     "";
 
             return false;
@@ -1699,54 +1580,78 @@ document.addEventListener("DOMContentLoaded", async () => {
         settings.engineType = projectSettings.engineType;
 
         for (const element of [
-            ui.gameInfo,
-            ui.currentTabDiv,
-            ui.progressMeterContainer,
+            UI.gameInfo,
+            UI.currentTabDiv,
+            UI.progressMeterContainer,
         ]) {
             element.classList.replace("hidden", "flex");
         }
 
-        ui.toLanguageInput.value = projectSettings.translationLanguages.to;
-        ui.fromLanguageInput.value = projectSettings.translationLanguages.from;
-        ui.trimCheckbox.textContent = projectSettings.trim ? "check" : "";
-        ui.romanizeCheckbox.textContent = projectSettings.romanize
+        UI.toLanguageInput.value = projectSettings.translationLanguages.to;
+        UI.fromLanguageInput.value = projectSettings.translationLanguages.from;
+        UI.trimCheckbox.textContent = projectSettings.trim ? "check" : "";
+        UI.romanizeCheckbox.textContent = projectSettings.romanize
             ? "check"
             : "";
-        ui.disableCustomProcessingCheckbox.textContent =
+        UI.disableCustomProcessingCheckbox.textContent =
             projectSettings.disableCustomProcessing ? "check" : "";
-        ui.mapsProcessingModeSelect.value =
-            projectSettings.mapsProcessingMode.toString();
+        UI.duplicateModeSelect.value = projectSettings.duplicateMode.toString();
 
-        ui.currentGameEngine.innerHTML = ENGINE_NAMES[settings.engineType];
+        UI.currentGameEngine.innerHTML = ENGINE_NAMES[settings.engineType];
         return true;
     }
 
     async function copyTranslationFromRoot(translationPath: string) {
-        await mkdir(settings.translationPath, { recursive: true });
+        const ok = await mkdir(settings.translationPath, {
+            recursive: true,
+        }).catch((err) => {
+            logErrorIO(settings.translationPath, err);
+            return false;
+        });
 
-        for (const entry of await readDir(translationPath)) {
+        if (ok === false) {
+            return;
+        }
+
+        const translationEntries = await readDir(translationPath).catch(
+            (err) => {
+                logErrorIO(settings.translationPath, err);
+            },
+        );
+
+        if (!translationEntries) {
+            return;
+        }
+
+        for (const entry of translationEntries) {
             await copyFile(
                 join(translationPath, entry.name),
                 join(settings.translationPath, entry.name),
             );
         }
 
-        // The only case when files must be converted to LF
-        // is when they're cloned from Windows machine
-        await invokeConvertToLF(settings.translationPath);
-
         const metadataPath = join(translationPath, RVPACKER_METADATA_FILE);
 
         if (await exists(metadataPath)) {
-            const metadata = JSON.parse(await readTextFile(metadataPath)) as {
-                mapsProcessingMode: MapsProcessingMode;
+            const metadataContent = await readTextFile(metadataPath).catch(
+                (err) => {
+                    logErrorIO(metadataPath, err);
+                },
+            );
+
+            if (!metadataContent) {
+                return;
+            }
+
+            const metadata = JSON.parse(metadataContent) as {
+                duplicateMode: DuplicateMode;
                 romanize: boolean;
                 disableCustomProcessing: boolean;
                 trim: boolean;
             };
 
             Object.assign(projectSettings, {
-                mapsProcessingMode: metadata.mapsProcessingMode,
+                duplicateMode: metadata.duplicateMode,
                 romanize: metadata.romanize,
                 disableCustomProcessing: metadata.disableCustomProcessing,
                 trim: metadata.trim,
@@ -1754,78 +1659,77 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function parseContentLines(
-        contentLines: string[],
-        translationFileBasename: string,
+    async function parseTranslationLines(
+        lines: string[],
+        filename: string,
         tabIndex: number,
     ): Promise<number> {
         const result: string[] = [];
-        const mapsNumbers: number[] = [];
+        const mapIndices: number[] = [];
 
-        for (let lineIndex = 0; lineIndex <= contentLines.length; lineIndex++) {
-            const line = contentLines[lineIndex];
+        async function parseMapComment() {
+            const mapID = mapIndices.shift();
+            const tempMapPath = join(
+                settings.tempMapsPath,
+                `map${mapID}${TXT_EXTENSION}`,
+            );
 
-            if (
-                lineIndex === contentLines.length ||
-                line.startsWith(MAP_COMMENT) ||
-                line.startsWith(BOOKMARK_COMMENT_PREFIX)
-            ) {
-                if (lineIndex !== contentLines.length) {
-                    mapsNumbers.push(
+            await writeTextFile(tempMapPath, result.join("\n")).catch((err) => {
+                logErrorIO(tempMapPath, err);
+            });
+
+            const tab = createTab(`map${mapID}`, result, tabIndex);
+
+            if (tab) {
+                UI.leftPanel.appendChild(tab);
+                tabIndex++;
+            }
+
+            result.length = 0;
+        }
+
+        for (const [lineIndex, line] of lines.entries()) {
+            if (line.startsWith(BOOKMARK_COMMENT_PREFIX)) {
+                addBookmark({
+                    title: `${filename}-${lineIndex + 1}`,
+                    description: line.slice(
+                        line.lastIndexOf(SEPARATOR) + SEPARATOR.length,
+                    ),
+                });
+            } else {
+                if (line.startsWith(MAP_COMMENT)) {
+                    mapIndices.push(
                         Number(
                             line.slice(
-                                line.lastIndexOf(LINES_SEPARATOR) +
-                                    LINES_SEPARATOR.length,
+                                line.lastIndexOf(SEPARATOR) + SEPARATOR.length,
                             ),
                         ),
                     );
 
-                    if (line.startsWith(BOOKMARK_COMMENT_PREFIX)) {
-                        addBookmark({
-                            title: `${translationFileBasename}-${lineIndex + 1}`,
-                            description: line.slice(
-                                line.lastIndexOf(LINES_SEPARATOR) +
-                                    LINES_SEPARATOR.length,
-                            ),
-                        });
-                        continue;
+                    if (result.length) {
+                        await parseMapComment();
                     }
                 }
 
-                if (result.length === 0) {
-                    result.push(line);
-                    continue;
-                }
-
-                const mapsNumber = mapsNumbers.shift();
-                await writeTextFile(
-                    join(
-                        settings.tempMapsPath,
-                        `maps${mapsNumber}${TXT_EXTENSION}`,
-                    ),
-                    result.join("\n"),
-                );
-
-                const tab = createTab(`maps${mapsNumber}`, result, tabIndex);
-
-                if (tab) {
-                    ui.leftPanel.appendChild(tab);
-                    tabIndex++;
-                }
-
-                result.length = 0;
-            }
-
-            if (lineIndex < contentLines.length) {
                 result.push(line);
             }
         }
 
+        await parseMapComment();
         return tabIndex;
     }
 
     async function parseTranslationFiles() {
-        const translationFiles = await readDir(settings.translationPath);
+        const translationFiles = await readDir(settings.translationPath).catch(
+            (err) => {
+                logErrorIO(settings.translationPath, err);
+            },
+        );
+
+        if (!translationFiles) {
+            return;
+        }
+
         let tabIndex = 1;
 
         for (const translationFile of translationFiles) {
@@ -1835,13 +1739,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const translationFileContent = await readTextFile(
                 join(settings.translationPath, translationFile.name),
-            );
+            ).catch((err) => {
+                logErrorIO(settings.translationPath, err);
+            });
 
             if (!translationFileContent) {
                 continue;
             }
 
-            const contentLines = translationFileContent.split("\n");
+            const contentLines = translationFileContent.lines();
 
             if (contentLines.length === 1) {
                 continue;
@@ -1852,34 +1758,33 @@ document.addEventListener("DOMContentLoaded", async () => {
                 -TXT_EXTENSION_LENGTH,
             );
 
-            if (!translationFileBasename.startsWith("maps")) {
+            if (!translationFileBasename.startsWith("map")) {
                 for (const [lineIndex, line] of contentLines.entries()) {
                     if (line.startsWith(BOOKMARK_COMMENT_PREFIX)) {
                         addBookmark({
                             title: `${translationFileBasename}-${lineIndex + 1}`,
                             description: line.slice(
-                                line.lastIndexOf(LINES_SEPARATOR) +
-                                    LINES_SEPARATOR.length,
+                                line.lastIndexOf(SEPARATOR) + SEPARATOR.length,
                             ),
                         });
                     }
                 }
 
-                const tabCreated = createTab(
+                const tab = createTab(
                     translationFileBasename,
                     contentLines,
                     tabIndex,
                 );
 
-                if (tabCreated) {
-                    ui.leftPanel.appendChild(tabCreated);
+                if (tab) {
+                    UI.leftPanel.appendChild(tab);
                     tabIndex++;
                 }
 
                 continue;
             }
 
-            const result = await parseContentLines(
+            const result = await parseTranslationLines(
                 contentLines,
                 translationFileBasename,
                 tabIndex,
@@ -1890,30 +1795,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function openProject(pathToProject: string, openingNew: boolean) {
-        await invokeAddToScope({ path: pathToProject });
+        await expandScope(pathToProject);
 
         if (!(await isProjectValid(pathToProject))) {
-            await settings.setProjectPath("");
-            ui.projectStatus.innerHTML = localization.noProjectSelected;
+            settings.reset();
+            UI.projectStatus.innerHTML = localization.noProjectSelected;
             return;
         }
 
         // Save and reset everything before opening a new project
         if (openingNew) {
-            await save(SaveMode.AllFiles);
+            await saver.saveAll();
             await beforeClose(true);
             await changeTab(null);
-            ui.leftPanel.innerHTML = "";
+            UI.leftPanel.innerHTML = "";
             batchWindow.clear();
-            ui.currentGameTitle.innerHTML = "";
+            UI.currentGameTitle.innerHTML = "";
             totalRows = 0;
             translatedRowsArray.length = 0;
         }
 
-        ui.projectStatus.innerHTML = localization.loadingProject;
-        const interval = animateProgressText(ui.projectStatus);
+        UI.projectStatus.innerHTML = localization.loadingProject;
+        const interval = animateProgressText(UI.projectStatus);
 
-        await settings.setProjectPath(pathToProject);
+        await settings.setProjectPath(
+            pathToProject,
+            projectSettings.sourceDirectory,
+        );
 
         if (!(await exists(settings.translationPath))) {
             const rootTranslationPath = join(
@@ -1924,19 +1832,19 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (await exists(rootTranslationPath)) {
                 await copyTranslationFromRoot(rootTranslationPath);
             } else {
-                await invokeRead(
-                    settings.projectPath,
-                    projectSettings.originalDirectory,
-                    1,
-                    false,
-                    false,
-                    [false, false, false, false],
-                    ProcessingMode.Default,
-                    settings.engineType,
-                    false,
-                    false,
-                    false,
-                );
+                await invokeRead({
+                    projectPath: settings.projectPath,
+                    sourcePath: settings.sourcePath,
+                    translationPath: settings.translationPath,
+                    duplicateMode: DuplicateMode.Allow,
+                    romanize: false,
+                    disableCustomProcessing: false,
+                    disableProcessing: FileFlags.None,
+                    readMode: ReadMode.Default,
+                    engineType: settings.engineType,
+                    ignore: false,
+                    trim: false,
+                });
             }
         }
 
@@ -1948,16 +1856,28 @@ document.addEventListener("DOMContentLoaded", async () => {
             const themeButton = document.createElement("button");
             themeButton.id = themeButton.innerHTML = themeName;
             themeButton.className = tw`backgroundPrimary backgroundPrimaryHovered h-8 p-1 text-base`;
-            ui.themeMenu.insertBefore(themeButton, ui.createThemeMenuButton);
+            UI.themeMenu.insertBefore(themeButton, UI.createThemeMenuButton);
         }
 
-        const backupFiles = await readDir(settings.backupPath);
-        settings.nextBackupNumber =
-            Math.max(
-                ...backupFiles.map((entry) =>
-                    Number.parseInt(entry.name.slice(0, -2)),
-                ),
-            ) + 1;
+        const backupFiles = await readDir(settings.backupPath).catch((err) => {
+            logErrorIO(settings.backupPath, err);
+        });
+
+        if (!backupFiles) {
+            return;
+        }
+
+        let lastBackupNumber = Math.max(
+            ...backupFiles.map((entry) =>
+                Number.parseInt(entry.name.slice(0, -2)),
+            ),
+        );
+
+        if (!Number.isFinite(lastBackupNumber)) {
+            lastBackupNumber = 0;
+        }
+
+        settings.nextBackupNumber = lastBackupNumber + 1;
 
         backup();
 
@@ -1974,14 +1894,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Set game title
         const systemFilePath = join(settings.translationPath, "system.txt");
-        const [originalTitle, translatedTitle] = (
-            await invokeReadLastLine({ filePath: systemFilePath })
-        ).split(LINES_SEPARATOR);
-        ui.currentGameTitle.setAttribute("original-title", originalTitle);
-        ui.currentGameTitle.value = translatedTitle || originalTitle;
+        const [sourceTitle, translationTitle] = (
+            await invokeReadLastLine(systemFilePath)
+        ).split(SEPARATOR);
+        UI.currentGameTitle.setAttribute("source-title", sourceTitle);
+        UI.currentGameTitle.value = translationTitle || sourceTitle;
 
         // Reset project status
-        ui.projectStatus.innerHTML = "";
+        UI.projectStatus.innerHTML = "";
         clearInterval(interval);
     }
 
@@ -2040,7 +1960,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateRowIds(startIndex: number) {
-        const children = ui.tabContent.children;
+        const children = UI.tabContent.children;
 
         for (let i = startIndex; i < children.length; i++) {
             const element = children[i];
@@ -2063,7 +1983,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (bookmarkIndex !== -1) {
             bookmarks.splice(bookmarkIndex, 1);
 
-            for (const bookmark of ui.bookmarksMenu.children) {
+            for (const bookmark of UI.bookmarksMenu.children) {
                 if (bookmark.textContent?.startsWith(rowContainerId)) {
                     bookmark.remove();
                 }
@@ -2097,7 +2017,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     rowNumber,
                 );
 
-                ui.tabContent.insertBefore(
+                UI.tabContent.insertBefore(
                     bookmarkElement,
                     target.parentElement!.parentElement!.parentElement,
                 );
@@ -2120,6 +2040,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case RowDeleteMode.Disabled:
                 alert(localization.deletingDisabled);
                 return;
+            // @ts-expect-error Fallthrough because of shared behavior
             case RowDeleteMode.Confirmation: {
                 const confirm = await ask(localization.deletingConfirmation);
 
@@ -2137,9 +2058,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 );
 
                 rowContainer.remove();
-
                 updateRowIds(position - 1);
-
                 totalRows -= 1;
                 break;
             }
@@ -2171,56 +2090,56 @@ document.addEventListener("DOMContentLoaded", async () => {
                     multipleTextAreasSelected = false;
 
                     for (const rowNumber of selectedTextareas.keys()) {
-                        const rowContainer = ui.tabContent.children[
+                        const rowContainer = UI.tabContent.children[
                             rowNumber
                         ] as HTMLDivElement;
                         (
                             rowContainer.lastElementChild! as HTMLTextAreaElement
                         ).style.outlineColor = "";
                     }
-                }
+                } else {
+                    if (
+                        !UI.tabContent.contains(document.activeElement) ||
+                        document.activeElement?.tagName !== "TEXTAREA"
+                    ) {
+                        return;
+                    }
 
-                if (
-                    !ui.tabContent.contains(document.activeElement) ||
-                    document.activeElement?.tagName !== "TEXTAREA"
-                ) {
-                    return;
-                }
+                    event.preventDefault();
 
-                event.preventDefault();
+                    selectedTextareas.clear();
+                    multipleTextAreasSelected = true;
 
-                selectedTextareas.clear();
-                multipleTextAreasSelected = true;
+                    const clickedRowContainerNumber = Number(
+                        target
+                            .closest(`[id^="${currentTab.name}"]`)!
+                            .id.split("-")[1],
+                    );
+                    const selectedRowContainerNumber = Number(
+                        document.activeElement
+                            .closest(`[id^="${currentTab.name}"]`)!
+                            .id.split("-")[1],
+                    );
 
-                const clickedRowContainerNumber = Number(
-                    target
-                        .closest(`[id^="${currentTab.name}"]`)!
-                        .id.split("-")[1],
-                );
-                const selectedRowContainerNumber = Number(
-                    document.activeElement
-                        .closest(`[id^="${currentTab.name}"]`)!
-                        .id.split("-")[1],
-                );
+                    const rowsRange =
+                        clickedRowContainerNumber - selectedRowContainerNumber;
+                    const rowsToSelect = Math.abs(rowsRange);
 
-                const rowsRange =
-                    clickedRowContainerNumber - selectedRowContainerNumber;
-                const rowsToSelect = Math.abs(rowsRange);
+                    const direction = rowsRange > 0 ? 1 : -1;
 
-                const direction = rowsRange > 0 ? 1 : -1;
+                    for (let i = 0; i <= Math.abs(rowsToSelect); i++) {
+                        const rowNumber =
+                            selectedRowContainerNumber + direction * i - 1;
 
-                for (let i = 0; i <= Math.abs(rowsToSelect); i++) {
-                    const rowNumber =
-                        selectedRowContainerNumber + direction * i - 1;
+                        const nextRowContainer = UI.tabContent.children[
+                            rowNumber
+                        ] as HTMLDivElement;
+                        const nextTextArea =
+                            nextRowContainer.lastElementChild as HTMLTextAreaElement;
 
-                    const nextRowContainer = ui.tabContent.children[
-                        rowNumber
-                    ] as HTMLDivElement;
-                    const nextTextArea =
-                        nextRowContainer.lastElementChild as HTMLTextAreaElement;
-
-                    nextTextArea.style.outlineColor = theme.outlineFocused;
-                    selectedTextareas.set(rowNumber, nextTextArea.value);
+                        nextTextArea.style.outlineColor = theme.outlineFocused;
+                        selectedTextareas.set(rowNumber, nextTextArea.value);
+                    }
                 }
             }
         }
@@ -2232,7 +2151,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.activeElement?.tagName === "TEXTAREA"
         ) {
             event.preventDefault();
-            await writeText(Array.from(selectedTextareas.values()).join("\0"));
+            await writeText(
+                Array.from(selectedTextareas.values()).join(
+                    CLIPBOARD_SEPARATOR,
+                ),
+            );
         }
     }
 
@@ -2242,23 +2165,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.activeElement?.tagName === "TEXTAREA"
         ) {
             event.preventDefault();
-            await writeText(Array.from(selectedTextareas.values()).join("\0"));
+
+            await writeText(
+                Array.from(selectedTextareas.values()).join(
+                    CLIPBOARD_SEPARATOR,
+                ),
+            );
 
             for (const rowNumber of selectedTextareas.keys()) {
-                const rowContainer = ui.tabContent.children[
+                const rowContainer = UI.tabContent.children[
                     rowNumber
                 ] as HTMLDivElement;
                 (rowContainer.lastElementChild! as HTMLTextAreaElement).value =
                     "";
             }
 
-            saved = false;
+            saver.saved = false;
         }
     }
 
     async function handleTabContentPaste(event: ClipboardEvent) {
-        const normalized = (await readText()).replaceAll(NEW_LINE, "\n");
-
+        const normalized = (await readText()).denormalize();
         await writeText(normalized);
 
         // eslint-disable-next-line no-magic-numbers
@@ -2266,10 +2193,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (
             document.activeElement?.tagName === "TEXTAREA" &&
-            normalized.includes("\0")
+            normalized.includes(CLIPBOARD_SEPARATOR)
         ) {
             event.preventDefault();
-            const clipboardTextSplit = normalized.split("\0");
+            const clipboardTextSplit = normalized.split(CLIPBOARD_SEPARATOR);
             const textRows = clipboardTextSplit.length;
 
             if (textRows === 0) {
@@ -2284,7 +2211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 for (let i = 0; i < textRows; i++) {
                     const rowNumber = rowContainerNumber + i - 1;
-                    const rowContainer = ui.tabContent.children[
+                    const rowContainer = UI.tabContent.children[
                         rowNumber
                     ] as HTMLDivElement | null;
 
@@ -2303,7 +2230,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     textAreaToReplace.calculateHeight();
                 }
 
-                saved = false;
+                saver.saved = false;
             }
         }
     }
@@ -2324,20 +2251,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function handleSearchPanelTransitionEnd() {
-        if (ui.searchSwitch.innerHTML.trim() === "search") {
-            ui.searchPanelFound.toggleMultiple("hidden", "flex");
-        } else {
-            ui.searchPanelReplaced.toggleMultiple("hidden", "flex");
-        }
-    }
-
     function handleSearchMenuChange(event: Event) {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case ui.searchInput.id:
-            case ui.replaceInput.id:
+            case UI.searchInput.id:
+            case UI.replaceInput.id:
                 calculateHeight(event);
                 break;
             default:
@@ -2349,10 +2268,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case ui.searchInput.id:
+            case UI.searchInput.id:
                 await handleSearchInputKeypress(event);
                 break;
-            case ui.replaceInput.id:
+            case UI.replaceInput.id:
                 handleReplaceInputKeypress(event);
                 break;
             default:
@@ -2364,7 +2283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLInputElement;
 
         if (target.type === "color") {
-            applyTheme(sheet, [target.id, target.value]);
+            applyTheme(STYLE_SHEET, [target.id, target.value]);
         }
     }
 
@@ -2380,29 +2299,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        let batchWindowAction: BatchAction | null = null;
+        let batchAction: BatchAction = BatchAction.None;
 
         switch (target.id) {
-            case ui.translateToolsMenuButton.id:
+            case UI.translateToolsMenuButton.id:
                 if (!areLanguageTagsValid()) {
                     return;
                 }
 
-                batchWindowAction = BatchAction.Translate;
+                batchAction = BatchAction.Translate;
                 break;
             case "trim-tools-menu-button":
-                batchWindowAction = BatchAction.Trim;
+                batchAction = BatchAction.Trim;
                 break;
             case "wrap-tools-menu-button":
-                batchWindowAction = BatchAction.Wrap;
+                batchAction = BatchAction.Wrap;
                 break;
         }
 
-        if (batchWindowAction === null) {
+        if (batchAction === BatchAction.None) {
             return;
         }
 
-        batchWindow.show(batchWindowAction);
+        batchWindow.show(batchAction);
     }
 
     function handleThemeMenuClick(event: MouseEvent) {
@@ -2417,13 +2336,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        ui.themeWindow.classList.remove("hidden");
-        ui.themeWindow.style.left = `${(document.body.clientWidth - ui.themeWindow.clientWidth) / 2}px`;
+        UI.themeWindow.classList.remove("hidden");
+        UI.themeWindow.style.left = `${(document.body.clientWidth - UI.themeWindow.clientWidth) / 2}px`;
 
         const themeColors = Object.values(theme);
         let colorIndex = 1;
 
-        for (const div of ui.themeWindowBody
+        for (const div of UI.themeWindowBody
             .children as HTMLCollectionOf<HTMLDivElement>) {
             for (const subdiv of div.children) {
                 (subdiv.firstElementChild as HTMLInputElement).value =
@@ -2435,14 +2354,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function handleBookmarksMenuClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null;
 
-        if (!target || target.id === ui.bookmarksMenu.id) {
+        if (!target || target.id === UI.bookmarksMenu.id) {
             return;
         }
 
-        const [file, row] = target.textContent!.split("-");
+        const [filename, row] = target.textContent!.split("-");
 
-        await changeTab(file);
-        ui.tabContent.children[Number(row)].scrollIntoView({
+        await changeTab(filename);
+        UI.tabContent.children[Number(row)].scrollIntoView({
             inline: "center",
             block: "center",
         });
@@ -2455,7 +2374,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const leftPanelChildren = Array.from(ui.leftPanel.children);
+        const leftPanelChildren = Array.from(UI.leftPanel.children);
         let innerTarget: HTMLElement | null = target;
 
         while (innerTarget && !leftPanelChildren.includes(innerTarget)) {
@@ -2478,9 +2397,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         switch (target.id) {
-            case ui.createThemeButton.id: {
+            case UI.createThemeButton.id: {
                 const themeNameInput: HTMLInputElement =
-                    ui.themeWindow.querySelector("#theme-name-input")!;
+                    UI.themeWindow.querySelector("#theme-name-input")!;
                 const themeName = themeNameInput.value.trim();
 
                 if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
@@ -2491,30 +2410,42 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 const newTheme = { name: themeName } as Theme;
-                for (const div of ui.themeWindowBody
+                for (const div of UI.themeWindowBody
                     .children as HTMLCollectionOf<HTMLDivElement>) {
                     for (const subdiv of div.children) {
                         const input =
                             subdiv.firstElementChild as HTMLInputElement;
-                        newTheme[input.id] = input.value;
+                        newTheme[input.id as keyof Theme] = input.value;
                     }
                 }
 
                 themes[themeName] = newTheme;
-                await writeTextFile(THEME_FILE_PATH, JSON.stringify(themes), {
-                    baseDir: RESOURCE_DIRECTORY,
+
+                const ok = await writeTextFile(
+                    THEME_FILE_PATH,
+                    JSON.stringify(themes),
+                    {
+                        baseDir: RESOURCE_DIRECTORY,
+                    },
+                ).catch((err) => {
+                    logErrorIO(THEME_FILE_PATH, err);
+                    return null;
                 });
+
+                if (ok === null) {
+                    return;
+                }
 
                 const newThemeButton = document.createElement("button");
                 newThemeButton.id = newThemeButton.textContent = themeName;
-                ui.themeMenu.insertBefore(
+                UI.themeMenu.insertBefore(
                     newThemeButton,
-                    ui.themeMenu.lastElementChild,
+                    UI.themeMenu.lastElementChild,
                 );
                 break;
             }
-            case ui.closeButton.id:
-                ui.themeWindow.classList.add("hidden");
+            case UI.closeButton.id:
+                UI.themeWindow.classList.add("hidden");
                 break;
         }
     }
@@ -2527,26 +2458,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         switch (target.id) {
-            case ui.fileMenuButton.id:
-                ui.fileMenu.toggleMultiple("hidden", "flex");
-                ui.helpMenu.classList.replace("flex", "hidden");
-                ui.languageMenu.classList.replace("flex", "hidden");
+            case UI.fileMenuButton.id:
+                UI.fileMenu.toggleMultiple("hidden", "flex");
+                UI.helpMenu.classList.replace("flex", "hidden");
+                UI.languageMenu.classList.replace("flex", "hidden");
 
-                ui.fileMenu.style.top = `${ui.fileMenuButton.offsetTop + ui.fileMenuButton.offsetHeight}px`;
-                ui.fileMenu.style.left = `${ui.fileMenuButton.offsetLeft}px`;
+                UI.fileMenu.style.top = `${UI.fileMenuButton.offsetTop + UI.fileMenuButton.offsetHeight}px`;
+                UI.fileMenu.style.left = `${UI.fileMenuButton.offsetLeft}px`;
                 break;
             case "reload-button":
                 if (await beforeClose(false)) {
                     location.reload();
                 }
                 break;
-            case ui.helpMenuButton.id:
-                ui.helpMenu.toggleMultiple("hidden", "flex");
-                ui.fileMenu.classList.replace("flex", "hidden");
-                ui.languageMenu.classList.replace("flex", "hidden");
+            case UI.helpMenuButton.id:
+                UI.helpMenu.toggleMultiple("hidden", "flex");
+                UI.fileMenu.classList.replace("flex", "hidden");
+                UI.languageMenu.classList.replace("flex", "hidden");
 
-                ui.helpMenu.style.top = `${ui.helpMenuButton.offsetTop + ui.helpMenuButton.offsetHeight}px`;
-                ui.helpMenu.style.left = `${ui.helpMenuButton.offsetLeft}px`;
+                UI.helpMenu.style.top = `${UI.helpMenuButton.offsetTop + UI.helpMenuButton.offsetHeight}px`;
+                UI.helpMenu.style.left = `${UI.helpMenuButton.offsetLeft}px`;
                 break;
             case "help-button":
                 // eslint-disable-next-line sonarjs/constructor-for-side-effects
@@ -2565,13 +2496,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     resizable: false,
                 });
                 break;
-            case ui.languageMenuButton.id:
-                ui.languageMenu.toggleMultiple("hidden", "flex");
-                ui.helpMenu.classList.replace("flex", "hidden");
-                ui.fileMenu.classList.replace("flex", "hidden");
+            case UI.languageMenuButton.id:
+                UI.languageMenu.toggleMultiple("hidden", "flex");
+                UI.helpMenu.classList.replace("flex", "hidden");
+                UI.fileMenu.classList.replace("flex", "hidden");
 
-                ui.languageMenu.style.top = `${ui.languageMenuButton.offsetTop + ui.languageMenuButton.offsetHeight}px`;
-                ui.languageMenu.style.left = `${ui.languageMenuButton.offsetLeft}px`;
+                UI.languageMenu.style.top = `${UI.languageMenuButton.offsetTop + UI.languageMenuButton.offsetHeight}px`;
+                UI.languageMenu.style.left = `${UI.languageMenuButton.offsetLeft}px`;
                 break;
             case "ru-button":
                 if (settings.language !== Language.Russian) {
@@ -2596,31 +2527,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         switch (target.id) {
-            case ui.searchSwitch.id: {
-                ui.searchPanelFound.classList.toggle("hidden");
-                ui.searchPanelReplaced.classList.toggle("hidden");
+            case UI.searchSwitch.id: {
+                UI.searchPanelContent.innerHTML = "";
+                UI.pageSelectContainer.toggleMultiple("hidden", "flex");
+                UI.logFileSelect.toggleMultiple("hidden");
 
-                if (target.innerHTML.trim() !== "search") {
+                if (target.innerHTML.trim() === "search") {
+                    target.innerHTML = "menu_book";
+
+                    for (const file of Object.keys(replacementLog)) {
+                        const fileOption = document.createElement("option");
+                        fileOption.value = file;
+                        UI.logFileSelect.appendChild(fileOption);
+                    }
+                } else {
                     target.innerHTML = "search";
-                    ui.searchPanelReplaced.innerHTML = "";
-                    return;
                 }
 
-                target.innerHTML = "menu_book";
-
-                for (const [key, value] of Object.entries(replacementLog)) {
-                    const replacedContainer = document.createElement("div");
-                    replacedContainer.className = tw`textSecond backgroundSecond borderPrimary my-1 cursor-pointer border-2 p-1 text-base`;
-                    replacedContainer.setAttribute("reverted", "0");
-
-                    replacedContainer.innerHTML = `<div class="textThird">${key}</div><div>${value.old}</div><div class="flex justify-center items-center text-xl textPrimary font-material w-full">arrow_downward</div><div>${value.new}</div>`;
-
-                    ui.searchPanelReplaced.appendChild(replacedContainer);
-                }
                 break;
             }
             case "previous-page-button": {
-                const page = Number(ui.searchCurrentPage.textContent!);
+                const page = Number(UI.searchCurrentPage.textContent!);
 
                 if (page > 0) {
                     await loadMatchObject(page - 1);
@@ -2628,9 +2555,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             }
             case "next-page-button": {
-                const page = Number(ui.searchCurrentPage.textContent!);
+                const page = Number(UI.searchCurrentPage.textContent!);
 
-                if (page < Number(ui.searchTotalPages.textContent!)) {
+                if (page < Number(UI.searchTotalPages.textContent!)) {
                     await loadMatchObject(page + 1);
                 }
                 break;
@@ -2647,29 +2574,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case "apply-search-button": {
-                const predicate = ui.searchInput.value;
+                const predicate = UI.searchInput.value;
 
                 if (predicate.trim()) {
-                    await searchText(predicate, ReplaceMode.Search);
+                    await searchText(predicate, SearchAction.Search);
                 }
                 break;
             }
             case "replace-button":
             case "put-button": {
-                const searchText = ui.searchInput.value;
-                const replacerText = ui.replaceInput.value;
+                const searchText = UI.searchInput.value;
+                const replacerText = UI.replaceInput.value;
 
-                const searchTextTrimmed = searchText.trim();
-                const replacerTextTrimmed = replacerText.trim();
-
-                if (searchTextTrimmed && replacerTextTrimmed) {
-                    await replacer.replaceText(
+                if (searchText.trim()) {
+                    await replacer.replaceAll(
                         searchText,
                         replacerText,
-                        Number(ui.searchModeSelect.value),
+                        Number(UI.searchModeSelect.value),
                         target.id === "replace-button"
-                            ? ReplaceMode.Replace
-                            : ReplaceMode.Put,
+                            ? SearchAction.Replace
+                            : SearchAction.Put,
                     );
                 }
                 break;
@@ -2697,57 +2621,54 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         switch (target.id) {
-            case ui.readingModeSelect.id:
-                switch (ui.readingModeSelect.value) {
+            case UI.readModeSelect.id:
+                switch (UI.readModeSelect.value) {
                     case "append":
-                        ui.readingModeDescription.innerHTML =
+                        UI.readModeDescription.innerHTML =
                             localization.appendModeDescription;
                         break;
                     case "force":
-                        ui.readingModeDescription.innerHTML =
+                        UI.readModeDescription.innerHTML =
                             localization.forceModeDescription;
                         break;
                 }
                 break;
-            case ui.applyReadButton.id: {
-                await save(SaveMode.AllFiles);
-                ui.readButton.firstElementChild!.classList.add("animate-spin");
-                const readingMode = Number(
-                    ui.readingModeSelect.value,
-                ) as ProcessingMode;
+            case UI.applyReadButton.id: {
+                await saver.saveAll();
 
-                await invokeRead(
-                    settings.projectPath,
-                    projectSettings.originalDirectory,
-                    readingMode === ProcessingMode.Append
-                        ? projectSettings.mapsProcessingMode
-                        : Number(ui.mapsProcessingModeSelect.value),
-                    readingMode === ProcessingMode.Append
-                        ? projectSettings.romanize
-                        : Boolean(ui.romanizeCheckbox.textContent),
-                    readingMode === ProcessingMode.Append
-                        ? projectSettings.disableCustomProcessing
-                        : Boolean(
-                              ui.disableCustomProcessingCheckbox.textContent,
-                          ),
-                    [
-                        Boolean(ui.rDisableMapsProcessingCheckbox.textContent),
-                        Boolean(ui.rDisableOtherProcessingCheckbox.textContent),
-                        Boolean(
-                            ui.rDisableSystemProcessingCheckbox.textContent,
-                        ),
-                        Boolean(
-                            ui.rDisablePluginsProcessingCheckbox.textContent,
-                        ),
-                    ],
-                    readingMode,
-                    settings.engineType,
-                    Boolean(ui.ignoreCheckbox.textContent),
-                    readingMode === ProcessingMode.Append
-                        ? projectSettings.trim
-                        : Boolean(ui.trimCheckbox.textContent),
-                    Boolean(ui.sortCheckbox.textContent),
-                );
+                UI.readButton.firstElementChild!.classList.add("animate-spin");
+                const readMode = Number(UI.readModeSelect.value) as ReadMode;
+
+                const fileFlags = getFileFlags();
+
+                await invokeRead({
+                    projectPath: settings.projectPath,
+                    sourcePath: settings.sourcePath,
+                    translationPath: settings.translationPath,
+                    engineType: settings.engineType,
+                    readMode,
+                    duplicateMode:
+                        readMode === ReadMode.Append
+                            ? projectSettings.duplicateMode
+                            : Number(UI.duplicateModeSelect.value),
+                    romanize:
+                        readMode === ReadMode.Append
+                            ? projectSettings.romanize
+                            : Boolean(UI.romanizeCheckbox.textContent),
+                    disableCustomProcessing:
+                        readMode === ReadMode.Append
+                            ? projectSettings.disableCustomProcessing
+                            : Boolean(
+                                  UI.disableCustomProcessingCheckbox
+                                      .textContent,
+                              ),
+                    disableProcessing: fileFlags,
+                    ignore: Boolean(UI.ignoreCheckbox.textContent),
+                    trim:
+                        readMode === ReadMode.Append
+                            ? projectSettings.trim
+                            : Boolean(UI.trimCheckbox.textContent),
+                });
 
                 if (await beforeClose(true)) {
                     location.reload();
@@ -2760,59 +2681,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function handlePurgeMenuClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null;
 
-        if (!target) {
+        if (target?.id !== UI.applyPurgeButton.id) {
             return;
         }
 
-        if (target.id === ui.applyPurgeButton.id) {
-            await save(SaveMode.AllFiles);
+        await saver.saveAll();
 
-            ui.purgeButton.firstElementChild!.classList.add("animate-spin");
+        UI.purgeButton.firstElementChild!.classList.add("animate-spin");
 
-            await invokePurge(
-                settings.projectPath,
-                projectSettings.originalDirectory,
-                ui.currentGameTitle.getAttribute("original-title")!,
-                projectSettings.mapsProcessingMode,
-                projectSettings.romanize,
-                projectSettings.disableCustomProcessing,
-                [
-                    Boolean(ui.pDisableMapsProcessingCheckbox.textContent),
-                    Boolean(ui.pDisableOtherProcessingCheckbox.textContent),
-                    Boolean(ui.pDisableSystemProcessingCheckbox.textContent),
-                    Boolean(ui.pDisablePluginsProcessingCheckbox.textContent),
-                ],
-                settings.engineType,
-                Boolean(ui.statCheckbox.textContent),
-                Boolean(ui.leaveFilledCheckbox.textContent),
-                Boolean(ui.purgeEmptyCheckbox.textContent),
-                Boolean(ui.createIgnoreCheckbox.textContent),
-                projectSettings.trim,
-            );
+        const fileFlags = getFileFlags();
 
-            ui.purgeButton.firstElementChild!.classList.remove("animate-spin");
+        await invokePurge({
+            sourcePath: settings.sourcePath,
+            translationPath: settings.translationPath,
+            engineType: settings.engineType,
+            duplicateMode: projectSettings.duplicateMode,
+            gameTitle: UI.currentGameTitle.getAttribute("source-title")!,
+            romanize: projectSettings.romanize,
+            disableCustomProcessing: projectSettings.disableCustomProcessing,
+            disableProcessing: fileFlags,
+            createIgnore: Boolean(UI.createIgnoreCheckbox.textContent),
+            trim: projectSettings.trim,
+        });
 
-            if (!ui.statCheckbox.textContent && (await beforeClose(true))) {
-                location.reload();
-            }
+        UI.purgeButton.firstElementChild!.classList.remove("animate-spin");
+
+        if (await beforeClose(true)) {
+            location.reload();
         }
     }
 
-    async function handleCompileMenuClick(event: MouseEvent) {
+    async function handleWriteMenuClick(event: MouseEvent) {
         const target = event.target as HTMLElement | null;
 
         if (!target) {
             return;
         }
 
-        if (target.id === ui.outputPathButton.id) {
+        if (target.id === UI.outputPathButton.id) {
             const directory = (await openPath({
                 directory: true,
                 multiple: false,
             }))!;
 
             if (directory) {
-                ui.outputPathInput.value = directory;
+                UI.outputPathInput.value = directory;
             }
         }
     }
@@ -2824,7 +2737,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        if (ui.tabContent.contains(target) && target.tagName === "DIV") {
+        if (UI.tabContent.contains(target) && target.tagName === "DIV") {
             const rowContainer = target.parentElement;
 
             if (rowContainer && /\d$/.test(rowContainer.id)) {
@@ -2843,33 +2756,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    function showCompileMenu() {
-        ui.compileMenu.toggleMultiple("hidden", "flex");
+    function showWriteMenu() {
+        UI.writeMenu.toggleMultiple("hidden", "flex");
 
-        if (ui.compileMenu.classList.contains("hidden")) {
+        if (UI.writeMenu.classList.contains("hidden")) {
             return;
         }
 
         requestAnimationFrame(() => {
-            ui.compileMenu.style.left = `${ui.compileButton.offsetLeft}px`;
-            ui.compileMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+            UI.writeMenu.style.left = `${UI.writeButton.offsetLeft}px`;
+            UI.writeMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
         });
 
-        ui.outputPathInput.value = settings.programDataPath;
-        ui.cDisableMapsProcessingCheckbox.innerHTML =
-            ui.cDisableOtherProcessingCheckbox.innerHTML =
-            ui.cDisableSystemProcessingCheckbox.innerHTML =
-            ui.cDisablePluginsProcessingCheckbox.innerHTML =
+        UI.outputPathInput.value = settings.programDataPath;
+        UI.disableMapProcessingCheckbox.innerHTML =
+            UI.disableOtherProcessingCheckbox.innerHTML =
+            UI.disableSystemProcessingCheckbox.innerHTML =
+            UI.disablePluginProcessingCheckbox.innerHTML =
                 "";
     }
 
-    async function handleTopPanelButtonsDivMousedown(event: MouseEvent) {
+    async function handleTopPanelClick(event: MouseEvent) {
         const target = (event.target as HTMLElement).closest(`[id$="button"]`);
 
         if (
             !target ||
             (!settings.projectPath && target.id !== "open-directory-button") ||
-            !ui.topPanelButtonsDiv.contains(target)
+            !UI.topPanelButtonsDiv.contains(target)
         ) {
             return;
         }
@@ -2878,33 +2791,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case "menu-button":
-                ui.leftPanel.toggleMultiple(
+                UI.leftPanel.toggleMultiple(
                     "translate-x-0",
                     "-translate-x-full",
                 );
                 break;
-            case ui.saveButton.id:
-                await save(SaveMode.AllFiles);
+            case UI.saveButton.id:
+                await saver.saveAll();
                 break;
-            case "compile-button": {
+            case "write-button": {
+                UI.disableMapProcessingCheckbox = UI.writeMenu.querySelector(
+                    "#disable-map-processing-checkbox",
+                )!;
+                UI.disableOtherProcessingCheckbox = UI.writeMenu.querySelector(
+                    "#disable-other-processing-checkbox",
+                )!;
+                UI.disableSystemProcessingCheckbox = UI.writeMenu.querySelector(
+                    "#disable-system-processing-checkbox",
+                )!;
+                UI.disablePluginProcessingCheckbox = UI.writeMenu.querySelector(
+                    "#disable-plugin-processing-checkbox",
+                )!;
+
                 if (button === MouseButton.Right) {
-                    showCompileMenu();
+                    showWriteMenu();
                 } else if (button === MouseButton.Left) {
-                    if (ui.compileButton.classList.contains("hidden")) {
-                        await startCompilation();
+                    if (UI.writeMenu.classList.contains("hidden")) {
+                        await write();
                         return;
                     }
 
-                    await startCompilation(ui.outputPathInput.value, [
-                        Boolean(ui.cDisableMapsProcessingCheckbox.textContent),
-                        Boolean(ui.cDisableOtherProcessingCheckbox.textContent),
-                        Boolean(
-                            ui.cDisableSystemProcessingCheckbox.textContent,
-                        ),
-                        Boolean(
-                            ui.cDisablePluginsProcessingCheckbox.textContent,
-                        ),
-                    ]);
+                    const fileFlags = getFileFlags();
+                    await write(UI.outputPathInput.value, fileFlags);
                 }
                 break;
             }
@@ -2953,82 +2871,107 @@ document.addEventListener("DOMContentLoaded", async () => {
                 );
                 break;
             }
-            case ui.themeButton.id:
-                ui.themeMenu.toggleMultiple("hidden", "flex");
+            case UI.themeButton.id:
+                UI.themeMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
-                    ui.themeMenu.style.left = `${ui.themeButton.offsetLeft}px`;
-                    ui.themeMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.themeMenu.style.left = `${UI.themeButton.offsetLeft}px`;
+                    UI.themeMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
-            case ui.bookmarksButton.id:
-                ui.bookmarksMenu.toggleMultiple("hidden", "flex");
+            case UI.bookmarksButton.id:
+                UI.bookmarksMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
-                    ui.bookmarksMenu.style.left = `${ui.bookmarksButton.offsetLeft}px`;
-                    ui.bookmarksMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.bookmarksMenu.style.left = `${UI.bookmarksButton.offsetLeft}px`;
+                    UI.bookmarksMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
-            case ui.readButton.id: {
-                if (!projectSettings.originalDirectory) {
+            case UI.readButton.id: {
+                if (!projectSettings.sourceDirectory) {
                     alert(localization.gameFilesDoNotExist);
                     return;
                 }
 
-                ui.readMenu.toggleMultiple("hidden", "flex");
+                UI.readMenu.toggleMultiple("hidden", "flex");
 
-                if (ui.readMenu.classList.contains("hidden")) {
+                if (UI.readMenu.classList.contains("hidden")) {
                     return;
                 }
 
+                UI.disableMapProcessingCheckbox = UI.readMenu.querySelector(
+                    "#disable-map-processing-checkbox",
+                )!;
+                UI.disableOtherProcessingCheckbox = UI.readMenu.querySelector(
+                    "#disable-other-processing-checkbox",
+                )!;
+                UI.disableSystemProcessingCheckbox = UI.readMenu.querySelector(
+                    "#disable-system-processing-checkbox",
+                )!;
+                UI.disablePluginProcessingCheckbox = UI.readMenu.querySelector(
+                    "#disable-plugin-processing-checkbox",
+                )!;
+
                 requestAnimationFrame(() => {
-                    ui.readMenu.style.left = `${ui.readButton.offsetLeft}px`;
-                    ui.readMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.readMenu.style.left = `${UI.readButton.offsetLeft}px`;
+                    UI.readMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
             }
-            case ui.searchButton.id:
-                if (!ui.searchMenu.classList.contains("hidden")) {
-                    ui.searchMenu.classList.add("hidden");
+            case UI.searchButton.id:
+                if (!UI.searchMenu.classList.contains("hidden")) {
+                    UI.searchMenu.classList.add("hidden");
                     return;
                 }
 
-                ui.searchMenu.classList.remove("hidden");
+                UI.searchMenu.classList.remove("hidden");
                 requestAnimationFrame(() => {
-                    ui.searchMenu.style.left = `${ui.searchButton.offsetLeft}px`;
-                    ui.searchMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.searchMenu.style.left = `${UI.searchButton.offsetLeft}px`;
+                    UI.searchMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
-            case ui.toolsButton.id:
-                ui.toolsMenu.toggleMultiple("hidden", "flex");
+            case UI.toolsButton.id:
+                UI.toolsMenu.toggleMultiple("hidden", "flex");
 
                 requestAnimationFrame(() => {
-                    ui.toolsMenu.style.left = `${ui.toolsButton.offsetLeft}px`;
-                    ui.toolsMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.toolsMenu.style.left = `${UI.toolsButton.offsetLeft}px`;
+                    UI.toolsMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
-            case ui.purgeButton.id: {
-                if (!projectSettings.originalDirectory) {
+            case UI.purgeButton.id: {
+                if (!projectSettings.sourceDirectory) {
                     alert(localization.gameFilesDoNotExist);
                     return;
                 }
 
-                ui.purgeMenu.toggleMultiple("hidden", "flex");
+                UI.purgeMenu.toggleMultiple("hidden", "flex");
 
-                if (ui.purgeMenu.classList.contains("hidden")) {
+                if (UI.purgeMenu.classList.contains("hidden")) {
                     return;
                 }
 
+                UI.disableMapProcessingCheckbox = UI.purgeMenu.querySelector(
+                    "#disable-map-processing-checkbox",
+                )!;
+                UI.disableOtherProcessingCheckbox = UI.purgeMenu.querySelector(
+                    "#disable-other-processing-checkbox",
+                )!;
+                UI.disableSystemProcessingCheckbox = UI.purgeMenu.querySelector(
+                    "#disable-system-processing-checkbox",
+                )!;
+                UI.disablePluginProcessingCheckbox = UI.purgeMenu.querySelector(
+                    "#disable-plugin-processing-checkbox",
+                )!;
+
                 requestAnimationFrame(() => {
-                    ui.purgeMenu.style.left = `${ui.purgeButton.offsetLeft}px`;
-                    ui.purgeMenu.style.top = `${ui.menuBar.clientHeight + ui.topPanel.clientHeight}px`;
+                    UI.purgeMenu.style.left = `${UI.purgeButton.offsetLeft}px`;
+                    UI.purgeMenu.style.top = `${UI.menuBar.clientHeight + UI.topPanel.clientHeight}px`;
                 });
                 break;
             }
         }
     }
 
-    // #region Settings and localization initialization, check for updates
     await attachConsole();
 
     const settings: Settings = await loadSettings();
@@ -3039,33 +2982,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) as ThemeObject;
     let theme: Theme = themes[settings.theme];
 
-    initializeLocalization(settings.language);
     await checkForUpdates();
-    // #endregion
-
-    // #region Program initialization
     applyLocalization(localization, theme);
 
-    // #region Static constants
+    const STYLE_SHEET = getThemeStyleSheet()!;
+    const UI = setupUi(WindowType.Main) as MainWindowUI;
 
-    const sheet = getThemeStyleSheet()!;
-    const ui = setupUi("mainwindow") as MainWindowUI;
-
-    // #endregion
     let backupIsActive: number | null = null;
 
-    // Set theme
     let currentTheme: string;
-
     setTheme(theme);
 
-    // Initialize the project
     const currentTab: CurrentTab = {
         name: null,
         index: null,
-        content: ui.tabContent,
+        content: UI.tabContent,
     };
-    const batchWindow = new BatchWindow(settings, currentTab, ui);
+    const batchWindow = new BatchWindow(settings, currentTab, UI);
     let lastCharacters = "";
     let lastSubstitutionCharacter: { char: string; pos: number } | null = null;
 
@@ -3075,13 +3008,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const translatedRowsArray: number[] = [];
     const bookmarks: Bookmark[] = [];
 
-    await openProject(settings.projectPath, false);
+    let currentFocusedElement: [string, string] | [] = [];
 
-    // Load the font
-    const textAreaPropertiesMemo: TextAreaPropertiesMemo = {};
-    await loadFont(settings.fontUrl);
+    let changeTimer: null | number = null;
+    let shiftPressed = false;
 
-    const replacementLog: ReplacementLog = await fetchReplacementLog();
+    let multipleTextAreasSelected = false;
+
+    const replacementLog: ReplacementLog = await loadReplacementLog();
 
     const activeGhostLines: HTMLDivElement[] = [];
 
@@ -3097,53 +3031,43 @@ document.addEventListener("DOMContentLoaded", async () => {
         currentTab,
         searcher,
     );
-    const saver = new Saver(settings, currentTab, ui.currentGameTitle);
-
-    let saved = true;
-    let currentFocusedElement: [string, string] | [] = [];
-
-    let changeTimer: null | number = null;
-    let shiftPressed = false;
-
-    let multipleTextAreasSelected = false;
+    const saver = new Saver(
+        settings,
+        currentTab,
+        UI.currentGameTitle,
+        UI.saveButton.firstElementChild!,
+    );
 
     await APP_WINDOW.setZoom(settings.zoom);
-    // #endregion
 
-    // #region Event listeners
-    ui.topPanelButtonsDiv.addEventListener("contextmenu", (event) => {
+    await openProject(settings.projectPath, false);
+    await loadFont(settings.fontUrl);
+
+    UI.topPanelButtonsDiv.addEventListener("contextmenu", (event) => {
         event.preventDefault();
     });
 
-    ui.topPanelButtonsDiv.addEventListener(
-        "mousedown",
-        handleTopPanelButtonsDivMousedown,
-    );
-    ui.tabContent.addEventListener("paste", handleTabContentPaste);
-    ui.tabContent.addEventListener("keyup", handleTabContentKeyup);
-    ui.tabContent.addEventListener("input", handleTabContentInput);
-    ui.searchPanel.addEventListener(
-        "transitionend",
-        handleSearchPanelTransitionEnd,
-    );
-    ui.searchPanelFound.addEventListener("mousedown", handleResultClick);
-    ui.goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
-    ui.searchMenu.addEventListener("change", handleSearchMenuChange);
-    ui.searchMenu.addEventListener("keydown", handleSearchMenuKeydown);
-    ui.themeWindow.addEventListener("input", handleThemeWindowInput);
-    ui.toolsMenu.addEventListener("click", handleToolsMenuClick);
-    ui.themeMenu.addEventListener("click", handleThemeMenuClick);
-    ui.bookmarksMenu.addEventListener("click", handleBookmarksMenuClick);
-    ui.leftPanel.addEventListener("click", handleLeftPanelClick);
-    ui.themeWindow.addEventListener("click", handleThemeWindowClick);
-    ui.menuBar.addEventListener("click", handleMenuBarClick);
-    ui.searchPanel.addEventListener("click", handleSearchPanelClick);
-    ui.searchMenu.addEventListener("click", handleSearchMenuClick);
-    ui.readMenu.addEventListener("click", handleReadMenuClick);
-    ui.purgeMenu.addEventListener("click", handlePurgeMenuClick);
-    ui.compileMenu.addEventListener("click", handleCompileMenuClick);
-    ui.tabContent.addEventListener("keydown", handleTabContentKeydown, true);
-    ui.searchPanelReplaced.addEventListener("mousedown", handleReplacedClick);
+    UI.topPanelButtonsDiv.addEventListener("mousedown", handleTopPanelClick);
+    UI.tabContent.addEventListener("paste", handleTabContentPaste);
+    UI.tabContent.addEventListener("keyup", handleTabContentKeyup);
+    UI.tabContent.addEventListener("input", handleTabContentInput);
+    UI.searchPanelContent.addEventListener("mousedown", handleResultClick);
+    UI.goToRowInput.addEventListener("keydown", handleGotoRowInputKeypress);
+    UI.searchMenu.addEventListener("change", handleSearchMenuChange);
+    UI.searchMenu.addEventListener("keydown", handleSearchMenuKeydown);
+    UI.themeWindow.addEventListener("input", handleThemeWindowInput);
+    UI.toolsMenu.addEventListener("click", handleToolsMenuClick);
+    UI.themeMenu.addEventListener("click", handleThemeMenuClick);
+    UI.bookmarksMenu.addEventListener("click", handleBookmarksMenuClick);
+    UI.leftPanel.addEventListener("click", handleLeftPanelClick);
+    UI.themeWindow.addEventListener("click", handleThemeWindowClick);
+    UI.menuBar.addEventListener("click", handleMenuBarClick);
+    UI.searchPanel.addEventListener("click", handleSearchPanelClick);
+    UI.searchMenu.addEventListener("click", handleSearchMenuClick);
+    UI.readMenu.addEventListener("click", handleReadMenuClick);
+    UI.purgeMenu.addEventListener("click", handlePurgeMenuClick);
+    UI.writeMenu.addEventListener("click", handleWriteMenuClick);
+    UI.tabContent.addEventListener("keydown", handleTabContentKeydown, true);
     document.body.addEventListener("keydown", handleKeypress);
     document.body.addEventListener("keyup", (event) => {
         if (event.key === "Shift") {
@@ -3151,11 +3075,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    ui.tabContent.addEventListener("focus", handleFocus, true);
-    ui.tabContent.addEventListener("blur", handleBlur, true);
-    ui.tabContent.addEventListener("mousedown", handleTabContentMousedown);
-    ui.tabContent.addEventListener("copy", handleTabContentCopy);
-    ui.tabContent.addEventListener("cut", handleTabContentCut);
+    UI.tabContent.addEventListener("focus", handleFocus, true);
+    UI.tabContent.addEventListener("blur", handleBlur, true);
+    UI.tabContent.addEventListener("mousedown", handleTabContentMousedown);
+    UI.tabContent.addEventListener("copy", handleTabContentCopy);
+    UI.tabContent.addEventListener("cut", handleTabContentCut);
     document.addEventListener("click", handleDocumentClick);
 
     await listen("fetch-settings", async () => {
@@ -3167,13 +3091,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     await listen<boolean>("saved", (event) => {
-        saved = event.payload;
+        saver.saved = event.payload;
     });
 
     await listen<[number, number]>("update-progress", (event) => {
         const [index, lineCount] = event.payload;
 
-        const progressBar = ui.leftPanel.children[index].lastElementChild
+        const progressBar = UI.leftPanel.children[index].lastElementChild
             ?.firstElementChild as HTMLElement | null;
 
         updateProgress(progressBar, lineCount, PERCENT_MULTIPLIER);
@@ -3186,5 +3110,4 @@ document.addEventListener("DOMContentLoaded", async () => {
             event.preventDefault();
         }
     });
-    // #endregion
 });

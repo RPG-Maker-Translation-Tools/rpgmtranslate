@@ -1,17 +1,18 @@
+import "./utilities/extensions";
 import { loadWindow, setupUi as setupUI } from "./utilities/functions";
-import { invokeAddToScope, invokeWalkDir } from "./utilities/invokes";
-import "./utilities/math-extensions";
+import { expandScope, invokeWalkDir } from "./utilities/invokes";
 
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
+import { WindowType } from "./types/enums";
 import {
     MAX_BACKUP_PERIOD,
     MAX_BACKUPS,
     MIN_BACKUP_PERIOD,
 } from "./utilities/constants";
-const appWindow = getCurrentWebviewWindow();
+const APP_WINDOW = getCurrentWebviewWindow();
 
 interface FontObject extends Record<string, string> {
     font: string;
@@ -23,8 +24,7 @@ async function fetchFonts(): Promise<FontObject> {
     const fontPath =
         getPlatform() === "windows" ? "C:/Windows/Fonts" : "/usr/share/fonts";
 
-    await invokeAddToScope({ path: fontPath });
-
+    await expandScope(fontPath);
     const entries = await invokeWalkDir(fontPath);
 
     for (const path of entries) {
@@ -42,23 +42,23 @@ async function fetchFonts(): Promise<FontObject> {
 
 document.addEventListener("DOMContentLoaded", async () => {
     const [settings] = await loadWindow("settings");
-    const ui = setupUI("settingswindow") as SettingsWindowUI;
+    const UI = setupUI(WindowType.Settings) as SettingsWindowUI;
 
-    ui.backupMaxInput.value = settings.backup.max.toString();
-    ui.backupPeriodInput.value = settings.backup.period.toString();
-    ui.backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
-    ui.rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
-    ui.displayGhostLinesCheck.innerHTML = settings.displayGhostLines
+    UI.backupMaxInput.value = settings.backup.max.toString();
+    UI.backupPeriodInput.value = settings.backup.period.toString();
+    UI.backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
+    UI.rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
+    UI.displayGhostLinesCheck.innerHTML = settings.displayGhostLines
         ? "check"
         : "";
-    ui.checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
+    UI.checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
 
-    if (!ui.backupCheck.textContent) {
-        ui.backupSettings.classList.add("hidden");
-        ui.backupSettings.classList.add("-translate-y-full");
+    if (!UI.backupCheck.textContent) {
+        UI.backupSettings.classList.add("hidden");
+        UI.backupSettings.classList.add("-translate-y-full");
     } else {
-        ui.backupSettings.classList.add("flex");
-        ui.backupSettings.classList.add("translate-y-0");
+        UI.backupSettings.classList.add("flex");
+        UI.backupSettings.classList.add("translate-y-0");
     }
 
     for (const [path, name] of Object.entries(
@@ -69,54 +69,54 @@ document.addEventListener("DOMContentLoaded", async () => {
         optionElement.id = path;
         optionElement.innerHTML = optionElement.value = name;
 
-        ui.fontSelect.appendChild(optionElement);
+        UI.fontSelect.appendChild(optionElement);
     }
 
     document.addEventListener("click", (event) => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case ui.checkForUpdatesCheck.id:
-                if (!ui.checkForUpdatesCheck.textContent) {
-                    ui.checkForUpdatesCheck.innerHTML = "check";
+            case UI.checkForUpdatesCheck.id:
+                if (!UI.checkForUpdatesCheck.textContent) {
+                    UI.checkForUpdatesCheck.innerHTML = "check";
                     settings.checkForUpdates = true;
                 } else {
-                    ui.checkForUpdatesCheck.innerHTML = "";
+                    UI.checkForUpdatesCheck.innerHTML = "";
                     settings.checkForUpdates = false;
                 }
                 break;
-            case ui.displayGhostLinesCheck.id:
-                if (!ui.displayGhostLinesCheck.textContent) {
-                    ui.displayGhostLinesCheck.innerHTML = "check";
+            case UI.displayGhostLinesCheck.id:
+                if (!UI.displayGhostLinesCheck.textContent) {
+                    UI.displayGhostLinesCheck.innerHTML = "check";
                     settings.displayGhostLines = true;
                 } else {
-                    ui.displayGhostLinesCheck.innerHTML = "";
+                    UI.displayGhostLinesCheck.innerHTML = "";
                     settings.displayGhostLines = false;
                 }
                 break;
-            case ui.backupCheck.id:
-                if (!ui.backupCheck.textContent) {
-                    ui.backupSettings.classList.replace("hidden", "flex");
+            case UI.backupCheck.id:
+                if (!UI.backupCheck.textContent) {
+                    UI.backupSettings.classList.replace("hidden", "flex");
 
                     requestAnimationFrame(() =>
-                        ui.backupSettings.classList.replace(
+                        UI.backupSettings.classList.replace(
                             "-translate-y-full",
                             "translate-y-0",
                         ),
                     );
 
-                    ui.backupCheck.innerHTML = "check";
+                    UI.backupCheck.innerHTML = "check";
                     settings.backup.enabled = true;
                 } else {
-                    ui.backupSettings.classList.replace(
+                    UI.backupSettings.classList.replace(
                         "translate-y-0",
                         "-translate-y-full",
                     );
 
-                    ui.backupSettings.addEventListener(
+                    UI.backupSettings.addEventListener(
                         "transitionend",
                         () =>
-                            ui.backupSettings.classList.replace(
+                            UI.backupSettings.classList.replace(
                                 "flex",
                                 "hidden",
                             ),
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         },
                     );
 
-                    ui.backupCheck.innerHTML = "";
+                    UI.backupCheck.innerHTML = "";
                     settings.backup.enabled = false;
                 }
                 break;
@@ -136,31 +136,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case ui.backupMaxInput.id: {
-                ui.backupMaxInput.value = ui.backupMaxInput.value.replaceAll(
+            case UI.backupMaxInput.id: {
+                UI.backupMaxInput.value = UI.backupMaxInput.value.replaceAll(
                     /\D/g,
                     "",
                 );
 
                 const newBackupMax = Math.clamp(
-                    Number.parseInt(ui.backupMaxInput.value),
+                    Number.parseInt(UI.backupMaxInput.value),
                     1,
                     MAX_BACKUPS,
                 );
-                ui.backupMaxInput.value = newBackupMax.toString();
+                UI.backupMaxInput.value = newBackupMax.toString();
                 settings.backup.max = newBackupMax;
                 break;
             }
-            case ui.backupPeriodInput.id: {
-                ui.backupPeriodInput.value =
-                    ui.backupPeriodInput.value.replaceAll(/\D/g, "");
+            case UI.backupPeriodInput.id: {
+                UI.backupPeriodInput.value =
+                    UI.backupPeriodInput.value.replaceAll(/\D/g, "");
 
                 const newBackupPeriod = Math.clamp(
-                    Number.parseInt(ui.backupPeriodInput.value),
+                    Number.parseInt(UI.backupPeriodInput.value),
                     MIN_BACKUP_PERIOD,
                     MAX_BACKUP_PERIOD,
                 );
-                ui.backupPeriodInput.value = newBackupPeriod.toString();
+                UI.backupPeriodInput.value = newBackupPeriod.toString();
                 settings.backup.period = newBackupPeriod;
                 break;
             }
@@ -171,14 +171,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const target = event.target as HTMLElement;
 
         switch (target.id) {
-            case ui.fontSelect.id:
-                if (ui.fontSelect.value === "default") {
+            case UI.fontSelect.id:
+                if (UI.fontSelect.value === "default") {
                     settings.fontUrl = "";
                     document.body.style.fontFamily = "";
                 } else {
-                    for (const element of ui.fontSelect
+                    for (const element of UI.fontSelect
                         .children as HTMLCollectionOf<HTMLOptionElement>) {
-                        if (element.value === ui.fontSelect.value) {
+                        if (element.value === UI.fontSelect.value) {
                             settings.fontUrl = element.id.replaceAll("\\", "/");
 
                             const font = await new FontFace(
@@ -191,10 +191,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
                 break;
-            case ui.rowDeleteModeSelect.id:
-                for (const element of ui.rowDeleteModeSelect
+            case UI.rowDeleteModeSelect.id:
+                for (const element of UI.rowDeleteModeSelect
                     .children as HTMLCollectionOf<HTMLOptionElement>) {
-                    if (element.value === ui.rowDeleteModeSelect.value) {
+                    if (element.value === UI.rowDeleteModeSelect.value) {
                         settings.rowDeleteMode = Number.parseInt(element.value);
                     }
                 }
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (settings.fontUrl) {
-        for (const element of ui.fontSelect
+        for (const element of UI.fontSelect
             .children as HTMLCollectionOf<HTMLOptionElement>) {
             if (
                 element.value.includes(
@@ -212,12 +212,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ),
                 )
             ) {
-                ui.fontSelect.value = element.value;
+                UI.fontSelect.value = element.value;
             }
         }
     }
 
-    await appWindow.onCloseRequested(async () => {
+    await APP_WINDOW.onCloseRequested(async () => {
         await emit("get-settings", settings);
     });
 });

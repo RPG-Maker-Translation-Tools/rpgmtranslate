@@ -11,7 +11,7 @@ import {
     TRANSLATION_DIRECTORY,
 } from "../utilities/constants";
 import { join } from "../utilities/functions";
-import { invokeAddToScope } from "../utilities/invokes";
+import { expandScope } from "../utilities/invokes";
 import { EngineType, Language, RowDeleteMode } from "./enums";
 
 interface SettingsOptions {
@@ -23,7 +23,7 @@ interface SettingsOptions {
     projectPath?: string;
     programDataPath?: string;
     tempMapsPath?: string;
-    originalPath?: string;
+    sourcePath?: string;
     translationPath?: string;
     logPath?: string;
     projectSettingsPath?: string;
@@ -36,25 +36,30 @@ interface SettingsOptions {
 }
 
 export class Settings {
-    language = Language.English;
-    backup = { enabled: true, period: MIN_BACKUP_PERIOD, max: MAX_BACKUPS };
-    theme = "cool-zinc";
-    fontUrl = "";
-    firstLaunch = true;
-    #projectPath = "";
-    programDataPath = "";
-    tempMapsPath = "";
-    originalPath = "";
-    translationPath = "";
-    logPath = "";
-    projectSettingsPath = "";
-    backupPath = "";
-    engineType = EngineType.New;
-    rowDeleteMode = RowDeleteMode.Disabled;
-    displayGhostLines = false;
-    checkForUpdates = true;
-    nextBackupNumber = 0;
-    zoom = 1;
+    public language = Language.English;
+    public backup = {
+        enabled: true,
+        period: MIN_BACKUP_PERIOD,
+        max: MAX_BACKUPS,
+    };
+    public theme = "cool-zinc";
+    public fontUrl = "";
+    public firstLaunch = true;
+    public projectPath = "";
+    public programDataPath = "";
+    public tempMapsPath = "";
+    public sourcePath = "";
+    public translationPath = "";
+    public logPath = "";
+    public projectSettingsPath = "";
+    public backupPath = "";
+    public engineType = EngineType.New;
+    public rowDeleteMode = RowDeleteMode.Disabled;
+    public displayGhostLines = false;
+    public checkForUpdates = true;
+    public nextBackupNumber = 0;
+    public zoom = 1;
+    public outputPath = "";
 
     public constructor(options: SettingsOptions = {}) {
         this.language = options.language ?? this.language;
@@ -62,10 +67,10 @@ export class Settings {
         this.theme = options.theme ?? this.theme;
         this.fontUrl = options.fontUrl ?? this.fontUrl;
         this.firstLaunch = options.firstLaunch ?? this.firstLaunch;
-        this.#projectPath = options.projectPath ?? this.#projectPath;
+        this.projectPath = options.projectPath ?? this.projectPath;
         this.programDataPath = options.programDataPath ?? this.programDataPath;
         this.tempMapsPath = options.tempMapsPath ?? this.tempMapsPath;
-        this.originalPath = options.originalPath ?? this.originalPath;
+        this.sourcePath = options.sourcePath ?? this.sourcePath;
         this.translationPath = options.translationPath ?? this.translationPath;
         this.logPath = options.logPath ?? this.logPath;
         this.projectSettingsPath =
@@ -101,25 +106,27 @@ export class Settings {
     }
 
     public reset() {
-        this.#projectPath = "";
+        this.projectPath = "";
         this.programDataPath = "";
         this.tempMapsPath = "";
-        this.originalPath = "";
+        this.sourcePath = "";
+        this.outputPath = "";
         this.translationPath = "";
         this.projectSettingsPath = "";
         this.logPath = "";
         this.backupPath = "";
     }
 
-    public get projectPath() {
-        return this.#projectPath;
-    }
-
-    public async setProjectPath(projectPath: string) {
-        this.#projectPath = projectPath;
-        this.programDataPath = join(this.#projectPath, PROGRAM_DATA_DIRECTORY);
+    public async setProjectPath(projectPath: string, sourceDirectory: string) {
+        this.projectPath = projectPath;
+        this.programDataPath = join(this.projectPath, PROGRAM_DATA_DIRECTORY);
         this.tempMapsPath = join(this.programDataPath, TEMP_MAPS_DIRECTORY);
-        this.originalPath = join(this.#projectPath, "");
+        this.sourcePath = join(this.projectPath, sourceDirectory);
+        this.outputPath = join(
+            this.projectPath,
+            PROGRAM_DATA_DIRECTORY,
+            "output",
+        );
         this.translationPath = join(
             this.programDataPath,
             TRANSLATION_DIRECTORY,
@@ -131,7 +138,7 @@ export class Settings {
         this.logPath = join(this.programDataPath, LOG_FILE);
         this.backupPath = join(this.programDataPath, BACKUP_DIRECTORY);
 
-        await invokeAddToScope({ path: this.programDataPath });
+        await expandScope(this.programDataPath);
         await mkdir(this.programDataPath, { recursive: true });
         await mkdir(this.tempMapsPath, { recursive: true });
         await mkdir(this.backupPath, { recursive: true });

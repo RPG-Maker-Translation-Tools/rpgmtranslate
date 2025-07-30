@@ -3,11 +3,10 @@ import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import {
     COMMENT_PREFIX,
     COMMENT_SUFFIX_LENGTH,
-    LINES_SEPARATOR,
     MAP_DISPLAY_NAME_COMMENT_PREFIX,
     MAP_DISPLAY_NAME_COMMENT_PREFIX_LENGTH,
-    NEW_LINE,
     SECOND_MS,
+    SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
     TXT_EXTENSION,
@@ -27,7 +26,7 @@ export class BatchWindow {
     #batchWindowFooter = this.#batchWindow.children[2];
     #checkedFiles: HTMLElement[] = [];
 
-    constructor(
+    public constructor(
         private readonly settings: Settings,
         private readonly currentTab: CurrentTab,
         private readonly ui: MainWindowUI,
@@ -57,6 +56,7 @@ export class BatchWindow {
                         element.firstElementChild!.textContent = "check";
                     }
                     break;
+                // @ts-expect-error Fallthrough because of shared behavior
                 case "apply-button": {
                     const wrapLength = Number.parseInt(
                         (
@@ -79,7 +79,7 @@ export class BatchWindow {
 
                         await sleep(SECOND_MS);
 
-                        await this.processExternalFile(
+                        await this.#processExternalFile(
                             filename,
                             Number.parseInt(element.id),
                             wrapLength,
@@ -141,46 +141,45 @@ export class BatchWindow {
         this.#batchWindow.classList.replace("hidden", "flex");
     }
 
-    public async processExternalFile(
+    async #processExternalFile(
         filename: string,
         index: number,
         wrapLength?: number,
     ) {
         const contentPath = join(
             this.settings.programDataPath,
-            filename.startsWith("maps")
+            filename.startsWith("map")
                 ? TEMP_MAPS_DIRECTORY
                 : TRANSLATION_DIRECTORY,
             `${filename}${TXT_EXTENSION}`,
         );
 
         const newLines = await Promise.all(
-            (await readTextFile(contentPath)).split("\n").map(async (line) => {
-                const [originalText, translationText] =
-                    line.split(LINES_SEPARATOR);
-                if (!originalText.trim()) {
+            (await readTextFile(contentPath)).lines().map(async (line) => {
+                const [source, translation] = line.split(SEPARATOR);
+                if (!source.trim()) {
                     return;
                 }
 
-                const translationTrimmed = translationText.trim();
+                const translationTrimmed = translation.trim();
                 const translationExists = Boolean(translationTrimmed);
-                const isComment = originalText.startsWith(COMMENT_PREFIX);
-                const isMapDisplayNameComment = originalText.startsWith(
+                const isComment = source.startsWith(COMMENT_PREFIX);
+                const isMapDisplayNameComment = source.startsWith(
                     MAP_DISPLAY_NAME_COMMENT_PREFIX,
                 );
 
                 switch (this.#batchWindowAction) {
                     case BatchAction.Trim:
                         return translationExists
-                            ? `${originalText}${LINES_SEPARATOR}${translationTrimmed}`
+                            ? `${source}${SEPARATOR}${translationTrimmed}`
                             : line;
                     case BatchAction.Translate:
                         if (
                             (isMapDisplayNameComment || !isComment) &&
                             !translationExists
                         ) {
-                            return await this.translateLine(
-                                originalText,
+                            return await this.#translateLine(
+                                source,
                                 isMapDisplayNameComment,
                             );
                         }
@@ -188,22 +187,20 @@ export class BatchWindow {
                         return line;
                     case BatchAction.Wrap:
                         if (!isComment && translationExists && wrapLength) {
-                            const wrapped = this.wrapText(
-                                translationText.replaceAll(NEW_LINE, "\n"),
+                            const wrapped = this.#wrapText(
+                                translation.denormalize(),
                                 wrapLength,
                             );
-                            return `${originalText}${LINES_SEPARATOR}${wrapped.replaceAll("\n", NEW_LINE)}`;
+                            return `${source}${SEPARATOR}${wrapped.nnormalize()}`;
                         }
 
                         return line;
-                    default:
-                        break;
                 }
             }),
         );
 
         if (this.#batchWindowAction === BatchAction.Translate) {
-            await this.updateTranslationProgress(index, newLines.length);
+            await this.#updateTranslationProgress(index, newLines.length);
         }
 
         await writeTextFile(contentPath, newLines.join("\n"));
@@ -214,8 +211,8 @@ export class BatchWindow {
         await sleep(SECOND_MS / 2);
     }
 
-    private wrapText(text: string, length: number): string {
-        const lines = text.split("\n");
+    #wrapText(text: string, length: number): string {
+        const lines = text.lines();
         const remainder: string[] = [];
         const wrappedLines: string[] = [];
 
@@ -246,10 +243,7 @@ export class BatchWindow {
         return wrappedLines.join("\n");
     }
 
-    private async translateLine(
-        text: string,
-        isMapComment: boolean,
-    ): Promise<string> {
+    async #translateLine(text: string, isMapComment: boolean): Promise<string> {
         const textToTranslate = isMapComment
             ? text.slice(
                   MAP_DISPLAY_NAME_COMMENT_PREFIX_LENGTH,
@@ -257,17 +251,17 @@ export class BatchWindow {
               )
             : text;
 
-        const translated = await invokeTranslateText({
+        const translation = await invokeTranslateText({
             text: textToTranslate,
             from: this.ui.fromLanguageInput.value.trim(),
             to: this.ui.toLanguageInput.value.trim(),
-            replace: true,
+            normalize: true,
         });
 
-        return `${text}${LINES_SEPARATOR}${translated}`;
+        return `${text}${SEPARATOR}${translation}`;
     }
 
-    private async updateTranslationProgress(index: number, lineCount: number) {
+    async #updateTranslationProgress(index: number, lineCount: number) {
         await emit("update-progress", [index, lineCount]);
     }
 

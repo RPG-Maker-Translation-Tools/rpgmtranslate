@@ -1,186 +1,240 @@
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import {
-    LINES_SEPARATOR,
-    NEW_LINE,
+    SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
-    TXT_EXTENSION_LENGTH,
+    TXT_EXTENSION,
 } from "../utilities/constants";
 import { createRegExp, join } from "../utilities/functions";
-import { ReplaceMode, SearchMode } from "./enums";
+import { SearchAction, SearchMode } from "./enums";
 import { Searcher } from "./searcher";
 import { Settings } from "./settings";
 
-export class Replacer {
-    replacedText = false;
+// TODO: Increment translation counter on puts, or decrement on putting empty
 
-    constructor(
+export class Replacer {
+    public constructor(
         private readonly settings: Settings,
-        private readonly replacementLog: Record<
-            string,
-            { old: string; new: string }
-        >,
+        private readonly replacementLog: ReplacementLog,
         private readonly searchFlags: SearchFlagsObject,
         private readonly currentTab: CurrentTab,
         private readonly searcher: Searcher,
     ) {}
 
-    public async replaceText(
-        text: string,
-        replacer: string,
+    #addLog(filename: string, source: string, old: string, new_: string) {
+        if (!(filename in this.replacementLog)) {
+            this.replacementLog[filename] = {};
+        }
+
+        this.replacementLog[filename][source] = [old, new_];
+    }
+
+    public async replaceSingle(
+        searchText: string,
+        replacerText: string,
+        filename: string,
+        rowNumber: number,
+        searchAction: SearchAction,
+    ) {
+        const regexp = await createRegExp(
+            searchText,
+            this.searchFlags,
+            searchAction,
+        );
+
+        if (!regexp) {
+            return;
+        }
+
+        let replacedText: string;
+
+        if (filename === this.currentTab.name) {
+            replacedText = this.replaceCurrentTab(
+                regexp,
+                replacerText,
+                filename,
+                rowNumber,
+                searchAction,
+                true,
+            );
+        } else {
+            const filePath = join(
+                this.settings.programDataPath,
+                filename.startsWith("map")
+                    ? TEMP_MAPS_DIRECTORY
+                    : TRANSLATION_DIRECTORY,
+                `${filename}${TXT_EXTENSION}`,
+            );
+
+            const contentLines = (await readTextFile(filePath)).lines();
+
+            replacedText = this.replaceExternalFile(
+                regexp,
+                replacerText,
+                contentLines,
+                filename,
+                rowNumber,
+                searchAction,
+                true,
+            );
+
+            await writeTextFile(filePath, contentLines.join("\n"));
+        }
+
+        return replacedText;
+    }
+
+    public async replaceAll(
+        searchText: string,
+        replacerText: string,
         searchMode: SearchMode,
-        replaceMode: ReplaceMode,
+        searchAction: SearchAction,
     ): Promise<string | undefined> {
         const [results] = await this.searcher.search(
-            text,
+            searchText,
             searchMode,
-            replaceMode,
+            searchAction,
         );
 
         if (!results.size) {
             return;
         }
 
-        const regexp: RegExp | null = await createRegExp(
-            text,
+        const regexp = await createRegExp(
+            searchText,
             this.searchFlags,
+            searchAction,
         );
+
         if (!regexp) {
             return;
         }
 
-        for (const [file, rowNumberArray] of results.entries()) {
-            if (this.currentTab.name?.startsWith(file)) {
-                this.replaceInCurrentTab(
-                    rowNumberArray,
-                    regexp,
-                    replacer,
-                    replaceMode,
-                );
+        for (const [filename, rowNumbers] of results.entries()) {
+            if (this.currentTab.name?.startsWith(filename)) {
+                for (const rowNumber of rowNumbers) {
+                    this.replaceCurrentTab(
+                        regexp,
+                        replacerText,
+                        filename,
+                        rowNumber - 1,
+                        searchAction,
+                        false,
+                    );
+                }
             } else {
-                await this.replaceInExternalFile(
-                    file,
-                    rowNumberArray,
-                    regexp,
-                    replacer,
-                    replaceMode,
+                const filePath = join(
+                    this.settings.programDataPath,
+                    filename.startsWith("map")
+                        ? TEMP_MAPS_DIRECTORY
+                        : TRANSLATION_DIRECTORY,
+                    filename,
                 );
+
+                const fileContent = (await readTextFile(filePath)).lines();
+
+                for (const rowNumber of rowNumbers) {
+                    this.replaceExternalFile(
+                        regexp,
+                        replacerText,
+                        fileContent,
+                        filename,
+                        rowNumber,
+                        searchAction,
+                        false,
+                    );
+                }
+
+                await writeTextFile(filePath, fileContent.join("\n"));
             }
         }
-
-        this.replacedText = true;
     }
 
-    public async replaceTextHTML(
-        textarea: HTMLTextAreaElement,
+    private replaceCurrentTab(
+        regexp: RegExp,
         replacerText: string,
-        replaceMode: ReplaceMode,
-    ): Promise<string | undefined> {
-        const text = textarea.value;
+        filename: string,
+        rowNumber: number,
+        searchAction: SearchAction,
+        single: boolean,
+    ): string {
+        const textarea = this.currentTab.content.children[rowNumber]
+            .lastElementChild! as HTMLTextAreaElement;
 
-        const regexp: RegExp | null = await createRegExp(
-            text,
-            this.searchFlags,
-        );
+        let replacedText = "";
+        let newValue = "";
 
-        if (!regexp) {
-            return;
-        }
+        if (searchAction === SearchAction.Replace) {
+            newValue = textarea.value.replace(regexp, replacerText);
 
-        let newValue: string;
-
-        if (replaceMode === ReplaceMode.Replace) {
-            newValue = textarea.value
-                .split(regexp)
-                .flatMap((part, i, arr) => [
-                    part,
-                    i < arr.length - 1
-                        ? `<span class="bg-red-600">${replacerText}</span>`
-                        : "",
-                ])
-                .join("");
-
-            this.replacementLog[textarea.id] = {
-                old: textarea.value,
-                new: newValue,
-            };
-            textarea.value = newValue.replaceAll(/<span(.*?)>|<\/span>/g, "");
-            this.replacedText = true;
+            if (single) {
+                replacedText = textarea.value.replace(
+                    regexp,
+                    `<span class="bg-red-600">${replacerText}</span>`,
+                );
+            }
         } else {
-            textarea.value = replacerText;
-            newValue = `<span class="bg-red-600">${replacerText}</span>`;
+            newValue = replacerText;
+
+            if (single) {
+                replacedText = `<span class="bg-red-600">${replacerText}</span>`;
+            }
         }
 
-        return newValue;
+        if (newValue) {
+            this.#addLog(
+                filename,
+                this.currentTab.content.children[rowNumber].children[1]
+                    .textContent!,
+                textarea.value,
+                newValue,
+            );
+            textarea.value = newValue;
+        }
+
+        return replacedText;
     }
 
-    private replaceInCurrentTab(
-        rowNumberArray: number[],
+    private replaceExternalFile(
         regexp: RegExp,
         replacerText: string,
-        replaceMode: ReplaceMode,
-    ) {
-        for (const rowNumber of rowNumberArray) {
-            const textarea = this.currentTab.content.children[rowNumber - 1]
-                .lastElementChild! as HTMLTextAreaElement;
+        contentLines: string[],
+        filename: string,
+        rowNumber: number,
+        searchAction: SearchAction,
+        single: boolean,
+    ): string {
+        const [source_, translation_] =
+            contentLines[rowNumber].split(SEPARATOR);
+        const translation = translation_.denormalize();
 
-            if (replaceMode === ReplaceMode.Replace) {
-                const newValue = textarea.value.replace(regexp, replacerText);
+        let replacedText = "";
+        let newValue = "";
 
-                this.replacementLog[
-                    textarea.closest(`[id^="${this.currentTab.name}"]`)!.id
-                ] = {
-                    old: textarea.value,
-                    new: newValue,
-                };
+        if (searchAction === SearchAction.Replace) {
+            newValue = translation.replace(regexp, replacerText);
 
-                textarea.value = newValue;
-            } else {
-                textarea.value = replacerText;
+            if (single) {
+                replacedText = translation.replace(
+                    regexp,
+                    `<span class="bg-red-600">${replacerText}</span>`,
+                );
+            }
+        } else {
+            newValue = replacerText;
+
+            if (single) {
+                replacedText = `<span class="bg-red-600">${replacerText}</span>`;
             }
         }
-    }
 
-    private async replaceInExternalFile(
-        file: string,
-        rowNumberArray: number[],
-        regexp: RegExp,
-        replacer: string,
-        replaceMode: ReplaceMode,
-    ) {
-        const filePath = join(
-            this.settings.programDataPath,
-            file.startsWith("maps")
-                ? TEMP_MAPS_DIRECTORY
-                : TRANSLATION_DIRECTORY,
-            file,
-        );
+        if (newValue) {
+            contentLines[rowNumber] =
+                `${source_}${SEPARATOR}${newValue.nnormalize()}`;
 
-        const fileContent = (await readTextFile(filePath)).split("\n");
-
-        for (const rowNumber of rowNumberArray) {
-            const [original, translated] =
-                fileContent[rowNumber].split(LINES_SEPARATOR);
-            const translatedNormalized = translated.replaceAll(NEW_LINE, "\n");
-
-            const newValue =
-                replaceMode === ReplaceMode.Replace
-                    ? translatedNormalized.replace(regexp, replacer)
-                    : replacer;
-
-            if (replaceMode === ReplaceMode.Replace) {
-                this.replacementLog[
-                    `${file.slice(0, -TXT_EXTENSION_LENGTH)}-${rowNumber}`
-                ] = {
-                    old: translatedNormalized,
-                    new: newValue,
-                };
-            }
-
-            fileContent[rowNumber] =
-                `${original}${LINES_SEPARATOR}${newValue.replaceAll("\n", NEW_LINE)}`;
+            this.#addLog(filename, source_, translation, newValue);
         }
 
-        await writeTextFile(filePath, fileContent.join("\n"));
+        return replacedText;
     }
 }

@@ -1,7 +1,7 @@
 export const RESOURCE_DIRECTORY = 11;
 export const SETTINGS_PATH = "res/settings.json";
 export const NEW_LINE = "\\#";
-export const LINES_SEPARATOR = "<#>";
+export const SEPARATOR = "<#>";
 export const PROGRAM_DATA_DIRECTORY = ".rpgmtranslate";
 export const TRANSLATION_DIRECTORY = "translation";
 export const TEMP_MAPS_DIRECTORY = "temp-maps";
@@ -61,3 +61,5 @@ export const BOOKMARK_COMMENT_PREFIX = "<!-- Bookmark";
 export const MAP_COMMENT = "<!-- Map -->";
 
 export const RVPACKER_METADATA_FILE = ".rvpacker-metadata";
+
+export const CLIPBOARD_SEPARATOR = "<###>";

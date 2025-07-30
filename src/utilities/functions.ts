@@ -1,8 +1,13 @@
 import { emit, once } from "@tauri-apps/api/event";
 import { message } from "@tauri-apps/plugin-dialog";
-import { attachConsole } from "@tauri-apps/plugin-log";
+import { attachConsole, error } from "@tauri-apps/plugin-log";
 import XRegExp from "xregexp";
-import { EngineType, SearchFlags } from "../types/enums";
+import {
+    EngineType,
+    SearchAction,
+    SearchFlags,
+    WindowType,
+} from "../types/enums";
 import { ProjectSettings } from "../types/projectsettings";
 import { Settings } from "../types/settings";
 import { SECOND_MS } from "./constants";
@@ -17,11 +22,17 @@ export function applyTheme(
     sheet: CSSStyleSheet,
     theme: Theme | [string, string],
 ) {
-    const entries = Array.isArray(theme) ? [theme] : Object.entries(theme);
+    const entries: [string, string][] = Array.isArray(theme)
+        ? [theme]
+        : Object.entries(theme);
 
     for (const [id, value] of entries) {
         for (const rule of sheet.cssRules) {
             const selectorText = rule.selectorText;
+
+            if (!selectorText) {
+                continue;
+            }
 
             if (selectorText.startsWith(`.${id}`)) {
                 for (const ruleStyle of rule.style) {
@@ -146,26 +157,31 @@ export const tw = (
 
 export async function createRegExp(
     text: string,
-    searchFlags: SearchFlagsObject,
+    searchFlagsObject: SearchFlagsObject,
+    searchAction: SearchAction,
 ): Promise<RegExp | null> {
     text = text.trim();
     if (!text) {
         return null;
     }
 
-    const flags = searchFlags.flags;
+    const searchFlags = searchFlagsObject.flags;
 
-    let regexpString =
-        flags & SearchFlags.RegExp ? text : await invokeEscapeText({ text });
+    let expression =
+        searchFlags & SearchFlags.RegExp ? text : await invokeEscapeText(text);
 
-    if (flags & SearchFlags.WholeWord) {
-        regexpString = `(?<!\\p{L})${regexpString}(?!\\p{L})`;
+    if (searchFlags & SearchFlags.WholeWord) {
+        expression = `(?<!\\p{L})${expression}(?!\\p{L})`;
     }
 
-    const regexpAttribute = flags & SearchFlags.CaseSensitive ? "g" : "gi";
+    if (searchAction === SearchAction.Put) {
+        expression = `^${expression}$`;
+    }
+
+    const flags = searchFlags & SearchFlags.CaseSensitive ? "g" : "gi";
 
     try {
-        return XRegExp(regexpString, regexpAttribute);
+        return XRegExp(expression, flags);
     } catch (err) {
         await message(`Invalid regular expression. (${text}), ${err})`);
         return null;
@@ -192,14 +208,15 @@ export interface MainWindowUI {
     replaceInput: HTMLTextAreaElement;
     leftPanel: HTMLDivElement;
     searchPanel: HTMLDivElement;
-    searchPanelFound: HTMLDivElement;
-    searchPanelReplaced: HTMLDivElement;
+    searchPanelContent: HTMLDivElement;
     searchCurrentPage: HTMLSpanElement;
     searchTotalPages: HTMLSpanElement;
+    pageSelectContainer: HTMLDivElement;
+    logFileSelect: HTMLSelectElement;
     topPanel: HTMLDivElement;
     topPanelButtonsDiv: HTMLDivElement;
     saveButton: HTMLButtonElement;
-    compileButton: HTMLButtonElement;
+    writeButton: HTMLButtonElement;
     themeButton: HTMLButtonElement;
     themeMenu: HTMLDivElement;
     toolsButton: HTMLButtonElement;
@@ -239,43 +256,29 @@ export interface MainWindowUI {
     searchSwitch: HTMLDivElement;
     fromLanguageInput: HTMLInputElement;
     toLanguageInput: HTMLInputElement;
-    compileMenu: HTMLDivElement;
+    writeMenu: HTMLDivElement;
     outputPathButton: HTMLButtonElement;
     outputPathInput: HTMLInputElement;
-    cDisableMapsProcessingCheckbox: HTMLSpanElement;
-    cDisableOtherProcessingCheckbox: HTMLSpanElement;
-    cDisableSystemProcessingCheckbox: HTMLSpanElement;
-    cDisablePluginsProcessingCheckbox: HTMLSpanElement;
+    disableMapProcessingCheckbox: HTMLSpanElement;
+    disableOtherProcessingCheckbox: HTMLSpanElement;
+    disableSystemProcessingCheckbox: HTMLSpanElement;
+    disablePluginProcessingCheckbox: HTMLSpanElement;
     readMenu: HTMLDivElement;
-    readingModeSelect: HTMLSelectElement;
-    readingModeDescription: HTMLDivElement;
-    mapsProcessingModeSelect: HTMLSelectElement;
+    readModeSelect: HTMLSelectElement;
+    readModeDescription: HTMLDivElement;
+    duplicateModeSelect: HTMLSelectElement;
     romanizeCheckbox: HTMLSpanElement;
     disableCustomProcessingCheckbox: HTMLSpanElement;
-    rDisableMapsProcessingCheckbox: HTMLSpanElement;
-    rDisableOtherProcessingCheckbox: HTMLSpanElement;
-    rDisableSystemProcessingCheckbox: HTMLSpanElement;
-    rDisablePluginsProcessingCheckbox: HTMLSpanElement;
     ignoreCheckbox: HTMLSpanElement;
     trimCheckbox: HTMLSpanElement;
-    sortCheckbox: HTMLSpanElement;
     applyReadButton: HTMLDivElement;
     purgeMenu: HTMLDivElement;
-    statCheckbox: HTMLSpanElement;
-    leaveFilledCheckbox: HTMLSpanElement;
-    purgeEmptyCheckbox: HTMLSpanElement;
     createIgnoreCheckbox: HTMLSpanElement;
-    pDisableMapsProcessingCheckbox: HTMLSpanElement;
-    pDisableOtherProcessingCheckbox: HTMLSpanElement;
-    pDisableSystemProcessingCheckbox: HTMLSpanElement;
-    pDisablePluginsProcessingCheckbox: HTMLSpanElement;
     applyPurgeButton: HTMLDivElement;
 }
 
-export function setupUi(
-    window: "mainwindow" | "settingswindow",
-): MainWindowUI | SettingsWindowUI {
-    if (window === "mainwindow") {
+export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
+    if (window === WindowType.Main) {
         const topPanel = document.getElementById("top-panel") as HTMLDivElement;
         const topPanelButtonsDiv =
             topPanel.firstElementChild! as HTMLDivElement;
@@ -284,12 +287,16 @@ export function setupUi(
         ) as HTMLDivElement;
         const themeWindowBody = themeWindow.children[1];
 
-        const compileMenu = document.getElementById(
-            "compile-menu",
+        const writeMenu = document.getElementById(
+            "write-menu",
         ) as HTMLDivElement;
         const readMenu = document.getElementById("read-menu") as HTMLDivElement;
         const purgeMenu = document.getElementById(
             "purge-menu",
+        ) as HTMLDivElement;
+
+        const searchPanel = document.getElementById(
+            "search-panel",
         ) as HTMLDivElement;
 
         return {
@@ -303,25 +310,23 @@ export function setupUi(
                 "replace-input",
             ) as HTMLTextAreaElement,
             leftPanel: document.getElementById("left-panel") as HTMLDivElement,
-            searchPanel: document.getElementById(
-                "search-results",
-            ) as HTMLDivElement,
-            searchPanelFound: document.getElementById(
-                "search-content",
-            ) as HTMLDivElement,
-            searchPanelReplaced: document.getElementById(
-                "replace-content",
-            ) as HTMLDivElement,
-            searchCurrentPage: document.getElementById(
-                "search-current-page",
-            ) as HTMLSpanElement,
-            searchTotalPages: document.getElementById(
-                "search-total-pages",
-            ) as HTMLSpanElement,
+            searchPanel,
+            searchPanelContent: searchPanel.querySelector(
+                "#search-panel-content",
+            )!,
+            searchCurrentPage: searchPanel.querySelector(
+                "#search-current-page",
+            )!,
+            searchTotalPages: searchPanel.querySelector("search-total-pages")!,
+            searchSwitch: searchPanel.querySelector("#switch-content")!,
+            pageSelectContainer: searchPanel.querySelector(
+                "#page-select-container",
+            )!,
+            logFileSelect: searchPanel.querySelector("#log-file-select")!,
             topPanel,
             topPanelButtonsDiv,
             saveButton: topPanelButtonsDiv.querySelector("#save-button")!,
-            compileButton: topPanelButtonsDiv.querySelector("#compile-button")!,
+            writeButton: topPanelButtonsDiv.querySelector("#write-button")!,
             themeButton: topPanelButtonsDiv.querySelector("#theme-button")!,
             themeMenu: document.getElementById("theme-menu") as HTMLDivElement,
             toolsButton: topPanelButtonsDiv.querySelector("#tools-button")!,
@@ -402,75 +407,39 @@ export function setupUi(
             themeWindowBody,
             createThemeButton: themeWindow.querySelector("#create-theme")!,
             closeButton: themeWindow.querySelector("#close-button")!,
-            searchSwitch: document.getElementById(
-                "switch-search-content",
-            ) as HTMLDivElement,
             fromLanguageInput: topPanel.querySelector("#from-language-input")!,
             toLanguageInput: topPanel.querySelector("#to-language-input")!,
-            compileMenu,
-            outputPathButton: compileMenu.querySelector("#select-output-path")!,
-            outputPathInput: compileMenu.querySelector("#output-path-input")!,
-            cDisableMapsProcessingCheckbox: compileMenu.querySelector(
+            writeMenu,
+            outputPathButton: writeMenu.querySelector("#select-output-path")!,
+            outputPathInput: writeMenu.querySelector("#output-path-input")!,
+            disableMapProcessingCheckbox: writeMenu.querySelector(
                 "#disable-maps-processing-checkbox",
             )!,
-            cDisableOtherProcessingCheckbox: compileMenu.querySelector(
+            disableOtherProcessingCheckbox: writeMenu.querySelector(
                 "#disable-other-processing-checkbox",
             )!,
-            cDisableSystemProcessingCheckbox: compileMenu.querySelector(
+            disableSystemProcessingCheckbox: writeMenu.querySelector(
                 "#disable-system-processing-checkbox",
             )!,
-            cDisablePluginsProcessingCheckbox: compileMenu.querySelector(
+            disablePluginProcessingCheckbox: writeMenu.querySelector(
                 "#disable-plugins-processing-checkbox",
             )!,
             readMenu,
-            readingModeSelect: readMenu.querySelector("#reading-mode-select")!,
-            readingModeDescription:
-                readMenu.querySelector("#mode-description")!,
-            mapsProcessingModeSelect: readMenu.querySelector(
-                "#maps-processing-mode-select",
+            readModeSelect: readMenu.querySelector("#read-mode-select")!,
+            readModeDescription: readMenu.querySelector("#mode-description")!,
+            duplicateModeSelect: readMenu.querySelector(
+                "#duplicate-mode-select",
             )!,
             romanizeCheckbox: readMenu.querySelector("#romanize-checkbox")!,
             disableCustomProcessingCheckbox: readMenu.querySelector(
                 "#custom-processing-checkbox",
             )!,
-            rDisableMapsProcessingCheckbox: readMenu.querySelector(
-                "#disable-maps-processing-checkbox",
-            )!,
-            rDisableOtherProcessingCheckbox: readMenu.querySelector(
-                "#disable-other-processing-checkbox",
-            )!,
-            rDisableSystemProcessingCheckbox: readMenu.querySelector(
-                "#disable-system-processing-checkbox",
-            )!,
-            rDisablePluginsProcessingCheckbox: readMenu.querySelector(
-                "#disable-plugins-processing-checkbox",
-            )!,
             ignoreCheckbox: readMenu.querySelector("#ignore-checkbox")!,
             trimCheckbox: readMenu.querySelector("#trim-checkbox")!,
-            sortCheckbox: readMenu.querySelector("#sort-checkbox")!,
             applyReadButton: readMenu.querySelector("#apply-read-button")!,
             purgeMenu,
-            statCheckbox: purgeMenu.querySelector("#stat-checkbox")!,
-            leaveFilledCheckbox: purgeMenu.querySelector(
-                "#leave-filled-checkbox",
-            )!,
-            purgeEmptyCheckbox: purgeMenu.querySelector(
-                "#purge-empty-checkbox",
-            )!,
             createIgnoreCheckbox: purgeMenu.querySelector(
                 "#create-ignore-checkbox",
-            )!,
-            pDisableMapsProcessingCheckbox: purgeMenu.querySelector(
-                "#disable-maps-processing-checkbox",
-            )!,
-            pDisableOtherProcessingCheckbox: purgeMenu.querySelector(
-                "#disable-other-processing-checkbox",
-            )!,
-            pDisableSystemProcessingCheckbox: purgeMenu.querySelector(
-                "#disable-system-processing-checkbox",
-            )!,
-            pDisablePluginsProcessingCheckbox: purgeMenu.querySelector(
-                "#disable-plugins-processing-checkbox",
             )!,
             applyPurgeButton: purgeMenu.querySelector("#apply-purge-button")!,
         };
@@ -511,4 +480,8 @@ export function setupUi(
             checkForUpdatesCheck,
         };
     }
+}
+
+export function logErrorIO(path: string, err: unknown) {
+    void error(`${path}: IO error occured: ${err}`);
 }

@@ -1,31 +1,29 @@
 import { exists } from "@tauri-apps/plugin-fs";
 import { join } from "../utilities/functions";
-import { EngineType, MapsProcessingMode } from "./enums";
+import { DuplicateMode, EngineType } from "./enums";
 
 export class ProjectSettings {
     public engineType = EngineType.New;
     public romanize = false;
-    public translationLanguages: { from: string; to: string } = {
+    public translationLanguages: TranslationLanguages = {
         from: "",
         to: "",
     };
-    public mapsProcessingMode = MapsProcessingMode.Default;
+    public duplicateMode = DuplicateMode.Allow;
     public disableCustomProcessing = false;
     public trim = false;
-    public originalDirectory = "Data";
+    public sourceDirectory = "Data";
 
-    constructor(options: ProjectSettingsOptions = {}) {
+    public constructor(options: ProjectSettingsOptions = {}) {
         this.engineType = options.engineType ?? this.engineType;
         this.romanize = options.romanize ?? this.romanize;
         this.translationLanguages =
             options.translationLanguages ?? this.translationLanguages;
-        this.mapsProcessingMode =
-            options.mapsProcessingMode ?? this.mapsProcessingMode;
+        this.duplicateMode = options.duplicateMode ?? this.duplicateMode;
         this.disableCustomProcessing =
             options.disableCustomProcessing ?? this.disableCustomProcessing;
         this.trim = options.trim ?? this.trim;
-        this.originalDirectory =
-            options.originalDirectory ?? this.originalDirectory;
+        this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
     }
 
     public async findEngineType(projectPath: string): Promise<boolean> {
@@ -39,7 +37,7 @@ export class ProjectSettings {
         let engineTypeFound = false;
 
         for (const [type, file] of systemFiles) {
-            if (await exists(join(projectPath, this.originalDirectory, file))) {
+            if (await exists(join(projectPath, this.sourceDirectory, file))) {
                 this.engineType = type;
                 engineTypeFound = true;
                 break;
@@ -49,17 +47,17 @@ export class ProjectSettings {
         return engineTypeFound;
     }
 
-    public async findOriginalDirectory(projectPath: string): Promise<boolean> {
-        let originalDirectoryFound = false;
+    public async findSourceDirectory(projectPath: string): Promise<boolean> {
+        let sourceDirectoryFound = false;
 
         for (const directory of ["Data", "data", "original"]) {
             if (await exists(join(projectPath, directory))) {
-                this.originalDirectory = directory;
-                originalDirectoryFound = true;
+                this.sourceDirectory = directory;
+                sourceDirectoryFound = true;
                 break;
             }
         }
 
-        return originalDirectoryFound;
+        return sourceDirectoryFound;
     }
 }
