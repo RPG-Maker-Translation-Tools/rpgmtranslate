@@ -1,7 +1,14 @@
 {
     "identifier": "settings",
     "permissions": [
-        { "allow": ["$RESOURCE/**"], "identifier": "fs:scope" },
+        {
+            "allow": [
+                "$RESOURCE/**",
+                "/usr/share/fonts/**/*",
+                "C:/Windows/Fonts/**/*"
+            ],
+            "identifier": "fs:scope"
+        },
         "core:default",
         "fs:default",
         "dialog:default",

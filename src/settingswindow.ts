@@ -1,3 +1,9 @@
+import { WindowType } from "./types/enums";
+import {
+    MAX_BACKUP_PERIOD,
+    MAX_BACKUPS,
+    MIN_BACKUP_PERIOD,
+} from "./utilities/constants";
 import "./utilities/extensions";
 import { loadWindow, setupUi as setupUI } from "./utilities/functions";
 import { expandScope, invokeWalkDir } from "./utilities/invokes";
@@ -6,12 +12,6 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
-import { WindowType } from "./types/enums";
-import {
-    MAX_BACKUP_PERIOD,
-    MAX_BACKUPS,
-    MIN_BACKUP_PERIOD,
-} from "./utilities/constants";
 const APP_WINDOW = getCurrentWebviewWindow();
 
 interface FontObject extends Record<string, string> {

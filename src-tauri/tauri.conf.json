@@ -55,7 +55,11 @@
     "app": {
         "security": {
             "assetProtocol": {
-                "scope": ["$RESOURCE/**"],
+                "scope": [
+                    "$RESOURCE/**",
+                    "/usr/share/fonts/**/*",
+                    "C:/Windows/Fonts/**/*"
+                ],
                 "enable": true
             },
             "csp": {
@@ -63,7 +67,7 @@
                 "connect-src": "ipc: http://ipc.localhost",
                 "img-src": "'self' asset: http://asset.localhost blob: data:",
                 "style-src": "'unsafe-inline' 'self'",
-                "font-src": "*"
+                "font-src": "asset: http://asset.localhost"
             }
         },
         "windows": [
