@@ -317,7 +317,7 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
             searchCurrentPage: searchPanel.querySelector(
                 "#search-current-page",
             )!,
-            searchTotalPages: searchPanel.querySelector("search-total-pages")!,
+            searchTotalPages: searchPanel.querySelector("#search-total-pages")!,
             searchSwitch: searchPanel.querySelector("#switch-content")!,
             pageSelectContainer: searchPanel.querySelector(
                 "#page-select-container",
