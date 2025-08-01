@@ -40,5 +40,6 @@ export default tseslint.config({
         "sonarjs/cognitive-complexity": ["error", 25],
         "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
         "@typescript-eslint/explicit-member-accessibility": "error",
+        "@typescript-eslint/strict-boolean-expressions": "error",
     },
 });

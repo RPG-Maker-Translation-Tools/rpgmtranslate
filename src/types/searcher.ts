@@ -190,9 +190,8 @@ export class Searcher {
             .filter(
                 (entry) =>
                     entry.name.endsWith(TXT_EXTENSION) &&
-                    !entry.name.startsWith(
-                        this.tabInfo.currentTab.name ?? "\0",
-                    ) &&
+                    entry.name.slice(0, -TXT_EXTENSION_LENGTH) !==
+                        this.tabInfo.currentTab.name &&
                     entry.name !== "maps.txt",
             );
 
@@ -245,7 +244,7 @@ export class Searcher {
                 const searchInTranslation =
                     this.#searchMode !== SearchMode.Source &&
                     this.#searchAction !== SearchAction.Put &&
-                    translation;
+                    !translation.empty();
 
                 if (!searchInSource && !searchInTranslation) {
                     continue;

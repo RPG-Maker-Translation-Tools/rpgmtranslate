@@ -78,3 +78,7 @@ String.prototype.nnormalize = function () {
 String.prototype.denormalize = function () {
     return this.replaceAll(NEW_LINE, "\n");
 };
+
+String.prototype.empty = function () {
+    return this.length === 0;
+};

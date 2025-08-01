@@ -35,7 +35,7 @@ export class Saver {
                 .children[2] as HTMLTextAreaElement;
 
             this.#outputArray.push(
-                sourceTextDiv.textContent!.nnormalize() +
+                sourceTextDiv.textContent.nnormalize() +
                     SEPARATOR +
                     translationTextArea.value.nnormalize(),
             );
@@ -55,7 +55,7 @@ export class Saver {
 
         const filePath = `${this.tabInfo.currentTab.name}${TXT_EXTENSION}`;
         const savePath = join(
-            this.tabInfo.currentTab.name!.startsWith("map")
+            this.tabInfo.currentTab.name.startsWith("map")
                 ? this.settings.tempMapsPath
                 : this.settings.translationPath,
             filePath,

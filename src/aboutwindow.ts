@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.addEventListener("click", async (event) => {
         const url = links.get(event.target as HTMLAnchorElement);
 
-        if (url) {
+        if (url !== undefined) {
             await openLink(url);
         }
     });

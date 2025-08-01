@@ -33,7 +33,7 @@ export class Replacer {
         filename: string,
         rowNumber: number,
         searchAction: SearchAction,
-    ) {
+    ): Promise<string> {
         const regexp = await createRegExp(
             searchText,
             this.searchFlags,
@@ -41,10 +41,10 @@ export class Replacer {
         );
 
         if (!regexp) {
-            return;
+            return "";
         }
 
-        let replacedText: string;
+        let replacedText = "";
 
         if (filename === this.tabInfo.currentTab.name) {
             replacedText = this.replaceCurrentTab(
@@ -87,7 +87,7 @@ export class Replacer {
         replacerText: string,
         searchMode: SearchMode,
         searchAction: SearchAction,
-    ): Promise<string | undefined> {
+    ) {
         const [results] = await this.searcher.search(
             searchText,
             searchMode,
@@ -109,7 +109,7 @@ export class Replacer {
         }
 
         for (const [filename, rowNumbers] of results.entries()) {
-            if (this.tabInfo.currentTab.name?.startsWith(filename)) {
+            if (this.tabInfo.currentTab.name.startsWith(filename)) {
                 for (const rowNumber of rowNumbers) {
                     this.replaceCurrentTab(
                         regexp,
@@ -183,7 +183,7 @@ export class Replacer {
             this.#addLog(
                 filename,
                 this.tabInfo.currentTab.content.children[rowNumber].children[1]
-                    .textContent!,
+                    .textContent,
                 textarea.value,
                 newValue,
             );

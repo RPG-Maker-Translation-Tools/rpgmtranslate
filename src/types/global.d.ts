@@ -11,9 +11,12 @@ interface String {
      * Denormalizes custom NEW_LINE `\#` line breaks back to default LINE FEED `\n`.
      */
     denormalize(): string;
+    empty(): boolean;
 }
 
-interface HTMLElement {
+interface Element {
+    /// Why isn't it like that in TypeScript by default?
+    textContent: string;
     toggleMultiple(...classes: string[]): void;
 }
 
@@ -87,8 +90,8 @@ interface SearchFlagsObject {
 }
 
 interface CurrentTab {
-    name: string | null;
-    index: number | null;
+    name: string;
+    index: number;
     content: HTMLDivElement;
 }
 

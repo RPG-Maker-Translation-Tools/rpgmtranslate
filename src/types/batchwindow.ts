@@ -66,12 +66,13 @@ export class BatchWindow {
                     );
 
                     for (const element of this.#batchWindowBody.children) {
-                        const checked = element.firstElementChild?.textContent;
-                        if (!checked) {
+                        const checked =
+                            element.firstElementChild?.textContent ?? "";
+                        if (checked.empty()) {
                             continue;
                         }
 
-                        const filename = element.children[1].textContent!;
+                        const filename = element.children[1].textContent;
 
                         if (filename === this.tabInfo.currentTab.name) {
                             await emit("change-tab", null);
@@ -144,7 +145,7 @@ export class BatchWindow {
     async #processExternalFile(
         filename: string,
         index: number,
-        wrapLength?: number,
+        wrapLength: number,
     ) {
         const contentPath = join(
             this.settings.programDataPath,
@@ -186,7 +187,12 @@ export class BatchWindow {
 
                         return line;
                     case BatchAction.Wrap:
-                        if (!isComment && translationExists && wrapLength) {
+                        if (
+                            !isComment &&
+                            translationExists &&
+                            Number.isFinite(wrapLength) &&
+                            wrapLength !== 0
+                        ) {
                             const wrapped = this.#wrapText(
                                 translation.denormalize(),
                                 wrapLength,

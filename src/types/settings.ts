@@ -86,7 +86,7 @@ export class Settings {
     public async setLanguageFromLocale() {
         const locale = await getLocale();
 
-        if (!locale) {
+        if (locale === null) {
             return;
         }
 

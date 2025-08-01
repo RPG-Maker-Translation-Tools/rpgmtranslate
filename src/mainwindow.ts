@@ -106,31 +106,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function changeProgress(direction: ProgressDirection) {
         if (direction === ProgressDirection.Increment) {
-            tabInfo.translated[tabInfo.currentTab.index!] += 1;
+            tabInfo.translated[tabInfo.currentTab.index] += 1;
         } else {
-            tabInfo.translated[tabInfo.currentTab.index!] -= 1;
+            tabInfo.translated[tabInfo.currentTab.index] -= 1;
         }
 
-        updateTabProgress(tabInfo.currentTab.index!);
+        updateTabProgress(tabInfo.currentTab.index);
         updateProgressMeter();
     }
 
     function getFileFlags(): FileFlags {
         let fileFlags = FileFlags.All;
 
-        if (UI.disableMapProcessingCheckbox.textContent) {
+        if (!UI.disableMapProcessingCheckbox.textContent.empty()) {
             fileFlags &= ~FileFlags.Map;
         }
 
-        if (UI.disableOtherProcessingCheckbox.textContent) {
+        if (!UI.disableOtherProcessingCheckbox.textContent.empty()) {
             fileFlags &= ~FileFlags.Other;
         }
 
-        if (UI.disableSystemProcessingCheckbox.textContent) {
+        if (!UI.disableSystemProcessingCheckbox.textContent.empty()) {
             fileFlags &= ~FileFlags.System;
         }
 
-        if (UI.disablePluginProcessingCheckbox.textContent) {
+        if (!UI.disablePluginProcessingCheckbox.textContent.empty()) {
             fileFlags &= ~FileFlags.Scripts;
         }
 
@@ -156,13 +156,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             ) {
                 event.preventDefault();
 
-                const original = Object.entries(CHARACTER_SUBSTITUTIONS).find(
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    ([_, subChar]) =>
-                        subChar === lastSubstitutionCharacter!.char,
-                )?.[0];
+                const original =
+                    Object.entries(CHARACTER_SUBSTITUTIONS).find(
+                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        ([_, subChar]) =>
+                            subChar === lastSubstitutionCharacter!.char,
+                    )?.[0] ?? "";
 
-                if (original) {
+                if (!original.empty()) {
                     const value = textarea.value;
                     textarea.value =
                         value.slice(0, selectionStart - 1) +
@@ -191,11 +192,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (key.length === 1) {
             lastCharacters += key;
 
-            const match = Object.keys(CHARACTER_SUBSTITUTIONS).find(
-                (sequence) => lastCharacters.endsWith(sequence),
-            );
+            const match =
+                Object.keys(CHARACTER_SUBSTITUTIONS).find((sequence) =>
+                    lastCharacters.endsWith(sequence),
+                ) ?? "";
 
-            if (match) {
+            if (!match.empty()) {
                 event.preventDefault();
 
                 const substitution = CHARACTER_SUBSTITUTIONS[match];
@@ -458,7 +460,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //         return;
     //     }
 
-    //     const rowContainerID = element.firstElementChild!.textContent!;
+    //     const rowContainerID = element.firstElementChild!.textContent;
     //     const [filename, row] = rowContainerID.split("-");
     //     const rowNumber = Number(row) - 1;
 
@@ -476,7 +478,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //         if (currentTab.name === filename) {
     //             const textarea = UI.tabContent.children[rowNumber]
     //                 .lastElementChild! as HTMLTextAreaElement;
-    //             textarea.value = element.children[1].textContent!;
+    //             textarea.value = element.children[1].textContent;
     //         } else {
     //             const filePath = join(
     //                 settings.programDataPath,
@@ -500,7 +502,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //             const fileLines = fileContent.lines();
     //             const requiredLineParts = fileLines[rowNumber].split(SEPARATOR);
     //             requiredLineParts[1] =
-    //                 element.children[1].textContent!.nnormalize();
+    //                 element.children[1].textContent.nnormalize();
 
     //             fileLines[rowNumber] = requiredLineParts.join(SEPARATOR);
 
@@ -511,7 +513,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //             );
     //         }
 
-    //         element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent!}</div>${localization.textReverted}<div>${element.children[1].textContent!}</div>`;
+    //         element.innerHTML = `<div class="textThird">${element.firstElementChild!.textContent}</div>${localization.textReverted}<div>${element.children[1].textContent}</div>`;
     //         element.setAttribute("reverted", "1");
     //         delete replacementLog[rowContainerID];
     //     }
@@ -548,7 +550,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (searchAction === SearchAction.Search) {
             if (ctrl) {
                 await writeToClipboard(
-                    resultElement.firstElementChild!.textContent!,
+                    resultElement.firstElementChild!.textContent,
                 );
             } else {
                 await changeTab(filename);
@@ -581,7 +583,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 searchAction,
             );
 
-            if (!replacedText) {
+            if (replacedText.empty()) {
                 return;
             }
 
@@ -597,7 +599,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function backup() {
-        if (!settings.backup.enabled || backupIsActive) {
+        if (
+            !settings.backup.enabled ||
+            (backupIsActive !== null && backupIsActive !== 0)
+        ) {
             return;
         }
 
@@ -637,11 +642,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     async function changeTab(filename: string | null, newTabIndex?: number) {
-        if (tabInfo.currentTab.name === filename || changeTimer) {
+        if (tabInfo.currentTab.name === filename || changeTimer !== -1) {
             return;
         }
 
-        if (!(filename ?? "" in tabInfo.tabs)) {
+        if (filename !== null && !(filename in tabInfo.tabs)) {
             return;
         }
 
@@ -650,8 +655,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (tabInfo.currentTab.name) {
             await saver.saveSingle();
 
-            const selectedTab =
-                UI.leftPanel.children[tabInfo.currentTab.index!];
+            const selectedTab = UI.leftPanel.children[tabInfo.currentTab.index];
 
             selectedTab.classList.replace(
                 "backgroundThird",
@@ -661,11 +665,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         UI.tabContent.innerHTML = "";
 
-        if (filename) {
+        if (filename === null) {
+            tabInfo.currentTab.name = "";
+            UI.currentTabDiv.innerHTML = "";
+        } else {
             UI.currentTabDiv.innerHTML = tabInfo.currentTab.name = filename;
 
             newTabIndex ??= tabInfo.tabs[filename];
-            tabInfo.currentTab.index = newTabIndex!;
+            tabInfo.currentTab.index = newTabIndex;
 
             const selectedTab = UI.leftPanel.children[tabInfo.currentTab.index];
             selectedTab.classList.replace(
@@ -674,13 +681,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             await createTabContent(filename);
-        } else {
-            tabInfo.currentTab.name = null;
-            UI.currentTabDiv.innerHTML = "";
         }
 
         changeTimer = setTimeout(() => {
-            changeTimer = null;
+            changeTimer = -1;
             // eslint-disable-next-line no-magic-numbers
         }, SECOND_MS / 10);
 
@@ -691,7 +695,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
         if (event.code === "Enter") {
             const targetRow = document.getElementById(
-                `${tabInfo.currentTab.name!}-${UI.goToRowInput.value}`,
+                `${tabInfo.currentTab.name}-${UI.goToRowInput.value}`,
             ) as HTMLDivElement | null;
 
             if (targetRow) {
@@ -761,7 +765,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case "KeyG":
                 event.preventDefault();
 
-                if (tabInfo.currentTab.name) {
+                if (!tabInfo.currentTab.name.empty()) {
                     if (UI.goToRowInput.classList.contains("hidden")) {
                         UI.goToRowInput.classList.remove("hidden");
                         UI.goToRowInput.focus();
@@ -846,6 +850,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function handleBodyKeypress(event: KeyboardEvent) {
         if (event.ctrlKey) {
+            // FIXME: fires only if currently on body, fix
             await handleCtrlKeypress(event);
         } else if (event.altKey) {
             switch (event.code) {
@@ -871,7 +876,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     toggleSearchPanel();
                     break;
                 case "ArrowDown":
-                    if (tabInfo.currentTab.index !== null) {
+                    if (tabInfo.currentTab.index !== -1) {
                         const newStateIndex =
                             (tabInfo.currentTab.index + 1) %
                             UI.leftPanel.children.length;
@@ -884,7 +889,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                     break;
                 case "ArrowUp":
-                    if (tabInfo.currentTab.index !== null) {
+                    if (tabInfo.currentTab.index !== -1) {
                         const newStateIndex =
                             (tabInfo.currentTab.index -
                                 1 +
@@ -940,7 +945,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     const sourceTextDiv = selectedTextArea.parentElement!
                         .children[1] as HTMLDivElement;
-                    let sourceText = sourceTextDiv.textContent!;
+                    let sourceText = sourceTextDiv.textContent;
 
                     if (
                         sourceText.startsWith(MAP_DISPLAY_NAME_COMMENT_PREFIX)
@@ -951,14 +956,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                         );
                     }
 
-                    const translation = await invokeTranslateText({
-                        text: sourceText,
-                        to: UI.toLanguageInput.value.trim(),
-                        from: UI.fromLanguageInput.value.trim(),
-                        normalize: false,
-                    });
+                    const translation =
+                        (await invokeTranslateText({
+                            text: sourceText,
+                            to: UI.toLanguageInput.value.trim(),
+                            from: UI.fromLanguageInput.value.trim(),
+                            normalize: false,
+                        })) ?? "";
 
-                    if (translation) {
+                    if (!translation.empty()) {
                         selectedTextArea.placeholder = translation;
                     }
                     break;
@@ -1504,7 +1510,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const checkboxLabel = document.createElement("span");
         checkboxLabel.className = tw`text-base`;
-        checkboxLabel.innerHTML = buttonElement.firstElementChild!.textContent!;
+        checkboxLabel.innerHTML = (
+            buttonElement.firstElementChild as HTMLElement
+        ).textContent;
 
         checkboxDiv.append(checkbox, checkboxLabel);
         batchWindow.addCheckbox(checkboxDiv);
@@ -1641,10 +1649,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             const metadataContent = await readTextFile(metadataPath).catch(
                 (err) => {
                     logErrorIO(metadataPath, err);
+                    return "";
                 },
             );
 
-            if (!metadataContent) {
+            if (metadataContent.empty()) {
                 return;
             }
 
@@ -1655,12 +1664,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 trim: boolean;
             };
 
-            Object.assign(projectSettings, {
-                duplicateMode: metadata.duplicateMode,
-                romanize: metadata.romanize,
-                disableCustomProcessing: metadata.disableCustomProcessing,
-                trim: metadata.trim,
-            });
+            Object.assign(projectSettings, metadata);
         }
     }
 
@@ -1733,9 +1737,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 join(settings.translationPath, translationFile.name),
             ).catch((err) => {
                 logErrorIO(settings.translationPath, err);
+                return "";
             });
 
-            if (!translationFileContent) {
+            if (translationFileContent.empty()) {
                 continue;
             }
 
@@ -1821,6 +1826,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ignore: false,
                     trim: false,
                 });
+
+                const metadata = {
+                    disableCustomProcessing: false,
+                    trim: false,
+                    duplicateMode: DuplicateMode.Allow,
+                    romanize: false,
+                };
+
+                Object.assign(projectSettings, metadata);
+
+                await writeTextFile(
+                    join(settings.translationPath, ".rvpacker-metadata"),
+                    JSON.stringify(metadata),
+                );
             }
         }
 
@@ -1942,7 +1961,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             bookmarks.splice(bookmarkIndex, 1);
 
             for (const bookmark of UI.bookmarksMenu.children) {
-                if (bookmark.textContent?.startsWith(rowContainerId)) {
+                if (bookmark.textContent.startsWith(rowContainerId)) {
                     bookmark.remove();
                 }
             }
@@ -1971,7 +1990,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const bookmarkElement = createRow(
                     `<!-- Bookmark: ${rowNumber} -->`,
                     [description],
-                    tabInfo.currentTab.name!,
+                    tabInfo.currentTab.name,
                     rowNumber,
                 );
 
@@ -2012,12 +2031,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     `[id^="${tabInfo.currentTab.name}"]`,
                 )!;
                 const position = Number(
-                    rowContainer.firstElementChild!.textContent!,
+                    rowContainer.firstElementChild!.textContent,
                 );
 
                 rowContainer.remove();
                 updateRowIds(position - 1);
-                tabInfo.total[tabInfo.currentTab.index!] -= 1;
+                tabInfo.total[tabInfo.currentTab.index] -= 1;
                 break;
             }
         }
@@ -2309,8 +2328,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const themeColors = Object.values(theme);
         let colorIndex = 1;
 
-        for (const div of UI.themeWindowBody
-            .children as HTMLCollectionOf<HTMLDivElement>) {
+        for (const div of UI.themeWindowBody.children) {
             for (const subdiv of div.children) {
                 (subdiv.firstElementChild as HTMLInputElement).value =
                     themeColors[colorIndex++];
@@ -2325,7 +2343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        const [filename, row] = target.textContent!.split("-");
+        const [filename, row] = target.textContent.split("-");
 
         await changeTab(filename);
         UI.tabContent.children[Number(row)].scrollIntoView({
@@ -2377,8 +2395,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
 
                 const newTheme = { name: themeName } as Theme;
-                for (const div of UI.themeWindowBody
-                    .children as HTMLCollectionOf<HTMLDivElement>) {
+                for (const div of UI.themeWindowBody.children) {
                     for (const subdiv of div.children) {
                         const input =
                             subdiv.firstElementChild as HTMLInputElement;
@@ -2514,7 +2531,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             }
             case "previous-page-button": {
-                const page = Number(UI.searchCurrentPage.textContent!);
+                const page = Number(UI.searchCurrentPage.textContent);
 
                 if (page > 0) {
                     await loadMatchObject(page - 1);
@@ -2522,9 +2539,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             }
             case "next-page-button": {
-                const page = Number(UI.searchCurrentPage.textContent!);
+                const page = Number(UI.searchCurrentPage.textContent);
 
-                if (page < Number(UI.searchTotalPages.textContent!)) {
+                if (page < Number(UI.searchTotalPages.textContent)) {
                     await loadMatchObject(page + 1);
                 }
                 break;
@@ -2590,23 +2607,66 @@ document.addEventListener("DOMContentLoaded", async () => {
         switch (target.id) {
             case UI.readModeSelect.id:
                 switch (UI.readModeSelect.value) {
-                    case "append":
+                    case "0":
                         UI.readModeDescription.innerHTML =
                             localization.appendModeDescription;
+                        UI.duplicateModeSelect.value =
+                            projectSettings.duplicateMode.toString();
+                        UI.trimCheckbox.innerHTML = projectSettings.trim
+                            ? "check"
+                            : "";
+                        UI.romanizeCheckbox.innerHTML = projectSettings.romanize
+                            ? "check"
+                            : "";
+                        UI.disableCustomProcessingCheckbox.innerHTML =
+                            projectSettings.disableCustomProcessing
+                                ? "check"
+                                : "";
+
+                        UI.duplicateModeSelect.disabled = true;
                         break;
-                    case "force":
+                    case "1":
                         UI.readModeDescription.innerHTML =
                             localization.forceModeDescription;
+
+                        UI.duplicateModeSelect.disabled = false;
+                        UI.duplicateModeSelect.value = "0";
+                        UI.trimCheckbox.innerHTML = "";
+                        UI.romanizeCheckbox.innerHTML = "";
+                        UI.disableCustomProcessingCheckbox.innerHTML = "";
                         break;
                 }
                 break;
             case UI.applyReadButton.id: {
-                await saver.saveAll();
-
-                UI.readButton.firstElementChild!.classList.add("animate-spin");
                 const readMode = Number(UI.readModeSelect.value) as ReadMode;
 
+                const duplicateMode = Number(UI.duplicateModeSelect.value);
+                const romanize = Boolean(UI.romanizeCheckbox.textContent);
+                const disableCustomProcessing = Boolean(
+                    UI.disableCustomProcessingCheckbox.textContent,
+                );
+                const trim = Boolean(UI.trimCheckbox.textContent);
+
+                if (readMode === ReadMode.Force) {
+                    const metadata = {
+                        disableCustomProcessing,
+                        trim,
+                        duplicateMode,
+                        romanize,
+                    };
+
+                    Object.assign(projectSettings, metadata);
+
+                    await writeTextFile(
+                        join(settings.translationPath, ".rvpacker-metadata"),
+                        JSON.stringify(metadata),
+                    );
+                } else {
+                    await saver.saveAll();
+                }
+
                 const fileFlags = getFileFlags();
+                UI.readButton.firstElementChild!.classList.add("animate-spin");
 
                 await invokeRead({
                     projectPath: settings.projectPath,
@@ -2614,27 +2674,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     translationPath: settings.translationPath,
                     engineType: settings.engineType,
                     readMode,
-                    duplicateMode:
-                        readMode === ReadMode.Append
-                            ? projectSettings.duplicateMode
-                            : Number(UI.duplicateModeSelect.value),
-                    romanize:
-                        readMode === ReadMode.Append
-                            ? projectSettings.romanize
-                            : Boolean(UI.romanizeCheckbox.textContent),
-                    disableCustomProcessing:
-                        readMode === ReadMode.Append
-                            ? projectSettings.disableCustomProcessing
-                            : Boolean(
-                                  UI.disableCustomProcessingCheckbox
-                                      .textContent,
-                              ),
+                    duplicateMode,
+                    romanize,
+                    disableCustomProcessing,
                     disableProcessing: fileFlags,
                     ignore: Boolean(UI.ignoreCheckbox.textContent),
-                    trim:
-                        readMode === ReadMode.Append
-                            ? projectSettings.trim
-                            : Boolean(UI.trimCheckbox.textContent),
+                    trim,
                 });
 
                 if (await beforeClose(true)) {
@@ -2708,11 +2753,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             const rowContainer = target.parentElement;
 
             if (rowContainer && /\d$/.test(rowContainer.id)) {
-                await writeToClipboard(target.textContent!);
+                await writeToClipboard(target.textContent);
             }
         }
 
         if (target.id.includes("checkbox")) {
+            if (UI.readModeSelect.value === "0") {
+                switch (target.id) {
+                    case UI.trimCheckbox.id:
+                    case UI.romanizeCheckbox.id:
+                    case UI.disableCustomProcessingCheckbox.id:
+                        return;
+                }
+            }
+
             target.innerHTML = !target.textContent ? "check" : "";
         }
 
@@ -2794,12 +2848,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 break;
             }
             case "open-directory-button": {
-                const directory = await openPath({
-                    directory: true,
-                    multiple: false,
-                });
+                const directory =
+                    (await openPath({
+                        directory: true,
+                        multiple: false,
+                    })) ?? "";
 
-                if (!directory) {
+                if (directory.empty()) {
                     return;
                 }
 
@@ -2966,8 +3021,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         total: [],
         translated: [],
         currentTab: {
-            name: null,
-            index: null,
+            name: "",
+            index: -1,
             content: UI.tabContent,
         },
     };
@@ -2983,7 +3038,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let currentFocusedElement: [string, string] | [] = [];
 
-    let changeTimer: null | number = null;
+    let changeTimer = -1;
     let shift = false;
     let ctrl = false;
 

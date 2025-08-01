@@ -87,7 +87,7 @@ export function animateProgressText(
     interval = SECOND_MS / 2,
 ) {
     // eslint-disable-next-line sonarjs/slow-regex
-    const baseText = progressText.textContent!.replace(/\.+$/, "");
+    const baseText = progressText.textContent.replace(/\.+$/, "");
     let dots = 0;
 
     function updateText() {
