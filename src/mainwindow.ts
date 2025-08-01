@@ -97,6 +97,22 @@ const APP_WINDOW = getCurrentWebviewWindow();
 // TODO: Reimplement logic for filling/interacting with log entries.
 
 document.addEventListener("DOMContentLoaded", async () => {
+    async function writeToClipboard(text: string) {
+        await writeText(text);
+        clipboardText = text;
+    }
+
+    function changeProgress(direction: ProgressDirection) {
+        if (direction === ProgressDirection.Increment) {
+            tabInfo.translated[tabInfo.currentTab.index!] += 1;
+        } else {
+            tabInfo.translated[tabInfo.currentTab.index!] -= 1;
+        }
+
+        updateTabProgress(tabInfo.currentTab.index!);
+        updateProgressMeter();
+    }
+
     function getFileFlags(): FileFlags {
         let fileFlags = FileFlags.All;
 
@@ -528,12 +544,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (searchAction === SearchAction.Search) {
-            await changeTab(filename);
+            if (ctrl) {
+                await writeToClipboard(
+                    resultElement.firstElementChild!.textContent!,
+                );
+            } else {
+                await changeTab(filename);
 
-            UI.tabContent.children[rowNumber].scrollIntoView({
-                block: "center",
-                inline: "center",
-            });
+                UI.tabContent.children[rowNumber].scrollIntoView({
+                    block: "center",
+                    inline: "center",
+                });
+            }
         } else {
             if (searchAction === SearchAction.Replace) {
                 if (!isTranslation) {
@@ -1017,7 +1039,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (event.key === "Shift" && !event.repeat) {
-            shiftPressed = true;
+            shift = true;
+        }
+
+        if (event.key === "Control" && !event.repeat) {
+            ctrl = true;
         }
     }
 
@@ -2066,7 +2092,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     return;
                 }
 
-                if (!shiftPressed) {
+                if (!shift) {
                     multipleTextAreasSelected = false;
 
                     for (const rowNumber of selectedTextareas.keys()) {
@@ -2131,7 +2157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.activeElement?.tagName === "TEXTAREA"
         ) {
             event.preventDefault();
-            await writeText(
+            await writeToClipboard(
                 Array.from(selectedTextareas.values()).join(
                     CLIPBOARD_SEPARATOR,
                 ),
@@ -2146,7 +2172,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             event.preventDefault();
 
-            await writeText(
+            await writeToClipboard(
                 Array.from(selectedTextareas.values()).join(
                     CLIPBOARD_SEPARATOR,
                 ),
@@ -2721,7 +2747,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const rowContainer = target.parentElement;
 
             if (rowContainer && /\d$/.test(rowContainer.id)) {
-                await writeText(target.textContent!);
+                await writeToClipboard(target.textContent!);
             }
         }
 
@@ -2991,7 +3017,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentFocusedElement: [string, string] | [] = [];
 
     let changeTimer: null | number = null;
-    let shiftPressed = false;
+    let shift = false;
+    let ctrl = false;
 
     let multipleTextAreasSelected = false;
 
@@ -3051,7 +3078,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.addEventListener("keydown", handleKeypress);
     document.body.addEventListener("keyup", (event) => {
         if (event.key === "Shift") {
-            shiftPressed = false;
+            shift = false;
+        }
+
+        if (event.key === "Control") {
+            ctrl = false;
         }
     });
 
