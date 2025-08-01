@@ -57,7 +57,6 @@ export class Settings {
     public rowDeleteMode = RowDeleteMode.Disabled;
     public displayGhostLines = false;
     public checkForUpdates = true;
-    public nextBackupNumber = 0;
     public zoom = 1;
     public outputPath = "";
 

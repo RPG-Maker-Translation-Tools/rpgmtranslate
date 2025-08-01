@@ -1859,26 +1859,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             UI.themeMenu.insertBefore(themeButton, UI.createThemeMenuButton);
         }
 
-        const backupFiles = await readDir(settings.backupPath).catch((err) => {
-            logErrorIO(settings.backupPath, err);
-        });
-
-        if (!backupFiles) {
-            return;
-        }
-
-        let lastBackupNumber = Math.max(
-            ...backupFiles.map((entry) =>
-                Number.parseInt(entry.name.slice(0, -2)),
-            ),
-        );
-
-        if (!Number.isFinite(lastBackupNumber)) {
-            lastBackupNumber = 0;
-        }
-
-        settings.nextBackupNumber = lastBackupNumber + 1;
-
         backup();
 
         // Upon the first launch, show docs

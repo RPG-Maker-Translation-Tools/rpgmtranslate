@@ -92,12 +92,9 @@ export class Saver {
             date.getSeconds().toString().padStart(2, "0"),
         ].join("-");
 
-        this.settings.nextBackupNumber =
-            (this.settings.nextBackupNumber % this.settings.backup.max) + 1;
-
         const backupDirectoryPath = join(
             this.settings.backupPath,
-            `${formattedDate}_${this.settings.nextBackupNumber.toString().padStart(2, "0")}`,
+            formattedDate,
         );
 
         await mkdir(backupDirectoryPath, { recursive: true });
