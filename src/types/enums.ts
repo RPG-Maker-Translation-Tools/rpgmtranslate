@@ -82,3 +82,14 @@ export const enum FileFlags {
     Scripts = 8,
     All = 15,
 }
+
+export const enum TextAreaStatus {
+    None,
+    Translated,
+    Untranslated,
+}
+
+export const enum ProgressDirection {
+    Increment,
+    Decrement,
+}

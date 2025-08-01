@@ -28,7 +28,7 @@ export class BatchWindow {
 
     public constructor(
         private readonly settings: Settings,
-        private readonly currentTab: CurrentTab,
+        private readonly tabInfo: TabInfo,
         private readonly ui: MainWindowUI,
     ) {
         this.#batchWindow.addEventListener("mouseup", () => {
@@ -73,7 +73,7 @@ export class BatchWindow {
 
                         const filename = element.children[1].textContent!;
 
-                        if (filename === this.currentTab.name) {
+                        if (filename === this.tabInfo.currentTab.name) {
                             await emit("change-tab", null);
                         }
 
@@ -200,7 +200,8 @@ export class BatchWindow {
         );
 
         if (this.#batchWindowAction === BatchAction.Translate) {
-            await this.#updateTranslationProgress(index, newLines.length);
+            this.tabInfo.translated[index] = this.tabInfo.total[index];
+            await emit("update-progress", index);
         }
 
         await writeTextFile(contentPath, newLines.join("\n"));
@@ -259,10 +260,6 @@ export class BatchWindow {
         });
 
         return `${text}${SEPARATOR}${translation}`;
-    }
-
-    async #updateTranslationProgress(index: number, lineCount: number) {
-        await emit("update-progress", [index, lineCount]);
     }
 
     public hide() {

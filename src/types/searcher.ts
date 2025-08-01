@@ -4,7 +4,9 @@ import {
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 import {
+    MAP_COMMENT,
     MAX_FILE_MATCHES,
     SEPARATOR,
     TEMP_MAPS_DIRECTORY,
@@ -27,7 +29,7 @@ export class Searcher {
     public constructor(
         private readonly settings: Settings,
         private readonly searchFlags: SearchFlagsObject,
-        private readonly currentTab: CurrentTab,
+        private readonly tabInfo: TabInfo,
     ) {}
 
     #createMatchesContainer(elementText: string, matches: string[]): string {
@@ -128,7 +130,7 @@ export class Searcher {
     }
 
     async #searchCurrentTab() {
-        for (const rowContainer of this.currentTab.content.children) {
+        for (const rowContainer of this.tabInfo.currentTab.content.children) {
             const searchSource =
                 this.#searchMode !== SearchMode.Translation &&
                 this.#searchAction !== SearchAction.Replace;
@@ -188,7 +190,9 @@ export class Searcher {
             .filter(
                 (entry) =>
                     entry.name.endsWith(TXT_EXTENSION) &&
-                    !entry.name.startsWith(this.currentTab.name ?? "\0") &&
+                    !entry.name.startsWith(
+                        this.tabInfo.currentTab.name ?? "\0",
+                    ) &&
                     entry.name !== "maps.txt",
             );
 
@@ -205,6 +209,8 @@ export class Searcher {
             const fileContent = await readTextFile(filePath);
             const lines = fileContent.lines();
 
+            let skip = false;
+
             for (const [lineNumber, line] of lines.entries()) {
                 if (!line.trim()) {
                     continue;
@@ -212,8 +218,19 @@ export class Searcher {
 
                 let [source, translation] = line.split(SEPARATOR);
 
+                if (
+                    source === MAP_COMMENT &&
+                    !(`map${translation}` in this.tabInfo.tabs)
+                ) {
+                    skip = true;
+                }
+
+                if (skip) {
+                    continue;
+                }
+
                 if ((translation as string | undefined) === undefined) {
-                    console.error(
+                    await error(
                         `Couldn't split line in file ${filename} at line ${lineNumber + 1}`,
                     );
                     continue;

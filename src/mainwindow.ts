@@ -1,3 +1,4 @@
+import { BatchWindow } from "./types/batchwindow";
 import {
     BatchAction,
     DuplicateMode,
@@ -5,12 +6,19 @@ import {
     JumpDirection,
     Language,
     MouseButton,
+    ProgressDirection,
     ReadMode,
     RowDeleteMode,
     SearchAction,
     SearchFlags,
+    TextAreaStatus,
     WindowType,
 } from "./types/enums";
+import { ProjectSettings } from "./types/projectsettings";
+import { Replacer } from "./types/replacer";
+import { Saver } from "./types/saver";
+import { Searcher } from "./types/searcher";
+import { Settings } from "./types/settings";
 import {
     BOOKMARK_COMMENT_PREFIX,
     CHARACTER_SUBSTITUTIONS,
@@ -51,7 +59,6 @@ import {
     join,
     logErrorIO,
     setupUi,
-    sleep,
     tw,
 } from "./utilities/functions";
 import {
@@ -71,7 +78,7 @@ import {
     getCurrentWebviewWindow,
     WebviewWindow,
 } from "@tauri-apps/api/webviewWindow";
-import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { ask, message, open as openPath } from "@tauri-apps/plugin-dialog";
 import {
     copyFile,
@@ -82,15 +89,10 @@ import {
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
-import { attachConsole, error } from "@tauri-apps/plugin-log";
+import { attachConsole, error, info } from "@tauri-apps/plugin-log";
 import { exit, relaunch } from "@tauri-apps/plugin-process";
 import { check as checkVersion } from "@tauri-apps/plugin-updater";
-import { BatchWindow } from "./types/batchwindow";
-import { ProjectSettings } from "./types/projectsettings";
-import { Replacer } from "./types/replacer";
-import { Saver } from "./types/saver";
-import { Searcher } from "./types/searcher";
-import { Settings } from "./types/settings";
+
 const APP_WINDOW = getCurrentWebviewWindow();
 
 // TODO: Add listener for log file select.
@@ -239,7 +241,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         let rowNumber = Number(row);
 
         // External files are 0-indexed
-        if (filename !== currentTab.name) {
+        if (filename !== tabInfo.currentTab.name) {
             rowNumber += 1;
         }
 
@@ -249,7 +251,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         resultContainer.className = tw`textSecond borderPrimary backgroundSecond my-1 cursor-pointer border-2 p-1 text-base`;
 
         const rowContainer =
-            filename !== currentTab.name
+            filename !== tabInfo.currentTab.name
                 ? null
                 : (UI.tabContent.children[rowNumber - 1] as HTMLDivElement);
         const counterpartElement = rowContainer?.children[
@@ -397,8 +399,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updateProgressMeter() {
-        const total = totalRows;
-        const translated = translatedRowsArray.reduce((a, b) => a + b, 0);
+        const total = tabInfo.total.reduce((a, b) => a + b, 0);
+        const translated = tabInfo.translated.reduce((a, b) => a + b, 0);
 
         UI.globalProgressMeter.style.width = `${Math.round((translated / total) * PERCENT_MULTIPLIER)}%`;
         UI.globalProgressMeter.innerHTML = `${translated} / ${total}`;
@@ -608,95 +610,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, settings.backup.period * SECOND_MS);
     }
 
-    function calculateRows(
-        onlyCurrentTab: boolean,
-        rows?: string[],
-    ): [number, number, number] {
-        let totalRows: number;
-        let translatedRows = 0;
-
-        if (onlyCurrentTab) {
-            totalRows = UI.tabContent.children.length;
-
-            if (totalRows === 0) {
-                return [0, 0, 0];
-            }
-
-            for (const rowContainer of UI.tabContent.children) {
-                const sourceTextDiv = rowContainer
-                    .children[1] as HTMLDivElement;
-                const translationTextArea = rowContainer
-                    .children[2] as HTMLTextAreaElement;
-
-                if (sourceTextDiv.textContent!.startsWith(COMMENT_PREFIX)) {
-                    totalRows--;
-                } else if (translationTextArea.value) {
-                    translatedRows++;
-                }
-            }
-        } else {
-            totalRows = rows!.length;
-
-            if (totalRows === 0) {
-                return [0, 0, 0];
-            }
-
-            for (const line of rows!) {
-                if (line.startsWith(COMMENT_PREFIX)) {
-                    totalRows--;
-                } else if (!line.endsWith(SEPARATOR)) {
-                    translatedRows++;
-                }
-            }
-        }
+    function updateTabProgress(tabIndex: number) {
+        const progressBar = UI.leftPanel.children[tabIndex].lastElementChild
+            ?.firstElementChild as HTMLElement | null;
 
         const percentage = Math.floor(
-            (translatedRows / totalRows) * PERCENT_MULTIPLIER,
+            (tabInfo.translated[tabIndex] / tabInfo.total[tabIndex]) *
+                PERCENT_MULTIPLIER,
         );
 
-        return [totalRows, translatedRows, percentage];
-    }
+        if (progressBar) {
+            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
 
-    function updateProgress(
-        progressBar: HTMLSpanElement | null,
-        translatedRows: number,
-        percentage: number,
-    ) {
-        if (!progressBar) {
-            return;
-        }
-
-        translatedRowsArray[currentTab.index!] = translatedRows;
-        updateProgressMeter();
-
-        progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
-
-        if (percentage === PERCENT_MULTIPLIER) {
-            progressBar.classList.replace("backgroundThird", "bg-green-600");
-        } else {
-            progressBar.classList.replace("bg-green-600", "backgroundThird");
+            if (percentage === PERCENT_MULTIPLIER) {
+                progressBar.classList.replace(
+                    "backgroundThird",
+                    "bg-green-600",
+                );
+            } else {
+                progressBar.classList.replace(
+                    "bg-green-600",
+                    "backgroundThird",
+                );
+            }
         }
     }
 
     async function changeTab(filename: string | null, newTabIndex?: number) {
-        if ((currentTab.name && currentTab.name === filename) || changeTimer) {
+        if (tabInfo.currentTab.name === filename || changeTimer) {
+            return;
+        }
+
+        if (!(filename ?? "" in tabInfo.tabs)) {
             return;
         }
 
         await awaitSave();
 
-        if (currentTab.name) {
+        if (tabInfo.currentTab.name) {
             await saver.saveSingle();
-            const calculated = calculateRows(true);
-            const translatedRows = calculated[1];
-            const percentage = calculated[2];
 
-            const selectedTab = UI.leftPanel.children[currentTab.index!];
-
-            const progressBar = selectedTab.lastElementChild
-                ?.firstElementChild as HTMLSpanElement | null;
-
-            updateProgress(progressBar, translatedRows, percentage);
+            const selectedTab =
+                UI.leftPanel.children[tabInfo.currentTab.index!];
 
             selectedTab.classList.replace(
                 "backgroundThird",
@@ -707,24 +662,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         UI.tabContent.innerHTML = "";
 
         if (filename) {
-            UI.currentTabDiv.innerHTML = currentTab.name = filename;
+            UI.currentTabDiv.innerHTML = tabInfo.currentTab.name = filename;
 
-            if (!newTabIndex) {
-                let i = 0;
+            newTabIndex ??= tabInfo.tabs[filename];
+            tabInfo.currentTab.index = newTabIndex!;
 
-                for (const element of UI.leftPanel.children) {
-                    if (element.firstElementChild!.textContent === filename) {
-                        newTabIndex = i;
-                        break;
-                    }
-
-                    i++;
-                }
-            }
-
-            currentTab.index = newTabIndex!;
-
-            const selectedTab = UI.leftPanel.children[currentTab.index];
+            const selectedTab = UI.leftPanel.children[tabInfo.currentTab.index];
             selectedTab.classList.replace(
                 "backgroundPrimary",
                 "backgroundThird",
@@ -732,7 +675,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             await createTabContent(filename);
         } else {
-            currentTab.name = null;
+            tabInfo.currentTab.name = null;
             UI.currentTabDiv.innerHTML = "";
         }
 
@@ -748,7 +691,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function handleGotoRowInputKeypress(event: KeyboardEvent) {
         if (event.code === "Enter") {
             const targetRow = document.getElementById(
-                `${currentTab.name!}-${UI.goToRowInput.value}`,
+                `${tabInfo.currentTab.name!}-${UI.goToRowInput.value}`,
             ) as HTMLDivElement | null;
 
             if (targetRow) {
@@ -818,7 +761,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             case "KeyG":
                 event.preventDefault();
 
-                if (currentTab.name) {
+                if (tabInfo.currentTab.name) {
                     if (UI.goToRowInput.classList.contains("hidden")) {
                         UI.goToRowInput.classList.remove("hidden");
                         UI.goToRowInput.focus();
@@ -873,7 +816,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const [file, row] = focusedElement
-            .closest(`[id^="${currentTab.name}"]`)!
+            .closest(`[id^="${tabInfo.currentTab.name}"]`)!
             .id.split("-");
         const rowNumber = Number(row);
 
@@ -928,9 +871,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     toggleSearchPanel();
                     break;
                 case "ArrowDown":
-                    if (currentTab.index !== null) {
+                    if (tabInfo.currentTab.index !== null) {
                         const newStateIndex =
-                            (currentTab.index + 1) %
+                            (tabInfo.currentTab.index + 1) %
                             UI.leftPanel.children.length;
 
                         await changeTab(
@@ -941,9 +884,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                     break;
                 case "ArrowUp":
-                    if (currentTab.index !== null) {
+                    if (tabInfo.currentTab.index !== null) {
                         const newStateIndex =
-                            (currentTab.index -
+                            (tabInfo.currentTab.index -
                                 1 +
                                 UI.leftPanel.children.length) %
                             UI.leftPanel.children.length;
@@ -1380,8 +1323,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const parent = target.parentElement;
 
         if (parent) {
-            for (const child of parent.children) {
-                (child as HTMLElement).style.height = `${newHeight}px`;
+            for (const child of parent.children as HTMLCollectionOf<HTMLElement>) {
+                child.style.height = `${newHeight}px`;
             }
         }
     }
@@ -1396,6 +1339,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             currentFocusedElement = [target.id, target.value];
         }
+
+        textareaStatus = target.value.trim()
+            ? TextAreaStatus.Translated
+            : TextAreaStatus.Untranslated;
     }
 
     function handleBlur(event: FocusEvent) {
@@ -1413,6 +1360,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             currentFocusedElement.length = 0;
         }
+
+        switch (textareaStatus) {
+            case TextAreaStatus.Translated:
+                if (!target.value.trim()) {
+                    changeProgress(ProgressDirection.Decrement);
+                }
+                break;
+            case TextAreaStatus.Untranslated:
+                if (target.value.trim()) {
+                    changeProgress(ProgressDirection.Increment);
+                }
+                break;
+            case TextAreaStatus.None:
+                break;
+        }
+
+        textareaStatus = TextAreaStatus.None;
     }
 
     async function loadFont(fontUrl: string) {
@@ -1475,28 +1439,41 @@ document.addEventListener("DOMContentLoaded", async () => {
         settings.theme = newTheme.name;
     }
 
-    function createTab(
-        name: string,
-        rows: string[],
-        tabIndex: number,
-    ): HTMLButtonElement | undefined {
+    function createTab(name: string, rows: string[]) {
         if (name === "system") {
             // Remove the game title row
             rows = rows.slice(0, -1);
         }
 
-        const [total, translated, percentage] = calculateRows(false, rows);
+        let total = rows.length;
+        let translated = 0;
 
-        if (total === 0) {
+        if (total <= 0) {
             return;
         }
 
-        totalRows += total;
-        translatedRowsArray.push(translated);
+        for (const line of rows) {
+            if (line.startsWith(COMMENT_PREFIX)) {
+                total--;
+            } else if (!line.endsWith(SEPARATOR)) {
+                translated++;
+            }
+        }
+
+        if (total <= 0) {
+            return;
+        }
+
+        const percentage = Math.floor(
+            (translated / total) * PERCENT_MULTIPLIER,
+        );
+
+        tabInfo.total.push(total);
+        tabInfo.translated.push(translated);
 
         const buttonElement = document.createElement("button");
         buttonElement.className = tw`backgroundPrimary backgroundPrimaryHovered flex h-8 w-full cursor-pointer flex-row justify-center p-1`;
-        buttonElement.id = (tabIndex - 1).toString();
+        buttonElement.id = tabInfo.tabCount.toString();
 
         const stateSpan = document.createElement("span");
         stateSpan.innerHTML = name;
@@ -1532,7 +1509,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         checkboxDiv.append(checkbox, checkboxLabel);
         batchWindow.addCheckbox(checkboxDiv);
 
-        return buttonElement;
+        UI.leftPanel.appendChild(buttonElement);
+        tabInfo.tabs[name] = tabInfo.tabCount;
+        tabInfo.tabCount += 1;
     }
 
     async function extractArchive(projectPath: string): Promise<boolean> {
@@ -1685,11 +1664,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    async function parseTranslationLines(
-        lines: string[],
-        filename: string,
-        tabIndex: number,
-    ): Promise<number> {
+    async function parseTranslationLines(lines: string[], filename: string) {
         const result: string[] = [];
         const mapIndices: number[] = [];
 
@@ -1704,13 +1679,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 logErrorIO(tempMapPath, err);
             });
 
-            const tab = createTab(`map${mapID}`, result, tabIndex);
-
-            if (tab) {
-                UI.leftPanel.appendChild(tab);
-                tabIndex++;
-            }
-
+            createTab(`map${mapID}`, result);
             result.length = 0;
         }
 
@@ -1742,7 +1711,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         await parseMapComment();
-        return tabIndex;
     }
 
     async function parseTranslationFiles() {
@@ -1755,8 +1723,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!translationFiles) {
             return;
         }
-
-        let tabIndex = 1;
 
         for (const translationFile of translationFiles) {
             if (!translationFile.name.endsWith(TXT_EXTENSION)) {
@@ -1796,27 +1762,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 }
 
-                const tab = createTab(
-                    translationFileBasename,
-                    contentLines,
-                    tabIndex,
-                );
-
-                if (tab) {
-                    UI.leftPanel.appendChild(tab);
-                    tabIndex++;
-                }
-
+                createTab(translationFileBasename, contentLines);
                 continue;
             }
 
-            const result = await parseTranslationLines(
-                contentLines,
-                translationFileBasename,
-                tabIndex,
-            );
-
-            tabIndex = result;
+            await parseTranslationLines(contentLines, translationFileBasename);
         }
     }
 
@@ -1837,8 +1787,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             UI.leftPanel.innerHTML = "";
             batchWindow.clear();
             UI.currentGameTitle.innerHTML = "";
-            totalRows = 0;
-            translatedRowsArray.length = 0;
+            tabInfo.total.length = 0;
+            tabInfo.translated.length = 0;
         }
 
         UI.projectStatus.innerHTML = localization.loadingProject;
@@ -1920,7 +1870,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const update = await checkVersion();
 
             if (!update) {
-                console.log(localization.upToDate);
+                await info(localization.upToDate);
                 return;
             }
 
@@ -1939,29 +1889,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             let downloaded = 0;
             let contentLength: number | undefined = 0;
 
-            await update.downloadAndInstall((event) => {
+            await update.downloadAndInstall(async (event) => {
                 switch (event.event) {
                     case "Started":
                         contentLength = event.data.contentLength;
-                        console.log(
+                        await info(
                             `Started downloading ${event.data.contentLength} bytes`,
                         );
                         break;
                     case "Progress":
                         downloaded += event.data.chunkLength;
-                        console.log(
+                        await info(
                             `Downloaded ${downloaded} from ${contentLength}`,
                         );
                         break;
                     case "Finished":
-                        console.log("Download finished");
+                        await info("Download finished");
                         break;
                 }
             });
 
             await relaunch();
-        } catch (e) {
-            console.error(e);
+        } catch (e: unknown) {
+            await error(`${e}`);
         }
     }
 
@@ -1981,7 +1931,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function handleBookmarkButtonClick(target: HTMLElement) {
-        const rowContainerId = target.closest(`[id^="${currentTab.name}"]`)!.id;
+        const rowContainerId = target.closest(
+            `[id^="${tabInfo.currentTab.name}"]`,
+        )!.id;
         const bookmarkIndex = bookmarks.findIndex(
             (obj) => obj.title === rowContainerId,
         );
@@ -2019,7 +1971,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const bookmarkElement = createRow(
                     `<!-- Bookmark: ${rowNumber} -->`,
                     [description],
-                    currentTab.name!,
+                    tabInfo.currentTab.name!,
                     rowNumber,
                 );
 
@@ -2057,7 +2009,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // eslint-disable-next-line no-fallthrough
             case RowDeleteMode.Allowed: {
                 const rowContainer = target.closest(
-                    `[id^="${currentTab.name}"]`,
+                    `[id^="${tabInfo.currentTab.name}"]`,
                 )!;
                 const position = Number(
                     rowContainer.firstElementChild!.textContent!,
@@ -2065,7 +2017,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 rowContainer.remove();
                 updateRowIds(position - 1);
-                totalRows -= 1;
+                tabInfo.total[tabInfo.currentTab.index!] -= 1;
                 break;
             }
         }
@@ -2118,12 +2070,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     const clickedRowContainerNumber = Number(
                         target
-                            .closest(`[id^="${currentTab.name}"]`)!
+                            .closest(`[id^="${tabInfo.currentTab.name}"]`)!
                             .id.split("-")[1],
                     );
                     const selectedRowContainerNumber = Number(
                         document.activeElement
-                            .closest(`[id^="${currentTab.name}"]`)!
+                            .closest(`[id^="${tabInfo.currentTab.name}"]`)!
                             .id.split("-")[1],
                     );
 
@@ -2182,60 +2134,69 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const rowContainer = UI.tabContent.children[
                     rowNumber
                 ] as HTMLDivElement;
-                (rowContainer.lastElementChild! as HTMLTextAreaElement).value =
-                    "";
+
+                const textarea =
+                    rowContainer.lastElementChild! as HTMLTextAreaElement;
+
+                if (textarea.value) {
+                    changeProgress(ProgressDirection.Decrement);
+                }
+
+                textarea.value = "";
             }
 
+            textareaStatus = TextAreaStatus.None;
             saver.saved = false;
         }
     }
 
-    async function handleTabContentPaste(event: ClipboardEvent) {
-        const normalized = (await readText()).denormalize();
-        await writeText(normalized);
+    function handleTabContentPaste(event: ClipboardEvent) {
+        const normalized = clipboardText.denormalize();
 
-        // eslint-disable-next-line no-magic-numbers
-        await sleep(SECOND_MS / 100);
+        if (document.activeElement?.tagName !== "TEXTAREA") {
+            return;
+        }
 
-        if (
-            document.activeElement?.tagName === "TEXTAREA" &&
-            normalized.includes(CLIPBOARD_SEPARATOR)
-        ) {
+        const startRowContainer = document.activeElement.closest(
+            `[id^="${tabInfo.currentTab.name}"]`,
+        )!;
+
+        if (normalized.includes(CLIPBOARD_SEPARATOR)) {
             event.preventDefault();
             const clipboardTextSplit = normalized.split(CLIPBOARD_SEPARATOR);
             const textRows = clipboardTextSplit.length;
+            const startIndex = Number(startRowContainer.id.split("-")[1]);
 
             if (textRows === 0) {
                 return;
             } else {
-                const rowContainer = document.activeElement.closest(
-                    `[id^="${currentTab.name}"]`,
-                )!;
-                const rowContainerNumber = Number(
-                    rowContainer.id.split("-")[1],
-                );
-
                 for (let i = 0; i < textRows; i++) {
-                    const rowNumber = rowContainerNumber + i - 1;
-                    const rowContainer = UI.tabContent.children[
-                        rowNumber
-                    ] as HTMLDivElement | null;
+                    const rowIndex = startIndex + i - 1;
 
-                    if (!rowContainer) {
-                        continue;
+                    if (rowIndex > UI.tabContent.children.length) {
+                        return;
                     }
 
-                    const textAreaToReplace =
+                    const rowContainer = UI.tabContent.children[
+                        rowIndex
+                    ] as HTMLDivElement;
+
+                    const textarea =
                         rowContainer.lastElementChild! as HTMLTextAreaElement;
 
+                    if (!textarea.value && clipboardTextSplit[i]) {
+                        changeProgress(ProgressDirection.Increment);
+                    }
+
                     replacedTextareas.set(
-                        rowNumber,
-                        textAreaToReplace.value.replaceAll(normalized, ""),
+                        rowIndex,
+                        textarea.value.replaceAll(normalized, ""),
                     );
-                    textAreaToReplace.value = clipboardTextSplit[i];
-                    textAreaToReplace.calculateHeight();
+                    textarea.value = clipboardTextSplit[i];
+                    textarea.calculateHeight();
                 }
 
+                textareaStatus = TextAreaStatus.None;
                 saver.saved = false;
             }
         }
@@ -2305,7 +2266,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
-        let batchAction: BatchAction = BatchAction.None;
+        let batchAction = BatchAction.None;
 
         switch (target.id) {
             case UI.translateToolsMenuButton.id:
@@ -2999,19 +2960,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     let currentTheme: string;
     setTheme(theme);
 
-    const currentTab: CurrentTab = {
-        name: null,
-        index: null,
-        content: UI.tabContent,
+    const tabInfo: TabInfo = {
+        tabs: {},
+        tabCount: 0,
+        total: [],
+        translated: [],
+        currentTab: {
+            name: null,
+            index: null,
+            content: UI.tabContent,
+        },
     };
-    const batchWindow = new BatchWindow(settings, currentTab, UI);
+
+    const batchWindow = new BatchWindow(settings, tabInfo, UI);
     let lastCharacters = "";
     let lastSubstitutionCharacter: { char: string; pos: number } | null = null;
+    let textareaStatus!: TextAreaStatus;
 
     let projectSettings!: ProjectSettings;
 
-    let totalRows = 0;
-    const translatedRowsArray: number[] = [];
     const bookmarks: Bookmark[] = [];
 
     let currentFocusedElement: [string, string] | [] = [];
@@ -3030,20 +2997,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     const replacedTextareas = new Map<number, string>();
 
     const searchFlags: SearchFlagsObject = { flags: SearchFlags.None };
-    const searcher = new Searcher(settings, searchFlags, currentTab);
+    const searcher = new Searcher(settings, searchFlags, tabInfo);
     const replacer = new Replacer(
         settings,
         replacementLog,
         searchFlags,
-        currentTab,
+        tabInfo,
         searcher,
     );
     const saver = new Saver(
         settings,
-        currentTab,
+        tabInfo,
         UI.currentGameTitle,
         UI.saveButton.firstElementChild!,
     );
+
+    let clipboardText = "";
 
     await APP_WINDOW.setZoom(settings.zoom);
 
@@ -3105,13 +3074,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         saver.saved = event.payload;
     });
 
-    await listen<[number, number]>("update-progress", (event) => {
-        const [index, lineCount] = event.payload;
-
-        const progressBar = UI.leftPanel.children[index].lastElementChild
-            ?.firstElementChild as HTMLElement | null;
-
-        updateProgress(progressBar, lineCount, PERCENT_MULTIPLIER);
+    await listen<number>("update-progress", (event) => {
+        updateTabProgress(event.payload);
     });
 
     await APP_WINDOW.onCloseRequested(async (event) => {

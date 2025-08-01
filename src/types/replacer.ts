@@ -10,14 +10,12 @@ import { SearchAction, SearchMode } from "./enums";
 import { Searcher } from "./searcher";
 import { Settings } from "./settings";
 
-// TODO: Increment translation counter on puts, or decrement on putting empty
-
 export class Replacer {
     public constructor(
         private readonly settings: Settings,
         private readonly replacementLog: ReplacementLog,
         private readonly searchFlags: SearchFlagsObject,
-        private readonly currentTab: CurrentTab,
+        private readonly tabInfo: TabInfo,
         private readonly searcher: Searcher,
     ) {}
 
@@ -48,7 +46,7 @@ export class Replacer {
 
         let replacedText: string;
 
-        if (filename === this.currentTab.name) {
+        if (filename === this.tabInfo.currentTab.name) {
             replacedText = this.replaceCurrentTab(
                 regexp,
                 replacerText,
@@ -111,7 +109,7 @@ export class Replacer {
         }
 
         for (const [filename, rowNumbers] of results.entries()) {
-            if (this.currentTab.name?.startsWith(filename)) {
+            if (this.tabInfo.currentTab.name?.startsWith(filename)) {
                 for (const rowNumber of rowNumbers) {
                     this.replaceCurrentTab(
                         regexp,
@@ -158,7 +156,7 @@ export class Replacer {
         searchAction: SearchAction,
         single: boolean,
     ): string {
-        const textarea = this.currentTab.content.children[rowNumber]
+        const textarea = this.tabInfo.currentTab.content.children[rowNumber]
             .lastElementChild! as HTMLTextAreaElement;
 
         let replacedText = "";
@@ -184,11 +182,18 @@ export class Replacer {
         if (newValue) {
             this.#addLog(
                 filename,
-                this.currentTab.content.children[rowNumber].children[1]
+                this.tabInfo.currentTab.content.children[rowNumber].children[1]
                     .textContent!,
                 textarea.value,
                 newValue,
             );
+
+            if (searchAction === SearchAction.Put) {
+                if (!textarea.value.trim()) {
+                    this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
+                }
+            }
+
             textarea.value = newValue;
         }
 

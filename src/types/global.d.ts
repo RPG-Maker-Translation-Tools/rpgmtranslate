@@ -204,3 +204,11 @@ interface PurgeOptions extends OptionsBase {
     gameTitle: string;
     createIgnore: boolean;
 }
+
+interface TabInfo {
+    tabs: Record<string, number>;
+    tabCount: number;
+    total: number[];
+    translated: number[];
+    currentTab: CurrentTab;
+}

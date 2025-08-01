@@ -16,8 +16,6 @@ import {
 import { join } from "../utilities/functions";
 import { Settings } from "./settings";
 
-// TODO: Filter empty maps
-
 export class Saver {
     #outputArray: string[] = [];
     #saving = false;
@@ -25,13 +23,13 @@ export class Saver {
 
     public constructor(
         private readonly settings: Settings,
-        private readonly currentTab: CurrentTab,
+        private readonly tabInfo: TabInfo,
         private readonly currentGameTitle: HTMLInputElement,
         private readonly saveIcon: Element,
     ) {}
 
     public async saveSingle() {
-        for (const rowContainer of this.currentTab.content.children) {
+        for (const rowContainer of this.tabInfo.currentTab.content.children) {
             const sourceTextDiv = rowContainer.children[1] as HTMLDivElement;
             const translationTextArea = rowContainer
                 .children[2] as HTMLTextAreaElement;
@@ -43,7 +41,7 @@ export class Saver {
             );
         }
 
-        if (this.currentTab.name === "system") {
+        if (this.tabInfo.currentTab.name === "system") {
             const sourceTitle =
                 this.currentGameTitle.getAttribute("source-title")!;
             const output =
@@ -55,9 +53,9 @@ export class Saver {
             this.#outputArray.push(output);
         }
 
-        const filePath = `${this.currentTab.name}${TXT_EXTENSION}`;
+        const filePath = `${this.tabInfo.currentTab.name}${TXT_EXTENSION}`;
         const savePath = join(
-            this.currentTab.name!.startsWith("map")
+            this.tabInfo.currentTab.name!.startsWith("map")
                 ? this.settings.tempMapsPath
                 : this.settings.translationPath,
             filePath,
@@ -127,7 +125,7 @@ export class Saver {
         this.saveIcon.classList.add("animate-spin");
         this.#saving = true;
 
-        if (this.currentTab.name) {
+        if (this.tabInfo.currentTab.name) {
             await this.saveSingle();
         }
 

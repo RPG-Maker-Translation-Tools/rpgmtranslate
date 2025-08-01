@@ -1,6 +1,7 @@
+import { loadWindow } from "./utilities/functions";
+
 import { getVersion } from "@tauri-apps/api/app";
 import { open as openLink } from "@tauri-apps/plugin-shell";
-import { loadWindow } from "./utilities/functions";
 
 document.addEventListener("DOMContentLoaded", async () => {
     await loadWindow("about");
