@@ -217,11 +217,12 @@ export class Searcher {
 
                 let [source, translation] = line.split(SEPARATOR);
 
-                if (
-                    source === MAP_COMMENT &&
-                    !(`map${translation}` in this.tabInfo.tabs)
-                ) {
-                    skip = true;
+                if (source === MAP_COMMENT) {
+                    if (!(`map${translation}` in this.tabInfo.tabs)) {
+                        skip = true;
+                    } else {
+                        skip = false;
+                    }
                 }
 
                 if (skip) {
