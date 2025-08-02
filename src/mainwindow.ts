@@ -599,10 +599,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function backup() {
-        if (
-            !settings.backup.enabled ||
-            (backupIsActive !== null && backupIsActive !== 0)
-        ) {
+        if (!settings.backup.enabled || backupIsActive !== -1) {
             return;
         }
 
@@ -610,7 +607,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (settings.backup.enabled) {
                 await saver.saveBackup();
             } else {
-                clearInterval(backupIsActive!);
+                clearInterval(backupIsActive);
+                backupIsActive = -1;
             }
         }, settings.backup.period * SECOND_MS);
     }
@@ -3010,7 +3008,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const STYLE_SHEET = getThemeStyleSheet()!;
     const UI = setupUi(WindowType.Main) as MainWindowUI;
 
-    let backupIsActive: number | null = null;
+    let backupIsActive = -1;
 
     let currentTheme: string;
     setTheme(theme);
@@ -3036,7 +3034,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const bookmarks: Bookmark[] = [];
 
-    let currentFocusedElement: [string, string] | [] = [];
+    let currentFocusedElement: string[] = [];
 
     let changeTimer = -1;
     let shift = false;
