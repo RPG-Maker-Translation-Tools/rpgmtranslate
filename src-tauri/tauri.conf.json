@@ -67,7 +67,7 @@
                 "connect-src": "ipc: http://ipc.localhost",
                 "img-src": "'self' asset: http://asset.localhost blob: data:",
                 "style-src": "'unsafe-inline' 'self'",
-                "font-src": "asset: http://asset.localhost"
+                "font-src": "asset: http://asset.localhost http://tauri.localhost"
             }
         },
         "windows": [
