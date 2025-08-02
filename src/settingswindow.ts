@@ -53,12 +53,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         : "";
     UI.checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
 
-    if (UI.backupCheck.innerText.empty()) {
-        UI.backupSettings.classList.add("flex");
-        UI.backupSettings.classList.add("translate-y-0");
-    } else {
+    if (UI.backupCheck.textContent.empty()) {
         UI.backupSettings.classList.add("hidden");
         UI.backupSettings.classList.add("-translate-y-full");
+    } else {
+        UI.backupSettings.classList.add("flex");
+        UI.backupSettings.classList.add("translate-y-0");
     }
 
     for (const [path, name] of Object.entries(
@@ -77,25 +77,37 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case UI.checkForUpdatesCheck.id:
-                if (UI.checkForUpdatesCheck.innerText.empty()) {
-                    UI.checkForUpdatesCheck.innerHTML = "";
-                    settings.checkForUpdates = false;
-                } else {
+                if (UI.checkForUpdatesCheck.textContent.empty()) {
                     UI.checkForUpdatesCheck.innerHTML = "check";
                     settings.checkForUpdates = true;
+                } else {
+                    UI.checkForUpdatesCheck.innerHTML = "";
+                    settings.checkForUpdates = false;
                 }
                 break;
             case UI.displayGhostLinesCheck.id:
-                if (UI.displayGhostLinesCheck.innerText.empty()) {
-                    UI.displayGhostLinesCheck.innerHTML = "";
-                    settings.displayGhostLines = false;
-                } else {
+                if (UI.displayGhostLinesCheck.textContent.empty()) {
                     UI.displayGhostLinesCheck.innerHTML = "check";
                     settings.displayGhostLines = true;
+                } else {
+                    UI.displayGhostLinesCheck.innerHTML = "";
+                    settings.displayGhostLines = false;
                 }
                 break;
             case UI.backupCheck.id:
-                if (UI.backupCheck.innerText.empty()) {
+                if (UI.backupCheck.textContent.empty()) {
+                    UI.backupSettings.classList.replace("hidden", "flex");
+
+                    requestAnimationFrame(() =>
+                        UI.backupSettings.classList.replace(
+                            "-translate-y-full",
+                            "translate-y-0",
+                        ),
+                    );
+
+                    UI.backupCheck.innerHTML = "check";
+                    settings.backup.enabled = true;
+                } else {
                     UI.backupSettings.classList.replace(
                         "translate-y-0",
                         "-translate-y-full",
@@ -115,18 +127,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     UI.backupCheck.innerHTML = "";
                     settings.backup.enabled = false;
-                } else {
-                    UI.backupSettings.classList.replace("hidden", "flex");
-
-                    requestAnimationFrame(() =>
-                        UI.backupSettings.classList.replace(
-                            "-translate-y-full",
-                            "translate-y-0",
-                        ),
-                    );
-
-                    UI.backupCheck.innerHTML = "check";
-                    settings.backup.enabled = true;
                 }
                 break;
         }
