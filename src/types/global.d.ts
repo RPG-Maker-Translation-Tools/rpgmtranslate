@@ -14,9 +14,8 @@ interface String {
     empty(): boolean;
 }
 
-interface Element {
+interface HTMLElement {
     /// Why isn't it like that in TypeScript by default?
-    textContent: string;
     toggleMultiple(...classes: string[]): void;
 }
 
