@@ -58,8 +58,15 @@ export const JSON_EXTENSION = ".json";
 export const JSON_EXTENSION_LENGTH = JSON_EXTENSION.length;
 
 export const BOOKMARK_COMMENT_PREFIX = "<!-- Bookmark";
-export const MAP_COMMENT = "<!-- Map -->";
+export const MAP_ID_COMMENT = "<!-- Map -->";
+export const EVENT_ID_COMMENT = "<!-- Event ID -->";
+export const SYSTEM_ENTRY_COMMENT = "<!-- System Entry -->";
+export const SCRIPT_ID_COMMENT = "<!-- Script ID -->";
+export const PLUGIN_ID_COMMENT = "<!-- Plugin ID -->";
 
 export const RVPACKER_METADATA_FILE = ".rvpacker-metadata";
 
 export const CLIPBOARD_SEPARATOR = "<###>";
+
+export const DEFAULT_ROW_COLUMN_WIDTH = 128;
+export const DEFAULT_COLUMN_WIDTH = 768;

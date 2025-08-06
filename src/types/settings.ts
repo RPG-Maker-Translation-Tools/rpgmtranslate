@@ -35,7 +35,7 @@ interface SettingsOptions {
     zoom?: number;
 }
 
-export class Settings {
+export class Settings implements SettingsOptions {
     public language = Language.English;
     public backup = {
         enabled: true,
@@ -53,7 +53,6 @@ export class Settings {
     public logPath = "";
     public projectSettingsPath = "";
     public backupPath = "";
-    public engineType = EngineType.New;
     public rowDeleteMode = RowDeleteMode.Disabled;
     public displayGhostLines = false;
     public checkForUpdates = true;
@@ -75,7 +74,6 @@ export class Settings {
         this.projectSettingsPath =
             options.projectSettingsPath ?? this.projectSettingsPath;
         this.backupPath = options.backupPath ?? this.backupPath;
-        this.engineType = options.engineType ?? this.engineType;
         this.rowDeleteMode = options.rowDeleteMode ?? this.rowDeleteMode;
         this.displayGhostLines =
             options.displayGhostLines ?? this.displayGhostLines;

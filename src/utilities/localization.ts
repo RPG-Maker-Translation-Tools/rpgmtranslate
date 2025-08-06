@@ -71,13 +71,13 @@ export class MainWindowLocalization {
     public readonly readButtonTitle: string;
     public readonly directoryAlreadyOpened: string;
     public readonly errorOccurred: string;
-    public readonly searchMode: string;
-    public readonly searchAll: string;
-    public readonly searchOnlyTranslation: string;
-    public readonly searchOnlySource: string;
-    public readonly trimFields: string;
-    public readonly translateFields: string;
-    public readonly wrapFields: string;
+    public readonly searchModeSelectLabel: string;
+    public readonly searchAllOptionLabel: string;
+    public readonly searchOnlyTranslationOptionLabel: string;
+    public readonly searchOnlySourceOptionLabel: string;
+    public readonly trimActionDescription: string;
+    public readonly translateActionDescription: string;
+    public readonly wrapActionDescription: string;
     public readonly translationLanguagesNotSelected: string;
     public readonly selectFiles: string;
     public readonly wrapNumber: string;
@@ -130,7 +130,11 @@ export class MainWindowLocalization {
     public readonly createIgnoreCheck: string;
     public readonly purgeButtonText: string;
     public readonly trim: string;
-    public readonly putConflictsWithRegexp: string;
+    public readonly chooseFileOption: string;
+    public readonly selectBatchAction: string;
+    public readonly selectTranslationColumn: string;
+    public readonly searchColumnSelectLabel: string;
+    public readonly rightmostFilledOptionLabel: string;
 
     public constructor(language: Language) {
         switch (language) {
@@ -224,13 +228,15 @@ export class MainWindowLocalization {
                 this.directoryAlreadyOpened =
                     "Выбранная директория уже открыта в программе.";
                 this.errorOccurred = "Произошла ошибка:";
-                this.searchMode = "Режим поиска";
-                this.searchAll = "Искать везде";
-                this.searchOnlySource = "Искать только в ориг. тексте";
-                this.searchOnlyTranslation = "Искать только в переводе";
-                this.trimFields = "Обрезать пробелы полей";
-                this.translateFields = "Перевести поля";
-                this.wrapFields = "Перенести строки в полях";
+                this.searchModeSelectLabel = "Режим поиска";
+                this.searchAllOptionLabel = "Искать везде";
+                this.searchOnlySourceOptionLabel =
+                    "Искать только в ориг. тексте";
+                this.searchOnlyTranslationOptionLabel =
+                    "Искать только в переводе";
+                this.trimActionDescription = "Обрезать пробелы полей";
+                this.translateActionDescription = "Перевести поля";
+                this.wrapActionDescription = "Перенести строки в полях";
                 this.translationLanguagesNotSelected =
                     "Языки перевода не выбраны. Введите их в полях наверху.";
                 this.selectFiles =
@@ -302,8 +308,11 @@ export class MainWindowLocalization {
                 this.purgeButtonText = "Очистка";
                 this.trim =
                     "Удалить лишние начальные и конечные пробелы из распарсенного текста. Может привести к нерабочей или некорректной записи текста.";
-                this.putConflictsWithRegexp =
-                    "Поиск по регулярным выражениям не может быть использован с глобальным замещением.";
+                this.chooseFileOption = "-Выберите файл-";
+                this.selectBatchAction = "-Выберите действие-";
+                this.selectTranslationColumn = "-Выберите целевой столбец-";
+                this.searchColumnSelectLabel = "Выберите столбец для поиска";
+                this.rightmostFilledOptionLabel = "Крайний заполненный";
                 break;
             case Language.English:
             default:
@@ -393,13 +402,14 @@ export class MainWindowLocalization {
                 this.directoryAlreadyOpened =
                     "Selected directory is already opened in the program.";
                 this.errorOccurred = "An error has occurred:";
-                this.searchMode = "Search mode";
-                this.searchAll = "Search everywhere";
-                this.searchOnlySource = "Search only in source text";
-                this.searchOnlyTranslation = "Search only in translation";
-                this.trimFields = "Trim fields";
-                this.translateFields = "Translate fields";
-                this.wrapFields = "Wrap lines in fields";
+                this.searchModeSelectLabel = "Search mode";
+                this.searchAllOptionLabel = "Search everywhere";
+                this.searchOnlySourceOptionLabel = "Search only in source text";
+                this.searchOnlyTranslationOptionLabel =
+                    "Search only in translation";
+                this.trimActionDescription = "Trim fields";
+                this.translateActionDescription = "Translate fields";
+                this.wrapActionDescription = "Wrap lines in fields";
                 this.translationLanguagesNotSelected =
                     "Translation languages are not selected. Input them to inputs above.";
                 this.selectFiles =
@@ -467,8 +477,11 @@ export class MainWindowLocalization {
                 this.purgeButtonText = "Purge";
                 this.trim =
                     "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing.";
-                this.putConflictsWithRegexp =
-                    "Global put conflicts with regexp search.";
+                this.chooseFileOption = "-Choose a file-";
+                this.selectBatchAction = "-Select action-";
+                this.selectTranslationColumn = "-Select column-";
+                this.searchColumnSelectLabel = "Select column for search";
+                this.rightmostFilledOptionLabel = "Rightmost filled";
                 break;
         }
     }

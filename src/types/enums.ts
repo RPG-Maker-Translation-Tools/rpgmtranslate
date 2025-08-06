@@ -93,3 +93,8 @@ export const enum ProgressDirection {
     Increment,
     Decrement,
 }
+
+export const enum MatchType {
+    Source = "source",
+    Translation = "translation",
+}

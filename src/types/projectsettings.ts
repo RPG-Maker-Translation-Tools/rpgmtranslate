@@ -1,8 +1,13 @@
-import { exists } from "@tauri-apps/plugin-fs";
+import {
+    DEFAULT_COLUMN_WIDTH,
+    DEFAULT_ROW_COLUMN_WIDTH,
+} from "../utilities/constants";
 import { join } from "../utilities/functions";
 import { DuplicateMode, EngineType } from "./enums";
 
-export class ProjectSettings {
+import { exists } from "@tauri-apps/plugin-fs";
+
+export class ProjectSettings implements ProjectSettingsOptions {
     public engineType = EngineType.New;
     public romanize = false;
     public translationLanguages: TranslationLanguages = {
@@ -13,6 +18,12 @@ export class ProjectSettings {
     public disableCustomProcessing = false;
     public trim = false;
     public sourceDirectory = "Data";
+    public columns: [string, number][] = [
+        ["Row", DEFAULT_ROW_COLUMN_WIDTH],
+        ["Source", DEFAULT_COLUMN_WIDTH],
+        ["Translation", DEFAULT_COLUMN_WIDTH],
+    ];
+    public translationColumnCount = 1;
 
     public constructor(options: ProjectSettingsOptions = {}) {
         this.engineType = options.engineType ?? this.engineType;
@@ -24,9 +35,12 @@ export class ProjectSettings {
             options.disableCustomProcessing ?? this.disableCustomProcessing;
         this.trim = options.trim ?? this.trim;
         this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
+        this.columns = options.columns ?? this.columns;
+        this.translationColumnCount =
+            options.translationColumnCount ?? this.translationColumnCount;
     }
 
-    public async findEngineType(projectPath: string): Promise<boolean> {
+    public async setEngineType(projectPath: string): Promise<boolean> {
         const systemFiles: [EngineType, string][] = [
             [EngineType.XP, "System.rxdata"],
             [EngineType.VX, "System.rvdata"],

@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         : "";
     UI.checkForUpdatesCheck.innerHTML = settings.checkForUpdates ? "check" : "";
 
-    if (UI.backupCheck.textContent.empty()) {
+    if (UI.backupCheck.textContent.isEmpty()) {
         UI.backupSettings.classList.add("hidden");
         UI.backupSettings.classList.add("-translate-y-full");
     } else {
@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         switch (target.id) {
             case UI.checkForUpdatesCheck.id:
-                if (UI.checkForUpdatesCheck.textContent.empty()) {
+                if (UI.checkForUpdatesCheck.textContent.isEmpty()) {
                     UI.checkForUpdatesCheck.innerHTML = "check";
                     settings.checkForUpdates = true;
                 } else {
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case UI.displayGhostLinesCheck.id:
-                if (UI.displayGhostLinesCheck.textContent.empty()) {
+                if (UI.displayGhostLinesCheck.textContent.isEmpty()) {
                     UI.displayGhostLinesCheck.innerHTML = "check";
                     settings.displayGhostLines = true;
                 } else {
@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
                 break;
             case UI.backupCheck.id:
-                if (UI.backupCheck.textContent.empty()) {
+                if (UI.backupCheck.textContent.isEmpty()) {
                     UI.backupSettings.classList.replace("hidden", "flex");
 
                     requestAnimationFrame(() =>

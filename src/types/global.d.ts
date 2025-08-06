@@ -1,22 +1,49 @@
 interface String {
-    count(char: string): number;
+    count(pattern: string): number;
     countLines(): number;
     lines(): string[];
-    stripSuffix(suffix: string): string;
+    stripSuffix(this: string, suffix: string): string;
     /**
-     * Normalizes default LINE FEED `\n` line breaks to custom NEW_LINE `\#` line breaks.
+     * Converts default LINE FEED `\n` line breaks to custom NEW_LINE `\#` line breaks.
      */
-    nnormalize(): string;
+    dlbtoclb(): string;
     /**
-     * Denormalizes custom NEW_LINE `\#` line breaks back to default LINE FEED `\n`.
+     * Converts custom NEW_LINE `\#` line breaks back to default LINE FEED `\n`.
      */
-    denormalize(): string;
-    empty(): boolean;
+    clbtodlb(): string;
+    isEmpty(): boolean;
+    basename(): string;
+    /**
+     * Extracts parts, delimited by SEPARATOR `<#>`.
+     */
+    parts(): string[] | null;
+}
+
+interface Array<T> {
+    source(this: string[]): string;
+    translation(this: string[]): string;
+    translations(this: string[]): string[];
+    filterMap<U>(this: T[], fn: (value: T) => U | null): U[];
+}
+
+interface Element {
+    getElementById<T extends Element>(id: string): T | null;
 }
 
 interface HTMLElement {
-    /// Why isn't it like that in TypeScript by default?
     toggleMultiple(...classes: string[]): void;
+}
+
+interface HTMLDivElement {
+    rowNumberElement(): HTMLSpanElement;
+    rowNumber(): number;
+
+    sourceElement(): HTMLDivElement;
+    source(): string;
+
+    translationElement(): HTMLTextAreaElement;
+    translation(): string;
+    translations(): string[];
 }
 
 interface HTMLTextAreaElement {
@@ -55,11 +82,12 @@ interface CSSRule {
 }
 
 interface Bookmark {
-    title: string;
+    file: string;
+    rowIndex: number;
     description: string;
 }
 
-type LogEntry = Record<string, [string, string]>;
+type LogEntry = Record<string, [string, number, string, string]>;
 type ReplacementLog = Record<string, LogEntry>;
 
 interface TranslationLanguages {
@@ -68,21 +96,18 @@ interface TranslationLanguages {
 }
 
 interface ProjectSettingsOptions {
-    engineType?: import("./enums").EngineType | null;
+    engineType?: import("./enums").EngineType;
     translationLanguages?: TranslationLanguages;
     duplicateMode?: import("./enums").DuplicateMode;
     romanize?: boolean;
     disableCustomProcessing?: boolean;
     trim?: boolean;
     sourceDirectory?: string;
+    columns?: [string, number][];
+    translationColumnCount?: number;
 }
 
 type MatchObject = Record<string, string[]>;
-
-interface SearchResults {
-    results: Map<string, number[]>;
-    matchCount: number;
-}
 
 interface SearchFlagsObject {
     flags: import("./enums").SearchFlags;
@@ -95,33 +120,28 @@ interface CurrentTab {
 }
 
 interface MainWindowUI {
+    tabContentHeader: HTMLDivElement;
+    tabContentContainer: HTMLDivElement;
     tabContent: HTMLDivElement;
-    searchInput: HTMLTextAreaElement;
-    replaceInput: HTMLTextAreaElement;
+    bottomScrollBar: HTMLDivElement;
+    bottomScrollContent: HTMLDivElement;
+
+    batchButton: HTMLDivElement;
+    batchWindow: HTMLDivElement;
+
     leftPanel: HTMLDivElement;
-    searchPanel: HTMLDivElement;
-    searchPanelContent: HTMLDivElement;
-    searchCurrentPage: HTMLSpanElement;
-    searchTotalPages: HTMLSpanElement;
-    searchSwitch: HTMLDivElement;
-    pageSelectContainer: HTMLDivElement;
-    logFileSelect: HTMLSelectElement;
+
     topPanel: HTMLDivElement;
     topPanelButtonsDiv: HTMLDivElement;
+
     saveButton: HTMLButtonElement;
     writeButton: HTMLButtonElement;
     themeButton: HTMLButtonElement;
     themeMenu: HTMLDivElement;
     toolsButton: HTMLButtonElement;
-    translateToolsMenuButton: HTMLElement;
-    toolsMenu: HTMLDivElement;
     readButton: HTMLButtonElement;
     purgeButton: HTMLButtonElement;
-    searchCaseButton: HTMLButtonElement;
-    searchWholeButton: HTMLButtonElement;
-    searchRegexButton: HTMLButtonElement;
-    searchModeSelect: HTMLSelectElement;
-    searchLocationButton: HTMLButtonElement;
+
     goToRowInput: HTMLInputElement;
     menuBar: HTMLDivElement;
     fileMenuButton: HTMLButtonElement;
@@ -132,8 +152,6 @@ interface MainWindowUI {
     languageMenu: HTMLDivElement;
     currentTabDiv: HTMLDivElement;
     createThemeMenuButton: HTMLButtonElement;
-    searchMenu: HTMLDivElement;
-    searchButton: HTMLButtonElement;
     bookmarksButton: HTMLButtonElement;
     bookmarksMenu: HTMLDivElement;
     projectStatus: HTMLDivElement;
@@ -146,8 +164,10 @@ interface MainWindowUI {
     themeWindowBody: Element;
     createThemeButton: HTMLButtonElement;
     closeButton: HTMLButtonElement;
+
     fromLanguageInput: HTMLInputElement;
     toLanguageInput: HTMLInputElement;
+
     writeMenu: HTMLDivElement;
     outputPathButton: HTMLButtonElement;
     outputPathInput: HTMLInputElement;
@@ -213,4 +233,12 @@ interface TabInfo {
     total: number[];
     translated: number[];
     currentTab: CurrentTab;
+    updateTabProgress: (tabIndex: number) => void;
+    changeTab: (filename: string | null, newTabIndex?: number) => Promise<void>;
+}
+
+interface SearchResults {
+    results: Record<string, number[]>;
+    pages: number;
+    regexp: RegExp;
 }

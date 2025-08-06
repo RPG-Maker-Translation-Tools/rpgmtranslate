@@ -1,33 +1,44 @@
 import {
+    MAP_ID_COMMENT,
+    MAX_FILE_MATCHES,
+    TEMP_MAPS_DIRECTORY,
+    TRANSLATION_DIRECTORY,
+    TXT_EXTENSION,
+    TXT_EXTENSION_LENGTH,
+} from "../utilities/constants";
+import { createRegExp, getFileComment, join } from "../utilities/functions";
+import { MatchType, SearchAction, SearchFlags, SearchMode } from "./enums";
+import { ProjectSettings } from "./projectsettings";
+import { Settings } from "./settings";
+
+import {
+    DirEntry,
     readDir,
     readTextFile,
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import { error } from "@tauri-apps/plugin-log";
-import {
-    MAP_COMMENT,
-    MAX_FILE_MATCHES,
-    SEPARATOR,
-    TEMP_MAPS_DIRECTORY,
-    TRANSLATION_DIRECTORY,
-    TXT_EXTENSION,
-    TXT_EXTENSION_LENGTH,
-} from "../utilities/constants";
-import { createRegExp, join } from "../utilities/functions";
-import { SearchAction, SearchFlags, SearchMode } from "./enums";
-import { Settings } from "./settings";
+
+interface Match {
+    text: string;
+    type: MatchType;
+    column: [string, number];
+}
 
 export class Searcher {
-    #matchesResult = new Map<string, number[]>();
-    #matchesObject = new Map<string, string[]>();
-    #matchPagesCount = -1;
-    #regexp?: RegExp;
+    #searchResults: SearchResults = {
+        results: {},
+        pages: 0,
+        regexp: / /,
+    };
+    #matchObject = new Map<string, string[]>();
     #searchMode?: SearchMode;
     #searchAction?: SearchAction;
 
     public constructor(
         private readonly settings: Settings,
+        private readonly projectSettings: ProjectSettings,
         private readonly searchFlags: SearchFlagsObject,
         private readonly tabInfo: TabInfo,
     ) {}
@@ -53,15 +64,15 @@ export class Searcher {
     }
 
     #appendSearchMatch(
-        text: string,
+        match: Match,
+        matchCounterpart: Match,
         filename: string,
-        rowNumber: string,
-        counterpartIsSource: boolean,
-        counterpartText = "",
+        entry: string,
+        rowNumber: string | number,
     ) {
         // Regexp.exec fucks up matches by including capturing groups
         // eslint-disable-next-line sonarjs/prefer-regexp-exec
-        const matches = text.match(this.#regexp!);
+        const matches = match.text.match(this.#searchResults.regexp);
 
         if (!matches) {
             return;
@@ -72,40 +83,52 @@ export class Searcher {
                 filename = filename.slice(0, -TXT_EXTENSION_LENGTH);
             }
 
-            const matchKey = `${filename}-${counterpartIsSource ? "translation" : "source"}-${rowNumber}`;
+            const matchKey = `${filename}-${entry}-${match.type}-${match.column[0]} (${match.column[1]})-${rowNumber}`;
             const matchValue = [
-                this.#createMatchesContainer(text, matches),
-                counterpartText,
+                this.#createMatchesContainer(match.text, matches),
+                matchCounterpart.text,
             ];
 
-            this.#matchesObject.set(matchKey, matchValue);
+            this.#matchObject.set(matchKey, matchValue);
         } else {
-            if (!this.#matchesResult.has(filename)) {
-                this.#matchesResult.set(filename, []);
-            }
+            const resultEntry = `${filename}-${entry}-${match.column[1]}`;
 
-            this.#matchesResult.get(filename)!.push(Number(rowNumber));
+            if (filename in this.#searchResults.results) {
+                this.#searchResults.results[resultEntry].push(
+                    Number(rowNumber),
+                );
+            } else {
+                this.#searchResults.results[resultEntry] = [];
+            }
         }
     }
 
     async #writeMatches(drain = false): Promise<void> {
-        if (this.#matchesObject.size === 0) {
+        if (this.#matchObject.size === 0) {
             return;
         }
 
-        if (this.#matchesObject.size < MAX_FILE_MATCHES && !drain) {
+        if (this.#matchObject.size < MAX_FILE_MATCHES && !drain) {
             return;
         }
 
-        const entries = Array.from(this.#matchesObject.entries());
+        const entries = Array.from(this.#matchObject.entries());
+        const chunks: [string, string[]][][] = [];
 
-        while (entries.length > 0) {
-            const chunk = entries.splice(0, MAX_FILE_MATCHES);
-            this.#matchPagesCount++;
+        let i = 0;
+
+        while (i < entries.length) {
+            const count = Math.min(entries.length - i, MAX_FILE_MATCHES);
+            chunks.push(entries.slice(i, i + count));
+            i += count;
+        }
+
+        for (const chunk of chunks) {
+            this.#searchResults.pages++;
 
             const filePath = join(
                 this.settings.programDataPath,
-                `match${this.#matchPagesCount}.json`,
+                `match${this.#searchResults.pages}.json`,
             );
 
             await writeTextFile(
@@ -114,7 +137,7 @@ export class Searcher {
             );
         }
 
-        this.#matchesObject.clear();
+        this.#matchObject.clear();
     }
 
     async #removeOldMatches() {
@@ -130,7 +153,23 @@ export class Searcher {
     }
 
     async #searchCurrentTab() {
-        for (const rowContainer of this.tabInfo.currentTab.content.children) {
+        let entry!: string;
+        let fileComment: string;
+
+        if (this.tabInfo.currentTab.name.startsWith("map")) {
+            fileComment = MAP_ID_COMMENT;
+        } else if (this.tabInfo.currentTab.name.startsWith("system")) {
+            fileComment = "<!-- System Entry -->";
+        } else if (this.tabInfo.currentTab.name.startsWith("scripts")) {
+            fileComment = "<!-- Script ID -->";
+        } else if (this.tabInfo.currentTab.name.startsWith("plugins")) {
+            fileComment = "<!-- Plugin ID -->";
+        } else {
+            fileComment = "<!-- Event ID -->";
+        }
+
+        for (const rowContainer of this.tabInfo.currentTab.content
+            .children as HTMLCollectionOf<HTMLDivElement>) {
             const searchSource =
                 this.#searchMode !== SearchMode.Translation &&
                 this.#searchAction !== SearchAction.Replace;
@@ -143,39 +182,75 @@ export class Searcher {
                 continue;
             }
 
-            const sourceText = (rowContainer.children[1] as HTMLDivElement)
-                .innerHTML;
-            const translationText = (
-                rowContainer.children[2] as HTMLTextAreaElement
-            ).value;
+            const name = this.tabInfo.currentTab.name;
+            const rowNumber = rowContainer.rowNumber();
 
-            const [name, row] = rowContainer.id.split("-");
+            const source = rowContainer.source();
+            const translation = rowContainer.translation();
+
+            if (source === fileComment) {
+                entry = translation;
+            }
+
+            const sourceColumnIndex = 1;
+            const sourceColumnName =
+                this.projectSettings.columns[sourceColumnIndex][0];
+
+            const sourceMatch: Match = {
+                text: source,
+                type: MatchType.Source,
+                column: [sourceColumnName, sourceColumnIndex],
+            };
 
             if (searchSource) {
+                const translationMatch: Match = {
+                    text: translation,
+                    type: MatchType.Translation,
+                    column: ["", 1],
+                };
+
                 this.#appendSearchMatch(
-                    sourceText,
+                    sourceMatch,
+                    translationMatch,
                     name,
-                    row,
-                    false,
-                    translationText,
+                    entry,
+                    rowNumber,
                 );
             }
 
             if (searchTranslation) {
-                this.#appendSearchMatch(
-                    translationText,
-                    name,
-                    row,
-                    true,
-                    sourceText,
-                );
+                for (const [i, translation] of rowContainer
+                    .translations()
+                    .entries()) {
+                    if (translation.isEmpty()) {
+                        continue;
+                    }
+
+                    const columnIndex = i + 2;
+                    const columnName =
+                        this.projectSettings.columns[columnIndex][0];
+
+                    const translationMatch: Match = {
+                        text: translation,
+                        type: MatchType.Translation,
+                        column: [columnName, columnIndex],
+                    };
+
+                    this.#appendSearchMatch(
+                        translationMatch,
+                        sourceMatch,
+                        name,
+                        entry,
+                        rowNumber,
+                    );
+                }
             }
         }
 
         await this.#writeMatches(true);
     }
 
-    async #searchGlobal() {
+    async #getFiles(): Promise<DirEntry[]> {
         const [mapEntries, otherEntries] = await Promise.all([
             readDir(join(this.settings.tempMapsPath)),
             readDir(join(this.settings.translationPath)),
@@ -195,80 +270,120 @@ export class Searcher {
                     entry.name !== "maps.txt",
             );
 
+        return entries;
+    }
+
+    async #searchGlobal() {
+        const entries = await this.#getFiles();
+
         for (const entry of entries) {
             const filename = entry.name;
-            const isTempMap = filename.startsWith("map");
+            const isMap = filename.startsWith("map");
 
             const filePath = join(
                 this.settings.programDataPath,
-                isTempMap ? TEMP_MAPS_DIRECTORY : TRANSLATION_DIRECTORY,
+                isMap ? TEMP_MAPS_DIRECTORY : TRANSLATION_DIRECTORY,
                 filename,
             );
 
             const fileContent = await readTextFile(filePath);
             const lines = fileContent.lines();
 
-            let skip = false;
+            const fileComment = getFileComment(filename);
+            let fileEntry!: string;
 
-            for (const [lineNumber, line] of lines.entries()) {
-                if (!line.trim()) {
+            for (const [row, line] of lines.entries()) {
+                if (line.isEmpty()) {
                     continue;
                 }
 
-                let [source, translation] = line.split(SEPARATOR);
+                const split = line.parts();
 
-                if (source === MAP_COMMENT) {
-                    if (!(`map${translation}` in this.tabInfo.tabs)) {
-                        skip = true;
-                    } else {
-                        skip = false;
-                    }
-                }
-
-                if (skip) {
-                    continue;
-                }
-
-                if ((translation as string | undefined) === undefined) {
+                if (!split) {
                     await error(
-                        `Couldn't split line in file ${filename} at line ${lineNumber + 1}`,
+                        `Couldn't split line in file ${filename} at line ${row + 1}`,
                     );
                     continue;
                 }
 
-                source = source.denormalize().trim();
-                translation = translation.denormalize().trim();
-
                 const searchInSource =
                     this.#searchMode !== SearchMode.Translation &&
                     this.#searchAction !== SearchAction.Replace;
+
                 const searchInTranslation =
                     this.#searchMode !== SearchMode.Source &&
-                    this.#searchAction !== SearchAction.Put &&
-                    !translation.empty();
+                    this.#searchAction !== SearchAction.Put;
 
                 if (!searchInSource && !searchInTranslation) {
                     continue;
                 }
 
+                const source = split.source().clbtodlb();
+                const translation = split.translation().clbtodlb();
+
+                const sourceColumnIndex = 1;
+                const sourceColumnName =
+                    this.projectSettings.columns[sourceColumnIndex][0];
+
+                const sourceMatch: Match = {
+                    text: source,
+                    type: MatchType.Source,
+                    column: [sourceColumnName, sourceColumnIndex],
+                };
+
                 if (searchInSource) {
+                    const translationMatch: Match = {
+                        text: translation,
+                        type: MatchType.Translation,
+                        column: ["", 1],
+                    };
+
                     this.#appendSearchMatch(
-                        source,
+                        sourceMatch,
+                        translationMatch,
                         filename,
-                        lineNumber.toString(),
-                        false,
-                        translation,
+                        fileEntry,
+                        row,
                     );
                 }
 
+                if (source === fileComment) {
+                    fileEntry = translation;
+
+                    if (
+                        source === MAP_ID_COMMENT &&
+                        !(`map${translation}` in this.tabInfo.tabs)
+                    ) {
+                        break;
+                    }
+                }
+
                 if (searchInTranslation) {
-                    this.#appendSearchMatch(
-                        translation,
-                        filename,
-                        lineNumber.toString(),
-                        true,
-                        source,
-                    );
+                    for (const [i, translation] of split
+                        .translations()
+                        .entries()) {
+                        if (translation.isEmpty()) {
+                            continue;
+                        }
+
+                        const columnIndex = i + 2;
+                        const columnName =
+                            this.projectSettings.columns[columnIndex][0];
+
+                        const translationMatch: Match = {
+                            text: translation.clbtodlb(),
+                            type: MatchType.Translation,
+                            column: [columnName, columnIndex],
+                        };
+
+                        this.#appendSearchMatch(
+                            translationMatch,
+                            sourceMatch,
+                            filename,
+                            fileEntry,
+                            row,
+                        );
+                    }
                 }
             }
 
@@ -277,27 +392,28 @@ export class Searcher {
     }
 
     #reset() {
-        this.#matchesResult.clear();
-        this.#matchesObject.clear();
-        this.#matchPagesCount = -1;
+        this.#searchResults.results = {};
+        this.#searchResults.pages = 0;
+        this.#searchResults.regexp = / /;
+        this.#matchObject.clear();
     }
 
     public async search(
         text: string,
         searchMode: SearchMode,
         searchAction: SearchAction,
-    ): Promise<[Map<string, number[]>, number]> {
+    ): Promise<SearchResults> {
+        this.#reset();
+
         const regexp = await createRegExp(text, this.searchFlags, searchAction);
 
         if (!regexp) {
-            return [new Map<string, number[]>(), 0];
+            return this.#searchResults;
         }
-
-        this.#reset();
 
         this.#searchMode = searchMode;
         this.#searchAction = searchAction;
-        this.#regexp = regexp;
+        this.#searchResults.regexp = regexp;
 
         await this.#removeOldMatches();
         await this.#searchCurrentTab();
@@ -307,6 +423,6 @@ export class Searcher {
         }
 
         await this.#writeMatches(true);
-        return [this.#matchesResult, this.#matchPagesCount];
+        return this.#searchResults;
     }
 }

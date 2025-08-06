@@ -1,7 +1,3 @@
-import { emit, once } from "@tauri-apps/api/event";
-import { message } from "@tauri-apps/plugin-dialog";
-import { attachConsole, error } from "@tauri-apps/plugin-log";
-import XRegExp from "xregexp";
 import {
     EngineType,
     SearchAction,
@@ -10,13 +6,26 @@ import {
 } from "../types/enums";
 import { ProjectSettings } from "../types/projectsettings";
 import { Settings } from "../types/settings";
-import { SECOND_MS } from "./constants";
+import {
+    EVENT_ID_COMMENT,
+    MAP_ID_COMMENT,
+    PLUGIN_ID_COMMENT,
+    SCRIPT_ID_COMMENT,
+    SECOND_MS,
+    SYSTEM_ENTRY_COMMENT,
+} from "./constants";
 import { invokeEscapeText } from "./invokes";
 import {
     AboutWindowLocalization,
     Localization,
     SettingsWindowLocalization,
 } from "./localization";
+
+import XRegExp from "xregexp";
+
+import { emit, once } from "@tauri-apps/api/event";
+import { message } from "@tauri-apps/plugin-dialog";
+import { attachConsole, error } from "@tauri-apps/plugin-log";
 
 export function applyTheme(
     sheet: CSSStyleSheet,
@@ -202,81 +211,6 @@ export function escapeHTML(string: string) {
     });
 }
 
-export interface MainWindowUI {
-    tabContent: HTMLDivElement;
-    searchInput: HTMLTextAreaElement;
-    replaceInput: HTMLTextAreaElement;
-    leftPanel: HTMLDivElement;
-    searchPanel: HTMLDivElement;
-    searchPanelContent: HTMLDivElement;
-    searchCurrentPage: HTMLSpanElement;
-    searchTotalPages: HTMLSpanElement;
-    pageSelectContainer: HTMLDivElement;
-    logFileSelect: HTMLSelectElement;
-    topPanel: HTMLDivElement;
-    topPanelButtonsDiv: HTMLDivElement;
-    saveButton: HTMLButtonElement;
-    writeButton: HTMLButtonElement;
-    themeButton: HTMLButtonElement;
-    themeMenu: HTMLDivElement;
-    toolsButton: HTMLButtonElement;
-    translateToolsMenuButton: HTMLElement;
-    toolsMenu: HTMLDivElement;
-    readButton: HTMLButtonElement;
-    purgeButton: HTMLButtonElement;
-    searchCaseButton: HTMLButtonElement;
-    searchWholeButton: HTMLButtonElement;
-    searchRegexButton: HTMLButtonElement;
-    searchModeSelect: HTMLSelectElement;
-    searchLocationButton: HTMLButtonElement;
-    goToRowInput: HTMLInputElement;
-    menuBar: HTMLDivElement;
-    fileMenuButton: HTMLButtonElement;
-    helpMenuButton: HTMLButtonElement;
-    languageMenuButton: HTMLButtonElement;
-    fileMenu: HTMLDivElement;
-    helpMenu: HTMLDivElement;
-    languageMenu: HTMLDivElement;
-    currentTabDiv: HTMLDivElement;
-    createThemeMenuButton: HTMLButtonElement;
-    searchMenu: HTMLDivElement;
-    searchButton: HTMLButtonElement;
-    bookmarksButton: HTMLButtonElement;
-    bookmarksMenu: HTMLDivElement;
-    projectStatus: HTMLDivElement;
-    progressMeterContainer: HTMLDivElement;
-    globalProgressMeter: HTMLDivElement;
-    gameInfo: HTMLDivElement;
-    currentGameEngine: HTMLDivElement;
-    currentGameTitle: HTMLInputElement;
-    themeWindow: HTMLDivElement;
-    themeWindowBody: Element;
-    createThemeButton: HTMLButtonElement;
-    closeButton: HTMLButtonElement;
-    searchSwitch: HTMLDivElement;
-    fromLanguageInput: HTMLInputElement;
-    toLanguageInput: HTMLInputElement;
-    writeMenu: HTMLDivElement;
-    outputPathButton: HTMLButtonElement;
-    outputPathInput: HTMLInputElement;
-    disableMapProcessingCheckbox: HTMLSpanElement;
-    disableOtherProcessingCheckbox: HTMLSpanElement;
-    disableSystemProcessingCheckbox: HTMLSpanElement;
-    disablePluginProcessingCheckbox: HTMLSpanElement;
-    readMenu: HTMLDivElement;
-    readModeSelect: HTMLSelectElement;
-    readModeDescription: HTMLDivElement;
-    duplicateModeSelect: HTMLSelectElement;
-    romanizeCheckbox: HTMLSpanElement;
-    disableCustomProcessingCheckbox: HTMLSpanElement;
-    ignoreCheckbox: HTMLSpanElement;
-    trimCheckbox: HTMLSpanElement;
-    applyReadButton: HTMLDivElement;
-    purgeMenu: HTMLDivElement;
-    createIgnoreCheckbox: HTMLSpanElement;
-    applyPurgeButton: HTMLDivElement;
-}
-
 export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
     if (window === WindowType.Main) {
         const topPanel = document.getElementById("top-panel") as HTMLDivElement;
@@ -295,62 +229,40 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
             "purge-menu",
         ) as HTMLDivElement;
 
-        const searchPanel = document.getElementById(
-            "search-panel",
-        ) as HTMLDivElement;
-
         return {
+            tabContentHeader: document.getElementById(
+                "tab-content-header",
+            ) as HTMLDivElement,
+            tabContentContainer: document.getElementById(
+                "tab-content-container",
+            ) as HTMLDivElement,
             tabContent: document.getElementById(
                 "tab-content",
             ) as HTMLDivElement,
-            searchInput: document.getElementById(
-                "search-input",
-            ) as HTMLTextAreaElement,
-            replaceInput: document.getElementById(
-                "replace-input",
-            ) as HTMLTextAreaElement,
+            bottomScrollContent: document.getElementById(
+                "bottom-scroll-content",
+            ) as HTMLDivElement,
+            bottomScrollBar: document.getElementById(
+                "bottom-scroll-bar",
+            ) as HTMLDivElement,
+
+            batchButton: document.getElementById(
+                "batch-button",
+            ) as HTMLDivElement,
+            batchWindow: document.getElementById(
+                "batch-window",
+            ) as HTMLDivElement,
+
             leftPanel: document.getElementById("left-panel") as HTMLDivElement,
-            searchPanel,
-            searchPanelContent: searchPanel.querySelector(
-                "#search-panel-content",
-            )!,
-            searchCurrentPage: searchPanel.querySelector(
-                "#search-current-page",
-            )!,
-            searchTotalPages: searchPanel.querySelector("#search-total-pages")!,
-            searchSwitch: searchPanel.querySelector("#switch-content")!,
-            pageSelectContainer: searchPanel.querySelector(
-                "#page-select-container",
-            )!,
-            logFileSelect: searchPanel.querySelector("#log-file-select")!,
             topPanel,
             topPanelButtonsDiv,
-            saveButton: topPanelButtonsDiv.querySelector("#save-button")!,
-            writeButton: topPanelButtonsDiv.querySelector("#write-button")!,
-            themeButton: topPanelButtonsDiv.querySelector("#theme-button")!,
+            saveButton: topPanelButtonsDiv.getElementById("save-button")!,
+            writeButton: topPanelButtonsDiv.getElementById("write-button")!,
+            themeButton: topPanelButtonsDiv.getElementById("theme-button")!,
             themeMenu: document.getElementById("theme-menu") as HTMLDivElement,
-            toolsButton: topPanelButtonsDiv.querySelector("#tools-button")!,
-            translateToolsMenuButton: document.getElementById(
-                "translate-tools-menu-button",
-            )!,
-            toolsMenu: document.getElementById("tools-menu") as HTMLDivElement,
-            readButton: topPanelButtonsDiv.querySelector("#read-button")!,
-            purgeButton: topPanelButtonsDiv.querySelector("#purge-button")!,
-            searchCaseButton: document.getElementById(
-                "case-button",
-            ) as HTMLButtonElement,
-            searchWholeButton: document.getElementById(
-                "whole-button",
-            ) as HTMLButtonElement,
-            searchRegexButton: document.getElementById(
-                "regex-button",
-            ) as HTMLButtonElement,
-            searchModeSelect: document.getElementById(
-                "search-mode",
-            ) as HTMLSelectElement,
-            searchLocationButton: document.getElementById(
-                "location-button",
-            ) as HTMLButtonElement,
+            toolsButton: topPanelButtonsDiv.getElementById("tools-button")!,
+            readButton: topPanelButtonsDiv.getElementById("read-button")!,
+            purgeButton: topPanelButtonsDiv.getElementById("purge-button")!,
             goToRowInput: document.getElementById(
                 "goto-row-input",
             ) as HTMLInputElement,
@@ -374,12 +286,6 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
             ) as HTMLDivElement,
             createThemeMenuButton: document.getElementById(
                 "create-theme-menu-button",
-            ) as HTMLButtonElement,
-            searchMenu: document.getElementById(
-                "search-menu",
-            ) as HTMLDivElement,
-            searchButton: document.getElementById(
-                "search-button",
             ) as HTMLButtonElement,
             bookmarksButton: document.getElementById(
                 "bookmarks-button",
@@ -405,13 +311,13 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
             ) as HTMLInputElement,
             themeWindow,
             themeWindowBody,
-            createThemeButton: themeWindow.querySelector("#create-theme")!,
-            closeButton: themeWindow.querySelector("#close-button")!,
-            fromLanguageInput: topPanel.querySelector("#from-language-input")!,
-            toLanguageInput: topPanel.querySelector("#to-language-input")!,
+            createThemeButton: themeWindow.getElementById("create-theme")!,
+            closeButton: themeWindow.getElementById("close-button")!,
+            fromLanguageInput: topPanel.getElementById("from-language-input")!,
+            toLanguageInput: topPanel.getElementById("to-language-input")!,
             writeMenu,
-            outputPathButton: writeMenu.querySelector("#select-output-path")!,
-            outputPathInput: writeMenu.querySelector("#output-path-input")!,
+            outputPathButton: writeMenu.getElementById("select-output-path")!,
+            outputPathInput: writeMenu.getElementById("output-path-input")!,
             disableMapProcessingCheckbox: writeMenu.querySelector(
                 "#disable-maps-processing-checkbox",
             )!,
@@ -425,23 +331,23 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
                 "#disable-plugins-processing-checkbox",
             )!,
             readMenu,
-            readModeSelect: readMenu.querySelector("#read-mode-select")!,
-            readModeDescription: readMenu.querySelector("#mode-description")!,
+            readModeSelect: readMenu.getElementById("read-mode-select")!,
+            readModeDescription: readMenu.getElementById("mode-description")!,
             duplicateModeSelect: readMenu.querySelector(
                 "#duplicate-mode-select",
             )!,
-            romanizeCheckbox: readMenu.querySelector("#romanize-checkbox")!,
+            romanizeCheckbox: readMenu.getElementById("romanize-checkbox")!,
             disableCustomProcessingCheckbox: readMenu.querySelector(
                 "#custom-processing-checkbox",
             )!,
-            ignoreCheckbox: readMenu.querySelector("#ignore-checkbox")!,
-            trimCheckbox: readMenu.querySelector("#trim-checkbox")!,
-            applyReadButton: readMenu.querySelector("#apply-read-button")!,
+            ignoreCheckbox: readMenu.getElementById("ignore-checkbox")!,
+            trimCheckbox: readMenu.getElementById("trim-checkbox")!,
+            applyReadButton: readMenu.getElementById("apply-read-button")!,
             purgeMenu,
             createIgnoreCheckbox: purgeMenu.querySelector(
                 "#create-ignore-checkbox",
             )!,
-            applyPurgeButton: purgeMenu.querySelector("#apply-purge-button")!,
+            applyPurgeButton: purgeMenu.getElementById("apply-purge-button")!,
         };
     } else {
         const backupCheck = document.getElementById(
@@ -484,4 +390,68 @@ export function setupUi(window: WindowType): MainWindowUI | SettingsWindowUI {
 
 export function logErrorIO(path: string, err: unknown) {
     void error(`${path}: IO error occured: ${err}`);
+}
+
+export function getFileComment(filename: string): string {
+    let fileComment: string;
+
+    if (filename.startsWith("map")) {
+        fileComment = MAP_ID_COMMENT;
+    } else if (filename.startsWith("system")) {
+        fileComment = SYSTEM_ENTRY_COMMENT;
+    } else if (filename.startsWith("scripts")) {
+        fileComment = SCRIPT_ID_COMMENT;
+    } else if (filename.startsWith("plugins")) {
+        fileComment = PLUGIN_ID_COMMENT;
+    } else {
+        fileComment = EVENT_ID_COMMENT;
+    }
+
+    return fileComment;
+}
+
+/**
+ * Compares two strings with different line break styles, in this case, `\#` and `\n`.
+ * @param clbStr - string with custom `\#` line breaks.
+ * @param dlbStr - string with default `\n` line breaks.
+ */
+export function lbcmp(clbStr: string, dlbStr: string): boolean {
+    let i = 0,
+        j = 0;
+
+    while (i < clbStr.length && j < dlbStr.length) {
+        const clbChar = clbStr[i];
+        const dlbChar = dlbStr[j];
+
+        if (clbChar === "\\" && clbStr[i + 1] === "#") {
+            if (dlbChar !== "\n") {
+                return false;
+            }
+
+            i += 2;
+            j += 1;
+        } else {
+            if (clbChar !== dlbChar) {
+                return false;
+            }
+
+            i += 1;
+            j += 1;
+        }
+    }
+
+    return i === clbStr.length && j === dlbStr.length;
+}
+
+export async function logSplitError(row: number) {
+    await error(`Line can't be split at row ${row}`);
+}
+
+export function objectIsEmpty(obj: object) {
+    // eslint-disable-next-line sonarjs/no-unused-vars
+    for (const _ in obj) {
+        return false;
+    }
+
+    return true;
 }

@@ -1,12 +1,5 @@
 import {
-    copyFile,
-    mkdir,
-    readDir,
-    readTextFile,
-    remove as removePath,
-    writeTextFile,
-} from "@tauri-apps/plugin-fs";
-import {
+    SECOND_MS,
     SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
@@ -16,9 +9,19 @@ import {
 import { join } from "../utilities/functions";
 import { Settings } from "./settings";
 
+import {
+    copyFile,
+    mkdir,
+    readDir,
+    readTextFile,
+    remove as removePath,
+    writeTextFile,
+} from "@tauri-apps/plugin-fs";
+
 export class Saver {
     #outputArray: string[] = [];
     #saving = false;
+    #backupIsActive = -1;
     public saved = true;
 
     public constructor(
@@ -26,30 +29,36 @@ export class Saver {
         private readonly tabInfo: TabInfo,
         private readonly currentGameTitle: HTMLInputElement,
         private readonly saveIcon: Element,
-    ) {}
+    ) {
+        this.#setupBackup();
+    }
 
     public async saveSingle() {
-        for (const rowContainer of this.tabInfo.currentTab.content.children) {
-            const sourceTextDiv = rowContainer.children[1] as HTMLDivElement;
-            const translationTextArea = rowContainer
-                .children[2] as HTMLTextAreaElement;
+        for (const rowContainer of this.tabInfo.currentTab.content
+            .children as HTMLCollectionOf<HTMLDivElement>) {
+            const source = rowContainer.children[1] as HTMLDivElement;
+            const translations = rowContainer.translations();
 
             this.#outputArray.push(
-                sourceTextDiv.textContent.nnormalize() +
+                source.textContent.dlbtoclb() +
                     SEPARATOR +
-                    translationTextArea.value.nnormalize(),
+                    translations
+                        .map((translation) => translation.dlbtoclb())
+                        .join(SEPARATOR),
             );
         }
 
         if (this.tabInfo.currentTab.name === "system") {
             const sourceTitle =
                 this.currentGameTitle.getAttribute("source-title")!;
+
             const output =
                 sourceTitle +
                 SEPARATOR +
                 (sourceTitle === this.currentGameTitle.value
                     ? ""
                     : this.currentGameTitle.value);
+
             this.#outputArray.push(output);
         }
 
@@ -65,7 +74,22 @@ export class Saver {
         this.#outputArray.length = 0;
     }
 
-    public async saveBackup() {
+    #setupBackup() {
+        if (!this.settings.backup.enabled || this.#backupIsActive !== -1) {
+            return;
+        }
+
+        this.#backupIsActive = setInterval(async () => {
+            if (this.settings.backup.enabled) {
+                await this.#saveBackup();
+            } else {
+                clearInterval(this.#backupIsActive);
+                this.#backupIsActive = -1;
+            }
+        }, this.settings.backup.period * SECOND_MS);
+    }
+
+    async #saveBackup() {
         if (this.#saving) {
             return;
         }

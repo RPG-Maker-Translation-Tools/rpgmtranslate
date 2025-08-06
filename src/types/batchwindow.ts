@@ -1,115 +1,68 @@
-import { emit } from "@tauri-apps/api/event";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import {
     COMMENT_PREFIX,
     COMMENT_SUFFIX_LENGTH,
     MAP_DISPLAY_NAME_COMMENT_PREFIX,
     MAP_DISPLAY_NAME_COMMENT_PREFIX_LENGTH,
+    NEW_LINE,
     SECOND_MS,
     SEPARATOR,
     TEMP_MAPS_DIRECTORY,
     TRANSLATION_DIRECTORY,
     TXT_EXTENSION,
 } from "../utilities/constants";
-import { join, sleep } from "../utilities/functions";
+import { join, sleep, tw } from "../utilities/functions";
 import { invokeTranslateText } from "../utilities/invokes";
+import { MainWindowLocalization } from "../utilities/localization";
 import { BatchAction } from "./enums";
+import { ProjectSettings } from "./projectsettings";
 import { Settings } from "./settings";
 
+import { emit } from "@tauri-apps/api/event";
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+
 export class BatchWindow {
-    #batchWindowAction?: BatchAction;
-    #batchWindow = document.getElementById("batch-window") as HTMLDivElement;
-    #translateToolsMenuButton = document.getElementById(
-        "translate-tools-menu-button",
-    )!;
-    #batchWindowBody = this.#batchWindow.children[1];
-    #batchWindowFooter = this.#batchWindow.children[2];
+    #batchButton: HTMLDivElement;
+
+    #batchWindow: HTMLDivElement;
+    #batchWindowBody: HTMLDivElement;
+
+    #wrapLimitInput: HTMLInputElement;
+    #batchActionSelect: HTMLSelectElement;
+    #translationColumnSelect: HTMLSelectElement;
+
+    #wrapLimit = 0;
+    #batchAction = BatchAction.None;
+    #translationColumnIndex = -1;
+
     #checkedFiles: HTMLElement[] = [];
 
     public constructor(
-        private readonly settings: Settings,
-        private readonly tabInfo: TabInfo,
         private readonly ui: MainWindowUI,
+        private readonly settings: Settings,
+        private readonly projectSettings: ProjectSettings,
+        private readonly tabInfo: TabInfo,
+        localization: MainWindowLocalization,
     ) {
-        this.#batchWindow.addEventListener("mouseup", () => {
-            this.#checkedFiles.length = 0;
-        });
+        this.#batchButton = this.ui.batchButton;
+        this.#batchWindow = this.ui.batchWindow;
+
+        this.#batchWindowBody = this.#batchWindow.children[1] as HTMLDivElement;
+
+        this.#wrapLimitInput =
+            this.#batchWindow.getElementById("wrap-limit-input")!;
+        this.#batchActionSelect = this.#batchWindow.getElementById(
+            "batch-action-select",
+        )!;
+        this.#translationColumnSelect = this.#batchWindow.getElementById(
+            "translation-column-select",
+        )!;
+
+        this.#wrapLimitInput.placeholder = localization.wrapNumber;
+        this.#setColumns();
+        this.refill();
 
         this.#batchWindow.addEventListener("click", async (event) => {
-            const target = event.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (
-                target.classList.contains("checkbox") &&
-                !this.#checkedFiles.includes(target)
-            ) {
-                target.textContent = target.textContent ? "" : "check";
-                this.#checkedFiles.push(target);
-            }
-
-            switch (target.id) {
-                case "select-all-button":
-                    for (const element of this.#batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "check";
-                    }
-                    break;
-                // @ts-expect-error Fallthrough because of shared behavior
-                case "apply-button": {
-                    const wrapLength = Number.parseInt(
-                        (
-                            this.#batchWindowFooter.firstElementChild!
-                                .firstElementChild! as HTMLInputElement
-                        ).value,
-                    );
-
-                    for (const element of this.#batchWindowBody.children) {
-                        const checked =
-                            element.firstElementChild?.textContent ?? "";
-                        if (checked.empty()) {
-                            continue;
-                        }
-
-                        const filename = element.children[1].textContent;
-
-                        if (filename === this.tabInfo.currentTab.name) {
-                            await emit("change-tab", null);
-                        }
-
-                        await sleep(SECOND_MS);
-
-                        await this.#processExternalFile(
-                            filename,
-                            Number.parseInt(element.id),
-                            wrapLength,
-                        );
-                    }
-
-                    for (const element of this.#batchWindowBody.children) {
-                        element.firstElementChild!.classList.remove(
-                            "text-green-500",
-                        );
-                    }
-
-                    await emit("saved", false);
-                }
-                // eslint-disable-next-line no-fallthrough
-                case "deselect-all-button":
-                case "cancel-button":
-                    for (const element of this.#batchWindowBody.children) {
-                        element.firstElementChild!.textContent = "";
-                    }
-
-                    if (
-                        target.id === "cancel-button" ||
-                        target.id === "apply-button"
-                    ) {
-                        this.#batchWindow.classList.replace("flex", "hidden");
-                    }
-                    break;
-            }
+            await this.#handleButtonClick(event);
         });
 
         this.#batchWindow.addEventListener("mousemove", (event) => {
@@ -125,28 +78,121 @@ export class BatchWindow {
                 }
             }
         });
+
+        this.#batchWindow.addEventListener("mouseup", () => {
+            this.#checkedFiles.length = 0;
+        });
+
+        this.#batchActionSelect.addEventListener("change", () => {
+            const batchAction = Number(
+                this.#batchActionSelect.value,
+            ) as BatchAction;
+
+            if (batchAction === BatchAction.Wrap) {
+                this.#wrapLimitInput.classList.remove("hidden");
+            } else {
+                this.#wrapLimitInput.classList.add("hidden");
+            }
+        });
+
+        this.#translationColumnSelect.addEventListener("click", () => {
+            this.#setColumns();
+        });
     }
 
-    public show(batchWindowAction: BatchAction) {
-        const { x: xPos, y: yPos } =
-            this.#translateToolsMenuButton.getBoundingClientRect();
-        this.#batchWindow.style.left = `${xPos + this.#translateToolsMenuButton.clientWidth}px`;
-        this.#batchWindow.style.top = `${yPos}px`;
+    async #handleButtonClick(event: MouseEvent) {
+        const target = event.target as HTMLElement | null;
 
-        this.#batchWindowAction = batchWindowAction;
+        if (!target) {
+            return;
+        }
 
-        this.#batchWindowFooter.firstElementChild!.classList.toggle(
-            "hidden",
-            this.#batchWindowAction !== BatchAction.Wrap,
-        );
-        this.#batchWindow.classList.replace("hidden", "flex");
+        if (
+            target.classList.contains("checkbox") &&
+            !this.#checkedFiles.includes(target)
+        ) {
+            target.textContent = target.textContent ? "" : "check";
+            this.#checkedFiles.push(target);
+        }
+
+        switch (target.id) {
+            case "select-all-button":
+                for (const element of this.#batchWindowBody.children) {
+                    element.firstElementChild!.textContent = "check";
+                }
+                break;
+            // @ts-expect-error Fallthrough because of shared behavior
+            case "apply-button": {
+                this.#batchAction = Number(
+                    this.#batchActionSelect.value,
+                ) as BatchAction;
+
+                if (this.#batchAction === BatchAction.None) {
+                    // TODO: Handle
+                }
+
+                this.#translationColumnIndex = Number(
+                    this.#translationColumnSelect.value,
+                );
+
+                if (this.#translationColumnIndex === 0) {
+                    // TODO: handle
+                }
+
+                if (this.#batchAction === BatchAction.Wrap) {
+                    this.#wrapLimit = Number(this.#wrapLimitInput.value);
+
+                    if (
+                        !Number.isFinite(this.#wrapLimit) ||
+                        this.#wrapLimit <= 0
+                    ) {
+                        // TODO: Handle
+                    }
+                }
+
+                for (const element of this.#batchWindowBody.children) {
+                    const checked =
+                        element.firstElementChild?.textContent ?? "";
+
+                    if (checked.isEmpty()) {
+                        continue;
+                    }
+
+                    const filename = element.children[1].textContent;
+
+                    if (filename === this.tabInfo.currentTab.name) {
+                        await this.tabInfo.changeTab(null);
+                    }
+
+                    await this.#processFile(filename, Number(element.id));
+                }
+
+                for (const element of this.#batchWindowBody.children) {
+                    element.firstElementChild!.classList.remove(
+                        "text-green-500",
+                    );
+                }
+
+                await emit("saved", false);
+            }
+            // eslint-disable-next-line no-fallthrough
+            case "deselect-all-button":
+            case "cancel-button":
+                for (const element of this.#batchWindowBody.children) {
+                    element.firstElementChild!.textContent = "";
+                }
+
+                if (
+                    target.id === "cancel-button" ||
+                    target.id === "apply-button"
+                ) {
+                    this.#batchWindow.classList.replace("flex", "hidden");
+                }
+                break;
+        }
     }
 
-    async #processExternalFile(
-        filename: string,
-        index: number,
-        wrapLength: number,
-    ) {
+    async #processFile(filename: string, index: number) {
         const contentPath = join(
             this.settings.programDataPath,
             filename.startsWith("map")
@@ -157,10 +203,28 @@ export class BatchWindow {
 
         const newLines = await Promise.all(
             (await readTextFile(contentPath)).lines().map(async (line) => {
-                const [source, translation] = line.split(SEPARATOR);
-                if (!source.trim()) {
+                if (line.trim().isEmpty()) {
                     return;
                 }
+
+                const split = line.parts();
+
+                if (!split) {
+                    // TODO: Handle error
+                    return;
+                }
+
+                const source = split.source();
+
+                if (this.#batchAction === BatchAction.Translate) {
+                    // TODO: Set any other unset columns
+                    split[this.#translationColumnIndex] ??= "";
+                    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, sonarjs/different-types-comparison
+                } else if (split[this.#translationColumnIndex] === undefined) {
+                    return;
+                }
+
+                const translation = split[this.#translationColumnIndex];
 
                 const translationTrimmed = translation.trim();
                 const translationExists = Boolean(translationTrimmed);
@@ -169,7 +233,7 @@ export class BatchWindow {
                     MAP_DISPLAY_NAME_COMMENT_PREFIX,
                 );
 
-                switch (this.#batchWindowAction) {
+                switch (this.#batchAction) {
                     case BatchAction.Trim:
                         return translationExists
                             ? `${source}${SEPARATOR}${translationTrimmed}`
@@ -187,27 +251,21 @@ export class BatchWindow {
 
                         return line;
                     case BatchAction.Wrap:
-                        if (
-                            !isComment &&
-                            translationExists &&
-                            Number.isFinite(wrapLength) &&
-                            wrapLength !== 0
-                        ) {
-                            const wrapped = this.#wrapText(
-                                translation.denormalize(),
-                                wrapLength,
-                            );
-                            return `${source}${SEPARATOR}${wrapped.nnormalize()}`;
+                        if (!isComment && translationExists) {
+                            const wrapped = this.#wrapText(translation);
+                            return `${source}${SEPARATOR}${wrapped}`;
                         }
 
                         return line;
                 }
+
+                return line;
             }),
         );
 
-        if (this.#batchWindowAction === BatchAction.Translate) {
+        if (this.#batchAction === BatchAction.Translate) {
             this.tabInfo.translated[index] = this.tabInfo.total[index];
-            await emit("update-progress", index);
+            this.tabInfo.updateTabProgress(index);
         }
 
         await writeTextFile(contentPath, newLines.join("\n"));
@@ -215,11 +273,12 @@ export class BatchWindow {
         this.#batchWindowBody.children[index].firstElementChild!.classList.add(
             "text-green-500",
         );
+
         await sleep(SECOND_MS / 2);
     }
 
-    #wrapText(text: string, length: number): string {
-        const lines = text.lines();
+    #wrapText(text: string): string {
+        const lines = text.split(NEW_LINE);
         const remainder: string[] = [];
         const wrappedLines: string[] = [];
 
@@ -230,10 +289,10 @@ export class BatchWindow {
                 remainder.length = 0;
             }
 
-            if (line.length > length) {
+            if (line.length > this.#wrapLimit) {
                 const words = line.split(" ");
 
-                while (line.length > length && words.length > 0) {
+                while (line.length > this.#wrapLimit && words.length > 0) {
                     remainder.unshift(words.pop()!);
                 }
 
@@ -247,7 +306,7 @@ export class BatchWindow {
             wrappedLines.push(remainder.join(" "));
         }
 
-        return wrappedLines.join("\n");
+        return wrappedLines.join(NEW_LINE);
     }
 
     async #translateLine(text: string, isMapComment: boolean): Promise<string> {
@@ -268,6 +327,12 @@ export class BatchWindow {
         return `${text}${SEPARATOR}${translation}`;
     }
 
+    public show() {
+        this.#batchWindow.style.left = `${this.#batchButton.offsetLeft}px`;
+        this.#batchWindow.style.top = `${this.#batchButton.offsetTop + this.#batchButton.clientHeight}px`;
+        this.#batchWindow.classList.replace("hidden", "flex");
+    }
+
     public hide() {
         this.#batchWindow.classList.replace("flex", "hidden");
     }
@@ -276,11 +341,38 @@ export class BatchWindow {
         return this.#batchWindow.classList.contains("hidden");
     }
 
-    public addCheckbox(checkbox: HTMLDivElement) {
-        this.#batchWindowBody.appendChild(checkbox);
+    public refill() {
+        this.#batchWindowBody.innerHTML = "";
+
+        for (const tab of this.ui.leftPanel.children) {
+            const checkboxContainer = document.createElement("div");
+            checkboxContainer.className = tw`flex flex-row items-center gap-1 p-0.5`;
+            checkboxContainer.id = tab.id;
+
+            const checkbox = document.createElement("span");
+            checkbox.className = tw`checkbox borderPrimary max-h-6 min-h-6 max-w-6 min-w-6`;
+            checkboxContainer.appendChild(checkbox);
+
+            const checkboxLabel = document.createElement("span");
+            checkboxLabel.className = tw`textSecond text-base`;
+            checkboxLabel.textContent = tab.firstElementChild!.textContent;
+            checkboxContainer.appendChild(checkboxLabel);
+
+            this.#batchWindowBody.appendChild(checkboxContainer);
+        }
     }
 
-    public clear() {
-        this.#batchWindowBody.innerHTML = "";
+    #setColumns() {
+        this.#translationColumnSelect.innerHTML =
+            this.#translationColumnSelect.firstElementChild!.outerHTML;
+
+        for (const [i, [name]] of this.projectSettings.columns
+            .slice(2)
+            .entries()) {
+            const columnOption = document.createElement("option");
+            columnOption.value = (i + 2).toString();
+            columnOption.textContent = name;
+            this.#translationColumnSelect.appendChild(columnOption);
+        }
     }
 }

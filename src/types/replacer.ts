@@ -1,4 +1,3 @@
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import {
     SEPARATOR,
     TEMP_MAPS_DIRECTORY,
@@ -7,33 +6,46 @@ import {
 } from "../utilities/constants";
 import { createRegExp, join } from "../utilities/functions";
 import { SearchAction, SearchMode } from "./enums";
+import { Saver } from "./saver";
 import { Searcher } from "./searcher";
 import { Settings } from "./settings";
 
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+
 export class Replacer {
     public constructor(
+        private readonly searcher: Searcher,
+        private readonly saver: Saver,
         private readonly settings: Settings,
         private readonly replacementLog: ReplacementLog,
         private readonly searchFlags: SearchFlagsObject,
         private readonly tabInfo: TabInfo,
-        private readonly searcher: Searcher,
     ) {}
 
-    #addLog(filename: string, source: string, old: string, new_: string) {
+    #addLog(
+        filename: string,
+        entry: string,
+        source: string,
+        column: number,
+        old: string,
+        new_: string,
+    ) {
         if (!(filename in this.replacementLog)) {
             this.replacementLog[filename] = {};
         }
 
-        this.replacementLog[filename][source] = [old, new_];
+        this.replacementLog[filename][source] = [entry, column, old, new_];
     }
 
     public async replaceSingle(
         searchText: string,
         replacerText: string,
         filename: string,
-        rowNumber: number,
+        entry: string,
+        column: number,
+        rowIndex: number,
         searchAction: SearchAction,
-    ): Promise<string> {
+    ) {
         const regexp = await createRegExp(
             searchText,
             this.searchFlags,
@@ -41,19 +53,18 @@ export class Replacer {
         );
 
         if (!regexp) {
-            return "";
+            return;
         }
 
-        let replacedText = "";
-
         if (filename === this.tabInfo.currentTab.name) {
-            replacedText = this.replaceCurrentTab(
+            this.#replaceCurrentTab(
                 regexp,
                 replacerText,
                 filename,
-                rowNumber,
+                entry,
+                column,
+                rowIndex,
                 searchAction,
-                true,
             );
         } else {
             const filePath = join(
@@ -66,20 +77,21 @@ export class Replacer {
 
             const contentLines = (await readTextFile(filePath)).lines();
 
-            replacedText = this.replaceExternalFile(
+            this.#replaceExternalFile(
                 regexp,
                 replacerText,
                 contentLines,
                 filename,
-                rowNumber,
+                entry,
+                column,
+                rowIndex,
                 searchAction,
-                true,
             );
 
             await writeTextFile(filePath, contentLines.join("\n"));
         }
 
-        return replacedText;
+        this.saver.saved = false;
     }
 
     public async replaceAll(
@@ -88,158 +100,146 @@ export class Replacer {
         searchMode: SearchMode,
         searchAction: SearchAction,
     ) {
-        const [results] = await this.searcher.search(
+        const results = await this.searcher.search(
             searchText,
             searchMode,
             searchAction,
         );
 
-        if (!results.size) {
+        if (results.pages === 0) {
             return;
         }
 
-        const regexp = await createRegExp(
-            searchText,
-            this.searchFlags,
-            searchAction,
-        );
+        for (const [resultEntry, rowNumbers] of Object.entries(
+            results.results,
+        )) {
+            const [filename, entry, columnString] = resultEntry.split("-");
+            const column = Number(columnString);
 
-        if (!regexp) {
-            return;
-        }
-
-        for (const [filename, rowNumbers] of results.entries()) {
-            if (this.tabInfo.currentTab.name.startsWith(filename)) {
+            if (this.tabInfo.currentTab.name.startsWith(resultEntry)) {
                 for (const rowNumber of rowNumbers) {
-                    this.replaceCurrentTab(
-                        regexp,
+                    this.#replaceCurrentTab(
+                        results.regexp,
                         replacerText,
                         filename,
+                        entry,
+                        column,
                         rowNumber - 1,
                         searchAction,
-                        false,
                     );
                 }
             } else {
                 const filePath = join(
                     this.settings.programDataPath,
-                    filename.startsWith("map")
+                    resultEntry.startsWith("map")
                         ? TEMP_MAPS_DIRECTORY
                         : TRANSLATION_DIRECTORY,
-                    filename,
+                    resultEntry.slice(0, resultEntry.lastIndexOf("-")),
                 );
 
                 const fileContent = (await readTextFile(filePath)).lines();
 
-                for (const rowNumber of rowNumbers) {
-                    this.replaceExternalFile(
-                        regexp,
+                for (const rowIndex of rowNumbers) {
+                    this.#replaceExternalFile(
+                        results.regexp,
                         replacerText,
                         fileContent,
                         filename,
-                        rowNumber,
+                        entry,
+                        column,
+                        rowIndex,
                         searchAction,
-                        false,
                     );
                 }
 
                 await writeTextFile(filePath, fileContent.join("\n"));
             }
         }
+
+        this.saver.saved = false;
     }
 
-    private replaceCurrentTab(
+    #replaceCurrentTab(
         regexp: RegExp,
         replacerText: string,
         filename: string,
-        rowNumber: number,
+        entry: string,
+        column: number,
+        rowIndex: number,
         searchAction: SearchAction,
-        single: boolean,
-    ): string {
-        const textarea = this.tabInfo.currentTab.content.children[rowNumber]
+    ) {
+        const textarea = this.tabInfo.currentTab.content.children[rowIndex]
             .lastElementChild! as HTMLTextAreaElement;
 
-        let replacedText = "";
-        let newValue = "";
+        let newValue: string;
 
         if (searchAction === SearchAction.Replace) {
             newValue = textarea.value.replace(regexp, replacerText);
-
-            if (single) {
-                replacedText = textarea.value.replace(
-                    regexp,
-                    `<span class="bg-red-600">${replacerText}</span>`,
-                );
-            }
         } else {
             newValue = replacerText;
 
-            if (single) {
-                replacedText = `<span class="bg-red-600">${replacerText}</span>`;
+            if (!textarea.value) {
+                this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
+            } else if (replacerText.isEmpty()) {
+                this.tabInfo.translated[this.tabInfo.tabs[filename]] -= 1;
             }
         }
 
-        if (newValue) {
-            this.#addLog(
-                filename,
-                this.tabInfo.currentTab.content.children[rowNumber].children[1]
-                    .textContent,
-                textarea.value,
-                newValue,
-            );
+        this.#addLog(
+            filename,
+            entry,
+            this.tabInfo.currentTab.content.children[rowIndex].children[1]
+                .textContent,
+            column,
+            textarea.value,
+            newValue,
+        );
 
-            if (searchAction === SearchAction.Put) {
-                if (!textarea.value.trim()) {
-                    this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
-                }
-            }
-
-            textarea.value = newValue;
-        }
-
-        return replacedText;
+        textarea.value = newValue;
     }
 
-    private replaceExternalFile(
+    #replaceExternalFile(
         regexp: RegExp,
         replacerText: string,
         contentLines: string[],
         filename: string,
-        rowNumber: number,
+        entry: string,
+        column: number,
+        rowIndex: number,
         searchAction: SearchAction,
-        single: boolean,
-    ): string {
-        const [source_, translation_] =
-            contentLines[rowNumber].split(SEPARATOR);
-        const translation = translation_.denormalize();
+    ) {
+        const split = contentLines[rowIndex].parts();
 
-        let replacedText = "";
-        let newValue = "";
+        if (!split) {
+            // TODO: handle error
+            return;
+        }
+
+        const source = split.source();
+        const translation = split.translation().clbtodlb();
+
+        let newValue: string;
 
         if (searchAction === SearchAction.Replace) {
             newValue = translation.replace(regexp, replacerText);
-
-            if (single) {
-                replacedText = translation.replace(
-                    regexp,
-                    `<span class="bg-red-600">${replacerText}</span>`,
-                );
-            }
         } else {
             newValue = replacerText;
 
-            if (single) {
-                replacedText = `<span class="bg-red-600">${replacerText}</span>`;
+            if (!translation) {
+                this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
+            } else if (replacerText.isEmpty()) {
+                this.tabInfo.translated[this.tabInfo.tabs[filename]] -= 1;
             }
         }
 
-        if (newValue) {
-            contentLines[rowNumber] =
-                `${source_}${SEPARATOR}${newValue.nnormalize()}`;
-
-            this.#addLog(filename, source_, translation, newValue);
-        }
-
-        return replacedText;
+        contentLines[rowIndex] = `${source}${SEPARATOR}${newValue.dlbtoclb()}`;
+        this.#addLog(
+            filename,
+            entry,
+            source.clbtodlb(),
+            column,
+            translation,
+            newValue,
+        );
     }
 }

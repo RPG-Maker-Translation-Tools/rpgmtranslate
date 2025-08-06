@@ -132,7 +132,7 @@
                     <!-- Tools button -->
                     <button
                         class="button backgroundPrimaryHovered textThird toolsButtonTitle font-material size-16 p-4 outline-hidden"
-                        id="tools-button"
+                        id="batch-button"
                     >
                         construction
                     </button>
@@ -209,6 +209,7 @@
                                 type="text"
                                 autocomplete="off"
                                 autocapitalize="off"
+                                spellcheck="false"
                             />
                             <div id="game-engine"></div>
                         </div>
@@ -217,10 +218,24 @@
             </div>
         </header>
 
-        <main
-            class="flex w-full flex-col justify-start p-8 text-lg"
-            id="tab-content"
-        ></main>
+        <div
+            class="hidden w-full justify-start overflow-x-hidden p-8 pb-px text-lg whitespace-nowrap"
+            id="tab-content-header"
+        ></div>
+
+        <div class="overflow-x-hidden" id="tab-content-container">
+            <main
+                class="flex min-w-max flex-col justify-start p-8 pt-0 text-lg"
+                id="tab-content"
+            ></main>
+        </div>
+
+        <div
+            class="sticky bottom-0 z-50 h-6 overflow-x-auto"
+            id="bottom-scroll-bar"
+        >
+            <div class="h-px w-auto" id="bottom-scroll-content"></div>
+        </div>
 
         <div class="absolute px-8" id="project-status"></div>
 
@@ -346,7 +361,7 @@
         >
             <button
                 class="backgroundPrimaryHovered font-material mb-2 h-12 w-full content-center text-3xl select-none"
-                id="switch-content"
+                id="switch-panel-button"
             >
                 search
             </button>
@@ -371,10 +386,13 @@
                 id="log-file-select"
                 name="file-select"
             >
-                <option value="">-Choose a file-</option>
+                <option class="chooseFileOption" value=""></option>
             </select>
 
-            <div class="w-full flex-col" id="search-panel-content"></div>
+            <div
+                class="w-full flex-col text-base"
+                id="search-panel-content"
+            ></div>
         </div>
 
         <div
@@ -455,14 +473,33 @@
             </div>
 
             <div class="flex items-center justify-center p-2 text-base">
-                <span class="searchMode pr-2"></span>
+                <span class="searchModeSelectLabel pr-2"></span>
                 <select
                     class="backgroundSecond rounded-xs outline-hidden"
-                    id="search-mode"
+                    id="search-mode-select"
                 >
-                    <option class="searchAll" value="0"></option>
-                    <option class="searchOnlySource" value="1"></option>
-                    <option class="searchOnlyTranslation" value="2"></option>
+                    <option class="searchAllOptionLabel" value="0"></option>
+                    <option
+                        class="searchOnlySourceOptionLabel"
+                        value="1"
+                    ></option>
+                    <option
+                        class="searchOnlyTranslationOptionLabel"
+                        value="2"
+                    ></option>
+                </select>
+            </div>
+
+            <div class="flex items-center justify-center p-2 text-base">
+                <span class="searchColumnSelectLabel pr-2"></span>
+                <select
+                    class="backgroundSecond rounded-xs outline-hidden"
+                    id="search-column-select"
+                >
+                    <option
+                        class="rightmostFilledOptionLabel"
+                        value="0"
+                    ></option>
                 </select>
             </div>
         </div>
@@ -479,19 +516,14 @@
         />
 
         <div
-            class="backgroundPrimary textPrimary outlinePrimary borderSecond fixed z-50 hidden max-h-[66.666667%] w-7/12 flex-col gap-1 border-2 p-2 text-base"
+            class="backgroundPrimary textPrimary outlinePrimary borderSecond fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
             id="batch-window"
         >
             <div
                 class="selectFiles flex h-8 flex-row items-center justify-center text-lg"
             ></div>
+
             <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
-            <div class="flex flex-col items-center justify-center gap-2">
-                <div class="hidden flex-row gap-2">
-                    <input class="input backgroundSecond h-8" type="text" />
-                    <span class="wrapNumber text-base"></span>
-                </div>
-            </div>
 
             <div class="flex flex-row items-center justify-center gap-4">
                 <button
@@ -503,6 +535,7 @@
                     id="deselect-all-button"
                 ></button>
             </div>
+
             <div class="flex flex-row items-center justify-center gap-4">
                 <button
                     class="backgroundPrimary button backgroundPrimaryHovered borderPrimary apply h-8 w-32 rounded-md border-2 p-1"
@@ -513,30 +546,40 @@
                     id="cancel-button"
                 ></button>
             </div>
+
+            <div
+                class="flex flex-row items-center justify-center gap-2"
+                id="batch-window-footer"
+            >
+                <select class="backgroundSecond w-64" id="batch-action-select">
+                    <option class="selectBatchAction" value="0"></option>
+                    <option class="trimActionDescription" value="1"></option>
+                    <option
+                        class="translateActionDescription"
+                        value="2"
+                    ></option>
+                    <option class="wrapActionDescription" value="3"></option>
+                </select>
+
+                <select
+                    class="backgroundSecond w-64"
+                    id="translation-column-select"
+                >
+                    <option class="selectTranslationColumn" value="0"></option>
+                </select>
+
+                <input
+                    class="input backgroundSecond hidden h-6 text-base"
+                    id="wrap-limit-input"
+                    type="text"
+                />
+            </div>
         </div>
 
         <div class="dropdown-menu borderSecond hidden" id="theme-menu">
             <button
                 class="backgroundPrimary backgroundPrimaryHovered createTheme h-8 content-center p-1 text-base"
                 id="create-theme-menu-button"
-            ></button>
-        </div>
-
-        <div
-            class="dropdown-menu borderSecond hidden text-base"
-            id="tools-menu"
-        >
-            <button
-                class="backgroundPrimary backgroundPrimaryHovered trimFields h-8 content-center p-1"
-                id="trim-tools-menu-button"
-            ></button>
-            <button
-                class="backgroundPrimary backgroundPrimaryHovered translateFields h-8 content-center p-1"
-                id="translate-tools-menu-button"
-            ></button>
-            <button
-                class="backgroundPrimary backgroundPrimaryHovered wrapFields flex h-8 content-center p-1"
-                id="wrap-tools-menu-button"
             ></button>
         </div>
 
