@@ -1,0 +1,876 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="../../assets/style.css" />
+        <link rel="stylesheet" href="../../assets/theme-styles.css" />
+        <link rel="stylesheet" href="../../assets/material.css" />
+        <script type="module" src="MainWindow.ts" defer></script>
+    </head>
+
+    <body class="text-primary bg-dark overflow-x-hidden text-2xl">
+        <header class="sticky top-0 z-40">
+            <div
+                class="bg-primary mr-2 flex h-6 w-full items-center text-sm"
+                id="menu-bar"
+            >
+                <div class="hover-bg-second content-center">
+                    <button
+                        class="px-2"
+                        id="file-menu-button"
+                        data-i18n="File"
+                    ></button>
+                </div>
+                <div class="hover-bg-second content-center">
+                    <button
+                        class="px-2"
+                        id="help-menu-button"
+                        data-i18n="Help"
+                    ></button>
+                </div>
+                <div class="hover-bg-second content-center">
+                    <button
+                        class="px-2"
+                        id="language-menu-button"
+                        data-i18n="Language"
+                    ></button>
+                </div>
+                <div class="dropdown-menu border-second hidden" id="file-menu">
+                    <button
+                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                        id="reload-button"
+                        data-i18n="Reload (F5)"
+                    ></button>
+                </div>
+                <div class="dropdown-menu border-second hidden" id="help-menu">
+                    <button
+                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                        id="help-button"
+                        data-i18n="Help"
+                    ></button>
+                    <button
+                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                        id="about-button"
+                        data-i18n="About"
+                    ></button>
+                </div>
+                <div
+                    class="dropdown-menu border-second hidden"
+                    id="language-menu"
+                >
+                    <button
+                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                        id="ru-button"
+                    >
+                        Русский/Russian
+                    </button>
+                    <button
+                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                        id="en-button"
+                    >
+                        English/Английский
+                    </button>
+                </div>
+            </div>
+
+            <div
+                class="bg-primary flex h-16 w-full items-center justify-between"
+                id="top-panel"
+            >
+                <div
+                    class="flex h-full items-center text-3xl"
+                    id="top-panel-buttons"
+                >
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="menu-button"
+                        data-i18n-title="Tabs (Tab)"
+                    >
+                        menu
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="save-button"
+                        data-i18n-title="Save (Ctrl + S)"
+                    >
+                        <div>save</div>
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="write-button"
+                        data-i18n-title="Write (Alt + C)"
+                    >
+                        <div>manufacturing</div>
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="open-directory-button"
+                        data-i18n-title="Open directory"
+                    >
+                        folder_open
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="settings-button"
+                        data-i18n-title="Settings"
+                    >
+                        settings
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="theme-button"
+                        data-i18n-title="Themes"
+                    >
+                        palette
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="bookmarks-button"
+                        data-i18n-title="Bookmarks (Ctrl + B)"
+                    >
+                        bookmarks
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="search-button"
+                        data-i18n-title="Search (Ctrl + F)"
+                    >
+                        search
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="batch-button"
+                        data-i18n-title="Batch menu"
+                    >
+                        construction
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="read-button"
+                        data-i18n-title="Read menu"
+                    >
+                        <div>menu_book</div>
+                    </button>
+
+                    <button
+                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        id="purge-button"
+                        data-i18n-title="Purge menu"
+                    >
+                        mop
+                    </button>
+                </div>
+
+                <div class="flex h-full w-full flex-col gap-2 pl-4 text-base">
+                    <input
+                        class="input bg-second text-second h-6"
+                        id="from-language-input"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        type="text"
+                        data-i18n-placeholder="Machine translation from language (e. g. en, ru-RU)"
+                    />
+                    <input
+                        class="input bg-second text-second h-6"
+                        id="to-language-input"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        type="text"
+                        data-i18n-placeholder="Machine translation to language (e. g. en, ru-RU)"
+                    />
+                </div>
+
+                <div
+                    class="invisible flex h-full gap-4 p-4"
+                    id="metadata-container"
+                >
+                    <div
+                        class="flex w-24 items-center justify-center text-sm"
+                        id="current-tab"
+                    ></div>
+
+                    <div class="w-32 content-center">
+                        <div class="bg-second w-full rounded-xs">
+                            <div
+                                class="bg-third text-primary rounded-xs p-0.5 text-center text-xs leading-none font-medium"
+                                id="progress-meter"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex flex-col items-center justify-center text-sm"
+                        id="game-info"
+                    >
+                        <input
+                            class="input text-second bg-second min-h-8 w-96"
+                            id="game-title-input"
+                            type="text"
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                        />
+                        <div id="game-engine"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div
+            class="hidden w-full justify-start overflow-x-hidden p-8 pb-px text-lg whitespace-nowrap"
+            id="tab-content-header"
+        ></div>
+
+        <div class="overflow-x-hidden" id="tab-content-container">
+            <main
+                class="flex min-w-max flex-col justify-start p-8 pt-0 text-lg"
+                id="tab-content"
+            ></main>
+        </div>
+
+        <div
+            class="sticky bottom-0 z-50 h-6 overflow-x-auto"
+            id="bottom-scroll-bar"
+        >
+            <div class="h-px w-auto" id="bottom-scroll-content"></div>
+        </div>
+
+        <div class="absolute px-8" id="project-status"></div>
+
+        <div
+            class="bg-primary fixed bottom-0 z-50 hidden size-fit p-2 text-lg"
+            id="theme-edit-menu"
+        >
+            <div class="flex items-end justify-end">
+                <button class="font-material" id="close-button">close</button>
+            </div>
+
+            <div class="columns-2 gap-4 p-2">
+                <div class="flex flex-row gap-2">
+                    <input id="--bg-dark" type="color" />
+                    <label
+                        for="--bg-dark"
+                        data-i18n="Dark background color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--bg-primary" type="color" />
+                    <label
+                        for="--bg-primary"
+                        data-i18n="Primary background color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--outline-primary" type="color" />
+                    <label
+                        for="--outline-primary"
+                        data-i18n="Primary outline color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--outline-second" type="color" />
+                    <label
+                        for="--outline-second"
+                        data-i18n="Second outline color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--outline-third" type="color" />
+                    <label
+                        for="--outline-third"
+                        data-i18n="Third outline color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--focus-outline-primary" type="color" />
+                    <label
+                        for="--focus-outline-primary"
+                        data-i18n="Focused outline color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--border-primary" type="color" />
+                    <label
+                        for="--border-primary"
+                        data-i18n="Primary border color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--border-second" type="color" />
+                    <label
+                        for="--border-second"
+                        data-i18n="Second border color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--focus-border-primary" type="color" />
+                    <label
+                        for="--focus-border-primary"
+                        data-i18n="Focus border color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--bg-second" type="color" />
+                    <label
+                        for="--bg-second"
+                        data-i18n="Second background color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--hover-bg-primary" type="color" />
+                    <label
+                        for="--hover-bg-primary"
+                        data-i18n="Primary hovered background color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--hover-bg-second" type="color" />
+                    <label
+                        for="--hover-bg-second"
+                        data-i18n="Second hovered background color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--text-primary" type="color" />
+                    <label
+                        for="--text-primary"
+                        data-i18n="Primary text color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--text-second" type="color" />
+                    <label
+                        for="--text-second"
+                        data-i18n="Second text color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--text-third" type="color" />
+                    <label
+                        for="--text-third"
+                        data-i18n="Third text color"
+                    ></label>
+                </div>
+                <div class="flex flex-row gap-2">
+                    <input id="--bg-third" type="color" />
+                    <label
+                        for="--bg-third"
+                        data-i18n="Third background color"
+                    ></label>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center p-2">
+                <input
+                    class="input text-second bg-second h-8 w-full"
+                    id="theme-name-input"
+                    type="text"
+                    autocomplete="off"
+                    data-i18n-placeholder="Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
+                />
+            </div>
+
+            <div class="flex items-center justify-center p-2">
+                <button
+                    class="bg-second hover-bg-primary h-8 w-32 rounded-lg"
+                    id="create-theme"
+                    data-i18n="Create theme"
+                ></button>
+            </div>
+        </div>
+
+        <div
+            class="bg-primary fixed top-[88px] z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
+            id="left-panel"
+        ></div>
+
+        <div
+            class="bg-primary outline-third fixed top-0 right-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline-2 transition-transform duration-500"
+            id="search-panel"
+        >
+            <button
+                class="font-material hover-bg-primary mb-2 h-12 w-full content-center text-3xl select-none"
+                id="switch-panel-button"
+            >
+                search
+            </button>
+
+            <div
+                class="flex h-12 w-full items-center justify-evenly"
+                id="page-select-container"
+            >
+                <button class="font-material" id="previous-page-button">
+                    chevron_left
+                </button>
+                <span
+                    class="currentPage"
+                    id="search-current-page"
+                    data-i18n=" - "
+                ></span>
+                <span
+                    class="separator"
+                    id="search-separator"
+                    data-i18n="of"
+                ></span>
+                <span id="search-total-pages" data-i18n=" - "></span>
+                <button class="font-material" id="next-page-button">
+                    chevron_right
+                </button>
+            </div>
+
+            <select
+                class="hidden h-8 w-full items-center justify-evenly text-sm"
+                id="log-file-select"
+                name="file-select"
+            >
+                <option class="-Select File-" value=""></option>
+            </select>
+
+            <div
+                class="w-full flex-col text-base"
+                id="search-panel-content"
+            ></div>
+        </div>
+
+        <div
+            class="bg-primary border-second fixed z-50 hidden h-auto w-96 border-2"
+            id="search-menu"
+        >
+            <div class="flex h-auto flex-col">
+                <div
+                    class="flex h-auto flex-row items-center p-4"
+                    id="search-field"
+                >
+                    <textarea
+                        class="input text-second bg-second h-auto text-base"
+                        id="search-input"
+                        rows="1"
+                        cols="50"
+                        data-i18n-placeholder="Search input"
+                    ></textarea>
+                </div>
+                <div
+                    class="font-material flex flex-row items-center justify-center"
+                >
+                    <button
+                        class="button hover-bg-primary text-third w-16"
+                        id="apply-search-button"
+                        data-i18n-title="Search"
+                    >
+                        search
+                    </button>
+                    <button
+                        class="button hover-bg-primary text-third w-16"
+                        id="replace-button"
+                        data-i18n-title="Replace all matches"
+                    >
+                        arrow_downward
+                    </button>
+                    <button
+                        class="button hover-bg-primary text-third w-16"
+                        id="put-button"
+                        data-i18n-title="Put text to translation textarea of matching source text"
+                    >
+                        swipe_left
+                    </button>
+                </div>
+
+                <div class="flex flex-row items-center p-4" id="replace-field">
+                    <textarea
+                        class="input text-second bg-second h-auto text-base"
+                        id="replace-input"
+                        rows="1"
+                        cols="50"
+                        data-i18n-placeholder="Replace input"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="flex flex-row justify-center">
+                <button
+                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    id="case-button"
+                    data-i18n-title="Consider case (Alt + C)"
+                >
+                    match_case
+                </button>
+                <button
+                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    id="whole-button"
+                    data-i18n-title="Search the whole text (Alt + W)"
+                >
+                    match_word
+                </button>
+                <button
+                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    id="regex-button"
+                    data-i18n-title="Search by regular expressions (Alt + R)"
+                >
+                    regular_expression
+                </button>
+                <button
+                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    id="location-button"
+                    data-i18n-title="Search only in current tab (Alt + L)"
+                >
+                    location_on
+                </button>
+            </div>
+
+            <div class="flex items-center justify-center p-2 text-base">
+                <label
+                    class="pr-2"
+                    for="search-mode-select"
+                    data-i18n="Search mode"
+                ></label>
+                <select class="bg-second rounded-xs" id="search-mode-select">
+                    <option value="0" data-i18n="Search everywhere"></option>
+                    <option
+                        value="1"
+                        data-i18n="Search only in source text"
+                    ></option>
+                    <option
+                        value="2"
+                        data-i18n="Search only in translation"
+                    ></option>
+                </select>
+            </div>
+
+            <div class="flex items-center justify-center p-2 text-base">
+                <label
+                    class="pr-2"
+                    for="search-column-select"
+                    data-i18n="Select column"
+                ></label>
+                <select class="bg-second rounded-xs" id="search-column-select">
+                    <option value="0" data-i18n="Rightmost filled"></option>
+                </select>
+            </div>
+        </div>
+
+        <div
+            class="bg-primary fixed z-50 hidden h-auto max-h-32 w-48 flex-col overflow-auto text-sm"
+            id="bookmarks-menu"
+        ></div>
+
+        <input
+            class="bg-primary border-second focus-border-primary fixed top-8 right-1/4 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base"
+            id="goto-row-input"
+            type="number"
+        />
+
+        <div
+            class="bg-primary text-primary outline-primary border-second fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
+            id="batch-menu"
+        >
+            <div
+                class="flex h-8 flex-row items-center justify-center text-lg"
+                data-i18n="Select files (You can hold LMB and drag to select multiple files)"
+            ></div>
+
+            <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
+
+            <div class="flex flex-row items-center justify-center gap-4">
+                <button
+                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    id="select-all-button"
+                    data-i18n="Select All"
+                ></button>
+                <button
+                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    id="deselect-all-button"
+                    data-i18n="Deselect All"
+                ></button>
+            </div>
+
+            <div class="flex flex-row items-center justify-center gap-4">
+                <button
+                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    id="apply-button"
+                    data-i18n="Apply"
+                ></button>
+                <button
+                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    id="cancel-button"
+                    data-i18n="Cancel"
+                ></button>
+            </div>
+
+            <div
+                class="flex flex-row items-center justify-center gap-2"
+                id="batch-menu-footer"
+            >
+                <select class="bg-second w-64" id="batch-action-select">
+                    <option value="0" data-i18n="-Select Action-"></option>
+                    <option value="1" data-i18n="Trim"></option>
+                    <option value="2" data-i18n="Translate"></option>
+                    <option value="3" data-i18n="Wrap"></option>
+                </select>
+
+                <select class="bg-second w-64" id="translation-column-select">
+                    <option value="0" data-i18n="-Select Column-"></option>
+                </select>
+
+                <input
+                    class="input bg-second hidden h-6 text-base"
+                    id="wrap-limit-input"
+                    type="number"
+                />
+            </div>
+        </div>
+
+        <div class="dropdown-menu border-second hidden" id="theme-menu">
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="create-theme"
+                data-i18n="Create Theme"
+            ></button>
+        </div>
+
+        <div
+            class="dropdown-menu border-second bg-primary hidden max-w-3xl p-2 text-base"
+            id="write-menu"
+        >
+            <button
+                class="bg-second hover-bg-primary h-8 content-center rounded-xs p-1"
+                id="select-output-path-button"
+                data-i18n="Select Output Path"
+            ></button>
+
+            <input
+                class="input text-second bg-second"
+                id="output-path-input"
+                autocapitalize="off"
+                autocomplete="off"
+                type="text"
+            />
+
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-map-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable Mapxxx processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable Actors, Armors, Troops etc. processing"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable System processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable plugins.js/Scripts processing"
+                    ></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center">
+                <button
+                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    id="apply-button"
+                    data-i18n="Apply"
+                ></button>
+            </div>
+        </div>
+
+        <div
+            class="dropdown-menu border-second bg-primary hidden max-w-3xl gap-2 p-2 text-base"
+            id="read-menu"
+        >
+            <div>
+                <span data-i18n="Read mode:"></span>
+
+                <select class="bg-second rounded-xs" id="read-mode-select">
+                    <option data-i18n="Append" value="0"></option>
+                    <option data-i18n="Force rewrite" value="1"></option>
+                </select>
+
+                <div
+                    id="mode-description"
+                    data-i18n="In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+                ></div>
+            </div>
+
+            <div class="flex flex-row gap-2 pt-2">
+                <span data-i18n="Duplicate mode"></span>
+                <select class="bg-second rounded-xs" id="duplicate-mode-select">
+                    <option data-i18n="Allow duplicates" value="0"></option>
+                    <option data-i18n="Remove duplicates" value="1"></option>
+                </select>
+
+                <div id="duplicate-mode-description"></div>
+            </div>
+
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="romanize-checkbox"
+                    ></span>
+                    <span data-i18n="Whether to romanize text."></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="custom-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable custom processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-map-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable Mapxxx processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable Actors, Armors, Troops etc. processing"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable System processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable plugins.js/Scripts processing"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container" id="ignore-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="ignore-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Ignore entries from .rvpacker-ignore file"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container" id="trim-container">
+                    <span
+                        class="checkbox border-primary size-8 min-h-8 min-w-8"
+                        id="trim-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+                    ></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center">
+                <button
+                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    id="apply-button"
+                    data-i18n="Read"
+                ></button>
+            </div>
+        </div>
+
+        <div
+            class="dropdown-menu border-second bg-primary hidden max-w-3xl gap-2 p-2 text-base"
+            id="purge-menu"
+        >
+            <div class="flex flex-col gap-2 py-2">
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-map-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable Mapxxx processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-other-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable Actors, Armors, Troops etc. processing"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-system-processing-checkbox"
+                    ></span>
+                    <span data-i18n="Disable System processing"></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="disable-plugins-processing-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Disable plugins.js/Scripts processing"
+                    ></span>
+                </div>
+
+                <div class="checkbox-container">
+                    <span
+                        class="checkbox border-primary size-8"
+                        id="create-ignore-checkbox"
+                    ></span>
+                    <span
+                        data-i18n="Create .rvpacker-ignore file from purged lines to prevent their further appearance"
+                    ></span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center">
+                <button
+                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    id="apply-button"
+                    data-i18n="Purge"
+                ></button>
+            </div>
+        </div>
+    </body>
+</html>

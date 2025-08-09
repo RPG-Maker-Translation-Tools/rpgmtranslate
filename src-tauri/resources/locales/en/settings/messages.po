@@ -1,0 +1,66 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-08-10 00:10+0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/windows/settings/html.ts:11
+msgid "(min 1, max 99)"
+msgstr "(min 1, max 99)"
+
+#: src/windows/settings/html.ts:17
+msgid "Allowed"
+msgstr "Allowed"
+
+#: src/windows/settings/html.ts:16
+msgid "Ask for confirmation"
+msgstr "Ask for confirmation"
+
+#: src/windows/settings/html.ts:7
+msgid "Backup"
+msgstr "Backup"
+
+#: src/windows/settings/html.ts:13
+msgid "Check for updates"
+msgstr "Check for updates"
+
+#: src/windows/settings/html.ts:8
+msgid "Create backup every:"
+msgstr "Create backup every:"
+
+#: src/windows/settings/html.ts:19
+msgid "Default"
+msgstr "Default"
+
+#: src/windows/settings/html.ts:15
+msgid "Disabled"
+msgstr "Disabled"
+
+#: src/windows/settings/html.ts:12
+msgid "Display lines breaks in text areas"
+msgstr "Display lines breaks in text areas"
+
+#: src/windows/settings/html.ts:18
+msgid "Font"
+msgstr "Font"
+
+#: src/windows/settings/html.ts:10
+msgid "Max number of backups:"
+msgstr "Max number of backups:"
+
+#: src/windows/settings/html.ts:14
+msgid "Row delete mode"
+msgstr "Row delete mode"
+
+#: src/windows/settings/html.ts:9
+msgid "seconds (min 60, max 3600)"
+msgstr "seconds (min 60, max 3600)"

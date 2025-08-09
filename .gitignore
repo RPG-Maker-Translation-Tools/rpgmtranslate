@@ -1,4 +1,5 @@
 /.vscode
+/.swc
 /src/dist
 /src-tauri/target
 /src-tauri/Cargo.lock

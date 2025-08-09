@@ -27,8 +27,8 @@
                 "type": "downloadBootstrapper"
             }
         },
+        "resources": ["resources/**/*.json"],
         "createUpdaterArtifacts": true,
-        "resources": ["res/**/*"],
         "icon": [
             "icons/32x32.png",
             "icons/128x128.png",
@@ -56,24 +56,25 @@
         "security": {
             "assetProtocol": {
                 "scope": [
-                    "$RESOURCE/**",
                     "/usr/share/fonts/**/*",
-                    "C:/Windows/Fonts/**/*"
+                    "C:/Windows/Fonts/**/*",
+                    "$RESOURCE/**/*.json"
                 ],
                 "enable": true
             },
             "csp": {
-                "default-src": "'self' customprotocol: asset:",
+                "default-src": "'self' customprotocol: asset: http://asset.localhost",
                 "connect-src": "ipc: http://ipc.localhost",
                 "img-src": "'self' asset: http://asset.localhost blob: data:",
                 "style-src": "'unsafe-inline' 'self'",
-                "font-src": "asset: http://asset.localhost http://tauri.localhost"
+                "font-src": "asset: http://asset.localhost http://tauri.localhost",
+                "script-src": "asset: http://asset.localhost"
             }
         },
         "windows": [
             {
                 "title": "RPGMTranslate",
-                "url": "mainwindow.html",
+                "url": "windows/main/MainWindow.html",
                 "label": "main",
                 "maximized": true
             }

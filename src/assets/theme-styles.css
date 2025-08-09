@@ -1,48 +1,85 @@
-.backgroundDark {
-    background-color: transparent;
+:root {
+    --bg-dark: #18181b;
+    --bg-primary: #27272a;
+    --bg-second: #3f3f46;
+    --bg-third: #71717a;
+    --hover-bg-primary: #52525b;
+    --hover-bg-second: #3f3f46;
+
+    --outline-primary: #3f3f46;
+    --outline-second: #71717a;
+    --outline-third: #52525b;
+    --focus-outline-primary: #a1a1aa;
+
+    --text-primary: #d4d4d8;
+    --text-second: #e4e4e7;
+    --text-third: #a1a1aa;
+
+    --border-primary: #52525b;
+    --border-second: #3f3f46;
+    --focus-border-primary: #a1a1aa;
 }
-.backgroundPrimary {
-    background-color: transparent;
+
+.bg-dark {
+    background-color: var(--bg-dark);
 }
-.backgroundSecond {
-    background-color: transparent;
+
+.bg-primary {
+    background-color: var(--bg-primary);
 }
-.backgroundThird {
-    background-color: transparent;
+
+.bg-second {
+    background-color: var(--bg-second);
 }
-.textPrimary {
-    color: transparent;
+
+.bg-third {
+    background-color: var(--bg-third);
 }
-.textSecond {
-    color: transparent;
+
+.hover-bg-primary:hover {
+    background-color: var(--hover-bg-primary);
 }
-.textThird {
-    color: transparent;
+
+.hover-bg-second:hover {
+    background-color: var(--hover-bg-second);
 }
-.outlinePrimary {
-    outline-color: transparent;
+
+.outline-primary {
+    outline-color: var(--outline-primary);
 }
-.outlineSecond {
-    outline-color: transparent;
+
+.outline-second {
+    outline-color: var(--outline-second);
 }
-.outlineThird {
-    outline-color: transparent;
+
+.outline-third {
+    outline-color: var(--outline-third);
 }
-.borderPrimary {
-    border-color: transparent;
+
+.focus-outline-primary:focus {
+    outline-color: var(--focus-outline-primary);
 }
-.borderSecond {
-    border-color: transparent;
+
+.text-primary {
+    color: var(--text-primary);
 }
-.borderFocused:focus {
-    border-color: transparent;
+
+.text-second {
+    color: var(--text-second);
 }
-.outlineFocused:focus {
-    outline-color: transparent;
+
+.text-third {
+    color: var(--text-third);
 }
-.backgroundPrimaryHovered:hover {
-    background-color: transparent;
+
+.border-primary {
+    border-color: var(--border-primary);
 }
-.backgroundSecondHovered:hover {
-    background-color: transparent;
+
+.border-second {
+    border-color: var(--border-second);
+}
+
+.focus-border-primary:focus {
+    border-color: var(--focus-border-primary);
 }

@@ -1,0 +1,477 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-08-10 00:10+0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/windows/main/html.ts:30
+#: src/windows/main/html.ts:32
+msgid " - "
+msgstr " - "
+
+#: src/windows/main/html.ts:44
+msgid "-Select Action-"
+msgstr "-Select Action-"
+
+#: src/windows/main/html.ts:48
+msgid "-Select Column-"
+msgstr "-Select Column-"
+
+#: src/windows/main/components/SearchMenu.ts:290
+msgid "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
+msgstr "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
+
+#: src/windows/main/components/SearchPanel.ts:64
+msgid "<option value=\"\">-Choose a file-</option>"
+msgstr "<option value=\"\">-Choose a file-</option>"
+
+#: src/windows/main/html.ts:12
+#: src/windows/main/MainWindow.ts:1976
+msgid "About"
+msgstr "About"
+
+#: src/windows/main/components/WriteMenu.ts:103
+#: src/windows/main/MainWindow.ts:295
+msgid ""
+"All files were written successfully.\n"
+"Elapsed: {executionTime}"
+msgstr ""
+"All files were written successfully.\n"
+"Elapsed: {executionTime}"
+
+#: src/windows/main/html.ts:61
+msgid "Allow duplicates"
+msgstr "Allow duplicates"
+
+#: src/windows/main/html.ts:57
+msgid "Append"
+msgstr "Append"
+
+#: src/windows/main/html.ts:42
+#: src/windows/main/html.ts:55
+msgid "Apply"
+msgstr "Apply"
+
+#: src/windows/main/html.ts:86
+msgid "Batch menu"
+msgstr "Batch menu"
+
+#: src/windows/main/html.ts:84
+msgid "Bookmarks (Ctrl + B)"
+msgstr "Bookmarks (Ctrl + B)"
+
+#: src/windows/main/components/SearchPanel.ts:264
+msgid "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+msgstr "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+
+#: src/windows/main/html.ts:43
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/windows/main/MainWindow.ts:1191
+msgid "Cannot determine the type of the game's engine."
+msgstr "Cannot determine the type of the game's engine."
+
+#: src/windows/main/html.ts:92
+msgid "Consider case (Alt + C)"
+msgstr "Consider case (Alt + C)"
+
+#: src/windows/main/html.ts:76
+msgid "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
+msgstr "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
+
+#: src/windows/main/html.ts:29
+msgid "Create theme"
+msgstr "Create theme"
+
+#: src/windows/main/html.ts:49
+msgid "Create Theme"
+msgstr "Create Theme"
+
+#: src/windows/main/html.ts:13
+msgid "Dark background color"
+msgstr "Dark background color"
+
+#: src/windows/main/MainWindow.ts:1679
+msgid "Deleting is disabled in settings."
+msgstr "Deleting is disabled in settings."
+
+#: src/windows/main/html.ts:41
+msgid "Deselect All"
+msgstr "Deselect All"
+
+#: src/windows/main/html.ts:52
+#: src/windows/main/html.ts:66
+#: src/windows/main/html.ts:73
+msgid "Disable Actors, Armors, Troops etc. processing"
+msgstr "Disable Actors, Armors, Troops etc. processing"
+
+#: src/windows/main/html.ts:64
+msgid "Disable custom processing"
+msgstr "Disable custom processing"
+
+#: src/windows/main/html.ts:51
+#: src/windows/main/html.ts:65
+#: src/windows/main/html.ts:72
+msgid "Disable Mapxxx processing"
+msgstr "Disable Mapxxx processing"
+
+#: src/windows/main/html.ts:54
+#: src/windows/main/html.ts:68
+#: src/windows/main/html.ts:75
+msgid "Disable plugins.js/Scripts processing"
+msgstr "Disable plugins.js/Scripts processing"
+
+#: src/windows/main/html.ts:53
+#: src/windows/main/html.ts:67
+#: src/windows/main/html.ts:74
+msgid "Disable System processing"
+msgstr "Disable System processing"
+
+#: src/windows/main/MainWindow.ts:1684
+msgid "Do you really want to delete this row? This action is irreversible!"
+msgstr "Do you really want to delete this row? This action is irreversible!"
+
+#: src/windows/main/html.ts:60
+msgid "Duplicate mode"
+msgstr "Duplicate mode"
+
+#: src/windows/main/html.ts:7
+msgid "File"
+msgstr "File"
+
+#: src/windows/main/html.ts:21
+msgid "Focus border color"
+msgstr "Focus border color"
+
+#: src/windows/main/html.ts:18
+msgid "Focused outline color"
+msgstr "Focused outline color"
+
+#: src/windows/main/html.ts:58
+msgid "Force rewrite"
+msgstr "Force rewrite"
+
+#: src/windows/main/components/ReadMenu.ts:92
+msgid "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+msgstr "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+
+#: src/windows/main/components/WriteMenu.ts:76
+#: src/windows/main/MainWindow.ts:267
+#: src/windows/main/MainWindow.ts:2152
+#: src/windows/main/MainWindow.ts:2177
+msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+msgstr "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+
+#: src/windows/main/MainWindow.ts:226
+msgid "Go to row... from 1 to {lastRowNumber}"
+msgstr "Go to row... from 1 to {lastRowNumber}"
+
+#: src/windows/main/html.ts:8
+#: src/windows/main/html.ts:11
+#: src/windows/main/MainWindow.ts:1460
+#: src/windows/main/MainWindow.ts:1969
+msgid "Help"
+msgstr "Help"
+
+#: src/windows/main/html.ts:69
+msgid "Ignore entries from .rvpacker-ignore file"
+msgstr "Ignore entries from .rvpacker-ignore file"
+
+#: src/windows/main/components/ReadMenu.ts:74
+#: src/windows/main/html.ts:59
+msgid "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+msgstr "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+
+#: src/windows/main/MainWindow.ts:1560
+msgid "Install"
+msgstr "Install"
+
+#: src/windows/main/components/ThemeEditMenu.ts:46
+msgid "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
+msgstr "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
+
+#: src/windows/main/html.ts:9
+msgid "Language"
+msgstr "Language"
+
+#: src/windows/main/components/BatchMenu.ts:56
+msgid "Line length for wrapping"
+msgstr "Line length for wrapping"
+
+#: src/windows/main/MainWindow.ts:1404
+msgid "Loading project"
+msgstr "Loading project"
+
+#: src/windows/main/html.ts:96
+msgid "Machine translation from language (e. g. en, ru-RU)"
+msgstr "Machine translation from language (e. g. en, ru-RU)"
+
+#: src/windows/main/html.ts:97
+msgid "Machine translation to language (e. g. en, ru-RU)"
+msgstr "Machine translation to language (e. g. en, ru-RU)"
+
+#: src/windows/main/MainWindow.ts:1557
+msgid ""
+"New version found: {version}\n"
+"Current version: {currentVersion}\n"
+"Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+msgstr ""
+"New version found: {version}\n"
+"Current version: {currentVersion}\n"
+"Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+
+#: src/windows/main/MainWindow.ts:1389
+msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
+msgstr "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
+
+#: src/windows/main/html.ts:31
+msgid "of"
+msgstr "of"
+
+#: src/windows/main/html.ts:81
+msgid "Open directory"
+msgstr "Open directory"
+
+#: src/windows/main/html.ts:14
+msgid "Primary background color"
+msgstr "Primary background color"
+
+#: src/windows/main/html.ts:19
+msgid "Primary border color"
+msgstr "Primary border color"
+
+#: src/windows/main/html.ts:23
+msgid "Primary hovered background color"
+msgstr "Primary hovered background color"
+
+#: src/windows/main/html.ts:15
+msgid "Primary outline color"
+msgstr "Primary outline color"
+
+#: src/windows/main/html.ts:25
+msgid "Primary text color"
+msgstr "Primary text color"
+
+#: src/windows/main/MainWindow.ts:1550
+msgid "Program is up to date."
+msgstr "Program is up to date."
+
+#: src/windows/main/html.ts:77
+msgid "Purge"
+msgstr "Purge"
+
+#: src/windows/main/html.ts:88
+msgid "Purge menu"
+msgstr "Purge menu"
+
+#: src/windows/main/html.ts:91
+msgid "Put text to translation textarea of matching source text"
+msgstr "Put text to translation textarea of matching source text"
+
+#: src/windows/main/MainWindow.ts:1132
+msgid "Quit without saving?"
+msgstr "Quit without saving?"
+
+#: src/windows/main/html.ts:71
+msgid "Read"
+msgstr "Read"
+
+#: src/windows/main/html.ts:87
+msgid "Read menu"
+msgstr "Read menu"
+
+#: src/windows/main/html.ts:56
+msgid "Read mode:"
+msgstr "Read mode:"
+
+#: src/windows/main/html.ts:10
+msgid "Reload (F5)"
+msgstr "Reload (F5)"
+
+#: src/windows/main/html.ts:62
+msgid "Remove duplicates"
+msgstr "Remove duplicates"
+
+#: src/windows/main/html.ts:70
+msgid "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+msgstr "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+
+#: src/windows/main/html.ts:90
+msgid "Replace all matches"
+msgstr "Replace all matches"
+
+#: src/windows/main/html.ts:100
+msgid "Replace input"
+msgstr "Replace input"
+
+#: src/windows/main/html.ts:38
+msgid "Rightmost filled"
+msgstr "Rightmost filled"
+
+#: src/windows/main/html.ts:79
+msgid "Save (Ctrl + S)"
+msgstr "Save (Ctrl + S)"
+
+#: src/windows/main/html.ts:89
+msgid "Search"
+msgstr "Search"
+
+#: src/windows/main/html.ts:85
+msgid "Search (Ctrl + F)"
+msgstr "Search (Ctrl + F)"
+
+#: src/windows/main/html.ts:94
+msgid "Search by regular expressions (Alt + R)"
+msgstr "Search by regular expressions (Alt + R)"
+
+#: src/windows/main/html.ts:34
+msgid "Search everywhere"
+msgstr "Search everywhere"
+
+#: src/windows/main/html.ts:99
+msgid "Search input"
+msgstr "Search input"
+
+#: src/windows/main/html.ts:33
+msgid "Search mode"
+msgstr "Search mode"
+
+#: src/windows/main/html.ts:95
+msgid "Search only in current tab (Alt + L)"
+msgstr "Search only in current tab (Alt + L)"
+
+#: src/windows/main/html.ts:35
+msgid "Search only in source text"
+msgstr "Search only in source text"
+
+#: src/windows/main/html.ts:36
+msgid "Search only in translation"
+msgstr "Search only in translation"
+
+#: src/windows/main/html.ts:93
+msgid "Search the whole text (Alt + W)"
+msgstr "Search the whole text (Alt + W)"
+
+#: src/windows/main/html.ts:22
+msgid "Second background color"
+msgstr "Second background color"
+
+#: src/windows/main/html.ts:20
+msgid "Second border color"
+msgstr "Second border color"
+
+#: src/windows/main/html.ts:24
+msgid "Second hovered background color"
+msgstr "Second hovered background color"
+
+#: src/windows/main/html.ts:16
+msgid "Second outline color"
+msgstr "Second outline color"
+
+#: src/windows/main/html.ts:26
+msgid "Second text color"
+msgstr "Second text color"
+
+#: src/windows/main/html.ts:40
+msgid "Select All"
+msgstr "Select All"
+
+#: src/windows/main/html.ts:37
+msgid "Select column"
+msgstr "Select column"
+
+#: src/windows/main/html.ts:39
+msgid "Select files (You can hold LMB and drag to select multiple files)"
+msgstr "Select files (You can hold LMB and drag to select multiple files)"
+
+#: src/windows/main/html.ts:50
+msgid "Select Output Path"
+msgstr "Select Output Path"
+
+#: src/windows/main/MainWindow.ts:2095
+msgid "Selected directory is already opened in the program."
+msgstr "Selected directory is already opened in the program."
+
+#: src/windows/main/MainWindow.ts:1152
+msgid "Selected folder is missing. Project won't be initialized."
+msgstr "Selected folder is missing. Project won't be initialized."
+
+#: src/windows/main/html.ts:82
+#: src/windows/main/MainWindow.ts:2106
+msgid "Settings"
+msgstr "Settings"
+
+#: src/windows/main/components/SearchPanel.ts:175
+msgid "Source text cannot be replaced."
+msgstr "Source text cannot be replaced."
+
+#: src/windows/main/html.ts:78
+msgid "Tabs (Tab)"
+msgstr "Tabs (Tab)"
+
+#: src/windows/main/components/SearchPanel.ts:277
+#: src/windows/main/components/SearchPanel.ts:366
+msgid "Text was reverted to the previous state"
+msgstr "Text was reverted to the previous state"
+
+#: src/windows/main/html.ts:98
+msgid "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
+msgstr "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
+
+#: src/windows/main/html.ts:83
+msgid "Themes"
+msgstr "Themes"
+
+#: src/windows/main/html.ts:28
+msgid "Third background color"
+msgstr "Third background color"
+
+#: src/windows/main/html.ts:17
+msgid "Third outline color"
+msgstr "Third outline color"
+
+#: src/windows/main/html.ts:27
+msgid "Third text color"
+msgstr "Third text color"
+
+#: src/windows/main/html.ts:46
+msgid "Translate"
+msgstr "Translate"
+
+#: src/windows/main/MainWindow.ts:621
+msgid "Translation languages are not selected. Input them to inputs above."
+msgstr "Translation languages are not selected. Input them to inputs above."
+
+#: src/windows/main/html.ts:45
+msgid "Trim"
+msgstr "Trim"
+
+#: src/windows/main/MainWindow.ts:1559
+msgid "Update available"
+msgstr "Update available"
+
+#: src/windows/main/html.ts:63
+msgid "Whether to romanize text."
+msgstr "Whether to romanize text."
+
+#: src/windows/main/html.ts:47
+msgid "Wrap"
+msgstr "Wrap"
+
+#: src/windows/main/html.ts:80
+msgid "Write (Alt + C)"
+msgstr "Write (Alt + C)"
+
+#: src/windows/main/MainWindow.ts:1128
+msgid "You have unsaved changes. Save progress and quit?"
+msgstr "You have unsaved changes. Save progress and quit?"

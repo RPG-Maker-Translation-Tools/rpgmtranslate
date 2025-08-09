@@ -1,6 +1,5 @@
-// @ts-check
-
 import eslint from "@eslint/js";
+import pluginLingui from "eslint-plugin-lingui";
 import sonarjs from "eslint-plugin-sonarjs";
 import { globalIgnores } from "eslint/config";
 import tseslint from "typescript-eslint";
@@ -12,6 +11,7 @@ export default tseslint.config([
             eslint.configs.recommended,
             ...tseslint.configs.strictTypeChecked,
             ...tseslint.configs.stylisticTypeChecked,
+            pluginLingui.configs["flat/recommended"],
             {
                 languageOptions: {
                     parserOptions: {
