@@ -1,74 +1,48 @@
-import { Saver } from "@classes/Saver";
-import { Searcher } from "@classes/Searcher";
-import { SearchAction } from "@enums/SearchAction";
-import { SearchMode } from "@enums/SearchMode";
+import { emittery } from "@classes/emittery";
+import { AppEvent, SearchAction } from "@enums/index";
+import { ProjectSettings } from "@lib/classes";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
-import * as _ from "radashi";
 
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { ProjectSettings } from "./ProjectSettings";
 
 export class Replacer {
-    public constructor(
-        private readonly searcher: Searcher,
-        private readonly saver: Saver,
-        private readonly projectSettings: ProjectSettings,
-        private readonly replacementLog: ReplacementLog,
-        private readonly searchFlags: SearchFlagsObject,
-        private readonly tabInfo: TabInfo,
-    ) {}
+    #tempMapsPath = "";
+    #translationPath = "";
 
-    #addLog(
-        filename: string,
-        entry: string,
-        source: string,
-        column: number,
-        old: string,
-        new_: string,
-    ) {
-        if (!(filename in this.replacementLog)) {
-            this.replacementLog[filename] = {};
-        }
-
-        this.replacementLog[filename][source] = [entry, column, old, new_];
+    public init(projectSettings: ProjectSettings): void {
+        this.#tempMapsPath = projectSettings.tempMapsPath;
+        this.#translationPath = projectSettings.translationPath;
     }
 
     public async replaceSingle(
-        searchText: string,
+        rows: Rows,
+        tabName: string,
+        regexp: RegExp,
         replacerText: string,
         filename: string,
         entry: string,
-        column: number,
+        columnIndex: number,
         rowIndex: number,
         searchAction: SearchAction,
-    ) {
-        const regexp = await utils.createRegExp(
-            searchText,
-            this.searchFlags,
-            searchAction,
-        );
-
-        if (!regexp) {
-            return;
-        }
-
-        if (filename === this.tabInfo.currentTab.name) {
+    ): Promise<void> {
+        if (filename === tabName) {
             this.#replaceCurrentTab(
+                rows,
                 regexp,
                 replacerText,
                 filename,
                 entry,
-                column,
+                columnIndex,
                 rowIndex,
                 searchAction,
             );
         } else {
             const filePath = utils.join(
                 filename.startsWith("map")
-                    ? this.projectSettings.tempMapsPath
-                    : this.projectSettings.translationPath,
+                    ? this.#tempMapsPath
+                    : this.#translationPath,
                 `${filename}${consts.TXT_EXTENSION}`,
             );
 
@@ -80,7 +54,7 @@ export class Replacer {
                 contentLines,
                 filename,
                 entry,
-                column,
+                columnIndex,
                 rowIndex,
                 searchAction,
             );
@@ -88,34 +62,28 @@ export class Replacer {
             await writeTextFile(filePath, contentLines.join("\n"));
         }
 
-        this.saver.saved = false;
+        await emittery.emit(AppEvent.UpdateSaved, false);
     }
 
     public async replaceAll(
-        searchText: string,
+        results: SearchResults,
+        rows: Rows,
+        tabName: string,
         replacerText: string,
-        searchMode: SearchMode,
         searchAction: SearchAction,
-    ) {
-        const results = await this.searcher.search(
-            searchText,
-            searchMode,
-            searchAction,
-        );
-
-        if (results.pages === 0) {
-            return;
-        }
-
+    ): Promise<void> {
         for (const [resultEntry, rowNumbers] of Object.entries(
             results.results,
         )) {
             const [filename, entry, columnString] = resultEntry.split("-");
             const column = Number(columnString);
 
-            if (this.tabInfo.currentTab.name.startsWith(resultEntry)) {
+            let changedCount = 0;
+
+            if (tabName.startsWith(resultEntry)) {
                 for (const rowNumber of rowNumbers) {
-                    this.#replaceCurrentTab(
+                    changedCount += this.#replaceCurrentTab(
+                        rows,
                         results.regexp,
                         replacerText,
                         filename,
@@ -128,15 +96,15 @@ export class Replacer {
             } else {
                 const filePath = utils.join(
                     resultEntry.startsWith("map")
-                        ? this.projectSettings.tempMapsPath
-                        : this.projectSettings.translationPath,
+                        ? this.#tempMapsPath
+                        : this.#translationPath,
                     resultEntry.slice(0, resultEntry.lastIndexOf("-")),
                 );
 
                 const fileContent = utils.lines(await readTextFile(filePath));
 
                 for (const rowIndex of rowNumbers) {
-                    this.#replaceExternalFile(
+                    changedCount += this.#replaceExternalFile(
                         results.regexp,
                         replacerText,
                         fileContent,
@@ -150,23 +118,46 @@ export class Replacer {
 
                 await writeTextFile(filePath, fileContent.join("\n"));
             }
+
+            await emittery.emit(AppEvent.UpdateTranslatedLineCount, [
+                changedCount,
+                filename,
+            ]);
         }
 
-        this.saver.saved = false;
+        await emittery.emit(AppEvent.UpdateSaved, false);
+    }
+
+    #addLog(
+        filename: string,
+        entry: string,
+        source: string,
+        columnIndex: number,
+        old: string,
+        new_: string,
+    ): void {
+        void emittery.emit(AppEvent.AddLog, [
+            filename,
+            source,
+            [entry, columnIndex, old, new_],
+        ]);
     }
 
     #replaceCurrentTab(
+        rows: Rows,
         regexp: RegExp,
         replacerText: string,
         filename: string,
         entry: string,
-        column: number,
+        columnIndex: number,
         rowIndex: number,
         searchAction: SearchAction,
-    ) {
-        const textarea = this.tabInfo.currentTab.content.children[rowIndex]
-            .lastElementChild! as HTMLTextAreaElement;
+    ): number {
+        const textarea = rows[rowIndex].children[
+            columnIndex + 2
+        ] as HTMLTextAreaElement;
 
+        let changedCount = 0;
         let newValue: string;
 
         if (searchAction === SearchAction.Replace) {
@@ -175,23 +166,24 @@ export class Replacer {
             newValue = replacerText;
 
             if (!textarea.value) {
-                this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
-            } else if (_.isEmpty(replacerText)) {
-                this.tabInfo.translated[this.tabInfo.tabs[filename]] -= 1;
+                changedCount = 1;
+            } else if (!replacerText) {
+                changedCount = -1;
             }
         }
+
+        textarea.value = newValue;
 
         this.#addLog(
             filename,
             entry,
-            this.tabInfo.currentTab.content.children[rowIndex].children[1]
-                .textContent,
-            column,
+            utils.source(rows[rowIndex]),
+            columnIndex,
             textarea.value,
             newValue,
         );
 
-        textarea.value = newValue;
+        return changedCount;
     }
 
     #replaceExternalFile(
@@ -200,20 +192,22 @@ export class Replacer {
         contentLines: string[],
         filename: string,
         entry: string,
-        column: number,
+        columnIndex: number,
         rowIndex: number,
         searchAction: SearchAction,
-    ) {
+    ): number {
         const parts = utils.parts(contentLines[rowIndex]);
 
         if (!parts) {
             utils.logSplitError(filename, rowIndex + 1);
-            return;
+            return 0;
         }
 
         const source = utils.source(parts);
-        const translation = utils.clbtodlb(utils.translation(parts));
+        const translations = utils.translations(parts);
+        const translation = utils.clbtodlb(translations[columnIndex]);
 
+        let changedCount = 0;
         let newValue: string;
 
         if (searchAction === SearchAction.Replace) {
@@ -222,21 +216,25 @@ export class Replacer {
             newValue = replacerText;
 
             if (!translation) {
-                this.tabInfo.translated[this.tabInfo.tabs[filename]] += 1;
-            } else if (_.isEmpty(replacerText)) {
-                this.tabInfo.translated[this.tabInfo.tabs[filename]] -= 1;
+                changedCount = 1;
+            } else if (!replacerText) {
+                changedCount = -1;
             }
         }
 
+        translations[columnIndex] = utils.dlbtoclb(newValue);
         contentLines[rowIndex] =
-            `${source}${consts.SEPARATOR}${utils.dlbtoclb(newValue)}`;
+            `${source}${consts.SEPARATOR}${translations.join(consts.SEPARATOR)}`;
+
         this.#addLog(
             filename,
             entry,
             utils.clbtodlb(source),
-            column,
+            columnIndex,
             translation,
             newValue,
         );
+
+        return changedCount;
     }
 }

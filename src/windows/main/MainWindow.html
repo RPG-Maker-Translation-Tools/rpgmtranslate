@@ -36,55 +36,19 @@
                         data-i18n="Language"
                     ></button>
                 </div>
-                <div class="dropdown-menu border-second hidden" id="file-menu">
-                    <button
-                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                        id="reload-button"
-                        data-i18n="Reload (F5)"
-                    ></button>
-                </div>
-                <div class="dropdown-menu border-second hidden" id="help-menu">
-                    <button
-                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                        id="help-button"
-                        data-i18n="Help"
-                    ></button>
-                    <button
-                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                        id="about-button"
-                        data-i18n="About"
-                    ></button>
-                </div>
-                <div
-                    class="dropdown-menu border-second hidden"
-                    id="language-menu"
-                >
-                    <button
-                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                        id="ru-button"
-                    >
-                        Русский/Russian
-                    </button>
-                    <button
-                        class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                        id="en-button"
-                    >
-                        English/Английский
-                    </button>
-                </div>
             </div>
 
             <div
                 class="bg-primary flex h-16 w-full items-center justify-between"
-                id="top-panel"
+                id="utils-panel"
             >
                 <div
                     class="flex h-full items-center text-3xl"
-                    id="top-panel-buttons"
+                    id="utils-panel-buttons"
                 >
                     <button
                         class="button font-material hover-bg-primary text-third size-16 p-4"
-                        id="menu-button"
+                        id="tab-panel-button"
                         data-i18n-title="Tabs (Tab)"
                     >
                         menu
@@ -171,22 +135,25 @@
                     </button>
                 </div>
 
-                <div class="flex h-full w-full flex-col gap-2 pl-4 text-base">
+                <div
+                    class="invisible flex h-full w-full flex-col gap-2 pl-4 text-base"
+                    id="language-inputs"
+                >
                     <input
                         class="input bg-second text-second h-6"
-                        id="from-language-input"
+                        id="source-language-input"
                         autocapitalize="off"
                         autocomplete="off"
                         type="text"
-                        data-i18n-placeholder="Machine translation from language (e. g. en, ru-RU)"
+                        data-i18n-placeholder="Source text language for machine translation (e. g. en-US, ru-RU)"
                     />
                     <input
                         class="input bg-second text-second h-6"
-                        id="to-language-input"
+                        id="translation-language-input"
                         autocapitalize="off"
                         autocomplete="off"
                         type="text"
-                        data-i18n-placeholder="Machine translation to language (e. g. en, ru-RU)"
+                        data-i18n-placeholder="Translation language for machine translation (e. g. en-US, ru-RU)"
                     />
                 </div>
 
@@ -226,6 +193,42 @@
             </div>
         </header>
 
+        <div class="dropdown-menu border-second flex hidden" id="file-menu">
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="reload-button"
+                data-i18n="Reload (F5)"
+            ></button>
+        </div>
+
+        <div class="dropdown-menu border-second flex hidden" id="help-menu">
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="help-button"
+                data-i18n="Help"
+            ></button>
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="about-button"
+                data-i18n="About"
+            ></button>
+        </div>
+
+        <div class="dropdown-menu border-second flex hidden" id="language-menu">
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="ru-button"
+            >
+                Русский/Russian
+            </button>
+            <button
+                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                id="en-button"
+            >
+                English/Английский
+            </button>
+        </div>
+
         <div
             class="hidden w-full justify-start overflow-x-hidden p-8 pb-px text-lg whitespace-nowrap"
             id="tab-content-header"
@@ -244,8 +247,6 @@
         >
             <div class="h-px w-auto" id="bottom-scroll-content"></div>
         </div>
-
-        <div class="absolute px-8" id="project-status"></div>
 
         <div
             class="bg-primary fixed bottom-0 z-50 hidden size-fit p-2 text-lg"
@@ -391,7 +392,7 @@
 
         <div
             class="bg-primary fixed top-[88px] z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
-            id="left-panel"
+            id="tab-panel"
         ></div>
 
         <div
@@ -412,17 +413,17 @@
                 <button class="font-material" id="previous-page-button">
                     chevron_left
                 </button>
-                <span
+                <label
                     class="currentPage"
                     id="search-current-page"
                     data-i18n=" - "
-                ></span>
-                <span
+                ></label>
+                <label
                     class="separator"
                     id="search-separator"
                     data-i18n="of"
-                ></span>
-                <span id="search-total-pages" data-i18n=" - "></span>
+                ></label>
+                <label id="search-total-pages" data-i18n=" - "></label>
                 <button class="font-material" id="next-page-button">
                     chevron_right
                 </button>
@@ -433,7 +434,7 @@
                 id="log-file-select"
                 name="file-select"
             >
-                <option class="-Select File-" value=""></option>
+                <option data-i18n="-Select File-" value=""></option>
             </select>
 
             <div
@@ -464,7 +465,7 @@
                 >
                     <button
                         class="button hover-bg-primary text-third w-16"
-                        id="apply-search-button"
+                        id="search-button"
                         data-i18n-title="Search"
                     >
                         search
@@ -552,19 +553,19 @@
                     data-i18n="Select column"
                 ></label>
                 <select class="bg-second rounded-xs" id="search-column-select">
-                    <option value="0" data-i18n="Rightmost filled"></option>
+                    <option value="-1" data-i18n="Rightmost filled"></option>
                 </select>
             </div>
         </div>
 
         <div
-            class="bg-primary fixed z-50 hidden h-auto max-h-32 w-48 flex-col overflow-auto text-sm"
-            id="bookmarks-menu"
+            class="bg-primary fixed z-50 flex hidden h-auto max-h-32 w-48 flex-col overflow-auto text-sm"
+            id="bookmark-menu"
         ></div>
 
         <input
             class="bg-primary border-second focus-border-primary fixed top-8 right-1/4 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base"
-            id="goto-row-input"
+            id="go-to-row-input"
             type="number"
         />
 
@@ -624,11 +625,12 @@
                     class="input bg-second hidden h-6 text-base"
                     id="wrap-limit-input"
                     type="number"
+                    data-i18n-placeholder="Line length for wrapping"
                 />
             </div>
         </div>
 
-        <div class="dropdown-menu border-second hidden" id="theme-menu">
+        <div class="dropdown-menu border-second flex hidden" id="theme-menu">
             <button
                 class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
                 id="create-theme"
@@ -637,7 +639,7 @@
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary hidden max-w-3xl p-2 text-base"
+            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl p-2 text-base"
             id="write-menu"
         >
             <button
@@ -656,39 +658,43 @@
 
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-map-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable Mapxxx processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable Mapxxx processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-other-processing-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-system-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable System processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable System processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
-                        id="disable-plugins-processing-checkbox"
-                    ></span>
-                    <span
+                    <input
+                        class="size-8"
+                        id="disable-plugin-processing-checkbox"
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable plugins.js/Scripts processing"
-                    ></span>
+                    ></label>
                 </div>
             </div>
 
@@ -706,100 +712,119 @@
             id="read-menu"
         >
             <div>
-                <span data-i18n="Read mode:"></span>
-
                 <select class="bg-second rounded-xs" id="read-mode-select">
                     <option data-i18n="Append" value="0"></option>
                     <option data-i18n="Force rewrite" value="1"></option>
                 </select>
 
+                <label data-i18n="How to read files."></label>
                 <div
                     id="mode-description"
-                    data-i18n="In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+                    data-i18n="Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
                 ></div>
             </div>
 
             <div class="flex flex-row gap-2 pt-2">
-                <span data-i18n="Duplicate mode"></span>
-                <select class="bg-second rounded-xs" id="duplicate-mode-select">
+                <select
+                    class="bg-second rounded-xs"
+                    id="duplicate-mode-select"
+                    disabled
+                >
                     <option data-i18n="Allow duplicates" value="0"></option>
                     <option data-i18n="Remove duplicates" value="1"></option>
                 </select>
 
+                <label data-i18n="How to handle duplicates in text."></label>
                 <div id="duplicate-mode-description"></div>
             </div>
 
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="romanize-checkbox"
-                    ></span>
-                    <span data-i18n="Whether to romanize text."></span>
+                        disabled
+                        type="checkbox"
+                    />
+
+                    <label
+                        data-i18n="If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="custom-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable custom processing"></span>
+                        disabled
+                        type="checkbox"
+                    />
+                    <label
+                        data-i18n="Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-map-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable Mapxxx processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable Mapxxx processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-other-processing-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-system-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable System processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable System processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-plugins-processing-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable plugins.js/Scripts processing"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container" id="ignore-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="ignore-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Ignore entries from .rvpacker-ignore file"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container" id="trim-container">
-                    <span
-                        class="checkbox border-primary size-8 min-h-8 min-w-8"
+                    <input
+                        class="size-8"
                         id="trim-checkbox"
-                    ></span>
-                    <span
-                        data-i18n="Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
-                    ></span>
+                        type="checkbox"
+                        disabled
+                    />
+                    <label
+                        data-i18n="Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
+                    ></label>
                 </div>
             </div>
 
@@ -818,49 +843,54 @@
         >
             <div class="flex flex-col gap-2 py-2">
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-map-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable Mapxxx processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable Mapxxx processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-other-processing-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-system-processing-checkbox"
-                    ></span>
-                    <span data-i18n="Disable System processing"></span>
+                        type="checkbox"
+                    />
+                    <label data-i18n="Disable System processing"></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="disable-plugins-processing-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Disable plugins.js/Scripts processing"
-                    ></span>
+                    ></label>
                 </div>
 
                 <div class="checkbox-container">
-                    <span
-                        class="checkbox border-primary size-8"
+                    <input
+                        class="size-8"
                         id="create-ignore-checkbox"
-                    ></span>
-                    <span
+                        type="checkbox"
+                    />
+                    <label
                         data-i18n="Create .rvpacker-ignore file from purged lines to prevent their further appearance"
-                    ></span>
+                    ></label>
                 </div>
             </div>
 

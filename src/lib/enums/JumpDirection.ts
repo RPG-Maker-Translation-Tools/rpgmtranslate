@@ -1,4 +1,6 @@
 export const enum JumpDirection {
-    Next,
-    Previous,
+    Down,
+    Up,
+    Left,
+    Right,
 }

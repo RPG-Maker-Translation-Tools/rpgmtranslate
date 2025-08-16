@@ -43,6 +43,9 @@ export default tseslint.config([
             "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
             "@typescript-eslint/explicit-member-accessibility": "error",
             "@typescript-eslint/strict-boolean-expressions": "error",
+            "@typescript-eslint/member-ordering": "error",
+            "@typescript-eslint/adjacent-overload-signatures": "off",
+            "@typescript-eslint/explicit-function-return-type": "error",
         },
     },
     globalIgnores([

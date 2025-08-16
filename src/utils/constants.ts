@@ -57,8 +57,8 @@ export const TXT_EXTENSION_LENGTH = TXT_EXTENSION.length;
 export const JSON_EXTENSION = ".json";
 export const JSON_EXTENSION_LENGTH = JSON_EXTENSION.length;
 
-export const BOOKMARK_COMMENT_PREFIX = "<!-- Bookmark";
-export const MAP_ID_COMMENT = "<!-- Map -->";
+export const BOOKMARK_COMMENT = "<!-- Bookmark -->";
+export const MAP_COMMENT = "<!-- Map -->";
 export const EVENT_ID_COMMENT = "<!-- Event ID -->";
 export const SYSTEM_ENTRY_COMMENT = "<!-- System Entry -->";
 export const SCRIPT_ID_COMMENT = "<!-- Script ID -->";

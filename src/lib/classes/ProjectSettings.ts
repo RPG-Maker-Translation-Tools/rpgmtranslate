@@ -13,7 +13,7 @@ export interface ProjectSettingsOptions {
     romanize?: boolean;
     disableCustomProcessing?: boolean;
     trim?: boolean;
-    columns?: [string, number][];
+    translationColumns?: [string, number][];
 
     sourceDirectory?: string;
     programDataPath?: string;
@@ -31,16 +31,16 @@ export class ProjectSettings implements ProjectSettingsOptions {
     public engineType = EngineType.New;
     public romanize = false;
     public translationLanguages: TranslationLanguages = {
-        from: "",
-        to: "",
+        source: "",
+        translation: "",
     };
     public duplicateMode = DuplicateMode.Allow;
     public disableCustomProcessing = false;
     public trim = false;
     public sourceDirectory = "Data";
-    public columns: [string, number][] = [
-        ["Row", consts.DEFAULT_ROW_COLUMN_WIDTH],
-        ["Source", consts.DEFAULT_COLUMN_WIDTH],
+    public rowColumnWidth = consts.DEFAULT_ROW_COLUMN_WIDTH;
+    public sourceColumnWidth = consts.DEFAULT_COLUMN_WIDTH;
+    public translationColumns: [string, number][] = [
         ["Translation", consts.DEFAULT_COLUMN_WIDTH],
     ];
     public translationColumnCount = 1;
@@ -64,7 +64,8 @@ export class ProjectSettings implements ProjectSettingsOptions {
             options.disableCustomProcessing ?? this.disableCustomProcessing;
         this.trim = options.trim ?? this.trim;
         this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
-        this.columns = options.columns ?? this.columns;
+        this.translationColumns =
+            options.translationColumns ?? this.translationColumns;
         this.translationColumnCount =
             options.translationColumnCount ?? this.translationColumnCount;
 
@@ -77,6 +78,14 @@ export class ProjectSettings implements ProjectSettingsOptions {
             options.projectSettingsPath ?? this.projectSettingsPath;
         this.backupPath = options.backupPath ?? this.backupPath;
         this.outputPath = options.outputPath ?? this.outputPath;
+    }
+
+    public columnName(index: number): string {
+        return this.translationColumns[index][0];
+    }
+
+    public columnWidth(index: number): number {
+        return this.translationColumns[index][1];
     }
 
     public async setEngineType(projectPath: string): Promise<boolean> {
@@ -118,7 +127,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
         return sourceDirectoryFound;
     }
 
-    public async setProjectPath(projectPath: string) {
+    public async setProjectPath(projectPath: string): Promise<void> {
         this.programDataPath = utils.join(
             projectPath,
             consts.PROGRAM_DATA_DIRECTORY,
@@ -155,5 +164,13 @@ export class ProjectSettings implements ProjectSettingsOptions {
         if (!(await exists(this.logPath))) {
             await writeTextFile(this.logPath, "{}");
         }
+    }
+
+    public addColumn(): void {
+        this.translationColumns.push([
+            "Translation",
+            consts.DEFAULT_COLUMN_WIDTH,
+        ]);
+        this.translationColumnCount++;
     }
 }

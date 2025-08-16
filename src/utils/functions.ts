@@ -1,34 +1,12 @@
 import { FileFlags } from "@enums/index";
-import { SearchAction } from "@enums/SearchAction";
-import { SearchFlags } from "@enums/SearchFlags";
-import { escapeText } from "@utils/invokes";
 
 import * as consts from "@utils/constants";
-import * as _ from "radashi";
-import XRegExp from "xregexp";
 
 import { i18n, Messages } from "@lingui/core";
 
 import { resolveResource } from "@tauri-apps/api/path";
-import { message } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import { error } from "@tauri-apps/plugin-log";
-
-export function animateProgressText(
-    progressText: HTMLElement,
-    interval = consts.SECOND_MS / 2,
-) {
-    // eslint-disable-next-line sonarjs/slow-regex
-    const baseText = progressText.textContent.replace(/\.+$/, "");
-    let dots = 0;
-
-    function updateText() {
-        progressText.textContent = baseText + ".".repeat(dots);
-        dots = (dots + 1) % 4;
-    }
-
-    return setInterval(updateText, interval);
-}
 
 export const join = (...strings: string[]): string => strings.join("/");
 
@@ -37,40 +15,7 @@ export const tw = (
     ...values: string[]
 ): string => String.raw({ raw: strings }, ...values);
 
-export async function createRegExp(
-    text: string,
-    searchFlagsObject: SearchFlagsObject,
-    searchAction: SearchAction,
-): Promise<RegExp | null> {
-    text = text.trim();
-    if (!text) {
-        return null;
-    }
-
-    const searchFlags = searchFlagsObject.flags;
-
-    let expression =
-        searchFlags & SearchFlags.RegExp ? text : await escapeText(text);
-
-    if (searchFlags & SearchFlags.WholeWord) {
-        expression = `(?<!\\p{L})${expression}(?!\\p{L})`;
-    }
-
-    if (searchAction === SearchAction.Put) {
-        expression = `^${expression}$`;
-    }
-
-    const flags = searchFlags & SearchFlags.CaseSensitive ? "g" : "gi";
-
-    try {
-        return XRegExp(expression, flags);
-    } catch (err) {
-        await message(`Invalid regular expression. (${text}), ${err})`);
-        return null;
-    }
-}
-
-export function logErrorIO(path: string, err: unknown) {
+export function logErrorIO(path: string, err: unknown): void {
     void error(`${path}: IO error occured: ${err}`);
 }
 
@@ -78,7 +23,7 @@ export function getFileComment(filename: string): string {
     let fileComment: string;
 
     if (filename.startsWith("map")) {
-        fileComment = consts.MAP_ID_COMMENT;
+        fileComment = consts.MAP_COMMENT;
     } else if (filename.startsWith("system")) {
         fileComment = consts.SYSTEM_ENTRY_COMMENT;
     } else if (filename.startsWith("scripts")) {
@@ -125,11 +70,11 @@ export function lbcmp(clbStr: string, dlbStr: string): boolean {
     return i === clbStr.length && j === dlbStr.length;
 }
 
-export function logSplitError(filename: string, row: number) {
+export function logSplitError(filename: string, row: number): void {
     void error(`Couldn't split line in file ${filename} at line ${row}`);
 }
 
-export function objectIsEmpty(obj: object) {
+export function objectIsEmpty(obj: object): boolean {
     // eslint-disable-next-line sonarjs/no-unused-vars
     for (const _ in obj) {
         return false;
@@ -139,34 +84,36 @@ export function objectIsEmpty(obj: object) {
 }
 
 export function getFileFlags(menu: HTMLDivElement): FileFlags {
-    const disableMapProcessingCheckbox = menu.querySelector(
+    const disableMapProcessingCheckbox = menu.querySelector<HTMLInputElement>(
         "#disable-map-processing-checkbox",
     )!;
-    const disableOtherProcessingCheckbox = menu.querySelector(
+    const disableOtherProcessingCheckbox = menu.querySelector<HTMLInputElement>(
         "#disable-other-processing-checkbox",
     )!;
-    const disableSystemProcessingCheckbox = menu.querySelector(
-        "#disable-system-processing-checkbox",
-    )!;
-    const disablePluginProcessingCheckbox = menu.querySelector(
-        "#disable-plugin-processing-checkbox",
-    )!;
+    const disableSystemProcessingCheckbox =
+        menu.querySelector<HTMLInputElement>(
+            "#disable-system-processing-checkbox",
+        )!;
+    const disablePluginProcessingCheckbox =
+        menu.querySelector<HTMLInputElement>(
+            "#disable-plugin-processing-checkbox",
+        )!;
 
     let fileFlags = FileFlags.All;
 
-    if (!_.isEmpty(disableMapProcessingCheckbox.textContent)) {
+    if (disableMapProcessingCheckbox.checked) {
         fileFlags &= ~FileFlags.Map;
     }
 
-    if (!_.isEmpty(disableOtherProcessingCheckbox.textContent)) {
+    if (disableOtherProcessingCheckbox.checked) {
         fileFlags &= ~FileFlags.Other;
     }
 
-    if (!_.isEmpty(disableSystemProcessingCheckbox.textContent)) {
+    if (disableSystemProcessingCheckbox.checked) {
         fileFlags &= ~FileFlags.System;
     }
 
-    if (!_.isEmpty(disablePluginProcessingCheckbox.textContent)) {
+    if (disablePluginProcessingCheckbox.checked) {
         fileFlags &= ~FileFlags.Scripts;
     }
 
@@ -183,7 +130,11 @@ export function parts(string: string): string[] | null {
     return split;
 }
 
-export function source(container: string[] | HTMLDivElement): string {
+export function joinParts(parts: string[]): string {
+    return parts.join(consts.SEPARATOR);
+}
+
+export function source(container: string[] | RowContainer): string {
     if (Array.isArray(container)) {
         return container[0];
     } else {
@@ -191,70 +142,71 @@ export function source(container: string[] | HTMLDivElement): string {
     }
 }
 
-export function sourceElement(container: HTMLDivElement): HTMLDivElement {
+export function sourceElement(container: RowContainer): HTMLDivElement {
     return container.children[1] as HTMLDivElement;
 }
 
-export function translation(container: string[] | HTMLDivElement): string {
+export function translation(
+    container: string[] | RowContainer,
+): [string, number] {
     if (Array.isArray(container)) {
-        return (
-            container.slice(1).findLast((translation) => {
-                return !_.isEmpty(translation);
-            }) ?? ""
-        );
+        for (let i = 1; i < container.length; i++) {
+            if (container[i].length) {
+                return [container[i], i - 1];
+            }
+        }
     } else {
-        const children = Array.from(
-            container.children as HTMLCollectionOf<HTMLTextAreaElement>,
-        ).slice(2);
+        for (let i = container.childElementCount - 1; i >= 2; i--) {
+            const element = container.children[i] as HTMLTextAreaElement;
 
-        const element = children.findLast((element) => {
-            return !_.isEmpty(element.value);
-        });
-
-        if (element) {
-            return element.value;
-        } else {
-            return "";
+            if (element.value) {
+                return [element.value, i - 2];
+            }
         }
     }
+
+    return ["", -1];
 }
 
-export function translationElement(container: HTMLDivElement) {
-    const children: HTMLTextAreaElement[] = Array.prototype.slice.call(
-        container.children,
-        2,
-    );
+export function translationElement(
+    container: RowContainer,
+): HTMLTextAreaElement {
+    for (let i = container.childElementCount - 1; i >= 2; i--) {
+        const element = container.children[i] as HTMLTextAreaElement;
 
-    const element = children.findLast((element) => {
-        return !_.isEmpty(element.value);
-    });
-
-    if (element) {
-        return element;
-    } else {
-        return children[0];
+        if (element.value) {
+            return element;
+        }
     }
+
+    return container.children[2] as HTMLTextAreaElement;
 }
 
-export function translations(container: string[] | HTMLDivElement): string[] {
+export function translations(container: string[] | RowContainer): string[] {
     if (Array.isArray(container)) {
         return container.slice(1);
     } else {
-        return Array.prototype.slice
-            .call(container.children, 2)
-            .map((element: HTMLTextAreaElement) => element.value);
+        const translations: string[] = [];
+
+        for (let i = 2; i < container.childElementCount; i++) {
+            translations.push(
+                (container.children[i] as HTMLTextAreaElement).value,
+            );
+        }
+
+        return translations;
     }
 }
 
-export function rowNumberElement(container: HTMLDivElement): HTMLSpanElement {
+export function rowNumberElement(container: RowContainer): HTMLSpanElement {
     return container.children[0].firstElementChild! as HTMLSpanElement;
 }
 
-export function rowNumber(container: HTMLDivElement) {
+export function rowNumber(container: RowContainer): number {
     return Number(container.children[0].firstElementChild!.textContent);
 }
 
-export function stripSuffix(string: string, suffix: string) {
+export function stripSuffix(string: string, suffix: string): string {
     if (string.endsWith(suffix)) {
         return string.slice(0, -suffix.length);
     }
@@ -262,7 +214,7 @@ export function stripSuffix(string: string, suffix: string) {
     return string;
 }
 
-export function stripPrefix(string: string, suffix: string) {
+export function stripPrefix(string: string, suffix: string): string {
     if (string.startsWith(suffix)) {
         return string.slice(suffix.length);
     }
@@ -298,7 +250,7 @@ export function lines(input: string): string[] {
     return result;
 }
 
-export function countLines(input: string) {
+export function countLines(input: string): number {
     let count = 1;
 
     for (let i = 0; i < input.length; i++) {
@@ -318,7 +270,7 @@ export function countLines(input: string) {
     return count;
 }
 
-export function count(input: string, pattern: string) {
+export function count(input: string, pattern: string): number {
     let count = 0;
     let pos = 0;
 
@@ -330,15 +282,15 @@ export function count(input: string, pattern: string) {
     return count;
 }
 
-export function dlbtoclb(input: string) {
+export function dlbtoclb(input: string): string {
     return input.replaceAll("\n", consts.NEW_LINE);
 }
 
-export function clbtodlb(input: string) {
+export function clbtodlb(input: string): string {
     return input.replaceAll(consts.NEW_LINE, "\n");
 }
 
-export function calculateHeight(textarea: HTMLTextAreaElement) {
+export function calculateHeight(textarea: HTMLTextAreaElement): void {
     const { lineHeight, paddingTop } = window.getComputedStyle(textarea);
 
     const newHeight =
@@ -351,22 +303,22 @@ export function calculateHeight(textarea: HTMLTextAreaElement) {
     }
 }
 
-export function toggleMultiple(element: Element, ...classes: string[]) {
+export function toggleMultiple(element: Element, ...classes: string[]): void {
     for (const className of classes) {
         element.classList.toggle(className);
     }
 }
 
-export function applyTheme(themes: Themes, theme: string) {
+export function applyTheme(themes: Themes, theme: string): void {
     for (const [property, value] of Object.entries(themes[theme])) {
         document.documentElement.style.setProperty(property, value);
     }
 }
 
-export async function i18nActivate(
+export async function initializeLocalization(
     window: "About" | "Main" | "Settings",
     locale: string,
-) {
+): Promise<void> {
     const { messages } = JSON.parse(
         await readTextFile(
             await resolveResource(
@@ -376,10 +328,9 @@ export async function i18nActivate(
     ) as { messages: Messages };
     i18n.load(locale, messages);
     i18n.activate(locale);
-    retranslate();
 }
 
-export function retranslate() {
+export function retranslate(): void {
     for (const element of document.querySelectorAll<HTMLElement>(
         "[data-i18n]",
     )) {

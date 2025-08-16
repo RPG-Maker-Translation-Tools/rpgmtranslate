@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-function extractMainMessagesForWindow(windowName: string) {
+function extractMainMessagesForWindow(windowName: string): void {
     const messages: string[] = [];
     const htmlPath = path.join(
         "./src/windows",
@@ -55,7 +55,7 @@ function generateTs(messages: string[]): string[] {
     return lines;
 }
 
-function extractAllWindows() {
+function extractAllWindows(): void {
     const windows = ["Main", "About", "Settings"];
     for (const name of windows) {
         extractMainMessagesForWindow(name);

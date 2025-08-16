@@ -1,44 +1,52 @@
+import { emittery } from "@classes/emittery";
+import { AppEvent } from "@lib/enums";
+
 import { t } from "@lingui/core/macro";
-import * as utils from "@utils/functions";
 
 import { message } from "@tauri-apps/plugin-dialog";
+import { Component } from "./Component";
 
-export class ThemeEditMenu {
-    #themeMenu: HTMLDivElement;
+export class ThemeEditMenu extends Component {
+    declare protected readonly element: HTMLDivElement;
+    readonly #themeEditMenuBody: HTMLDivElement;
+    readonly #createThemeButton: HTMLButtonElement;
+    readonly #themeNameInput: HTMLInputElement;
+    readonly #closeButton: HTMLButtonElement;
 
-    #themeEditMenu: HTMLDivElement;
-    #themeEditMenuBody: HTMLDivElement;
-    #createThemeButton: HTMLButtonElement;
-    #themeNameInput: HTMLInputElement;
-    #closeButton: HTMLButtonElement;
+    public constructor() {
+        super("theme-edit-menu");
+        this.#themeEditMenuBody = this.element.children[1] as HTMLDivElement;
+        this.#createThemeButton = this.element.querySelector("#create-theme")!;
+        this.#closeButton = this.element.querySelector("#close-button")!;
+        this.#themeNameInput = this.element.querySelector("#theme-name-input")!;
 
-    public constructor(themes: Themes) {
-        this.#themeMenu = document.getElementById(
-            "theme-menu",
-        ) as HTMLDivElement;
-        this.#themeEditMenu = document.getElementById(
-            "theme-edit-menu",
-        ) as HTMLDivElement;
-        this.#themeEditMenuBody = this.#themeEditMenu
-            .children[1] as HTMLDivElement;
-        this.#createThemeButton =
-            this.#themeEditMenu.querySelector("#create-theme")!;
-        this.#closeButton = this.#themeEditMenu.querySelector("#close-button")!;
-        this.#themeNameInput =
-            this.#themeEditMenu.querySelector("#theme-name-input")!;
+        this.element.oninput = (e): void => {
+            this.#oninput(e);
+        };
 
-        this.#themeEditMenuBody.addEventListener("input", (event) => {
-            const input = event.target as HTMLInputElement;
-            document
-                .querySelector<HTMLElement>(":root")!
-                .style.setProperty(input.id, input.value);
-        });
+        this.element.onclick = (e): void => {
+            this.#onclick(e);
+        };
+    }
 
-        this.#closeButton.addEventListener("click", () => {
-            this.#themeEditMenu.classList.add("hidden");
-        });
+    public override show(): void {
+        this.element.classList.remove("hidden");
+        this.element.style.left = `${(document.body.clientWidth - this.element.clientWidth) / 2}px`;
+    }
 
-        this.#createThemeButton.addEventListener("click", () => {
+    #oninput(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        document
+            .querySelector<HTMLElement>(":root")!
+            .style.setProperty(input.id, input.value);
+    }
+
+    #onclick(event: MouseEvent): void {
+        const target = event.target as HTMLElement | null;
+
+        if (target === this.#closeButton) {
+            this.hide();
+        } else if (target === this.#createThemeButton) {
             const themeName = this.#themeNameInput.value.trim();
 
             if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
@@ -48,27 +56,15 @@ export class ThemeEditMenu {
                 return;
             }
 
-            themes[themeName] = {};
+            const theme: Record<string, string> = {};
 
             for (const child of this.#themeEditMenuBody.querySelectorAll<HTMLInputElement>(
                 "input",
             )) {
-                themes[themeName][child.id] = child.value;
+                theme[child.id] = child.value;
             }
 
-            const newThemeButton = document.createElement("button");
-            newThemeButton.textContent = themeName;
-            newThemeButton.className = utils.tw`h-8 p-1 text-base bg-primary hover-bg-primary`;
-
-            this.#themeMenu.insertBefore(
-                newThemeButton,
-                this.#themeMenu.lastElementChild,
-            );
-        });
-    }
-
-    public show() {
-        this.#themeEditMenu.classList.remove("hidden");
-        this.#themeEditMenu.style.left = `${(document.body.clientWidth - this.#themeEditMenu.clientWidth) / 2}px`;
+            void emittery.emit(AppEvent.AddTheme, [themeName, theme]);
+        }
     }
 }

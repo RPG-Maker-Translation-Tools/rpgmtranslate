@@ -11,19 +11,16 @@
     <body class="bg-dark text-primary text-lg">
         <div class="flex flex-col p-8" id="options-menu">
             <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <span
-                    class="checkbox border-primary size-8 min-h-8 min-w-8 text-xl"
+                <input
+                    class="size-8 text-xl"
                     id="backup-check"
-                    >check</span
-                >
-                <span id="backup" data-i18n="Backup"></span>
+                    type="checkbox"
+                />
+                <label id="backup" data-i18n="Backup"></label>
             </div>
 
             <div class="overflow-hidden">
-                <div
-                    class="z-30 flex-col transition-all duration-300"
-                    id="backup-settings"
-                >
+                <div class="z-30 flex-col" id="backup-settings">
                     <div class="flex flex-row py-4" id="backup-period">
                         <span
                             class="mr-2"
@@ -61,25 +58,25 @@
             </div>
 
             <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <span
-                    class="checkbox border-primary size-8 min-h-8 min-w-8 text-xl"
+                <input
+                    class="size-8 min-h-8 min-w-8"
                     id="display-ghost-lines-check"
-                    >check</span
-                >
-                <span data-i18n="Display lines breaks in text areas"></span>
+                    type="checkbox"
+                />
+                <label data-i18n="Display lines breaks in text areas"></label>
             </div>
 
             <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <span
-                    class="checkbox border-primary size-8 min-h-8 min-w-8 text-xl"
+                <input
+                    class="size-8 min-h-8 min-w-8"
                     id="check-for-updates-check"
-                    >check</span
-                >
-                <span data-i18n="Check for updates"></span>
+                    type="checkbox"
+                />
+                <label data-i18n="Check for updates"></label>
             </div>
 
             <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <span data-i18n="Row delete mode"></span>
+                <label data-i18n="Row delete mode"></label>
                 <select
                     class="bg-second rounded-xs"
                     id="row-delete-mode-select"
@@ -91,7 +88,7 @@
             </div>
 
             <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <span data-i18n="Font"></span>
+                <label data-i18n="Font"></label>
                 <select class="bg-second rounded-xs" id="font-select">
                     <option data-i18n="Default" value="default"></option>
                 </select>

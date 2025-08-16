@@ -29,7 +29,8 @@
         "noFallthroughCasesInSwitch": true,
         "allowSyntheticDefaultImports": true,
 
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "noImplicitOverride": true
     },
     "include": ["src", "*.ts", "*.js"]
 }

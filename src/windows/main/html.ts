@@ -30,6 +30,7 @@ export function _htmlTranslations() {
     t` - `;
     t`of`;
     t` - `;
+    t`-Select File-`;
     t`Search mode`;
     t`Search everywhere`;
     t`Search only in source text`;
@@ -53,21 +54,21 @@ export function _htmlTranslations() {
     t`Disable System processing`;
     t`Disable plugins.js/Scripts processing`;
     t`Apply`;
-    t`Read mode:`;
     t`Append`;
     t`Force rewrite`;
-    t`In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!`;
-    t`Duplicate mode`;
+    t`How to read files.`;
+    t`Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted.`;
     t`Allow duplicates`;
     t`Remove duplicates`;
-    t`Whether to romanize text.`;
-    t`Disable custom processing`;
+    t`How to handle duplicates in text.`;
+    t`If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '').`;
+    t`Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read`;
     t`Disable Mapxxx processing`;
     t`Disable Actors, Armors, Troops etc. processing`;
     t`Disable System processing`;
     t`Disable plugins.js/Scripts processing`;
     t`Ignore entries from .rvpacker-ignore file`;
-    t`Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing.`;
+    t`Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior`;
     t`Read`;
     t`Disable Mapxxx processing`;
     t`Disable Actors, Armors, Troops etc. processing`;
@@ -93,9 +94,10 @@ export function _htmlTranslations() {
     t`Search the whole text (Alt + W)`;
     t`Search by regular expressions (Alt + R)`;
     t`Search only in current tab (Alt + L)`;
-    t`Machine translation from language (e. g. en, ru-RU)`;
-    t`Machine translation to language (e. g. en, ru-RU)`;
+    t`Source text language for machine translation (e. g. en-US, ru-RU)`;
+    t`Translation language for machine translation (e. g. en-US, ru-RU)`;
     t`Theme name. Allowed characters: a-z, A-Z, 0-9, -, _.`;
     t`Search input`;
     t`Replace input`;
+    t`Line length for wrapping`;
 }

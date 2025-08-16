@@ -1,8 +1,11 @@
-import { ProjectSettings, Settings } from "@classes/index";
-import { MouseButton } from "@lib/enums";
+import { emittery } from "@classes/emittery";
+import { ProjectSettings } from "@lib/classes";
+import { AppEvent, MouseButton } from "@lib/enums";
+import { tw } from "@utils/functions";
+import { Component } from "./Component";
 
-import * as consts from "@utils/constants";
-import * as utils from "@utils/functions";
+import { t } from "@lingui/core/macro";
+import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
 
 const enum ResizeDirection {
     Left,
@@ -12,12 +15,8 @@ const enum ResizeDirection {
 const EDGE_THRESHOLD = 8;
 const RESIZE_TOOLTIP_PADDING = 12;
 
-export class TabContentHeader {
-    #tabContentHeader: HTMLDivElement;
-    #scrollBar: HTMLDivElement;
-    #scrollBarContent: HTMLDivElement;
-
-    #tabContent: HTMLDivElement;
+export class TabContentHeader extends Component {
+    declare protected readonly element: HTMLDivElement;
 
     #resized = false;
     #resizing = false;
@@ -34,131 +33,131 @@ export class TabContentHeader {
     #resizeTooltip?: HTMLDivElement;
     #widthInput?: HTMLInputElement;
 
-    public constructor(
-        tabContentContainer: HTMLDivElement,
-        private readonly settings: Settings,
-        private readonly projectSettings: ProjectSettings,
-    ) {
-        this.#tabContentHeader = document.getElementById(
-            "tab-content-header",
-        ) as HTMLDivElement;
-        this.#scrollBar = document.getElementById(
-            "bottom-scroll-bar",
-        ) as HTMLDivElement;
-        this.#scrollBarContent = this.#scrollBar
-            .firstElementChild as HTMLDivElement;
+    #projectSettings!: ProjectSettings;
 
-        this.#tabContent =
-            tabContentContainer.firstElementChild as HTMLDivElement;
+    public constructor() {
+        super("tab-content-header");
 
-        for (const [i, column] of this.projectSettings.columns.entries()) {
+        this.element.onmousemove = (e): void => {
+            this.#onmousemove(e);
+        };
+
+        this.element.onmousedown = (e): void => {
+            this.#onmousedown(e);
+        };
+
+        this.element.onmouseup = (): void => {
+            this.#onmouseup();
+        };
+
+        this.element.oncontextmenu = (e): void => {
+            this.#oncontextmenu(e);
+        };
+
+        document.addEventListener("focusout", (e) => {
+            this.#onfocusout(e);
+        });
+    }
+
+    public get columns(): HTMLCollectionOf<HTMLDivElement> {
+        return super.children as HTMLCollectionOf<HTMLDivElement>;
+    }
+
+    public set scroll(pos: number) {
+        this.element.scrollLeft = pos;
+    }
+
+    public init(projectSettings: ProjectSettings): void {
+        this.#projectSettings = projectSettings;
+        const columns = this.#projectSettings.translationColumns;
+
+        for (let i = 0; i < columns.length + 2; i++) {
+            let columnName = "";
+            let columnWidth = 0;
+
+            if (i === 0) {
+                columnName = t`Row`;
+                columnWidth = this.#projectSettings.rowColumnWidth;
+            } else if (i === 1) {
+                columnName = t`Source`;
+                columnWidth = this.#projectSettings.sourceColumnWidth;
+            } else {
+                columnName = columns[i - 2][0];
+                columnWidth = columns[i - 2][1];
+            }
+
             const columnElement = document.createElement("div");
             columnElement.className =
                 "p-1 inline-block outline-primary bg-primary outline outline-2";
             columnElement.id = i.toString();
-            columnElement.style.width = `${column[1]}px`;
+            columnElement.style.width = `${columnWidth}px`;
 
-            const columnInput = document.createElement("input");
-            columnInput.className = utils.tw` w-full`;
-            columnInput.spellcheck = false;
-            columnInput.value = column[0];
+            if (i < 2) {
+                columnElement.innerHTML = columnName;
+            } else {
+                const columnInput = document.createElement("input");
+                columnInput.className = tw`w-full`;
+                columnInput.spellcheck = false;
+                columnInput.value = columnName;
+                columnElement.appendChild(columnInput);
+            }
 
-            columnElement.appendChild(columnInput);
-            this.#tabContentHeader.appendChild(columnElement);
+            this.element.appendChild(columnElement);
         }
 
         const addColumnElement = document.createElement("button");
-        addColumnElement.className = utils.tw`outline-primary bg-primary inline-block w-6 p-1 outline outline-2`;
+        addColumnElement.className = tw`outline-primary bg-primary inline-block w-6 p-1 outline outline-2`;
         addColumnElement.textContent = "+";
 
-        addColumnElement.onclick = () => {
+        addColumnElement.onclick = (): void => {
             this.addTranslationColumn();
         };
 
-        this.#tabContentHeader.appendChild(addColumnElement);
-        this.#scrollBarContent.style.width = `${this.#tabContent.clientWidth}px`;
-
-        this.#tabContentHeader.addEventListener("contextmenu", (event) => {
-            event.preventDefault();
-
-            if (this.#widthInput) {
-                this.#widthInput.remove();
-                this.#widthInput = undefined;
-                return;
-            }
-
-            let target = event.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            while (target.parentElement !== this.#tabContentHeader) {
-                target = target.parentElement as HTMLDivElement;
-            }
-
-            this.#widthInput = document.createElement("input");
-            this.#widthInput.type = "number";
-            this.#widthInput.value = Number.parseInt(
-                target.style.width,
-            ).toString();
-            this.#widthInput.className = utils.tw`absolute bg-second z-50 text-base p-1 rounded-md`;
-            this.#widthInput.style.left = `${event.x}px`;
-            this.#widthInput.style.top = `${event.y}px`;
-
-            this.#widthInput.addEventListener("keydown", (event) => {
-                switch (event.key) {
-                    case "Escape":
-                        this.#widthInput!.remove();
-                        break;
-                    case "Enter":
-                        this.#widthInput!.remove();
-                        this.#resize(
-                            Number(target.id),
-                            `${this.#widthInput!.value}px`,
-                        );
-                        break;
-                }
-            });
-
-            document.body.append(this.#widthInput);
-        });
-
-        this.#tabContentHeader.addEventListener("mousedown", (event) => {
-            if ((event.button as MouseButton) === MouseButton.Left) {
-                this.#startDrag(event);
-            }
-        });
-
-        this.#tabContentHeader.addEventListener("mousemove", (event) => {
-            this.#drag(event);
-        });
-
-        this.#tabContentHeader.addEventListener("mouseup", () => {
-            this.#drop();
-        });
-
-        this.#tabContentHeader.addEventListener("blur", (event) => {
-            const target = event.target as HTMLElement;
-
-            if (!(target instanceof HTMLInputElement)) {
-                return;
-            }
-
-            const columnIndex = Number(target.id);
-            const columnName = target.value;
-
-            this.projectSettings.columns[columnIndex][0] = columnName;
-        });
-
-        this.#scrollBar.addEventListener("scroll", () => {
-            tabContentContainer.scrollLeft = this.#scrollBar.scrollLeft;
-            this.#tabContentHeader.scrollLeft = this.#scrollBar.scrollLeft;
-        });
+        this.element.appendChild(addColumnElement);
     }
 
-    #drag(event: MouseEvent) {
-        const target = event.target as HTMLDivElement;
+    public addTranslationColumn(): void {
+        void emittery.emit(AppEvent.ColumnAdded);
+
+        const columnElement = document.createElement("div");
+        columnElement.className =
+            "p-1 inline-block outline-primary bg-primary outline outline-2";
+        columnElement.id = (this.element.childElementCount - 1).toString();
+        columnElement.style.width = `${DEFAULT_COLUMN_WIDTH}px`;
+
+        const columnInput = document.createElement("input");
+        columnInput.className = tw`w-full`;
+        columnInput.spellcheck = false;
+        columnInput.value = t`Translation`;
+
+        columnElement.appendChild(columnInput);
+        this.element.insertBefore(columnElement, this.element.lastElementChild);
+    }
+
+    public override show(): void {
+        this.element.classList.remove("hidden");
+    }
+
+    #resize(columnIndex: number, width: number): void {
+        if (columnIndex === 0) {
+            this.#projectSettings.rowColumnWidth = width;
+        } else if (columnIndex === 1) {
+            this.#projectSettings.sourceColumnWidth = width;
+        } else {
+            this.#projectSettings.translationColumns[columnIndex - 2][1] =
+                width;
+        }
+
+        this.#draggedElement!.style.width = `${width}px`;
+        void emittery.emit(AppEvent.ColumnResized, [columnIndex, width]);
+    }
+
+    #onmousemove(event: MouseEvent): void {
+        const target = event.target as HTMLDivElement | null;
+
+        if (!target) {
+            return;
+        }
 
         if (!this.#resizing) {
             const rect = target.getBoundingClientRect();
@@ -206,14 +205,18 @@ export class TabContentHeader {
         }
     }
 
-    #startDrag(event: MouseEvent) {
+    #onmousedown(event: MouseEvent): void {
         let target = event.target as HTMLDivElement | null;
 
-        if (!target) {
+        if ((event.button as MouseButton) !== MouseButton.Left) {
             return;
         }
 
-        while (target.parentElement !== this.#tabContentHeader) {
+        if (!target || target === this.element) {
+            return;
+        }
+
+        while (target.parentElement !== this.element) {
             target = target.parentElement as HTMLDivElement;
         }
 
@@ -230,13 +233,13 @@ export class TabContentHeader {
         const withinLeftEdge = distanceToLeft <= EDGE_THRESHOLD;
         const withinRightEdge = distanceToRight <= EDGE_THRESHOLD;
 
-        let adjacentElement: HTMLElement | null = null;
+        let adjacentElement: HTMLDivElement | null = null;
 
         if (withinLeftEdge) {
-            adjacentElement = target.previousElementSibling as HTMLElement;
+            adjacentElement = target.previousElementSibling as HTMLDivElement;
             this.#resizeDirection = ResizeDirection.Left;
         } else if (withinRightEdge) {
-            adjacentElement = target.nextElementSibling as HTMLElement;
+            adjacentElement = target.nextElementSibling as HTMLDivElement;
             this.#resizeDirection = ResizeDirection.Right;
         }
 
@@ -259,14 +262,14 @@ export class TabContentHeader {
         document.body.style.cursor = "col-resize";
 
         this.#resizeTooltip = document.createElement("div");
-        this.#resizeTooltip.className = utils.tw`fixed z-50 p-1 text-base`;
+        this.#resizeTooltip.className = tw`fixed z-50 p-1 text-base`;
         this.#resizeTooltip.style.background = "#333";
         this.#resizeTooltip.style.color = "#fff";
 
         document.body.appendChild(this.#resizeTooltip);
     }
 
-    #drop() {
+    #onmouseup(): void {
         if (!this.#resizing || !this.#resized) {
             return;
         }
@@ -280,89 +283,75 @@ export class TabContentHeader {
         }
 
         const draggedWidth = Math.max(this.#previewSourceWidth, 0);
-        const newDraggedWidth = `${draggedWidth}px`;
-
-        this.#resize(this.#draggedColumnIndex!, newDraggedWidth);
+        this.#resize(this.#draggedColumnIndex!, draggedWidth);
         this.#draggedElement!.style.outline = "";
 
         if (this.#adjacentElement!.textContent !== "+") {
             const adjacentWidth = Math.max(this.#previewAdjacentWidth, 0);
-            const newAdjacentWidth = `${adjacentWidth}px`;
-
-            this.#resize(this.#adjacentColumnIndex!, newAdjacentWidth);
+            this.#resize(this.#adjacentColumnIndex!, adjacentWidth);
             this.#adjacentElement!.style.outline = "";
         }
     }
 
-    #resize(columnIndex: number, width: string) {
-        (
-            this.#tabContentHeader.children[columnIndex] as HTMLElement
-        ).style.width = width;
+    #oncontextmenu(event: MouseEvent): void {
+        event.preventDefault();
 
-        for (const rowContainer of this.#tabContent.children) {
-            const element = rowContainer.children[columnIndex] as HTMLElement;
-            element.style.minWidth = element.style.width = width;
+        if (this.#widthInput) {
+            this.#widthInput.remove();
+            this.#widthInput = undefined;
+            return;
         }
 
-        this.projectSettings.columns[columnIndex][1] = Number(
-            width.slice(0, -2),
-        );
-    }
+        let target = event.target as HTMLElement | null;
 
-    public addTranslationColumn() {
-        for (const rowContainer of this.#tabContent.children) {
-            const translationTextArea = document.createElement("textarea");
-            translationTextArea.className = utils.tw`outline-primary focus-outline-primary bg-primary font min-h-full resize-none overflow-hidden p-1 outline outline-2 focus:z-10`;
-            translationTextArea.rows = 1;
-            translationTextArea.style.minWidth =
-                translationTextArea.style.width = `${consts.DEFAULT_COLUMN_WIDTH}px`;
-            translationTextArea.spellcheck = false;
-            translationTextArea.autocomplete = "off";
-            translationTextArea.autocapitalize = "off";
-            translationTextArea.autofocus = false;
+        if (!target || target === this.element) {
+            return;
+        }
 
-            if (this.settings.font) {
-                translationTextArea.style.fontFamily = "font";
+        while (target.parentElement !== this.element) {
+            target = target.parentElement as HTMLDivElement;
+        }
+
+        this.#widthInput = document.createElement("input");
+        this.#widthInput.type = "number";
+        this.#widthInput.value = Number.parseInt(target.style.width).toString();
+        this.#widthInput.className = tw`bg-second absolute z-50 rounded-md p-1 text-base`;
+        this.#widthInput.style.left = `${event.x}px`;
+        this.#widthInput.style.top = `${event.y}px`;
+
+        this.#widthInput.onkeydown = (event): void => {
+            switch (event.code) {
+                case "Escape":
+                    this.#widthInput!.remove();
+                    break;
+                case "Enter":
+                    this.#widthInput!.remove();
+                    this.#resize(
+                        Number(target.id),
+                        this.#widthInput!.valueAsNumber,
+                    );
+                    break;
             }
+        };
 
-            rowContainer.appendChild(translationTextArea);
+        document.body.appendChild(this.#widthInput);
+    }
+
+    #onfocusout(event: FocusEvent): void {
+        if (this.hidden) {
+            return;
         }
 
-        this.projectSettings.columns.push([
-            "Translation",
-            consts.DEFAULT_COLUMN_WIDTH,
-        ]);
-        this.projectSettings.translationColumnCount++;
+        const target = event.target as HTMLInputElement;
 
-        const columnData = this.projectSettings.columns.at(-1)!;
-        const columnElement = document.createElement("div");
-        columnElement.className =
-            "p-1 inline-block outline-primary bg-primary outline outline-2";
-        columnElement.id = (
-            this.#tabContentHeader.childElementCount - 1
-        ).toString();
-        columnElement.style.width = `${columnData[1]}px`;
+        if (target instanceof HTMLInputElement) {
+            const columnIndex = Number(target.id);
+            const columnName = target.value;
 
-        const columnInput = document.createElement("input");
-        columnInput.className = utils.tw`w-full`;
-        columnInput.spellcheck = false;
-        columnInput.value = columnData[0];
-
-        columnElement.appendChild(columnInput);
-
-        this.#tabContentHeader.insertBefore(
-            columnElement,
-            this.#tabContentHeader.lastElementChild,
-        );
-
-        this.#scrollBarContent.style.width = `${this.#tabContent.scrollWidth}px`;
-    }
-
-    public show() {
-        this.#tabContentHeader.classList.remove("hidden");
-    }
-
-    public hide() {
-        this.#tabContentHeader.classList.add("hidden");
+            void emittery.emit(AppEvent.ColumnRenamed, [
+                columnIndex,
+                columnName,
+            ]);
+        }
     }
 }

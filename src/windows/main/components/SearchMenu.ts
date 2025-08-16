@@ -1,141 +1,211 @@
-import { ProjectSettings } from "@classes/ProjectSettings";
-import { Replacer } from "@classes/Replacer";
-import { Searcher } from "@classes/Searcher";
-import { Settings } from "@classes/Settings";
-import { SearchAction } from "@enums/SearchAction";
-import { SearchFlags } from "@enums/SearchFlags";
-import { SearchPanel } from "./SearchPanel";
-
-import { t } from "@lingui/core/macro";
-
+import { emittery } from "@classes/emittery";
+import { AppEvent, SearchAction, SearchFlags } from "@enums/index";
 import * as utils from "@utils/functions";
+import { Component } from "./Component";
 
-export class SearchMenu {
-    #searchMenu: HTMLDivElement;
-    #searchButton: HTMLButtonElement;
+export class SearchMenu extends Component {
+    declare protected readonly element: HTMLDivElement;
 
-    public searchInput: HTMLTextAreaElement;
-    public replaceInput: HTMLTextAreaElement;
+    readonly #searchInput: HTMLTextAreaElement;
+    readonly #replaceInput: HTMLTextAreaElement;
 
-    #searchCaseButton: HTMLButtonElement;
-    #searchWholeButton: HTMLButtonElement;
-    #searchRegexButton: HTMLButtonElement;
-    #searchLocationButton: HTMLButtonElement;
+    readonly #searchCaseButton: HTMLButtonElement;
+    readonly #searchWholeButton: HTMLButtonElement;
+    readonly #searchRegexButton: HTMLButtonElement;
+    readonly #searchLocationButton: HTMLButtonElement;
 
-    #searchModeSelect: HTMLSelectElement;
-    #searchColumnSelect: HTMLSelectElement;
+    readonly #searchModeSelect: HTMLSelectElement;
+    readonly #searchColumnSelect: HTMLSelectElement;
 
-    public searchPanel: SearchPanel;
+    readonly #searchButton: HTMLButtonElement;
+    readonly #replaceButton: HTMLButtonElement;
+    readonly #putButton: HTMLButtonElement;
 
-    public constructor(
-        public readonly settings: Settings,
-        public readonly projectSettings: ProjectSettings,
-        private readonly searcher: Searcher,
-        public readonly replacer: Replacer,
-        private readonly searchFlags: SearchFlagsObject,
-        public readonly replacementLog: ReplacementLog,
-        public readonly tabInfo: TabInfo,
-    ) {
-        this.#searchMenu = document.getElementById(
-            "search-menu",
-        ) as HTMLDivElement;
-        this.#searchButton = document.getElementById(
-            "search-button",
-        ) as HTMLButtonElement;
+    public constructor() {
+        super("search-menu");
 
-        this.searchInput = this.#searchMenu.querySelector("#search-input")!;
-        this.replaceInput = this.#searchMenu.querySelector("#replace-input")!;
+        this.#searchInput = this.element.querySelector("#search-input")!;
+        this.#replaceInput = this.element.querySelector("#replace-input")!;
 
-        this.#searchCaseButton = this.#searchMenu.querySelector(
-            "#search-case-button",
-        )!;
-        this.#searchWholeButton = this.#searchMenu.querySelector(
-            "#search-whole-button",
-        )!;
-        this.#searchRegexButton = this.#searchMenu.querySelector(
-            "#search-regex-button",
-        )!;
-        this.#searchLocationButton = this.#searchMenu.querySelector(
-            "#search-location-button",
-        )!;
+        this.#searchCaseButton = this.element.querySelector("#case-button")!;
+        this.#searchWholeButton = this.element.querySelector("#whole-button")!;
+        this.#searchRegexButton = this.element.querySelector("#regex-button")!;
+        this.#searchLocationButton =
+            this.element.querySelector("#location-button")!;
 
-        this.#searchModeSelect = this.#searchMenu.querySelector(
+        this.#searchButton = this.element.querySelector("#search-button")!;
+        this.#replaceButton = this.element.querySelector("#replace-button")!;
+        this.#putButton = this.element.querySelector("#button-button")!;
+
+        this.#searchModeSelect = this.element.querySelector(
             "#search-mode-select",
         )!;
-        this.#searchColumnSelect = this.#searchMenu.querySelector(
+        this.#searchColumnSelect = this.element.querySelector(
             "#search-column-select",
         )!;
 
-        this.searchPanel = new SearchPanel(this);
-        this.#fetchColumns();
+        this.element.onkeydown = async (e): Promise<void> => {
+            await this.#onkeydown(e);
+        };
 
-        this.#searchMenu.addEventListener("change", (event) => {
-            this.#handleSearchMenuChange(event);
-        });
+        this.element.onchange = (e): void => {
+            this.#onchange(e);
+        };
 
-        this.#searchMenu.addEventListener("keydown", async (event) => {
-            await this.#handleSearchMenuKeydown(event);
-        });
-
-        this.#searchMenu.addEventListener("click", async (event) => {
-            await this.#handleSearchMenuClick(event);
-        });
-
-        this.#searchColumnSelect.addEventListener("click", () => {
-            this.#fetchColumns();
-        });
+        this.element.onclick = async (e): Promise<void> => {
+            await this.#onclick(e);
+        };
     }
 
-    #fetchColumns() {
-        this.#searchColumnSelect.innerHTML =
-            this.#searchColumnSelect.firstElementChild!.outerHTML;
+    public get searchText(): string {
+        return this.#searchInput.value;
+    }
 
-        for (const [i, [column]] of this.projectSettings.columns
-            .slice(2)
-            .entries()) {
+    public get replaceText(): string {
+        return this.#replaceInput.value;
+    }
+
+    public updateColumn(columnIndex: number, columnName: string): void {
+        let columnExists = false;
+
+        for (const option of this.#searchColumnSelect
+            .children as HTMLCollectionOf<HTMLOptionElement>) {
+            if (Number(option.value) === columnIndex) {
+                option.textContent = `${columnName} (${columnIndex + 1})`;
+                columnExists = true;
+            }
+        }
+
+        if (!columnExists) {
             const option = document.createElement("option");
-            option.id = (i + 2).toString();
-            option.textContent = column;
+            option.value = columnIndex.toString();
+            option.textContent = `${columnName} (${columnIndex + 1})`;
             this.#searchColumnSelect.appendChild(option);
         }
     }
 
-    public focus() {
-        this.searchInput.focus();
+    public init(translationColumns: [string, number][]): void {
+        this.#searchColumnSelect.innerHTML =
+            this.#searchColumnSelect.firstElementChild!.outerHTML;
+
+        for (let i = 0; i < translationColumns.length; i++) {
+            const option = document.createElement("option");
+            option.value = i.toString();
+            option.textContent = `${translationColumns[i][0]} (${i + 1})`;
+            this.#searchColumnSelect.appendChild(option);
+        }
     }
 
-    public show() {
-        this.#searchMenu.classList.remove("hidden");
-        this.#searchMenu.style.left = `${this.#searchButton.offsetLeft}px`;
-        this.#searchMenu.style.top = `${this.#searchButton.offsetTop + this.#searchButton.clientHeight}px`;
+    public override focus(): void {
+        this.#searchInput.focus();
     }
 
-    public hide() {
-        this.#searchMenu.classList.add("hidden");
-    }
+    async #onkeydown(event: KeyboardEvent): Promise<void> {
+        const target = event.target as HTMLElement | null;
 
-    public isHidden(): boolean {
-        return this.#searchMenu.classList.contains("hidden");
-    }
-
-    async #handleSearchInputKeypress(event: KeyboardEvent) {
-        if (!this.settings.project) {
+        if (!target) {
             return;
         }
 
+        switch (target) {
+            case this.#searchInput:
+                await this.#handleSearchInputKeypress(event);
+                break;
+            case this.#replaceInput:
+                this.#handleReplaceInputKeypress(event);
+                break;
+            default:
+                break;
+        }
+    }
+
+    #onchange(event: Event): void {
+        const target = event.target as HTMLElement | null;
+
+        if (!target) {
+            return;
+        }
+
+        switch (target) {
+            case this.#searchInput:
+            case this.#replaceInput:
+                utils.calculateHeight(this.#replaceInput);
+                break;
+            default:
+                break;
+        }
+    }
+
+    async #onclick(event: MouseEvent): Promise<void> {
+        const target = event.target as HTMLElement;
+
+        switch (target) {
+            case this.#searchButton: {
+                const predicate = this.#searchInput.value;
+
+                if (predicate.trim()) {
+                    await emittery.emit(AppEvent.SearchText, [
+                        predicate,
+                        Number(this.#searchModeSelect.value),
+                        Number(this.#searchColumnSelect.value),
+                        SearchAction.Search,
+                    ]);
+                }
+                break;
+            }
+            case this.#replaceButton:
+            case this.#putButton: {
+                const predicate = this.#searchInput.value;
+
+                if (predicate.trim()) {
+                    const replacer = this.#replaceInput.value;
+
+                    await emittery.emit(AppEvent.ReplaceText, [
+                        predicate,
+                        replacer,
+                        Number(this.#searchColumnSelect.value),
+                        Number(this.#searchModeSelect.value),
+                        target === this.#replaceButton
+                            ? SearchAction.Replace
+                            : SearchAction.Put,
+                    ]);
+                }
+                break;
+            }
+            case this.#searchCaseButton:
+                this.#toggleCaseSensitive();
+                break;
+            case this.#searchWholeButton:
+                this.#toggleWholeWordSearch();
+                break;
+            case this.#searchRegexButton:
+                this.#toggleRegExpSearch();
+                break;
+            case this.#searchLocationButton:
+                this.#toggleLocalSearch();
+                break;
+        }
+    }
+
+    async #handleSearchInputKeypress(event: KeyboardEvent): Promise<void> {
         if (event.code === "Enter") {
             event.preventDefault();
 
             if (event.ctrlKey) {
-                this.searchInput.value += "\n";
-                utils.calculateHeight(this.searchInput);
+                this.#searchInput.value += "\n";
+                utils.calculateHeight(this.#searchInput);
                 return;
             }
 
-            const predicate = this.searchInput.value;
+            const predicate = this.#searchInput.value;
 
             if (predicate.trim()) {
-                await this.#searchText(predicate, SearchAction.Search);
+                await emittery.emit(AppEvent.SearchText, [
+                    predicate,
+                    Number(this.#searchModeSelect.value),
+                    Number(this.#searchColumnSelect.value),
+                    SearchAction.Search,
+                ]);
             }
         } else if (event.altKey) {
             switch (event.code) {
@@ -155,146 +225,48 @@ export class SearchMenu {
         }
 
         requestAnimationFrame(() => {
-            utils.calculateHeight(this.searchInput);
+            utils.calculateHeight(this.#searchInput);
         });
     }
 
-    #handleReplaceInputKeypress(event: KeyboardEvent) {
-        if (!this.settings.project) {
-            return;
-        }
-
+    #handleReplaceInputKeypress(event: KeyboardEvent): void {
         if (event.code === "Enter") {
             event.preventDefault();
 
             if (event.ctrlKey) {
-                this.replaceInput.value += "\n";
-                utils.calculateHeight(this.replaceInput);
+                this.#replaceInput.value += "\n";
+                utils.calculateHeight(this.#replaceInput);
             }
         } else if (event.code === "Backspace") {
             requestAnimationFrame(() => {
-                utils.calculateHeight(this.replaceInput);
+                utils.calculateHeight(this.#replaceInput);
             });
         }
     }
 
-    async #handleSearchMenuKeydown(event: KeyboardEvent) {
-        const target = event.target as HTMLElement;
-
-        switch (target) {
-            case this.searchInput:
-                await this.#handleSearchInputKeypress(event);
-                break;
-            case this.replaceInput:
-                this.#handleReplaceInputKeypress(event);
-                break;
-            default:
-                break;
-        }
-    }
-
-    #handleSearchMenuChange(event: Event) {
-        const target = event.target as HTMLElement;
-
-        switch (target) {
-            case this.searchInput:
-            case this.replaceInput:
-                utils.calculateHeight(this.replaceInput);
-                break;
-            default:
-                break;
-        }
-    }
-
-    async #handleSearchMenuClick(event: MouseEvent) {
-        const target = event.target as HTMLElement | null;
-
-        if (!target) {
-            return;
-        }
-
-        switch (target.id) {
-            case "apply-search-button": {
-                const predicate = this.searchInput.value;
-
-                if (predicate.trim()) {
-                    await this.#searchText(predicate, SearchAction.Search);
-                }
-                break;
-            }
-            case "replace-button":
-            case "put-button": {
-                const predicate = this.searchInput.value;
-
-                if (predicate.trim()) {
-                    const replacer = this.replaceInput.value;
-
-                    await this.replacer.replaceAll(
-                        predicate,
-                        replacer,
-                        Number(this.#searchModeSelect.value),
-                        target.id === "replace-button"
-                            ? SearchAction.Replace
-                            : SearchAction.Put,
-                    );
-                }
-                break;
-            }
-            case "case-button":
-                this.#toggleCaseSensitive();
-                break;
-            case "whole-button":
-                this.#toggleWholeWordSearch();
-                break;
-            case "regex-button":
-                this.#toggleRegExpSearch();
-                break;
-            case "location-button":
-                this.#toggleLocalSearch();
-                break;
-        }
-    }
-
-    #toggleCaseSensitive() {
-        this.#searchCaseButton.classList.toggle("backgroundThird");
-        this.searchFlags.flags ^= SearchFlags.CaseSensitive;
-    }
-
-    #toggleWholeWordSearch() {
-        this.#searchWholeButton.classList.toggle("backgroundThird");
-        this.searchFlags.flags ^= SearchFlags.WholeWord;
-    }
-
-    #toggleRegExpSearch() {
-        this.#searchRegexButton.classList.toggle("backgroundThird");
-        this.searchFlags.flags ^= SearchFlags.RegExp;
-    }
-
-    #toggleLocalSearch() {
-        this.#searchLocationButton.classList.toggle("backgroundThird");
-        this.searchFlags.flags ^= SearchFlags.OnlyCurrentTab;
-    }
-
-    async #searchText(predicate: string, searchAction: SearchAction) {
-        const results = await this.searcher.search(
-            predicate,
-            Number(this.#searchModeSelect.value),
-            searchAction,
+    #toggleCaseSensitive(): void {
+        this.#searchCaseButton.classList.toggle("bg-third");
+        void emittery.emit(
+            AppEvent.SearchFlagChanged,
+            SearchFlags.CaseSensitive,
         );
+    }
 
-        if (searchAction === SearchAction.Search) {
-            this.searchPanel.searchCurrentPage.innerHTML = "0";
+    #toggleWholeWordSearch(): void {
+        this.#searchWholeButton.classList.toggle("bg-third");
+        void emittery.emit(AppEvent.SearchFlagChanged, SearchFlags.WholeWord);
+    }
 
-            if (results.pages === 0) {
-                this.searchPanel.searchTotalPages.innerHTML = "0";
-                this.searchPanel.searchPanelContent.innerHTML = t`<div id="no-results" class="content-center h-full">No matches</div>`;
-            } else {
-                this.searchPanel.searchTotalPages.innerHTML =
-                    results.pages.toString();
-                void this.searchPanel.loadSearchMatch(1);
-            }
+    #toggleRegExpSearch(): void {
+        this.#searchRegexButton.classList.toggle("bg-third");
+        void emittery.emit(AppEvent.SearchFlagChanged, SearchFlags.RegExp);
+    }
 
-            this.searchPanel.show();
-        }
+    #toggleLocalSearch(): void {
+        this.#searchLocationButton.classList.toggle("bg-third");
+        void emittery.emit(
+            AppEvent.SearchFlagChanged,
+            SearchFlags.OnlyCurrentTab,
+        );
     }
 }

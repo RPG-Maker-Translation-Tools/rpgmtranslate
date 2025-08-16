@@ -1,145 +1,173 @@
-import { MatchType } from "@enums/MatchType";
-import { MouseButton } from "@enums/MouseButton";
-import { SearchAction } from "@enums/SearchAction";
-import { SearchMenu } from "./SearchMenu";
+import { emittery } from "@classes/emittery";
+import { AppEvent, MouseButton, SearchAction } from "@enums/index";
+import { ProjectSettings } from "@lib/classes";
+import { Component, TabContent } from "./index";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
+import { tw } from "@utils/functions";
 
 import { t } from "@lingui/core/macro";
+
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { error } from "@tauri-apps/plugin-log";
 
-export class SearchPanel {
-    #searchPanel: HTMLDivElement;
-    public searchPanelContent: HTMLDivElement;
-    #logFileSelect: HTMLSelectElement;
-    #switchPanelButton: HTMLButtonElement;
-    public searchCurrentPage: HTMLSpanElement;
-    #pageSelectContainer: HTMLDivElement;
-    public searchTotalPages: HTMLSpanElement;
+export class SearchPanel extends Component {
+    declare protected readonly element: HTMLDivElement;
+    readonly #searchPanelContent: HTMLDivElement;
 
-    public constructor(private readonly searchMenu: SearchMenu) {
-        this.#searchPanel = document.getElementById(
-            "search-panel",
-        ) as HTMLDivElement;
-        this.searchPanelContent = this.#searchPanel.querySelector(
+    readonly #searchCurrentPage: HTMLSpanElement;
+    readonly #searchTotalPages: HTMLSpanElement;
+
+    readonly #logFileSelect: HTMLSelectElement;
+    readonly #switchPanelButton: HTMLButtonElement;
+    readonly #pageSelectContainer: HTMLDivElement;
+    readonly #previousPageButton: HTMLButtonElement;
+    readonly #nextPageButton: HTMLButtonElement;
+
+    #tabInfo!: TabInfo;
+    #tabContent!: TabContent;
+    #projectSettings!: ProjectSettings;
+    #replacementLog!: ReplacementLog;
+
+    public constructor() {
+        super("search-panel");
+
+        this.#searchPanelContent = this.element.querySelector(
             "#search-panel-content",
         )!;
-        this.#switchPanelButton = this.#searchPanel.querySelector(
+        this.#switchPanelButton = this.element.querySelector(
             "#switch-panel-button",
         )!;
-        this.#logFileSelect =
-            this.#searchPanel.querySelector("#log-file-select")!;
-        this.searchCurrentPage = this.#searchPanel.querySelector(
+        this.#logFileSelect = this.element.querySelector("#log-file-select")!;
+        this.#searchCurrentPage = this.element.querySelector(
             "#search-current-page",
         )!;
-        this.#pageSelectContainer = this.#searchPanel.querySelector(
+        this.#pageSelectContainer = this.element.querySelector(
             "#page-select-container",
         )!;
-        this.searchTotalPages = this.#searchPanel.querySelector(
+        this.#searchTotalPages = this.element.querySelector(
             "#search-total-pages",
         )!;
+        this.#previousPageButton = this.element.querySelector(
+            "#previous-page-button",
+        )!;
+        this.#nextPageButton = this.element.querySelector("#next-page-button")!;
 
-        this.#searchPanel.addEventListener("click", (event) => {
-            this.#handleSearchPanelClick(event);
-        });
+        this.element.onchange = (e): void => {
+            this.#onchange(e);
+        };
 
-        this.searchPanelContent.addEventListener("mousedown", async (event) => {
-            await this.#handleSearchPanelContentClick(event);
-        });
+        this.element.onmousedown = async (e): Promise<void> => {
+            await this.#onmousedown(e);
+        };
 
-        this.#logFileSelect.addEventListener("change", () => {
-            this.#loadLogs();
-        });
-
-        this.#logFileSelect.addEventListener("click", (event) => {
-            this.#handleLogFileClick(event);
-        });
+        this.element.onclick = (e): void => {
+            this.#onclick(e);
+        };
     }
 
-    #handleLogFileClick(event: MouseEvent) {
-        if ((event.button as MouseButton) === MouseButton.Left) {
-            this.#logFileSelect.innerHTML = t`<option value="">-Choose a file-</option>`;
+    public override get hidden(): boolean {
+        return this.element.classList.contains("translate-x-full");
+    }
 
-            for (const entry of Object.keys(this.searchMenu.replacementLog)) {
-                const option = document.createElement("option");
-                option.innerHTML = entry;
-                option.value = entry;
-                this.#logFileSelect.appendChild(option);
+    public updateResults(pages: number): void {
+        if (pages === 0) {
+            this.#searchCurrentPage.textContent = " - ";
+            this.#searchTotalPages.textContent = " - ";
+            this.#searchPanelContent.innerHTML = t`<div id="no-results" class="content-center h-full">No matches</div>`;
+        } else {
+            this.#searchCurrentPage.textContent = "1";
+            this.#searchTotalPages.textContent = pages.toString();
+            void this.loadSearchMatch(1);
+        }
+    }
+
+    public override hide(): void {
+        this.element.classList.replace("translate-x-0", "translate-x-full");
+    }
+
+    public init(
+        tabInfo: TabInfo,
+        tabContent: TabContent,
+        projectSettings: ProjectSettings,
+        replacementLog: ReplacementLog,
+    ): void {
+        this.#tabInfo = tabInfo;
+        this.#tabContent = tabContent;
+        this.#projectSettings = projectSettings;
+        this.#replacementLog = replacementLog;
+
+        this.#logFileSelect.innerHTML =
+            this.#logFileSelect.firstElementChild!.outerHTML;
+
+        for (const filename in this.#replacementLog) {
+            const option = document.createElement("option");
+            option.innerHTML = filename;
+            option.value = filename;
+            this.#logFileSelect.appendChild(option);
+        }
+    }
+
+    public override show(): void {
+        this.element.classList.replace("translate-x-full", "translate-x-0");
+    }
+
+    public addLog(filename: string): void {
+        const option = document.createElement("option");
+        option.innerHTML = filename;
+        option.value = filename;
+        this.#logFileSelect.appendChild(option);
+    }
+
+    public removeLog(filename: string): void {
+        for (const option of this.#logFileSelect.children) {
+            if (option.innerHTML === filename) {
+                option.remove();
             }
-
-            this.searchPanelContent.innerHTML = "";
         }
     }
 
-    #loadLogs() {
-        const filename = this.#logFileSelect.value;
+    public async loadSearchMatch(matchIndex: number): Promise<void> {
+        const matchObject = await this.#loadMatchObject(matchIndex);
 
-        for (const [source, [entry, column, old, new_]] of Object.entries(
-            this.searchMenu.replacementLog[filename],
-        )) {
-            const entryContainer = document.createElement("div");
-            entryContainer.className = utils.tw`textSecond border-primary backgroundSecond my-1 cursor-pointer border-2 p-1`;
+        for (const [
+            [matchInfo, match],
+            [counterpartInfo, counterpartMatch],
+        ] of matchObject) {
+            const matchContainer = document.createElement("div");
+            matchContainer.className = tw`text-second bg-second border-primary my-1 cursor-pointer border-2 p-1`;
 
-            entryContainer.append("Source:");
+            const matchDiv = document.createElement("div");
+            matchDiv.innerHTML = match;
+            matchDiv.className = tw`whitespace-pre-wrap`;
+            matchContainer.appendChild(matchDiv);
 
-            const sourceDiv = document.createElement("div");
-            sourceDiv.textContent = source;
-            entryContainer.appendChild(sourceDiv);
+            const matchInfoDiv = document.createElement("div");
+            matchInfoDiv.className = tw`text-third text-xs`;
+            matchInfoDiv.innerHTML = matchInfo;
+            matchContainer.appendChild(matchInfoDiv);
 
-            entryContainer.append("Old:");
+            const arrowDiv = document.createElement("div");
+            arrowDiv.className = tw`font-material content-center text-xl`;
+            arrowDiv.innerHTML = "arrow_downward";
+            matchContainer.appendChild(arrowDiv);
 
-            const oldDiv = document.createElement("div");
-            oldDiv.textContent = old;
-            entryContainer.appendChild(oldDiv);
+            const counterpartDiv = document.createElement("div");
+            counterpartDiv.textContent = counterpartMatch;
+            counterpartDiv.className = tw`whitespace-pre-wrap`;
+            matchContainer.appendChild(counterpartDiv);
 
-            entryContainer.append("New:");
+            const counterpartInfoDiv = document.createElement("div");
+            counterpartInfoDiv.className = tw`text-third text-xs`;
+            counterpartInfoDiv.innerHTML = counterpartInfo;
+            matchContainer.appendChild(counterpartInfoDiv);
 
-            const newDiv = document.createElement("div");
-            newDiv.textContent = new_;
-            entryContainer.appendChild(newDiv);
-
-            const entryInfo = document.createElement("div");
-            entryInfo.className = utils.tw`textThird text-xs`;
-            entryInfo.innerHTML = `${filename} - ${entry} - ${column}`;
-            entryContainer.appendChild(entryInfo);
-
-            this.searchPanelContent.appendChild(entryContainer);
+            this.#searchPanelContent.appendChild(matchContainer);
         }
     }
 
-    public toggle() {
-        utils.toggleMultiple(
-            this.#searchPanel,
-            "translate-x-0",
-            "translate-x-full",
-        );
-    }
-
-    public show() {
-        this.#searchPanel.classList.replace(
-            "translate-x-full",
-            "translate-x-0",
-        );
-    }
-
-    async #handleSearchResultClick(event: MouseEvent) {
-        const target = event.target as HTMLDivElement;
-        const resultElement = target.closest(".cursor-pointer")!;
-
-        if (!this.searchPanelContent.contains(resultElement)) {
-            return;
-        }
-
-        const metadata = resultElement.children[1].innerHTML;
-        const [filename, entry, type, columnString, row] =
-            metadata.split(" - ");
-        const column = Number(/\d/.exec(columnString)![0]);
-        const isTranslation = type.startsWith("t");
-        const rowIndex = Number(row) - 1;
-
+    async #handleSearchMatchClick(event: MouseEvent): Promise<void> {
         let searchAction: SearchAction;
 
         switch (event.button as MouseButton) {
@@ -156,171 +184,164 @@ export class SearchPanel {
                 return;
         }
 
+        const target = (event.target as HTMLElement).closest<HTMLDivElement>(
+            ".cursor-pointer",
+        )!;
+
+        const matchInfo = target.children[1].innerHTML;
+        const [filename, entry, type, columnString, row] =
+            matchInfo.split(" - ");
+        const columnIndex = Number(columnString[columnString.length - 2]) - 1;
+        const isTranslation = type.startsWith("t");
+        const rowIndex = Number(row) - 1;
+
         if (searchAction === SearchAction.Search) {
             if (event.ctrlKey) {
-                await writeText(resultElement.firstElementChild!.textContent);
+                await writeText(target.firstElementChild!.textContent);
             } else {
-                await this.searchMenu.tabInfo.changeTab(filename);
-
-                this.searchMenu.tabInfo.currentTab.content.children[
-                    rowIndex
-                ].scrollIntoView({
-                    block: "center",
-                    inline: "center",
-                });
+                await emittery.emit(AppEvent.ChangeTab, filename);
+                await emittery.emit(AppEvent.ScrollIntoRow, rowIndex);
             }
         } else {
-            if (searchAction === SearchAction.Replace) {
-                if (!isTranslation) {
-                    alert(t`Source text cannot be replaced.`);
-                    return;
-                }
-            }
-
-            const searchText = this.searchMenu.searchInput.value;
-
-            if (!searchText.trim()) {
+            if (searchAction === SearchAction.Replace && !isTranslation) {
+                alert(t`Source text cannot be replaced.`);
                 return;
             }
 
-            const replacerText = this.searchMenu.replaceInput.value;
-            await this.searchMenu.replacer.replaceSingle(
-                searchText,
-                replacerText,
+            await emittery.emit(AppEvent.ReplaceSingle, [
+                target,
                 filename,
                 entry,
-                column,
+                columnIndex,
                 rowIndex,
                 searchAction,
-            );
-
-            if (searchAction === SearchAction.Replace) {
-                for (const child of resultElement.firstElementChild!.children) {
-                    child.outerHTML = `<span class="bg-red-600">${replacerText}</span>`;
-                }
-            } else {
-                resultElement.children[3].innerHTML = `<span class="bg-red-600">${replacerText}</span>`;
-            }
+            ]);
         }
     }
 
-    async #handleLogResultClick(event: MouseEvent) {
-        const getRowIndex = (
-            tab: boolean,
-            translationLines?: string[],
-        ): number => {
-            let rowIndex = -1;
-            let found = false;
+    #findRequiredRow(
+        filename: string,
+        entry: string,
+        logSource: string,
+    ): number {
+        const fileComment = utils.getFileComment(filename);
 
-            const targetSource = element.firstElementChild!.textContent;
+        let rowIndex = -1;
+        let found = false;
 
-            if (tab) {
-                for (const child of this.searchMenu.tabInfo.currentTab.content
-                    .children) {
-                    const children = child.children;
-                    const source = children[1];
-                    const translation = children[2] as HTMLTextAreaElement;
+        for (let i = 0; i < this.#tabContent.childCount - 1; i++) {
+            const rowContainer = this.#tabContent.children[i];
+            const source = utils.source(rowContainer);
+            const translation = utils.translation(rowContainer)[0];
 
-                    if (
-                        source.textContent === fileComment &&
-                        translation.value === entry
-                    ) {
-                        if (found) {
-                            break;
-                        }
-
-                        found = true;
-                    } else if (found && source.textContent === targetSource) {
-                        rowIndex =
-                            Number(children[0].firstElementChild!.textContent) -
-                            1;
-                        break;
-                    }
+            if (source === fileComment && translation === entry) {
+                if (found) {
+                    break;
                 }
-            } else {
-                for (const [index, line] of translationLines!.entries()) {
-                    if (line.startsWith(fileComment) && line.endsWith(entry)) {
-                        if (found) {
-                            break;
-                        }
 
-                        found = true;
-                    } else if (found) {
-                        const source = line.slice(
-                            0,
-                            line.indexOf(consts.SEPARATOR),
-                        );
+                found = true;
+            } else if (found && source === logSource) {
+                rowIndex = i;
+                break;
+            }
+        }
 
-                        if (utils.lbcmp(source, targetSource)) {
-                            rowIndex = index;
-                            break;
-                        }
-                    }
-                }
+        if (rowIndex === -1) {
+            alert(
+                t`Can't found row with ${logSource} source text in file ${filename} and entry ${entry}.`,
+            );
+        }
+
+        return rowIndex;
+    }
+
+    #findExternalRequiredRow(
+        filename: string,
+        entry: string,
+        logSource: string,
+        translationLines: string[],
+    ): number {
+        const fileComment = utils.getFileComment(filename);
+
+        let rowIndex = -1;
+        let found = false;
+
+        for (let i = 0; i < translationLines.length; i++) {
+            const line = translationLines[i];
+            const parts = utils.parts(line);
+
+            if (!parts) {
+                utils.logSplitError(filename, i + 1);
+                continue;
             }
 
-            if (rowIndex === -1) {
-                void error(
-                    t`Can't found row with ${targetSource} source text in file ${filename} and entry ${entry}.`,
-                );
+            const source = utils.source(parts);
+            const translation = utils.translation(parts)[0];
+
+            if (source === fileComment && translation === entry) {
+                if (found) {
+                    break;
+                }
+
+                found = true;
+            } else if (found && utils.lbcmp(source, logSource)) {
+                rowIndex = i;
+                break;
             }
+        }
 
-            return rowIndex;
-        };
+        return rowIndex;
+    }
 
-        const target = event.target as HTMLElement;
-        const button = event.button as MouseButton;
-        const element = target.closest(".cursor-pointer")!;
+    async #handleLogRecordClick(event: MouseEvent): Promise<void> {
+        const target = (event.target as HTMLElement).closest<HTMLDivElement>(
+            ".cursor-pointer",
+        )!;
 
-        if (
-            element.innerHTML.includes(
-                t`Text was reverted to the previous state`,
-            )
-        ) {
+        if (target.hasAttribute("reverted")) {
             return;
         }
 
-        const [filename, entry, columnString] =
-            element.lastElementChild!.innerHTML.split(" - ");
-        const column = Number(columnString);
+        const button = event.button as MouseButton;
 
-        const fileComment = utils.getFileComment(filename);
-        let rowIndex: number;
+        const logSource = target.firstElementChild!.textContent;
+        const logOld = target.children[1].textContent;
+
+        const [filename, entry, columnString] =
+            target.lastElementChild!.innerHTML.split(" - ");
+        const columnIndex = Number(columnString[columnString.length - 2]) - 1;
 
         if (button === MouseButton.Left) {
-            await this.searchMenu.tabInfo.changeTab(filename);
-
-            rowIndex = getRowIndex(true);
+            await emittery.emit(AppEvent.ChangeTab, filename);
+            const rowIndex = this.#findRequiredRow(filename, entry, logSource);
 
             if (rowIndex === -1) {
                 return;
             }
 
-            this.searchMenu.tabInfo.currentTab.content.children[
-                rowIndex
-            ].scrollIntoView({
-                block: "center",
-                inline: "center",
-            });
+            await emittery.emit(AppEvent.ScrollIntoRow, rowIndex);
         } else if (button === MouseButton.Right) {
-            if (this.searchMenu.tabInfo.currentTab.name === filename) {
-                rowIndex = getRowIndex(true);
+            if (this.#tabInfo.tabName === filename) {
+                const rowIndex = this.#findRequiredRow(
+                    filename,
+                    entry,
+                    logSource,
+                );
 
                 if (rowIndex === -1) {
                     return;
                 }
 
-                const rowContainer = this.searchMenu.tabInfo.currentTab.content
-                    .children[rowIndex] as HTMLDivElement;
+                const rowContainer = this.#tabContent.children[rowIndex];
                 const textarea = rowContainer.children[
-                    column
+                    columnIndex + 2
                 ] as HTMLTextAreaElement;
-                textarea.value = element.children[1].textContent;
+                textarea.value = logOld;
             } else {
                 const filePath = utils.join(
                     filename.startsWith("map")
-                        ? this.searchMenu.projectSettings.tempMapsPath
-                        : this.searchMenu.projectSettings.translationPath,
+                        ? this.#projectSettings.tempMapsPath
+                        : this.#projectSettings.translationPath,
                     `${filename}${consts.TXT_EXTENSION}`,
                 );
 
@@ -335,7 +356,13 @@ export class SearchPanel {
                 }
 
                 const translationLines = utils.lines(fileContent);
-                rowIndex = getRowIndex(false, translationLines);
+
+                const rowIndex = this.#findExternalRequiredRow(
+                    filename,
+                    entry,
+                    logSource,
+                    translationLines,
+                );
 
                 if (rowIndex === -1) {
                     return;
@@ -343,8 +370,8 @@ export class SearchPanel {
 
                 const line = translationLines[rowIndex];
                 const parts = utils.parts(line)!;
-                parts[column] = utils.dlbtoclb(element.children[1].textContent);
-                translationLines[rowIndex] = parts.join(consts.SEPARATOR);
+                parts[columnIndex + 1] = utils.dlbtoclb(logOld);
+                translationLines[rowIndex] = utils.joinParts(parts);
 
                 await writeTextFile(
                     filePath,
@@ -354,37 +381,53 @@ export class SearchPanel {
                 });
             }
 
-            delete this.searchMenu.replacementLog[filename][
-                element.children[0].textContent
-            ];
-
-            if (utils.objectIsEmpty(this.searchMenu.replacementLog[filename])) {
-                delete this.searchMenu.replacementLog[filename];
-                this.#logFileSelect.value = "";
-            }
-
-            element.innerHTML = t`Text was reverted to the previous state`;
+            await emittery.emit(AppEvent.LogEntryReverted, [filename, logOld]);
+            target.innerHTML = t`Text was reverted to the previous state`;
+            target.setAttribute("reverted", "");
         }
     }
 
-    async #handleSearchPanelContentClick(event: MouseEvent) {
-        if (this.#switchPanelButton.innerHTML === "menu_book") {
-            await this.#handleLogResultClick(event);
-        } else {
-            await this.#handleSearchResultClick(event);
-        }
+    async #loadMatchObject(matchIndex: number): Promise<MatchObject> {
+        this.#searchCurrentPage.textContent = matchIndex.toString();
+        this.#searchPanelContent.innerHTML = "";
+
+        const matchFile = utils.join(
+            this.#projectSettings.programDataPath,
+            `match${matchIndex}${consts.JSON_EXTENSION}`,
+        );
+
+        const matchContent = await readTextFile(matchFile);
+        const matchObject = JSON.parse(matchContent) as MatchObject;
+
+        return matchObject;
     }
 
-    #handleSearchPanelClick(event: MouseEvent) {
+    async #onmousedown(event: MouseEvent): Promise<void> {
         const target = event.target as HTMLElement | null;
 
         if (!target) {
             return;
         }
 
-        switch (target.id) {
-            case this.#switchPanelButton.id: {
-                this.searchPanelContent.innerHTML = "";
+        if (this.#searchPanelContent.contains(target)) {
+            if (this.#switchPanelButton.innerHTML === "menu_book") {
+                await this.#handleLogRecordClick(event);
+            } else {
+                await this.#handleSearchMatchClick(event);
+            }
+        }
+    }
+
+    #onclick(event: MouseEvent): void {
+        const target = event.target as HTMLElement | null;
+
+        if (!target) {
+            return;
+        }
+
+        switch (target) {
+            case this.#switchPanelButton: {
+                this.#searchPanelContent.innerHTML = "";
                 utils.toggleMultiple(
                     this.#pageSelectContainer,
                     "hidden",
@@ -399,18 +442,18 @@ export class SearchPanel {
                 }
                 break;
             }
-            case "previous-page-button": {
-                const page = Number(this.searchCurrentPage.textContent);
+            case this.#previousPageButton: {
+                const page = Number(this.#searchCurrentPage.textContent);
 
                 if (page > 1) {
                     void this.loadSearchMatch(page - 1);
                 }
                 break;
             }
-            case "next-page-button": {
-                const page = Number(this.searchCurrentPage.textContent);
+            case this.#nextPageButton: {
+                const page = Number(this.#searchCurrentPage.textContent);
 
-                if (page < Number(this.searchTotalPages.textContent)) {
+                if (page < Number(this.#searchTotalPages.textContent)) {
                     void this.loadSearchMatch(page + 1);
                 }
                 break;
@@ -418,66 +461,47 @@ export class SearchPanel {
         }
     }
 
-    async #loadMatchObject(matchIndex: number): Promise<MatchObject> {
-        this.searchCurrentPage.textContent = matchIndex.toString();
-        this.searchPanelContent.innerHTML = "";
+    #onchange(event: Event): void {
+        if (event.target !== this.#logFileSelect) {
+            return;
+        }
 
-        const matchFile = utils.join(
-            this.searchMenu.projectSettings.programDataPath,
-            `match${matchIndex}${consts.JSON_EXTENSION}`,
-        );
+        const filename = this.#logFileSelect.value;
 
-        const matchContent = await readTextFile(matchFile);
-        const matchObject = JSON.parse(matchContent) as MatchObject;
+        for (const source in this.#replacementLog[filename]) {
+            const [entry, columnIndex, old, new_] =
+                this.#replacementLog[filename][source];
 
-        return matchObject;
-    }
+            const entryContainer = document.createElement("div");
+            entryContainer.className = tw`text-second border-primary bg-second my-1 cursor-pointer border-2 p-1`;
 
-    public async loadSearchMatch(matchIndex: number) {
-        const matchObject = await this.#loadMatchObject(matchIndex);
+            entryContainer.append("Source:");
 
-        for (const [metadata, [match, counterpart]] of Object.entries(
-            matchObject,
-        )) {
-            const [filename, entry, type, column, row] = metadata.split("-");
-            const isTranslation = type.startsWith("t");
-            let rowNumber = Number(row);
+            const sourceDiv = document.createElement("div");
+            sourceDiv.textContent = source;
+            sourceDiv.className = tw`whitespace-pre-wrap`;
+            entryContainer.appendChild(sourceDiv);
 
-            // External files are 0-indexed
-            if (filename !== this.searchMenu.tabInfo.currentTab.name) {
-                rowNumber += 1;
-            }
+            entryContainer.append("Old:");
 
-            const matchContainer = document.createElement("div");
-            matchContainer.className = utils.tw`textSecond border-primary backgroundSecond my-1 cursor-pointer border-2 p-1`;
+            const oldDiv = document.createElement("div");
+            oldDiv.textContent = old;
+            oldDiv.className = tw`whitespace-pre-wrap`;
+            entryContainer.appendChild(oldDiv);
 
-            const matchDiv = document.createElement("div");
-            matchDiv.innerHTML = match;
-            matchContainer.appendChild(matchDiv);
+            entryContainer.append("New:");
 
-            const matchInfo = document.createElement("div");
-            matchInfo.className = utils.tw`textThird text-xs`;
-            matchInfo.innerHTML = `${filename} - ${entry} - ${type} - ${column} - ${rowNumber}`;
-            matchContainer.appendChild(matchInfo);
+            const newDiv = document.createElement("div");
+            newDiv.textContent = new_;
+            newDiv.className = tw`whitespace-pre-wrap`;
+            entryContainer.appendChild(newDiv);
 
-            const arrowDiv = document.createElement("div");
-            arrowDiv.className = utils.tw`font-material content-center text-xl`;
-            arrowDiv.innerHTML = "arrow_downward";
-            matchContainer.appendChild(arrowDiv);
+            const entryInfo = document.createElement("div");
+            entryInfo.className = tw`text-third text-xs`;
+            entryInfo.innerHTML = `${filename} - ${entry} - ${this.#projectSettings.columnName(columnIndex)} (${columnIndex + 1})`;
+            entryContainer.appendChild(entryInfo);
 
-            const counterpartDiv = document.createElement("div");
-            counterpartDiv.textContent = counterpart;
-            matchContainer.appendChild(counterpartDiv);
-
-            const counterpartType = isTranslation
-                ? MatchType.Source
-                : MatchType.Translation;
-            const counterpartInfo = document.createElement("div");
-            counterpartInfo.className = utils.tw`textThird text-xs`;
-            counterpartInfo.innerHTML = `${filename} - ${entry} - ${counterpartType} - ${column} - ${rowNumber}`;
-            matchContainer.appendChild(counterpartInfo);
-
-            this.searchPanelContent.appendChild(matchContainer);
+            this.#searchPanelContent.appendChild(entryContainer);
         }
     }
 }

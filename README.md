@@ -25,7 +25,7 @@ If you have troubled figuring out the program, check the `Help > Help` top menu 
 ### Prerequisites
 
 - `rustup` with an installed Rust toolchain.
-- Tauri prerequisites (https://v2.tauri.app/start/prerequisites);
+- Tauri prerequisites (https://v2.tauri.app/start/prerequisites).
 - JavaScript runtime (`nodejs`, `bun`, `deno`).
 
 ### Building
@@ -62,7 +62,6 @@ After the build, `target` directory will be created in the `gui/src-tauri` path,
 ## License
 
 The repository is licensed under [WTFPL](http://www.wtfpl.net/).
-This means that you can use and modify the program in any way. You can do what the fuck you want to.
 
 The repository contains third-party software, that is licensed under other conditions:
 

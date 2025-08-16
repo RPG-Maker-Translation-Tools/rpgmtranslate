@@ -20,7 +20,7 @@ translators = { version = "0.1.5", features = ["all"] }
 log = "0.4.27"
 tokio = "1.47.1"
 walkdir = "2.5.0"
-thiserror = "2.0.12"
+thiserror = "2.0.14"
 marshal-rs = "1.1.1"
 rpgmad-lib = { version = "3.0.0", features = ["serde"] }
 rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "9.0.2" }

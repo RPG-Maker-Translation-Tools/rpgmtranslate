@@ -6,13 +6,51 @@
 }
 
 @layer base {
+    /* Disable annoying outline */
+    *:focus-visible {
+        outline: none;
+    }
+
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
     }
-    *:focus-visible {
-        outline: none;
+
+    /* TODO: Changeable colors */
+    input[type="checkbox"] {
+        cursor: pointer;
+        position: absolute;
+        opacity: 0;
+    }
+
+    input[type="checkbox"] + label {
+        cursor: pointer;
+    }
+
+    input[type="checkbox"] + label:before {
+        content: "";
+        border: 1px solid grey;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        margin-right: 0.25em;
+        margin-top: 0.25em;
+        vertical-align: -2px;
+    }
+
+    input[type="checkbox"]:checked + label:before {
+        background-image: url("./check.svg");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 16px;
+        background-color: var(--checkbox-bg, #666);
+    }
+
+    input[type="checkbox"]:disabled + label {
+        cursor: default;
+        color: black;
+        opacity: 0.5;
     }
 }
 
@@ -43,10 +81,6 @@ Make sure disabled buttons don't get the pointer cursor.
     @apply fixed z-50 flex-col rounded-md border-2;
 }
 
-.checkbox {
-    @apply font-material flex cursor-pointer items-center justify-center rounded-md border-2 select-none;
-}
-
 .checkbox-container {
-    @apply flex flex-row items-center gap-2;
+    @apply flex flex-row items-center gap-2 p-0.5;
 }

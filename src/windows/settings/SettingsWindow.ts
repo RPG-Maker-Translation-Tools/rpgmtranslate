@@ -2,24 +2,23 @@ import { expandScope, walkDir } from "@utils/invokes";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
-import * as _ from "radashi";
 
 import { ProjectSettings, Settings } from "@lib/classes";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { emit, emitTo, once } from "@tauri-apps/api/event";
+import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
 const APP_WINDOW = getCurrentWebviewWindow();
 
 interface SettingsWindowUI {
-    backupCheck: HTMLSpanElement;
+    backupCheck: HTMLInputElement;
     backupSettings: HTMLDivElement;
     backupMaxInput: HTMLInputElement;
     backupPeriodInput: HTMLInputElement;
     fontSelect: HTMLSelectElement;
     rowDeleteModeSelect: HTMLSelectElement;
-    displayGhostLinesCheck: HTMLSpanElement;
-    checkForUpdatesCheck: HTMLSpanElement;
+    displayGhostLinesCheck: HTMLInputElement;
+    checkForUpdatesCheck: HTMLInputElement;
 }
 
 interface FontObject extends Record<string, string> {
@@ -30,7 +29,7 @@ interface FontObject extends Record<string, string> {
 function setupUI(): SettingsWindowUI {
     const backupCheck = document.getElementById(
         "backup-check",
-    ) as HTMLSpanElement;
+    ) as HTMLInputElement;
     const backupSettings = document.getElementById(
         "backup-settings",
     ) as HTMLDivElement;
@@ -48,10 +47,10 @@ function setupUI(): SettingsWindowUI {
     ) as HTMLSelectElement;
     const displayGhostLinesCheck = document.getElementById(
         "display-ghost-lines-check",
-    ) as HTMLSpanElement;
+    ) as HTMLInputElement;
     const checkForUpdatesCheck = document.getElementById(
         "check-for-updates-check",
-    ) as HTMLSpanElement;
+    ) as HTMLInputElement;
 
     return {
         backupCheck,
@@ -86,176 +85,126 @@ async function fetchFonts(): Promise<FontObject> {
     return fontsObject;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-    await once<[Settings, Themes, ProjectSettings]>(
-        "settings",
-        async (event) => {
-            const UI = setupUI();
-            const [settings, themes] = event.payload;
+await once<[Settings, Themes, ProjectSettings]>("settings", async (event) => {
+    const UI = setupUI();
+    const [settings, themes] = event.payload;
 
-            utils.applyTheme(themes, settings.theme);
-            await utils.i18nActivate("Settings", settings.language);
+    utils.applyTheme(themes, settings.theme);
+    await utils.initializeLocalization("Settings", settings.language);
+    utils.retranslate();
 
-            UI.backupPeriodInput.min = consts.MIN_BACKUP_PERIOD.toString();
-            UI.backupPeriodInput.max = settings.backup.period.toString();
+    UI.backupPeriodInput.min = consts.MIN_BACKUP_PERIOD.toString();
+    UI.backupPeriodInput.max = settings.backup.period.toString();
 
-            UI.backupMaxInput.min = "1";
-            UI.backupMaxInput.max = consts.MAX_BACKUPS.toString();
+    UI.backupMaxInput.min = "1";
+    UI.backupMaxInput.max = consts.MAX_BACKUPS.toString();
 
-            UI.backupMaxInput.value = settings.backup.max.toString();
-            UI.backupPeriodInput.value = settings.backup.period.toString();
-            UI.backupCheck.innerHTML = settings.backup.enabled ? "check" : "";
-            UI.rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
-            UI.displayGhostLinesCheck.innerHTML = settings.displayGhostLines
-                ? "check"
-                : "";
-            UI.checkForUpdatesCheck.innerHTML = settings.checkForUpdates
-                ? "check"
-                : "";
+    UI.backupMaxInput.value = settings.backup.max.toString();
+    UI.backupPeriodInput.value = settings.backup.period.toString();
+    UI.backupCheck.checked = settings.backup.enabled;
+    UI.rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
+    UI.displayGhostLinesCheck.checked = settings.displayGhostLines;
 
-            if (_.isEmpty(UI.backupCheck.textContent)) {
-                UI.backupSettings.classList.add("hidden");
-                UI.backupSettings.classList.add("-translate-y-full");
-            } else {
-                UI.backupSettings.classList.add("flex");
-                UI.backupSettings.classList.add("translate-y-0");
-            }
+    UI.checkForUpdatesCheck.checked = settings.checkForUpdates;
 
-            for (const [path, name] of Object.entries(
-                (await fetchFonts()) as Record<string, string>,
-            )) {
-                const optionElement = document.createElement("option");
+    if (!UI.backupCheck.checked) {
+        UI.backupSettings.classList.add("hidden");
+        UI.backupSettings.classList.add("-translate-y-full");
+    } else {
+        UI.backupSettings.classList.add("flex");
+        UI.backupSettings.classList.add("translate-y-0");
+    }
 
-                optionElement.id = path;
-                optionElement.innerHTML = optionElement.value = name;
+    for (const [path, name] of Object.entries(
+        (await fetchFonts()) as Record<string, string>,
+    )) {
+        const optionElement = document.createElement("option");
 
-                UI.fontSelect.appendChild(optionElement);
-            }
+        optionElement.id = path;
+        optionElement.innerHTML = optionElement.value = name;
 
-            document.addEventListener("click", (event) => {
-                const target = event.target as HTMLElement;
+        UI.fontSelect.appendChild(optionElement);
+    }
 
-                switch (target.id) {
-                    case UI.checkForUpdatesCheck.id:
-                        if (_.isEmpty(UI.checkForUpdatesCheck.textContent)) {
-                            UI.checkForUpdatesCheck.innerHTML = "check";
-                            settings.checkForUpdates = true;
-                        } else {
-                            UI.checkForUpdatesCheck.innerHTML = "";
-                            settings.checkForUpdates = false;
-                        }
-                        break;
-                    case UI.displayGhostLinesCheck.id:
-                        if (_.isEmpty(UI.displayGhostLinesCheck.textContent)) {
-                            UI.displayGhostLinesCheck.innerHTML = "check";
-                            settings.displayGhostLines = true;
-                        } else {
-                            UI.displayGhostLinesCheck.innerHTML = "";
-                            settings.displayGhostLines = false;
-                        }
-                        break;
-                    case UI.backupCheck.id:
-                        if (_.isEmpty(UI.backupCheck.textContent)) {
-                            UI.backupSettings.classList.replace(
-                                "hidden",
-                                "flex",
-                            );
+    document.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement;
 
-                            requestAnimationFrame(() =>
-                                UI.backupSettings.classList.replace(
-                                    "-translate-y-full",
-                                    "translate-y-0",
-                                ),
-                            );
-
-                            UI.backupCheck.innerHTML = "check";
-                            settings.backup.enabled = true;
-                        } else {
-                            UI.backupSettings.classList.replace(
-                                "translate-y-0",
-                                "-translate-y-full",
-                            );
-
-                            UI.backupSettings.addEventListener(
-                                "transitionend",
-                                () =>
-                                    UI.backupSettings.classList.replace(
-                                        "flex",
-                                        "hidden",
-                                    ),
-                                {
-                                    once: true,
-                                },
-                            );
-
-                            UI.backupCheck.innerHTML = "";
-                            settings.backup.enabled = false;
-                        }
-                        break;
+        switch (target) {
+            case UI.checkForUpdatesCheck:
+                if (!UI.checkForUpdatesCheck.checked) {
+                    settings.checkForUpdates = true;
+                } else {
+                    settings.checkForUpdates = false;
                 }
-            });
-
-            document.addEventListener("change", async (event) => {
-                const target = event.target as HTMLElement;
-
-                switch (target.id) {
-                    case UI.fontSelect.id:
-                        if (UI.fontSelect.value === "default") {
-                            settings.font = "";
-                            document.body.style.fontFamily = "";
-                        } else {
-                            for (const element of UI.fontSelect
-                                .children as HTMLCollectionOf<HTMLOptionElement>) {
-                                if (element.value === UI.fontSelect.value) {
-                                    settings.font = element.id.replaceAll(
-                                        "\\",
-                                        "/",
-                                    );
-
-                                    const font = await new FontFace(
-                                        "font",
-                                        `url(${convertFileSrc(settings.font)})`,
-                                    ).load();
-                                    document.fonts.add(font);
-                                    document.body.style.fontFamily = "font";
-                                }
-                            }
-                        }
-                        break;
-                    case UI.rowDeleteModeSelect.id:
-                        for (const element of UI.rowDeleteModeSelect
-                            .children as HTMLCollectionOf<HTMLOptionElement>) {
-                            if (
-                                element.value === UI.rowDeleteModeSelect.value
-                            ) {
-                                settings.rowDeleteMode = Number.parseInt(
-                                    element.value,
-                                );
-                            }
-                        }
-                        break;
+                break;
+            case UI.displayGhostLinesCheck:
+                if (!UI.displayGhostLinesCheck.checked) {
+                    settings.displayGhostLines = true;
+                } else {
+                    settings.displayGhostLines = false;
                 }
-            });
+                break;
+            case UI.backupCheck:
+                if (!UI.backupCheck.checked) {
+                    UI.backupSettings.classList.replace("hidden", "flex");
 
-            if (settings.font) {
-                for (const element of UI.fontSelect
-                    .children as HTMLCollectionOf<HTMLOptionElement>) {
-                    if (
-                        element.value.includes(
-                            settings.font.slice(
-                                settings.font.lastIndexOf("/") + 1,
-                            ),
-                        )
-                    ) {
-                        UI.fontSelect.value = element.value;
+                    settings.backup.enabled = true;
+                } else {
+                    settings.backup.enabled = false;
+                }
+                break;
+        }
+    });
+
+    document.addEventListener("change", async (event) => {
+        const target = event.target as HTMLElement;
+
+        switch (target) {
+            case UI.fontSelect:
+                if (UI.fontSelect.value === "default") {
+                    settings.font = "";
+                    document.body.style.fontFamily = "";
+                } else {
+                    for (const element of UI.fontSelect
+                        .children as HTMLCollectionOf<HTMLOptionElement>) {
+                        if (element.value === UI.fontSelect.value) {
+                            settings.font = element.id.replaceAll("\\", "/");
+
+                            const font = await new FontFace(
+                                "font",
+                                `url(${convertFileSrc(settings.font)})`,
+                            ).load();
+                            document.fonts.add(font);
+                            document.body.style.fontFamily = "font";
+                        }
                     }
                 }
-            }
+                break;
+            case UI.rowDeleteModeSelect:
+                for (const element of UI.rowDeleteModeSelect
+                    .children as HTMLCollectionOf<HTMLOptionElement>) {
+                    if (element.value === UI.rowDeleteModeSelect.value) {
+                        settings.rowDeleteMode = Number.parseInt(element.value);
+                    }
+                }
+                break;
+        }
+    });
 
-            await APP_WINDOW.onCloseRequested(async () => {
-                await emit("get-settings", settings);
-            });
-        },
-    );
-    await emitTo("main", "fetch-settings");
+    if (settings.font) {
+        for (const element of UI.fontSelect
+            .children as HTMLCollectionOf<HTMLOptionElement>) {
+            if (
+                element.value.includes(
+                    settings.font.slice(settings.font.lastIndexOf("/") + 1),
+                )
+            ) {
+                UI.fontSelect.value = element.value;
+            }
+        }
+    }
+
+    await APP_WINDOW.onCloseRequested(async () => {
+        await emit("get-settings", settings);
+    });
 });

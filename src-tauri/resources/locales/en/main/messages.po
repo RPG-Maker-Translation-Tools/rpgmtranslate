@@ -18,29 +18,40 @@ msgstr ""
 msgid " - "
 msgstr " - "
 
-#: src/windows/main/html.ts:44
+#: src/windows/main/html.ts:45
 msgid "-Select Action-"
 msgstr "-Select Action-"
 
-#: src/windows/main/html.ts:48
+#: src/windows/main/html.ts:49
 msgid "-Select Column-"
 msgstr "-Select Column-"
 
-#: src/windows/main/components/SearchMenu.ts:290
+#: src/windows/main/html.ts:33
+msgid "-Select File-"
+msgstr "-Select File-"
+
+#: src/windows/main/components/SearchPanel.ts:78
 msgid "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 msgstr "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 
-#: src/windows/main/components/SearchPanel.ts:64
-msgid "<option value=\"\">-Choose a file-</option>"
-msgstr "<option value=\"\">-Choose a file-</option>"
+#: src/windows/main/components/SearchPanel.ts:420
+#~ msgid "<option value=\"\">-Choose a file-</option>"
+#~ msgstr "<option value=\"\">-Choose a file-</option>"
 
 #: src/windows/main/html.ts:12
-#: src/windows/main/MainWindow.ts:1976
+#: src/windows/main/MainWindow.ts:740
 msgid "About"
 msgstr "About"
 
-#: src/windows/main/components/WriteMenu.ts:103
-#: src/windows/main/MainWindow.ts:295
+#: src/windows/main/components/WriteMenu.ts:129
+#~ msgid ""
+#~ "All files were written successfully.\n"
+#~ "Elapsed: {elapsed}"
+#~ msgstr ""
+#~ "All files were written successfully.\n"
+#~ "Elapsed: {elapsed}"
+
+#: src/windows/main/MainWindow.ts:490
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {executionTime}"
@@ -56,36 +67,45 @@ msgstr "Allow duplicates"
 msgid "Append"
 msgstr "Append"
 
-#: src/windows/main/html.ts:42
-#: src/windows/main/html.ts:55
+#: src/windows/main/components/ReadMenu.ts:71
+#: src/windows/main/html.ts:60
+msgid "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
+msgstr "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
+
+#: src/windows/main/html.ts:43
+#: src/windows/main/html.ts:56
 msgid "Apply"
 msgstr "Apply"
 
-#: src/windows/main/html.ts:86
+#: src/windows/main/html.ts:87
 msgid "Batch menu"
 msgstr "Batch menu"
 
-#: src/windows/main/html.ts:84
+#: src/windows/main/html.ts:85
 msgid "Bookmarks (Ctrl + B)"
 msgstr "Bookmarks (Ctrl + B)"
 
-#: src/windows/main/components/SearchPanel.ts:264
-msgid "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
-msgstr "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+#: src/windows/main/components/SearchPanel.ts:251
+msgid "Can't found row with {logSource} source text in file {filename} and entry {entry}."
+msgstr "Can't found row with {logSource} source text in file {filename} and entry {entry}."
 
-#: src/windows/main/html.ts:43
+#: src/windows/main/components/SearchPanel.ts:277
+#~ msgid "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+#~ msgstr "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+
+#: src/windows/main/html.ts:44
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/windows/main/MainWindow.ts:1191
+#: src/windows/main/MainWindow.ts:629
 msgid "Cannot determine the type of the game's engine."
 msgstr "Cannot determine the type of the game's engine."
 
-#: src/windows/main/html.ts:92
+#: src/windows/main/html.ts:93
 msgid "Consider case (Alt + C)"
 msgstr "Consider case (Alt + C)"
 
-#: src/windows/main/html.ts:76
+#: src/windows/main/html.ts:77
 msgid "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
 msgstr "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
 
@@ -93,7 +113,7 @@ msgstr "Create .rvpacker-ignore file from purged lines to prevent their further 
 msgid "Create theme"
 msgstr "Create theme"
 
-#: src/windows/main/html.ts:49
+#: src/windows/main/html.ts:50
 msgid "Create Theme"
 msgstr "Create Theme"
 
@@ -101,49 +121,57 @@ msgstr "Create Theme"
 msgid "Dark background color"
 msgstr "Dark background color"
 
-#: src/windows/main/MainWindow.ts:1679
+#: src/windows/main/html.ts:60
+#~ msgid "Defines how to read files."
+#~ msgstr "Defines how to read files."
+
+#: src/windows/main/components/TabContent.ts:403
 msgid "Deleting is disabled in settings."
 msgstr "Deleting is disabled in settings."
 
-#: src/windows/main/html.ts:41
+#: src/windows/main/html.ts:42
 msgid "Deselect All"
 msgstr "Deselect All"
-
-#: src/windows/main/html.ts:52
-#: src/windows/main/html.ts:66
-#: src/windows/main/html.ts:73
-msgid "Disable Actors, Armors, Troops etc. processing"
-msgstr "Disable Actors, Armors, Troops etc. processing"
-
-#: src/windows/main/html.ts:64
-msgid "Disable custom processing"
-msgstr "Disable custom processing"
-
-#: src/windows/main/html.ts:51
-#: src/windows/main/html.ts:65
-#: src/windows/main/html.ts:72
-msgid "Disable Mapxxx processing"
-msgstr "Disable Mapxxx processing"
-
-#: src/windows/main/html.ts:54
-#: src/windows/main/html.ts:68
-#: src/windows/main/html.ts:75
-msgid "Disable plugins.js/Scripts processing"
-msgstr "Disable plugins.js/Scripts processing"
 
 #: src/windows/main/html.ts:53
 #: src/windows/main/html.ts:67
 #: src/windows/main/html.ts:74
+msgid "Disable Actors, Armors, Troops etc. processing"
+msgstr "Disable Actors, Armors, Troops etc. processing"
+
+#: src/windows/main/html.ts:65
+#~ msgid "Disable custom processing"
+#~ msgstr "Disable custom processing"
+
+#: src/windows/main/html.ts:52
+#: src/windows/main/html.ts:66
+#: src/windows/main/html.ts:73
+msgid "Disable Mapxxx processing"
+msgstr "Disable Mapxxx processing"
+
+#: src/windows/main/html.ts:55
+#: src/windows/main/html.ts:69
+#: src/windows/main/html.ts:76
+msgid "Disable plugins.js/Scripts processing"
+msgstr "Disable plugins.js/Scripts processing"
+
+#: src/windows/main/html.ts:54
+#: src/windows/main/html.ts:68
+#: src/windows/main/html.ts:75
 msgid "Disable System processing"
 msgstr "Disable System processing"
 
-#: src/windows/main/MainWindow.ts:1684
+#: src/windows/main/html.ts:65
+msgid "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
+msgstr "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
+
+#: src/windows/main/components/TabContent.ts:408
 msgid "Do you really want to delete this row? This action is irreversible!"
 msgstr "Do you really want to delete this row? This action is irreversible!"
 
-#: src/windows/main/html.ts:60
-msgid "Duplicate mode"
-msgstr "Duplicate mode"
+#: src/windows/main/html.ts:61
+#~ msgid "Duplicate mode"
+#~ msgstr "Duplicate mode"
 
 #: src/windows/main/html.ts:7
 msgid "File"
@@ -161,42 +189,70 @@ msgstr "Focused outline color"
 msgid "Force rewrite"
 msgstr "Force rewrite"
 
-#: src/windows/main/components/ReadMenu.ts:92
-msgid "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
-msgstr "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+#: src/windows/main/components/ReadMenu.ts:87
+#~ msgid "Force rewrites existing translation files"
+#~ msgstr "Force rewrites existing translation files"
 
-#: src/windows/main/components/WriteMenu.ts:76
-#: src/windows/main/MainWindow.ts:267
-#: src/windows/main/MainWindow.ts:2152
-#: src/windows/main/MainWindow.ts:2177
-msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
-msgstr "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+#: src/windows/main/components/ReadMenu.ts:87
+msgid "Force rewrites existing translation files."
+msgstr "Force rewrites existing translation files."
 
-#: src/windows/main/MainWindow.ts:226
+#: src/windows/main/components/ReadMenu.ts:89
+#~ msgid "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+#~ msgstr "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+
+#: src/windows/main/MainWindow.ts:1179
+#: src/windows/main/MainWindow.ts:1220
+#~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+#~ msgstr "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+
+#: src/windows/main/MainWindow.ts:466
+#: src/windows/main/MainWindow.ts:1131
+#: src/windows/main/MainWindow.ts:1172
+msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
+msgstr "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
+
+#: src/windows/main/MainWindow.ts:419
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Go to row... from 1 to {lastRowNumber}"
 
 #: src/windows/main/html.ts:8
 #: src/windows/main/html.ts:11
-#: src/windows/main/MainWindow.ts:1460
-#: src/windows/main/MainWindow.ts:1969
+#: src/windows/main/MainWindow.ts:281
+#: src/windows/main/MainWindow.ts:732
 msgid "Help"
 msgstr "Help"
 
-#: src/windows/main/html.ts:69
+#: src/windows/main/html.ts:61
+#~ msgid "How to handle duplicates in text"
+#~ msgstr "How to handle duplicates in text"
+
+#: src/windows/main/html.ts:63
+msgid "How to handle duplicates in text."
+msgstr "How to handle duplicates in text."
+
+#: src/windows/main/html.ts:59
+msgid "How to read files."
+msgstr "How to read files."
+
+#: src/windows/main/html.ts:64
+msgid "If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
+msgstr "If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
+
+#: src/windows/main/html.ts:70
 msgid "Ignore entries from .rvpacker-ignore file"
 msgstr "Ignore entries from .rvpacker-ignore file"
 
-#: src/windows/main/components/ReadMenu.ts:74
-#: src/windows/main/html.ts:59
-msgid "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
-msgstr "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+#: src/windows/main/components/ReadMenu.ts:73
+#: src/windows/main/html.ts:60
+#~ msgid "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+#~ msgstr "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
 
-#: src/windows/main/MainWindow.ts:1560
-msgid "Install"
-msgstr "Install"
+#: src/windows/main/MainWindow.ts:471
+#~ msgid "Install"
+#~ msgstr "Install"
 
-#: src/windows/main/components/ThemeEditMenu.ts:46
+#: src/windows/main/components/ThemeEditMenu.ts:54
 msgid "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
 msgstr "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
 
@@ -204,33 +260,41 @@ msgstr "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
 msgid "Language"
 msgstr "Language"
 
-#: src/windows/main/components/BatchMenu.ts:56
+#: src/windows/main/components/UtilsPanel.ts:201
+msgid "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or ja-JP"
+msgstr "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or ja-JP"
+
+#: src/windows/main/components/UtilsPanel.ts:199
+#~ msgid "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or jp-JP"
+#~ msgstr "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or jp-JP"
+
+#: src/windows/main/html.ts:102
 msgid "Line length for wrapping"
 msgstr "Line length for wrapping"
 
-#: src/windows/main/MainWindow.ts:1404
+#: src/windows/main/MainWindow.ts:254
 msgid "Loading project"
 msgstr "Loading project"
 
 #: src/windows/main/html.ts:96
-msgid "Machine translation from language (e. g. en, ru-RU)"
-msgstr "Machine translation from language (e. g. en, ru-RU)"
+#~ msgid "Machine translation from language (e. g. en, ru-RU)"
+#~ msgstr "Machine translation from language (e. g. en, ru-RU)"
 
 #: src/windows/main/html.ts:97
-msgid "Machine translation to language (e. g. en, ru-RU)"
-msgstr "Machine translation to language (e. g. en, ru-RU)"
+#~ msgid "Machine translation to language (e. g. en, ru-RU)"
+#~ msgstr "Machine translation to language (e. g. en, ru-RU)"
 
-#: src/windows/main/MainWindow.ts:1557
-msgid ""
-"New version found: {version}\n"
-"Current version: {currentVersion}\n"
-"Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
-msgstr ""
-"New version found: {version}\n"
-"Current version: {currentVersion}\n"
-"Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+#: src/windows/main/MainWindow.ts:468
+#~ msgid ""
+#~ "New version found: {version}\n"
+#~ "Current version: {currentVersion}\n"
+#~ "Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+#~ msgstr ""
+#~ "New version found: {version}\n"
+#~ "Current version: {currentVersion}\n"
+#~ "Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
 
-#: src/windows/main/MainWindow.ts:1389
+#: src/windows/main/MainWindow.ts:185
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 
@@ -238,7 +302,7 @@ msgstr "No project selected. Select the project directory, using 'open folder' b
 msgid "of"
 msgstr "of"
 
-#: src/windows/main/html.ts:81
+#: src/windows/main/html.ts:82
 msgid "Open directory"
 msgstr "Open directory"
 
@@ -262,37 +326,37 @@ msgstr "Primary outline color"
 msgid "Primary text color"
 msgstr "Primary text color"
 
-#: src/windows/main/MainWindow.ts:1550
-msgid "Program is up to date."
-msgstr "Program is up to date."
+#: src/windows/main/MainWindow.ts:461
+#~ msgid "Program is up to date."
+#~ msgstr "Program is up to date."
 
-#: src/windows/main/html.ts:77
+#: src/windows/main/html.ts:78
 msgid "Purge"
 msgstr "Purge"
 
-#: src/windows/main/html.ts:88
+#: src/windows/main/html.ts:89
 msgid "Purge menu"
 msgstr "Purge menu"
 
-#: src/windows/main/html.ts:91
+#: src/windows/main/html.ts:92
 msgid "Put text to translation textarea of matching source text"
 msgstr "Put text to translation textarea of matching source text"
 
-#: src/windows/main/MainWindow.ts:1132
+#: src/windows/main/MainWindow.ts:583
 msgid "Quit without saving?"
 msgstr "Quit without saving?"
 
-#: src/windows/main/html.ts:71
+#: src/windows/main/html.ts:72
 msgid "Read"
 msgstr "Read"
 
-#: src/windows/main/html.ts:87
+#: src/windows/main/html.ts:88
 msgid "Read menu"
 msgstr "Read menu"
 
-#: src/windows/main/html.ts:56
-msgid "Read mode:"
-msgstr "Read mode:"
+#: src/windows/main/html.ts:57
+#~ msgid "Read mode:"
+#~ msgstr "Read mode:"
 
 #: src/windows/main/html.ts:10
 msgid "Reload (F5)"
@@ -302,63 +366,71 @@ msgstr "Reload (F5)"
 msgid "Remove duplicates"
 msgstr "Remove duplicates"
 
-#: src/windows/main/html.ts:70
-msgid "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
-msgstr "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+#: src/windows/main/html.ts:71
+#~ msgid "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+#~ msgstr "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
 
-#: src/windows/main/html.ts:90
+#: src/windows/main/html.ts:71
+msgid "Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
+msgstr "Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
+
+#: src/windows/main/html.ts:91
 msgid "Replace all matches"
 msgstr "Replace all matches"
 
-#: src/windows/main/html.ts:100
+#: src/windows/main/html.ts:101
 msgid "Replace input"
 msgstr "Replace input"
 
-#: src/windows/main/html.ts:38
+#: src/windows/main/html.ts:39
 msgid "Rightmost filled"
 msgstr "Rightmost filled"
 
-#: src/windows/main/html.ts:79
+#: src/windows/main/components/TabContentHeader.ts:79
+msgid "Row"
+msgstr "Row"
+
+#: src/windows/main/html.ts:80
 msgid "Save (Ctrl + S)"
 msgstr "Save (Ctrl + S)"
 
-#: src/windows/main/html.ts:89
+#: src/windows/main/html.ts:90
 msgid "Search"
 msgstr "Search"
 
-#: src/windows/main/html.ts:85
+#: src/windows/main/html.ts:86
 msgid "Search (Ctrl + F)"
 msgstr "Search (Ctrl + F)"
 
-#: src/windows/main/html.ts:94
+#: src/windows/main/html.ts:95
 msgid "Search by regular expressions (Alt + R)"
 msgstr "Search by regular expressions (Alt + R)"
 
-#: src/windows/main/html.ts:34
+#: src/windows/main/html.ts:35
 msgid "Search everywhere"
 msgstr "Search everywhere"
 
-#: src/windows/main/html.ts:99
+#: src/windows/main/html.ts:100
 msgid "Search input"
 msgstr "Search input"
 
-#: src/windows/main/html.ts:33
+#: src/windows/main/html.ts:34
 msgid "Search mode"
 msgstr "Search mode"
 
-#: src/windows/main/html.ts:95
+#: src/windows/main/html.ts:96
 msgid "Search only in current tab (Alt + L)"
 msgstr "Search only in current tab (Alt + L)"
 
-#: src/windows/main/html.ts:35
+#: src/windows/main/html.ts:36
 msgid "Search only in source text"
 msgstr "Search only in source text"
 
-#: src/windows/main/html.ts:36
+#: src/windows/main/html.ts:37
 msgid "Search only in translation"
 msgstr "Search only in translation"
 
-#: src/windows/main/html.ts:93
+#: src/windows/main/html.ts:94
 msgid "Search the whole text (Alt + W)"
 msgstr "Search the whole text (Alt + W)"
 
@@ -382,53 +454,69 @@ msgstr "Second outline color"
 msgid "Second text color"
 msgstr "Second text color"
 
-#: src/windows/main/html.ts:40
+#: src/windows/main/html.ts:41
 msgid "Select All"
 msgstr "Select All"
 
-#: src/windows/main/html.ts:37
+#: src/windows/main/html.ts:38
 msgid "Select column"
 msgstr "Select column"
 
-#: src/windows/main/html.ts:39
+#: src/windows/main/html.ts:40
 msgid "Select files (You can hold LMB and drag to select multiple files)"
 msgstr "Select files (You can hold LMB and drag to select multiple files)"
 
-#: src/windows/main/html.ts:50
+#: src/windows/main/html.ts:51
 msgid "Select Output Path"
 msgstr "Select Output Path"
 
-#: src/windows/main/MainWindow.ts:2095
+#: src/windows/main/MainWindow.ts:617
+msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
+msgstr "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
+
+#: src/windows/main/MainWindow.ts:1072
 msgid "Selected directory is already opened in the program."
 msgstr "Selected directory is already opened in the program."
 
-#: src/windows/main/MainWindow.ts:1152
-msgid "Selected folder is missing. Project won't be initialized."
-msgstr "Selected folder is missing. Project won't be initialized."
+#: src/windows/main/MainWindow.ts:594
+msgid "Selected directory is missing. Project won't be initialized."
+msgstr "Selected directory is missing. Project won't be initialized."
 
-#: src/windows/main/html.ts:82
-#: src/windows/main/MainWindow.ts:2106
+#: src/windows/main/MainWindow.ts:648
+#~ msgid "Selected folder is missing. Project won't be initialized."
+#~ msgstr "Selected folder is missing. Project won't be initialized."
+
+#: src/windows/main/html.ts:83
+#: src/windows/main/MainWindow.ts:1086
 msgid "Settings"
 msgstr "Settings"
 
-#: src/windows/main/components/SearchPanel.ts:175
+#: src/windows/main/components/Searcher.ts:286
+#: src/windows/main/components/TabContentHeader.ts:82
+msgid "Source"
+msgstr "Source"
+
+#: src/windows/main/components/SearchPanel.ts:207
 msgid "Source text cannot be replaced."
 msgstr "Source text cannot be replaced."
 
-#: src/windows/main/html.ts:78
+#: src/windows/main/html.ts:97
+msgid "Source text language for machine translation (e. g. en-US, ru-RU)"
+msgstr "Source text language for machine translation (e. g. en-US, ru-RU)"
+
+#: src/windows/main/html.ts:79
 msgid "Tabs (Tab)"
 msgstr "Tabs (Tab)"
 
-#: src/windows/main/components/SearchPanel.ts:277
-#: src/windows/main/components/SearchPanel.ts:366
+#: src/windows/main/components/SearchPanel.ts:385
 msgid "Text was reverted to the previous state"
 msgstr "Text was reverted to the previous state"
 
-#: src/windows/main/html.ts:98
+#: src/windows/main/html.ts:99
 msgid "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
 msgstr "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
 
-#: src/windows/main/html.ts:83
+#: src/windows/main/html.ts:84
 msgid "Themes"
 msgstr "Themes"
 
@@ -444,34 +532,48 @@ msgstr "Third outline color"
 msgid "Third text color"
 msgstr "Third text color"
 
-#: src/windows/main/html.ts:46
+#: src/windows/main/html.ts:47
 msgid "Translate"
 msgstr "Translate"
 
-#: src/windows/main/MainWindow.ts:621
-msgid "Translation languages are not selected. Input them to inputs above."
-msgstr "Translation languages are not selected. Input them to inputs above."
+#: src/windows/main/components/TabContentHeader.ts:131
+#: src/windows/main/MainWindow.ts:964
+#: src/windows/main/MainWindow.ts:968
+msgid "Translation"
+msgstr "Translation"
 
-#: src/windows/main/html.ts:45
+#: src/windows/main/html.ts:98
+msgid "Translation language for machine translation (e. g. en-US, ru-RU)"
+msgstr "Translation language for machine translation (e. g. en-US, ru-RU)"
+
+#: src/windows/main/components/UtilsPanel.ts:173
+#~ msgid "Translation languages are not selected. Input them to inputs above."
+#~ msgstr "Translation languages are not selected. Input them to inputs above."
+
+#: src/windows/main/components/BatchMenu/BatchMenu.ts:332
+msgid "Translation languages are not set. Input them to the fields above."
+msgstr "Translation languages are not set. Input them to the fields above."
+
+#: src/windows/main/html.ts:46
 msgid "Trim"
 msgstr "Trim"
 
-#: src/windows/main/MainWindow.ts:1559
-msgid "Update available"
-msgstr "Update available"
+#: src/windows/main/MainWindow.ts:470
+#~ msgid "Update available"
+#~ msgstr "Update available"
 
-#: src/windows/main/html.ts:63
-msgid "Whether to romanize text."
-msgstr "Whether to romanize text."
+#: src/windows/main/html.ts:64
+#~ msgid "Whether to romanize text."
+#~ msgstr "Whether to romanize text."
 
-#: src/windows/main/html.ts:47
+#: src/windows/main/html.ts:48
 msgid "Wrap"
 msgstr "Wrap"
 
-#: src/windows/main/html.ts:80
+#: src/windows/main/html.ts:81
 msgid "Write (Alt + C)"
 msgstr "Write (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:1128
+#: src/windows/main/MainWindow.ts:573
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "You have unsaved changes. Save progress and quit?"

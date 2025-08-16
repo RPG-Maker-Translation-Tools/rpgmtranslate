@@ -1,78 +1,74 @@
 type Themes = Record<string, Record<string, string>>;
 
-interface Localization {
-    labels: Record<string, string>;
-    titles: Record<string, string>;
-    placeholders: Record<string, string>;
-    buttons: Record<string, string>;
-    messages: Record<string, string>;
+interface TabEntry {
+    index: number;
+    sourceLineCount: number;
+    translatedLineCount: number;
 }
 
-interface Bookmark {
-    file: string;
-    rowIndex: number;
-    description: string;
+type Tabs = Record<string, TabEntry>;
+interface TabInfo {
+    tabName: string;
+    tabs: Tabs;
 }
 
+type Rows = HTMLCollectionOf<RowContainer>;
+type Bookmarks = Record<string, Record<number, string>>;
 type LogEntry = Record<string, [string, number, string, string]>;
 type ReplacementLog = Record<string, LogEntry>;
 
 interface TranslationLanguages {
-    from: string;
-    to: string;
+    source: string;
+    translation: string;
 }
 
-type MatchObject = Record<string, string[]>;
+type MatchObject = [[string, string], [string, string]][];
 
-interface SearchFlagsObject {
-    flags: import("@enums/SearchFlags").SearchFlags;
-}
-
-interface CurrentTab {
-    name: string;
-    index: number;
-    content: HTMLDivElement;
-}
-
-interface OptionsBase extends Record<string, unknown> {
+interface InvokeOptions extends Record<string, unknown> {
     sourcePath: string;
     translationPath: string;
     engineType: import("@enums/EngineType").EngineType;
-    duplicateMode: DuplicateMode;
+    duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
     romanize: boolean;
     disableCustomProcessing: boolean;
     disableProcessing: import("@enums/FileFlags").FileFlags;
     trim: boolean;
 }
 
-interface ReadOptions extends OptionsBase {
+interface ReadOptions extends InvokeOptions {
     readMode: import("@enums/ReadMode").ReadMode;
     projectPath: string;
     ignore: boolean;
 }
 
-interface WriteOptions extends OptionsBase {
+interface WriteOptions extends InvokeOptions {
     outputPath: string;
     gameTitle: string;
 }
 
-interface PurgeOptions extends OptionsBase {
+interface PurgeOptions extends InvokeOptions {
     gameTitle: string;
     createIgnore: boolean;
-}
-
-interface TabInfo {
-    tabs: Record<string, number>;
-    tabCount: number;
-    total: number[];
-    translated: number[];
-    currentTab: CurrentTab;
-    updateTabProgress: (tabIndex: number) => void;
-    changeTab: (filename: string | null, newTabIndex?: number) => Promise<void>;
 }
 
 interface SearchResults {
     results: Record<string, number[]>;
     pages: number;
     regexp: RegExp;
+}
+
+interface RowColumns
+    extends HTMLCollectionOf<HTMLDivElement | HTMLTextAreaElement> {
+    0: HTMLDivElement;
+}
+
+interface RowContainer extends HTMLDivElement {
+    children: RowColumns;
+}
+
+interface Match {
+    text: string;
+    type: MatchType;
+    columnName: string;
+    columnNumber: number;
 }

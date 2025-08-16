@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { exists } from "@tauri-apps/plugin-fs";
 import { error } from "@tauri-apps/plugin-log";
 
-export async function read(args: ReadOptions) {
+export async function read(args: ReadOptions): Promise<void> {
     await invoke("read", args).catch(error);
 }
 
@@ -12,7 +12,7 @@ export async function write(args: WriteOptions): Promise<string> {
     return await invoke<string>("write", args);
 }
 
-export async function purge(args: PurgeOptions) {
+export async function purge(args: PurgeOptions): Promise<void> {
     await invoke("purge", args).catch(error);
 }
 
@@ -24,7 +24,7 @@ export async function readLastLine(filePath: string): Promise<string> {
     return await invoke<string>("read_last_line", { filePath });
 }
 
-export async function expandScope(dir: string) {
+export async function expandScope(dir: string): Promise<void> {
     await invoke("expand_scope", { dir });
 }
 
