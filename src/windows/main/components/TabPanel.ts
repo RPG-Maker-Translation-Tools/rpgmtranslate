@@ -161,7 +161,7 @@ export class TabPanel extends Component {
         const tabIndex = this.tabCount;
 
         const tabButton = document.createElement("button");
-        tabButton.className = tw`bg-primary hover-bg-primary flex h-8 w-full cursor-pointer flex-row justify-center p-1`;
+        tabButton.className = tw`bg-primary hover-bg-primary flex max-h-8 w-full cursor-pointer flex-row justify-center p-1`;
         tabButton.id = tabIndex.toString();
 
         const stateSpan = document.createElement("span");
