@@ -31,7 +31,7 @@ interface InvokeOptions extends Record<string, unknown> {
     duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
     romanize: boolean;
     disableCustomProcessing: boolean;
-    disableProcessing: import("@enums/FileFlags").FileFlags;
+    fileFlags: import("@enums/FileFlags").FileFlags;
     trim: boolean;
 }
 

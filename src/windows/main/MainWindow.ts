@@ -264,7 +264,7 @@ export class MainWindow {
             } else {
                 await this.#invokeRead(
                     ReadMode.Default,
-                    FileFlags.None,
+                    FileFlags.All,
                     DuplicateMode.Allow,
                     false,
                     false,
@@ -429,7 +429,7 @@ export class MainWindow {
                     await this.#appWindow.close();
                     break;
                 case "KeyC":
-                    await this.#invokeWrite(FileFlags.None);
+                    await this.#invokeWrite(FileFlags.All);
                     break;
             }
         } else {
@@ -460,7 +460,7 @@ export class MainWindow {
         }
     }
 
-    async #invokeWrite(disableProcessing: FileFlags): Promise<void> {
+    async #invokeWrite(fileFlags: FileFlags): Promise<void> {
         if (!this.#settings.projectPath) {
             alert(
                 t`Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation.`,
@@ -480,7 +480,7 @@ export class MainWindow {
             romanize: this.#projectSettings.romanize,
             disableCustomProcessing:
                 this.#projectSettings.disableCustomProcessing,
-            disableProcessing: disableProcessing,
+            fileFlags,
             trim: this.#projectSettings.trim,
         })
             .then((executionTime) => {
@@ -993,32 +993,29 @@ export class MainWindow {
             );
         });
 
-        emittery.on(
-            AppEvent.InvokePurge,
-            async ([disableProcessing, createIgnore]) => {
-                await this.#saver.saveAll(
-                    this.#tabInfo.tabName,
-                    this.#tabContent.children,
-                );
-                this.#utilsPanel.togglePurgeAnimation();
+        emittery.on(AppEvent.InvokePurge, async ([fileFlags, createIgnore]) => {
+            await this.#saver.saveAll(
+                this.#tabInfo.tabName,
+                this.#tabContent.children,
+            );
+            this.#utilsPanel.togglePurgeAnimation();
 
-                await purge({
-                    sourcePath: this.#projectSettings.sourcePath,
-                    translationPath: this.#projectSettings.translationPath,
-                    engineType: this.#projectSettings.engineType,
-                    duplicateMode: this.#projectSettings.duplicateMode,
-                    gameTitle: this.#utilsPanel.sourceTitle,
-                    romanize: this.#projectSettings.romanize,
-                    disableCustomProcessing:
-                        this.#projectSettings.disableCustomProcessing,
-                    disableProcessing,
-                    createIgnore,
-                    trim: this.#projectSettings.trim,
-                });
+            await purge({
+                sourcePath: this.#projectSettings.sourcePath,
+                translationPath: this.#projectSettings.translationPath,
+                engineType: this.#projectSettings.engineType,
+                duplicateMode: this.#projectSettings.duplicateMode,
+                gameTitle: this.#utilsPanel.sourceTitle,
+                romanize: this.#projectSettings.romanize,
+                disableCustomProcessing:
+                    this.#projectSettings.disableCustomProcessing,
+                fileFlags,
+                createIgnore,
+                trim: this.#projectSettings.trim,
+            });
 
-                await this.#reload();
-            },
-        );
+            await this.#reload();
+        });
 
         emittery.on(
             AppEvent.UtilsButtonClick,
@@ -1372,7 +1369,7 @@ export class MainWindow {
 
     async #invokeRead(
         readMode: ReadMode,
-        disableProcessing: FileFlags,
+        fileFlags: FileFlags,
         duplicateMode: DuplicateMode,
         romanize: boolean,
         disableCustomProcessing: boolean,
@@ -1414,7 +1411,7 @@ export class MainWindow {
             duplicateMode,
             romanize,
             disableCustomProcessing,
-            disableProcessing: disableProcessing,
+            fileFlags,
             ignore,
             trim,
         });

@@ -109,12 +109,11 @@ pub fn write(
     game_title: &str,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: FileFlags,
+    file_flags: FileFlags,
     trim: bool,
 ) -> Result<String, Error> {
     let start_time = Instant::now();
     let game_type = get_game_type(game_title, disable_custom_processing);
-    let file_flags = get_file_flags(disable_processing);
     let mut writer = WriterBuilder::new()
         .with_flags(file_flags)
         .romanize(romanize)
@@ -128,12 +127,6 @@ pub fn write(
     Ok(format!("{:.2}", start_time.elapsed().as_secs_f32()))
 }
 
-pub fn get_file_flags(disable_processing: FileFlags) -> FileFlags {
-    let mut file_flags = FileFlags::all();
-    file_flags.remove(disable_processing);
-    file_flags
-}
-
 #[command(async)]
 pub fn read(
     project_path: &Path,
@@ -144,7 +137,7 @@ pub fn read(
     duplicate_mode: DuplicateMode,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: FileFlags,
+    file_flags: FileFlags,
     ignore: bool,
     trim: bool,
 ) -> Result<(), Error> {
@@ -162,7 +155,6 @@ pub fn read(
     };
 
     let game_type = get_game_type(&game_title, disable_custom_processing);
-    let file_flags = get_file_flags(disable_processing);
 
     let mut reader = ReaderBuilder::new()
         .with_flags(file_flags)
@@ -193,12 +185,11 @@ pub fn purge(
     game_title: &str,
     romanize: bool,
     disable_custom_processing: bool,
-    disable_processing: FileFlags,
+    file_flags: FileFlags,
     create_ignore: bool,
     trim: bool,
 ) -> Result<(), Error> {
     let game_type = get_game_type(game_title, disable_custom_processing);
-    let file_flags = get_file_flags(disable_processing);
 
     PurgerBuilder::new()
         .with_flags(file_flags)
