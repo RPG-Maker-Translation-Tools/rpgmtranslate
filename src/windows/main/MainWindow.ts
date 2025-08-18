@@ -228,6 +228,10 @@ export class MainWindow {
         projectPath: string,
         openingNew: boolean,
     ): Promise<void> {
+        if (!projectPath) {
+            return;
+        }
+
         await expandScope(projectPath);
 
         const rootTranslationPath = join(
@@ -235,26 +239,29 @@ export class MainWindow {
             consts.TRANSLATION_DIRECTORY,
         );
 
-        if (
-            !projectPath ||
-            !(await this.#isProjectValid(projectPath, rootTranslationPath))
-        ) {
+        const projectSettings = await this.#isProjectValid(
+            projectPath,
+            rootTranslationPath,
+        );
+
+        if (!projectSettings) {
             return;
         }
 
         if (openingNew) {
+            await this.#changeTab(null);
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
                 this.#tabContent.children,
             );
             await this.#exitCleanup();
-            await this.#changeTab(null);
             this.#tabPanel.clear();
         }
 
         this.#tabContent.innerHTML = t`Loading project`;
 
         this.#settings.projectPath = projectPath;
+        this.#projectSettings = projectSettings;
         await this.#projectSettings.setProjectPath(projectPath);
 
         this.#replacementLog = await this.#loadReplacementLog();
@@ -284,6 +291,9 @@ export class MainWindow {
             });
             this.#settings.firstLaunch = false;
         }
+
+        this.#tabInfo.tabs = {};
+        this.#tabInfo.tabName = "";
 
         await this.#tabPanel.init(this.#projectSettings);
         await this.#utilsPanel.init(this.#projectSettings);
@@ -589,77 +599,71 @@ export class MainWindow {
     async #isProjectValid(
         projectPath: string,
         rootTranslationPath: string,
-    ): Promise<boolean> {
+    ): Promise<ProjectSettings | null> {
         if (!(await exists(projectPath))) {
             await message(
                 t`Selected directory is missing. Project won't be initialized.`,
             );
-            return false;
+            return null;
         }
 
-        const translationExists = await this.#checkTranslationPath(
-            projectPath,
-            rootTranslationPath,
-        );
-
-        let sourceDirectoryFound =
-            await this.#projectSettings.findSourceDirectory(projectPath);
-
-        if (!sourceDirectoryFound) {
-            const extracted = await extractArchive(projectPath);
-
-            if (extracted) {
-                sourceDirectoryFound =
-                    await this.#projectSettings.findSourceDirectory(
-                        projectPath,
-                    );
-            } else if (!translationExists) {
-                await message(
-                    t`Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized.`,
-                );
-                return false;
-            }
-        }
-
-        if (sourceDirectoryFound) {
-            const engineTypeFound =
-                await this.#projectSettings.setEngineType(projectPath);
-
-            if (!engineTypeFound) {
-                await message(
-                    t`Cannot determine the type of the game's engine.`,
-                );
-
-                return false;
-            }
-        } else {
-            this.#projectSettings.sourceDirectory = "";
-        }
-
-        return true;
-    }
-
-    async #checkTranslationPath(
-        projectPath: string,
-        rootTranslationPath: string,
-    ): Promise<boolean> {
         const projectSettingsPath = join(
             projectPath,
             consts.PROGRAM_DATA_DIRECTORY,
             consts.PROJECT_SETTINGS_FILE,
         );
 
-        return await readTextFile(projectSettingsPath)
-            .then(async (settings) => {
-                // TODO: move this assignment from here
-                this.#projectSettings = new ProjectSettings(
-                    JSON.parse(settings) as ProjectSettingsOptions,
-                );
-                return await exists(this.#projectSettings.translationPath);
+        let projectSettings = await readTextFile(projectSettingsPath)
+            .then((settings) => {
+                const json = JSON.parse(settings) as ProjectSettingsOptions;
+                return new ProjectSettings(json);
             })
-            .catch(async () => {
-                return await exists(rootTranslationPath);
+            .catch(() => {
+                return null;
             });
+
+        let translationExists = false;
+
+        if (projectSettings) {
+            translationExists = await exists(projectSettings.translationPath);
+        } else {
+            translationExists = await exists(rootTranslationPath);
+            projectSettings = new ProjectSettings();
+        }
+
+        let sourceDirectoryFound =
+            await projectSettings.findSourceDirectory(projectPath);
+
+        if (!sourceDirectoryFound) {
+            const extracted = await extractArchive(projectPath);
+
+            if (extracted) {
+                sourceDirectoryFound =
+                    await projectSettings.findSourceDirectory(projectPath);
+            } else if (!translationExists) {
+                await message(
+                    t`Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized.`,
+                );
+                return null;
+            }
+        }
+
+        if (sourceDirectoryFound) {
+            const engineTypeFound =
+                await projectSettings.setEngineType(projectPath);
+
+            if (!engineTypeFound) {
+                await message(
+                    t`Cannot determine the type of the game's engine.`,
+                );
+
+                return null;
+            }
+        } else {
+            projectSettings.sourceDirectory = "";
+        }
+
+        return projectSettings;
     }
 
     async #copyTranslationFromRoot(translationPath: string): Promise<void> {

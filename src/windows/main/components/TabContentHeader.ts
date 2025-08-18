@@ -70,6 +70,7 @@ export class TabContentHeader extends Component {
     public init(projectSettings: ProjectSettings): void {
         this.#projectSettings = projectSettings;
         const columns = this.#projectSettings.translationColumns;
+        const initialized = this.childCount !== 0;
 
         for (let i = 0; i < columns.length + 2; i++) {
             let columnName = "";
@@ -102,7 +103,14 @@ export class TabContentHeader extends Component {
                 columnElement.appendChild(columnInput);
             }
 
-            this.element.appendChild(columnElement);
+            if (initialized) {
+                this.element.replaceChild(
+                    columnElement,
+                    this.element.children[i],
+                );
+            } else {
+                this.element.appendChild(columnElement);
+            }
         }
 
         const addColumnElement = document.createElement("button");
@@ -113,7 +121,14 @@ export class TabContentHeader extends Component {
             this.addTranslationColumn();
         };
 
-        this.element.appendChild(addColumnElement);
+        if (initialized) {
+            this.element.replaceChild(
+                addColumnElement,
+                this.element.lastElementChild!,
+            );
+        } else {
+            this.element.appendChild(addColumnElement);
+        }
     }
 
     public addTranslationColumn(): void {
