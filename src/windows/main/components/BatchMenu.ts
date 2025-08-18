@@ -3,8 +3,7 @@ import { BatchAction } from "@enums/BatchAction";
 import { ProjectSettings } from "@lib/classes";
 import { AppEvent } from "@lib/enums";
 import { translate } from "@utils/invokes";
-import { Component } from "../Component";
-import { wrapText } from "./internal";
+import { Component } from "./Component";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
@@ -29,11 +28,11 @@ export class BatchMenu extends Component {
     readonly #applyButton: HTMLButtonElement;
     readonly #cancelButton: HTMLButtonElement;
 
+    readonly #changedCheckboxes = new Set<HTMLInputElement>();
+
     #wrapLimit = 0;
     #batchAction = BatchAction.None;
     #translationColumnIndex = -1;
-
-    readonly #changedCheckboxes = new Set<HTMLInputElement>();
 
     #sourceLanguage = "";
     #translationLanguage = "";
@@ -241,8 +240,39 @@ export class BatchMenu extends Component {
     }
 
     #wrapText(text: string): string {
-        /*@__INLINE__*/
-        return wrapText(text, this.#wrapLimit);
+        const lines = text.split(consts.NEW_LINE);
+
+        const remainder: string[] = [];
+        const wrappedLines: string[] = [];
+
+        for (let line of lines) {
+            if (remainder.length) {
+                // eslint-disable-next-line sonarjs/updated-loop-counter
+                line = `${remainder.join(" ")} ${line}`;
+                remainder.length = 0;
+            }
+
+            if (line.length > this.#wrapLimit) {
+                const words = line.split(" ");
+                let wordsLength = line.length;
+
+                while (wordsLength > this.#wrapLimit && words.length !== 0) {
+                    const popped = words.pop()!;
+                    wordsLength -= popped.length;
+                    remainder.unshift(popped);
+                }
+
+                wrappedLines.push(words.join(" "));
+            } else {
+                wrappedLines.push(line);
+            }
+        }
+
+        if (remainder.length) {
+            wrappedLines.push(remainder.join(" "));
+        }
+
+        return wrappedLines.join(consts.NEW_LINE);
     }
 
     async #translateLine(text: string, isMapComment: boolean): Promise<string> {
