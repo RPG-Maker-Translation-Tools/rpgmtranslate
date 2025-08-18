@@ -1379,8 +1379,14 @@ export class MainWindow {
         ignore: boolean,
     ): Promise<void> {
         this.#utilsPanel.toggleReadAnimation();
+        await mkdir(this.#projectSettings.translationPath, { recursive: true });
 
-        if (readMode !== ReadMode.Append) {
+        if (readMode === ReadMode.Append) {
+            await this.#saver.saveAll(
+                this.#tabInfo.tabName,
+                this.#tabContent.children,
+            );
+        } else {
             const metadata = {
                 disableCustomProcessing,
                 trim,
@@ -1396,12 +1402,7 @@ export class MainWindow {
                     ".rvpacker-metadata",
                 ),
                 JSON.stringify(metadata),
-            );
-        } else {
-            await this.#saver.saveAll(
-                this.#tabInfo.tabName,
-                this.#tabContent.children,
-            );
+            ).catch(error);
         }
 
         await read({
@@ -1418,11 +1419,11 @@ export class MainWindow {
             trim,
         });
 
-        if (readMode === ReadMode.Force) {
+        this.#utilsPanel.toggleReadAnimation();
+
+        if (readMode !== ReadMode.Default) {
             await this.#reload();
         }
-
-        this.#utilsPanel.toggleReadAnimation();
     }
 }
 
