@@ -12,7 +12,6 @@ import {
     Language,
     ReadMode,
     SearchAction,
-    SearchFlags,
 } from "@enums/index";
 import {
     applyTheme,
@@ -79,6 +78,8 @@ import {
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import { attachConsole, error } from "@tauri-apps/plugin-log";
+
+// TODO: Implement movable menus
 
 export class MainWindow {
     #changeTabTimer = -1;
@@ -969,6 +970,7 @@ export class MainWindow {
                 this.#projectSettings.translationColumnCount - 1,
                 t`Translation`,
             );
+
             this.#scrollBar.width = this.#tabContent.scrollWidth;
         });
 
@@ -1339,7 +1341,7 @@ export class MainWindow {
             this.#saver.translationTitle = translationTitle;
         });
 
-        emittery.on(AppEvent.SearchFlagChanged, (flag: SearchFlags) => {
+        emittery.on(AppEvent.SearchFlagChanged, (flag) => {
             this.#searcher.toggleFlag(flag);
         });
 

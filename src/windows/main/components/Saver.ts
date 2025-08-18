@@ -1,10 +1,10 @@
 import { emittery } from "@classes/emittery";
+import { ProjectSettings } from "@lib/classes";
+import { AppEvent } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 
-import { ProjectSettings } from "@lib/classes";
-import { AppEvent } from "@lib/enums";
 import {
     copyFile,
     mkdir,

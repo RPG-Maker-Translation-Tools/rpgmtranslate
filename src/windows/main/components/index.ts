@@ -1,4 +1,4 @@
-export * from "./BatchMenu/BatchMenu";
+export * from "./BatchMenu";
 export * from "./BookmarkMenu";
 export * from "./Component";
 export * from "./FileMenu";

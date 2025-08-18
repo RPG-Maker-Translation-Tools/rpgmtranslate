@@ -1,10 +1,10 @@
 import { emittery } from "@classes/emittery";
 import { AppEvent } from "@lib/enums";
+import { Component } from "./Component";
 
 import { t } from "@lingui/core/macro";
 
 import { message } from "@tauri-apps/plugin-dialog";
-import { Component } from "./Component";
 
 export class ThemeEditMenu extends Component {
     declare protected readonly element: HTMLDivElement;

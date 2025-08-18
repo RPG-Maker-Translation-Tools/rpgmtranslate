@@ -1,11 +1,11 @@
 import { emittery } from "@classes/emittery";
 import { ProjectSettings } from "@lib/classes";
 import { AppEvent, MouseButton } from "@lib/enums";
+import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
 import { tw } from "@utils/functions";
 import { Component } from "./Component";
 
 import { t } from "@lingui/core/macro";
-import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
 
 const enum ResizeDirection {
     Left,
