@@ -1,7 +1,8 @@
 import { emittery } from "@classes/emittery";
 import { AppEvent, SearchAction, SearchFlags } from "@enums/index";
-import * as utils from "@utils/functions";
 import { Component } from "./Component";
+
+import * as utils from "@utils/functions";
 
 export class SearchMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -146,8 +147,8 @@ export class SearchMenu extends Component {
                 if (predicate.trim()) {
                     await emittery.emit(AppEvent.SearchText, [
                         predicate,
-                        Number(this.#searchModeSelect.value),
                         Number(this.#searchColumnSelect.value),
+                        Number(this.#searchModeSelect.value),
                         SearchAction.Search,
                     ]);
                 }

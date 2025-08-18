@@ -1297,13 +1297,13 @@ export class MainWindow {
 
         emittery.on(
             AppEvent.SearchText,
-            async ([predicate, searchMode, targetColumn, searchAction]) => {
+            async ([predicate, columnIndex, searchMode, searchAction]) => {
                 const results = await this.#searcher.search(
                     this.#tabInfo.tabName,
                     this.#tabInfo.tabs,
                     this.#tabContent.children,
                     predicate,
-                    targetColumn,
+                    columnIndex,
                     searchMode,
                     searchAction,
                 );

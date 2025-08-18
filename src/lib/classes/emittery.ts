@@ -24,7 +24,7 @@ export const emittery = new Emittery<{
     [AppEvent.ScrollIntoRow]: number;
     [AppEvent.UtilsButtonClick]: HTMLButtonElement;
     [AppEvent.ReplaceText]: [string, string, number, SearchMode, SearchAction];
-    [AppEvent.SearchText]: [string, SearchMode, number, SearchAction];
+    [AppEvent.SearchText]: [string, number, SearchMode, SearchAction];
     [AppEvent.AddBookmark]: [string | undefined, string, number];
     [AppEvent.TogglePurgeAnimation]: undefined;
     [AppEvent.Reload]: undefined;
