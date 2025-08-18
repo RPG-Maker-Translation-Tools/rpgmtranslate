@@ -648,15 +648,17 @@ export class MainWindow {
             consts.PROJECT_SETTINGS_FILE,
         );
 
-        try {
-            const settingsContent = await readTextFile(projectSettingsPath);
-            this.#projectSettings = new ProjectSettings(
-                JSON.parse(settingsContent) as ProjectSettingsOptions,
-            );
-            return await exists(this.#projectSettings.translationPath);
-        } catch {
-            return await exists(rootTranslationPath);
-        }
+        return await readTextFile(projectSettingsPath)
+            .then(async (settings) => {
+                // TODO: move this assignment from here
+                this.#projectSettings = new ProjectSettings(
+                    JSON.parse(settings) as ProjectSettingsOptions,
+                );
+                return await exists(this.#projectSettings.translationPath);
+            })
+            .catch(async () => {
+                return await exists(rootTranslationPath);
+            });
     }
 
     async #copyTranslationFromRoot(translationPath: string): Promise<void> {
