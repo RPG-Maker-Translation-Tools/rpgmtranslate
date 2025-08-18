@@ -1,9 +1,9 @@
 import { emittery } from "@classes/emittery";
 import { AppEvent } from "@lib/enums";
+import { getFileFlags } from "@utils/functions";
 import { Component } from "./Component";
 
 import { open } from "@tauri-apps/plugin-dialog";
-import { getFileFlags } from "@utils/functions";
 
 export class WriteMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -54,12 +54,7 @@ export class WriteMenu extends Component {
     }
 
     public override show(x: number, y: number): void {
-        this.element.classList.remove("hidden");
-
-        requestAnimationFrame(() => {
-            this.element.style.left = `${x}px`;
-            this.element.style.top = `${y}px`;
-        });
+        super.show(x, y);
 
         this.#outputPathInput.value = this.#programDataPath;
         this.#disableMapProcessingCheckbox.checked =
