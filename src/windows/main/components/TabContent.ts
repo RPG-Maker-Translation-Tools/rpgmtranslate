@@ -172,7 +172,7 @@ export class TabContent extends Component {
         let maxColumns = 0;
 
         for (const line of contentLines) {
-            const columnCount = utils.count(line, consts.SEPARATOR) + 1;
+            const columnCount = utils.count(line, consts.SEPARATOR);
 
             if (columnCount > maxColumns) {
                 maxColumns = columnCount;
@@ -201,7 +201,7 @@ export class TabContent extends Component {
                 translationColumnCount++;
             }
 
-            while (translations.length < translationColumnCount - 1) {
+            while (translations.length < translationColumnCount) {
                 translations.push("");
             }
 
@@ -282,8 +282,8 @@ export class TabContent extends Component {
         source: string,
         translations: string[],
         rowIndex: number,
-    ): HTMLDivElement {
-        const rowContainer = document.createElement("div");
+    ): RowContainer {
+        const rowContainer = document.createElement("div") as RowContainer;
         rowContainer.className = tw`flex min-w-full flex-row py-px`;
 
         const rowNumberContainer = document.createElement("div");
