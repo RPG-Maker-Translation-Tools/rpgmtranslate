@@ -39,7 +39,7 @@ msgstr "<div id=\"no-results\" class=\"content-center h-full\">Нет совпа
 #~ msgstr "<option value=\"\">-Выберите файл-</option>"
 
 #: src/windows/main/html.ts:12
-#: src/windows/main/MainWindow.ts:740
+#: src/windows/main/MainWindow.ts:743
 msgid "About"
 msgstr "О программе"
 
@@ -49,7 +49,7 @@ msgstr "О программе"
 #~ "Elapsed: {elapsed}"
 #~ msgstr ""
 
-#: src/windows/main/MainWindow.ts:490
+#: src/windows/main/MainWindow.ts:491
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {executionTime}"
@@ -65,7 +65,7 @@ msgstr "Разрешить дубликаты"
 msgid "Append"
 msgstr "Добавление"
 
-#: src/windows/main/components/ReadMenu.ts:71
+#: src/windows/main/components/ReadMenu.ts:70
 #: src/windows/main/html.ts:60
 msgid "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
 msgstr "Добавляет новый текст из игры в файлы перевода, если этого текста ещё не существует. Неиспользуемые строки будут удалены из перевода, а порядок строк будет отсортирован."
@@ -95,7 +95,7 @@ msgstr "Не удалось найти ряд с исходным текстом
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/windows/main/MainWindow.ts:629
+#: src/windows/main/MainWindow.ts:630
 msgid "Cannot determine the type of the game's engine."
 msgstr "Не удалось определить тип движка игры."
 
@@ -191,7 +191,7 @@ msgstr "Перезаписать"
 #~ msgid "Force rewrites existing translation files"
 #~ msgstr "Принудительно переписывает существующие файлы перевода"
 
-#: src/windows/main/components/ReadMenu.ts:87
+#: src/windows/main/components/ReadMenu.ts:86
 msgid "Force rewrites existing translation files."
 msgstr "Принудительно переписывает существующие файлы перевода."
 
@@ -204,20 +204,20 @@ msgstr "Принудительно переписывает существующ
 #~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 #~ msgstr "Файлы игры не обнаружены (нет директории original или data), так что возможно лишь редактировать и сохранять перевод."
 
-#: src/windows/main/MainWindow.ts:466
-#: src/windows/main/MainWindow.ts:1131
-#: src/windows/main/MainWindow.ts:1172
+#: src/windows/main/MainWindow.ts:467
+#: src/windows/main/MainWindow.ts:1132
+#: src/windows/main/MainWindow.ts:1173
 msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 msgstr "Файлы игры не существуют (нет директории original/data/Data), так что возможно лишь редактировать и сохранять перевод."
 
-#: src/windows/main/MainWindow.ts:419
+#: src/windows/main/MainWindow.ts:420
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Перейти на ряд... от 1 до {lastRowNumber}"
 
 #: src/windows/main/html.ts:8
 #: src/windows/main/html.ts:11
-#: src/windows/main/MainWindow.ts:281
-#: src/windows/main/MainWindow.ts:732
+#: src/windows/main/MainWindow.ts:282
+#: src/windows/main/MainWindow.ts:735
 msgid "Help"
 msgstr "Помощь"
 
@@ -270,7 +270,7 @@ msgstr "Неверный языковой тег. Вы должны исполь
 msgid "Line length for wrapping"
 msgstr "Длина строки для переноса"
 
-#: src/windows/main/MainWindow.ts:254
+#: src/windows/main/MainWindow.ts:255
 msgid "Loading project"
 msgstr "Загрузка проекта"
 
@@ -300,7 +300,7 @@ msgstr "Загрузка проекта"
 #~ "Текущая версия: {currentVersion}\n"
 #~ "Списки изменений: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
 
-#: src/windows/main/MainWindow.ts:185
+#: src/windows/main/MainWindow.ts:186
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "Проект не выбран. Выберите директорию проекта, используя кнопку \"открыть папку\" в левом верхнем углу."
 
@@ -348,7 +348,7 @@ msgstr "Меню чистки"
 msgid "Put text to translation textarea of matching source text"
 msgstr "Заместить текст в поле перевода, если текст в поле исходного текста совпадает с искомым."
 
-#: src/windows/main/MainWindow.ts:583
+#: src/windows/main/MainWindow.ts:584
 msgid "Quit without saving?"
 msgstr "Выйти без сохранения?"
 
@@ -480,15 +480,15 @@ msgstr "Выберите файлы (можно зажать ЛКМ и выде�
 msgid "Select Output Path"
 msgstr "Выбрать выходной путь"
 
-#: src/windows/main/MainWindow.ts:617
+#: src/windows/main/MainWindow.ts:618
 msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 msgstr "Выбранная директория не содержит директории origina/data/Data, архива .rgss или директории translation. Проект не будет инициализирован."
 
-#: src/windows/main/MainWindow.ts:1072
+#: src/windows/main/MainWindow.ts:1073
 msgid "Selected directory is already opened in the program."
 msgstr "Выбранная директория уже открыта в программе."
 
-#: src/windows/main/MainWindow.ts:594
+#: src/windows/main/MainWindow.ts:595
 msgid "Selected directory is missing. Project won't be initialized."
 msgstr "Выбранная директория отсутствует. Проект не будет инициализирован."
 
@@ -497,7 +497,7 @@ msgstr "Выбранная директория отсутствует. Прое
 #~ msgstr "Выбранная папка не существует. Проект не будет инициализирован."
 
 #: src/windows/main/html.ts:83
-#: src/windows/main/MainWindow.ts:1086
+#: src/windows/main/MainWindow.ts:1087
 msgid "Settings"
 msgstr "Настройки"
 
@@ -569,8 +569,8 @@ msgid "Translate"
 msgstr "Перевод"
 
 #: src/windows/main/components/TabContentHeader.ts:131
-#: src/windows/main/MainWindow.ts:964
-#: src/windows/main/MainWindow.ts:968
+#: src/windows/main/MainWindow.ts:967
+#: src/windows/main/MainWindow.ts:971
 msgid "Translation"
 msgstr "Перевод"
 
@@ -582,7 +582,7 @@ msgstr "Язык перевода для машинного перевода (e.
 #~ msgid "Translation languages are not selected. Input them to inputs above."
 #~ msgstr "Языки перевода не выбраны. Введите их в поля наверху."
 
-#: src/windows/main/components/BatchMenu/BatchMenu.ts:332
+#: src/windows/main/components/BatchMenu.ts:362
 msgid "Translation languages are not set. Input them to the fields above."
 msgstr "Языки перевода не установлены. Введите их в поля сверху."
 
@@ -606,6 +606,6 @@ msgstr "Перенос строк"
 msgid "Write (Alt + C)"
 msgstr "Запись (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:573
+#: src/windows/main/MainWindow.ts:574
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "У вас остались несохранённые изменения. Сохранить прогресс и выйти?"

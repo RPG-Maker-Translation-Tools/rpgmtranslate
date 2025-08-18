@@ -39,7 +39,7 @@ msgstr "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 #~ msgstr "<option value=\"\">-Choose a file-</option>"
 
 #: src/windows/main/html.ts:12
-#: src/windows/main/MainWindow.ts:740
+#: src/windows/main/MainWindow.ts:743
 msgid "About"
 msgstr "About"
 
@@ -51,7 +51,7 @@ msgstr "About"
 #~ "All files were written successfully.\n"
 #~ "Elapsed: {elapsed}"
 
-#: src/windows/main/MainWindow.ts:490
+#: src/windows/main/MainWindow.ts:491
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {executionTime}"
@@ -67,7 +67,7 @@ msgstr "Allow duplicates"
 msgid "Append"
 msgstr "Append"
 
-#: src/windows/main/components/ReadMenu.ts:71
+#: src/windows/main/components/ReadMenu.ts:70
 #: src/windows/main/html.ts:60
 msgid "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
 msgstr "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
@@ -97,7 +97,7 @@ msgstr "Can't found row with {logSource} source text in file {filename} and entr
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/windows/main/MainWindow.ts:629
+#: src/windows/main/MainWindow.ts:630
 msgid "Cannot determine the type of the game's engine."
 msgstr "Cannot determine the type of the game's engine."
 
@@ -193,7 +193,7 @@ msgstr "Force rewrite"
 #~ msgid "Force rewrites existing translation files"
 #~ msgstr "Force rewrites existing translation files"
 
-#: src/windows/main/components/ReadMenu.ts:87
+#: src/windows/main/components/ReadMenu.ts:86
 msgid "Force rewrites existing translation files."
 msgstr "Force rewrites existing translation files."
 
@@ -206,20 +206,20 @@ msgstr "Force rewrites existing translation files."
 #~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 #~ msgstr "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 
-#: src/windows/main/MainWindow.ts:466
-#: src/windows/main/MainWindow.ts:1131
-#: src/windows/main/MainWindow.ts:1172
+#: src/windows/main/MainWindow.ts:467
+#: src/windows/main/MainWindow.ts:1132
+#: src/windows/main/MainWindow.ts:1173
 msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 msgstr "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 
-#: src/windows/main/MainWindow.ts:419
+#: src/windows/main/MainWindow.ts:420
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Go to row... from 1 to {lastRowNumber}"
 
 #: src/windows/main/html.ts:8
 #: src/windows/main/html.ts:11
-#: src/windows/main/MainWindow.ts:281
-#: src/windows/main/MainWindow.ts:732
+#: src/windows/main/MainWindow.ts:282
+#: src/windows/main/MainWindow.ts:735
 msgid "Help"
 msgstr "Help"
 
@@ -272,7 +272,7 @@ msgstr "Language tag is invalid. You must use existing IANA BCP-47 language tag.
 msgid "Line length for wrapping"
 msgstr "Line length for wrapping"
 
-#: src/windows/main/MainWindow.ts:254
+#: src/windows/main/MainWindow.ts:255
 msgid "Loading project"
 msgstr "Loading project"
 
@@ -294,7 +294,7 @@ msgstr "Loading project"
 #~ "Current version: {currentVersion}\n"
 #~ "Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
 
-#: src/windows/main/MainWindow.ts:185
+#: src/windows/main/MainWindow.ts:186
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 
@@ -342,7 +342,7 @@ msgstr "Purge menu"
 msgid "Put text to translation textarea of matching source text"
 msgstr "Put text to translation textarea of matching source text"
 
-#: src/windows/main/MainWindow.ts:583
+#: src/windows/main/MainWindow.ts:584
 msgid "Quit without saving?"
 msgstr "Quit without saving?"
 
@@ -470,15 +470,15 @@ msgstr "Select files (You can hold LMB and drag to select multiple files)"
 msgid "Select Output Path"
 msgstr "Select Output Path"
 
-#: src/windows/main/MainWindow.ts:617
+#: src/windows/main/MainWindow.ts:618
 msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 msgstr "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 
-#: src/windows/main/MainWindow.ts:1072
+#: src/windows/main/MainWindow.ts:1073
 msgid "Selected directory is already opened in the program."
 msgstr "Selected directory is already opened in the program."
 
-#: src/windows/main/MainWindow.ts:594
+#: src/windows/main/MainWindow.ts:595
 msgid "Selected directory is missing. Project won't be initialized."
 msgstr "Selected directory is missing. Project won't be initialized."
 
@@ -487,7 +487,7 @@ msgstr "Selected directory is missing. Project won't be initialized."
 #~ msgstr "Selected folder is missing. Project won't be initialized."
 
 #: src/windows/main/html.ts:83
-#: src/windows/main/MainWindow.ts:1086
+#: src/windows/main/MainWindow.ts:1087
 msgid "Settings"
 msgstr "Settings"
 
@@ -537,8 +537,8 @@ msgid "Translate"
 msgstr "Translate"
 
 #: src/windows/main/components/TabContentHeader.ts:131
-#: src/windows/main/MainWindow.ts:964
-#: src/windows/main/MainWindow.ts:968
+#: src/windows/main/MainWindow.ts:967
+#: src/windows/main/MainWindow.ts:971
 msgid "Translation"
 msgstr "Translation"
 
@@ -550,7 +550,7 @@ msgstr "Translation language for machine translation (e. g. en-US, ru-RU)"
 #~ msgid "Translation languages are not selected. Input them to inputs above."
 #~ msgstr "Translation languages are not selected. Input them to inputs above."
 
-#: src/windows/main/components/BatchMenu/BatchMenu.ts:332
+#: src/windows/main/components/BatchMenu.ts:362
 msgid "Translation languages are not set. Input them to the fields above."
 msgstr "Translation languages are not set. Input them to the fields above."
 
@@ -574,6 +574,6 @@ msgstr "Wrap"
 msgid "Write (Alt + C)"
 msgstr "Write (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:573
+#: src/windows/main/MainWindow.ts:574
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "You have unsaved changes. Save progress and quit?"
