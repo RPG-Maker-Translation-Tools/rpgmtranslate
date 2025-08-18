@@ -1,11 +1,10 @@
 import { emittery } from "@classes/emittery";
+import { ProjectSettings } from "@lib/classes";
 import { AppEvent, ReadMode } from "@lib/enums";
 import { getFileFlags } from "@utils/functions";
+import { Component } from "./Component";
 
 import { t } from "@lingui/core/macro";
-
-import { ProjectSettings } from "@lib/classes";
-import { Component } from "./Component";
 
 export class ReadMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -66,8 +65,8 @@ export class ReadMenu extends Component {
 
         switch (target) {
             case this.#readModeSelect:
-                switch (this.#readModeSelect.value) {
-                    case "0":
+                switch (Number(this.#readModeSelect.value) as ReadMode) {
+                    case ReadMode.Append:
                         this.#readModeDescription.innerHTML = t`Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted.`;
                         this.#duplicateModeSelect.value =
                             this.#projectSettings.duplicateMode.toString();
@@ -83,7 +82,7 @@ export class ReadMenu extends Component {
                             this.#duplicateModeSelect.disabled =
                                 true;
                         break;
-                    case "1":
+                    case ReadMode.Force:
                         this.#readModeDescription.innerHTML = t`Force rewrites existing translation files.`;
 
                         this.#duplicateModeSelect.value = "0";
