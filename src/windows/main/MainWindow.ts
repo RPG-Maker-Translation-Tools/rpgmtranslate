@@ -170,13 +170,6 @@ export class MainWindow {
         await this.#retranslate(this.#settings.language);
         await this.#appWindow.setZoom(this.#settings.zoom);
 
-        if (this.#settings.backup.enabled) {
-            this.#saver.setupBackup(
-                this.#settings.backup.max,
-                this.#settings.backup.period,
-            );
-        }
-
         applyTheme(this.#themes, this.#settings.theme);
         this.#themeMenu.init(this.#themes);
 
@@ -290,6 +283,15 @@ export class MainWindow {
                 center: true,
             });
             this.#settings.firstLaunch = false;
+        }
+
+        if (this.#settings.backup.enabled) {
+            this.#saver.setupBackup(
+                this.#settings.backup.max,
+                this.#settings.backup.period,
+            );
+        } else {
+            this.#saver.disableBackup();
         }
 
         this.#tabInfo.tabs = {};
