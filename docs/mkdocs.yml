@@ -10,6 +10,7 @@ nav:
     - User Guide:
           - Search Features: en/search.md
           - Text Editing: en/text-editing.md
+          - Batch Processing: en/batch-processing.md
           - Settings: en/settings.md
           - Read Menu: en/read.md
           - Purge Menu: en/purge.md

@@ -1,6 +1,6 @@
 # Settings
 
-For now, settings include not that many options, but let's walk over them.
+For now, settings include not that many options.
 
 ## Backup
 

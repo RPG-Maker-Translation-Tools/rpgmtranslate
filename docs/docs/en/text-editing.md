@@ -2,50 +2,39 @@
 
 ## Editing Area Layout
 
-![Editing area layout](../assets/editing-area-layout.png)
+![Editing area layout](../assets/layout.png)
 
-The editing interface contains:
+In the screenshot, editing area marked under number 5.
 
-1.  Information column with:
-    - Row numbers
-    - Bookmark toggles
-    - Delete buttons
-2.  Source text column
-3.  Translation text column
+As you can see, it contains row column, which tracks the row number of the row, and provides `Delete` and `Bookmark` buttons.
+
+Then goes the source text column, which, obviously, contains the source text. You can copy the source text from each row by clicking on it with left mouse button.
+
+Then the translation text column follows. There can be unlimited number of translation columns, and you can change the name of each.
 
 ## Keyboard Shortcuts
 
 You can edit the translation textarea like any other website input field. Available shortcuts:
 
-- Alt + Enter - Move to next row (down)
-- Ctrl + Enter - Move to previous row (up)
+- Ctrl + ArrowDown - Move to next row (down)
+- Ctrl + ArrowUp - Move to previous row (up)
+- Ctrl + ArrowLeft - Move to the left translation column
+- Ctrl + ArrowRight - Move to the right translation column
 - Ctrl + T - Machine translation:
-    - First press: Show translated text
-    - Second press: Apply translation
+    - First activation: Show translated text
+    - Second activation: Apply translation
 - Left-click on source text - Copy the source text
 
-Note: The program currently only supports Google Translate, and translation languages must be configured in options.
+Note: The program currently only supports Google Translate.
 
-## Text Editing Tools
+## Batch Select
 
-Access these through the "Tools" button:
+You can select multiple translation textareas by selecting one, and holding shift while selecting the other.
 
-### Trim Fields
+You can batch copy/cut/paste multiple translation textareas.
 
-Removes leading and trailing whitespace from translation text.
+## Batch Text Processing
 
-### Translate Fields
+Access it through the "Tools" button.
 
-Automatically translates source text and fills empty fields. Does not affect fields that already have translations.
-
-### Wrap Lines in Fields
-
-WARNING: This is the most dangerous tool.
-
-The tool:
-
-- Lets you input maximum line length
-- Wraps text at specified length
-- Moves excess content to new lines
-
-Note: This may make your translation display incorrectly, so USE WITH CAUTION.
+[Documentation on batch processing](./batch-processing.md)

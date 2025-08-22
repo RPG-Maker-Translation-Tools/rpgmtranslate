@@ -1,6 +1,5 @@
 # Настройки
 
-For now, settings include not that many options, but let's walk over them.
 На данный момент, настройки предоставляют не очень много опций, но давайте пройдёмся по ним.
 
 ## Резервное копирование
