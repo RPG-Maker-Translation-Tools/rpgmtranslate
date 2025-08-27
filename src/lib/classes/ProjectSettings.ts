@@ -13,7 +13,9 @@ export interface ProjectSettingsOptions {
     romanize?: boolean;
     disableCustomProcessing?: boolean;
     trim?: boolean;
+
     translationColumns?: [string, number][];
+    translationColumnCount?: number;
 
     sourceDirectory?: string;
     programDataPath?: string;
@@ -23,7 +25,6 @@ export interface ProjectSettingsOptions {
     logPath?: string;
     projectSettingsPath?: string;
     backupPath?: string;
-    translationColumnCount?: number;
     outputPath?: string;
 }
 
@@ -45,14 +46,14 @@ export class ProjectSettings implements ProjectSettingsOptions {
     ];
     public translationColumnCount = 1;
 
-    public programDataPath = "";
-    public tempMapsPath = "";
-    public sourcePath = "";
-    public translationPath = "";
-    public logPath = "";
-    public projectSettingsPath = "";
-    public backupPath = "";
-    public outputPath = "";
+    #programDataPath = "";
+    #tempMapsPath = "";
+    #sourcePath = "";
+    #translationPath = "";
+    #logPath = "";
+    #projectSettingsPath = "";
+    #backupPath = "";
+    #outputPath = "";
 
     public constructor(options: ProjectSettingsOptions = {}) {
         this.engineType = options.engineType ?? this.engineType;
@@ -69,15 +70,49 @@ export class ProjectSettings implements ProjectSettingsOptions {
         this.translationColumnCount =
             options.translationColumnCount ?? this.translationColumnCount;
 
-        this.programDataPath = options.programDataPath ?? this.programDataPath;
-        this.tempMapsPath = options.tempMapsPath ?? this.tempMapsPath;
-        this.sourcePath = options.sourcePath ?? this.sourcePath;
-        this.translationPath = options.translationPath ?? this.translationPath;
-        this.logPath = options.logPath ?? this.logPath;
-        this.projectSettingsPath =
-            options.projectSettingsPath ?? this.projectSettingsPath;
-        this.backupPath = options.backupPath ?? this.backupPath;
-        this.outputPath = options.outputPath ?? this.outputPath;
+        this.#programDataPath =
+            options.programDataPath ?? this.#programDataPath;
+        this.#tempMapsPath = options.tempMapsPath ?? this.#tempMapsPath;
+        this.#sourcePath = options.sourcePath ?? this.#sourcePath;
+        this.#translationPath =
+            options.translationPath ?? this.#translationPath;
+        this.#logPath = options.logPath ?? this.#logPath;
+        this.#projectSettingsPath =
+            options.projectSettingsPath ?? this.#projectSettingsPath;
+        this.#backupPath = options.backupPath ?? this.#backupPath;
+        this.#outputPath = options.outputPath ?? this.#outputPath;
+    }
+
+    public get programDataPath(): string {
+        return this.#programDataPath;
+    }
+
+    public get tempMapsPath(): string {
+        return this.#tempMapsPath;
+    }
+
+    public get sourcePath(): string {
+        return this.#sourcePath;
+    }
+
+    public get translationPath(): string {
+        return this.#translationPath;
+    }
+
+    public get logPath(): string {
+        return this.#logPath;
+    }
+
+    public get projectSettingsPath(): string {
+        return this.#projectSettingsPath;
+    }
+
+    public get backupPath(): string {
+        return this.#backupPath;
+    }
+
+    public get outputPath(): string {
+        return this.#outputPath;
     }
 
     public columnName(index: number): string {
@@ -128,41 +163,41 @@ export class ProjectSettings implements ProjectSettingsOptions {
     }
 
     public async setProjectPath(projectPath: string): Promise<void> {
-        this.programDataPath = utils.join(
+        this.#programDataPath = utils.join(
             projectPath,
             consts.PROGRAM_DATA_DIRECTORY,
         );
-        this.tempMapsPath = utils.join(
-            this.programDataPath,
+        this.#tempMapsPath = utils.join(
+            this.#programDataPath,
             consts.TEMP_MAPS_DIRECTORY,
         );
-        this.sourcePath = utils.join(projectPath, this.sourceDirectory);
-        this.outputPath = utils.join(
+        this.#sourcePath = utils.join(projectPath, this.sourceDirectory);
+        this.#outputPath = utils.join(
             projectPath,
             consts.PROGRAM_DATA_DIRECTORY,
             "output",
         );
-        this.translationPath = utils.join(
-            this.programDataPath,
+        this.#translationPath = utils.join(
+            this.#programDataPath,
             consts.TRANSLATION_DIRECTORY,
         );
-        this.projectSettingsPath = utils.join(
-            this.programDataPath,
+        this.#projectSettingsPath = utils.join(
+            this.#programDataPath,
             consts.PROJECT_SETTINGS_FILE,
         );
-        this.logPath = utils.join(this.programDataPath, consts.LOG_FILE);
-        this.backupPath = utils.join(
-            this.programDataPath,
+        this.#logPath = utils.join(this.#programDataPath, consts.LOG_FILE);
+        this.#backupPath = utils.join(
+            this.#programDataPath,
             consts.BACKUP_DIRECTORY,
         );
 
-        await expandScope(this.programDataPath);
-        await mkdir(this.programDataPath, { recursive: true });
-        await mkdir(this.tempMapsPath, { recursive: true });
-        await mkdir(this.backupPath, { recursive: true });
+        await expandScope(this.#programDataPath);
+        await mkdir(this.#programDataPath, { recursive: true });
+        await mkdir(this.#tempMapsPath, { recursive: true });
+        await mkdir(this.#backupPath, { recursive: true });
 
-        if (!(await exists(this.logPath))) {
-            await writeTextFile(this.logPath, "{}");
+        if (!(await exists(this.#logPath))) {
+            await writeTextFile(this.#logPath, "{}");
         }
     }
 
