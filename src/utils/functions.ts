@@ -150,7 +150,7 @@ export function translation(
     container: string[] | RowContainer,
 ): [string, number] {
     if (Array.isArray(container)) {
-        for (let i = 1; i < container.length; i++) {
+        for (let i = container.length - 1; i > 0; i--) {
             if (container[i].length) {
                 return [container[i], i - 1];
             }
