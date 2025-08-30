@@ -303,25 +303,21 @@ export class Searcher {
                     translation = translations[columnIndex];
                 }
 
-                if (translation) {
-                    const translationMatch: Match = {
-                        text: isArray
-                            ? utils.clbtodlb(translation)
-                            : translation,
-                        type: MatchType.Translation,
-                        columnName:
-                            this.#projectSettings.translationColumns[column][0],
-                        columnNumber: column + 1,
-                    };
+                const translationMatch: Match = {
+                    text: isArray ? utils.clbtodlb(translation) : translation,
+                    type: MatchType.Translation,
+                    columnName:
+                        this.#projectSettings.translationColumns[column][0],
+                    columnNumber: column + 1,
+                };
 
-                    this.#appendSearchMatch(
-                        sourceMatch,
-                        translationMatch,
-                        filename,
-                        entryIndex,
-                        i + 1,
-                    );
-                }
+                this.#appendSearchMatch(
+                    sourceMatch,
+                    translationMatch,
+                    filename,
+                    entryIndex,
+                    i + 1,
+                );
             }
 
             if (searchTranslation) {
