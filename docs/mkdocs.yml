@@ -1,8 +1,8 @@
 site_name: RPGMTranslate Documentation
 site_description: Documentation for RPGMTranslate
 
-repo_url: https://github.com/savannstm/rpgmtranslate
-repo_name: savannstm/rpgmtranslate
+repo_url: https://github.com/rpg-maker-translation-tools/rpgmtranslate
+repo_name: rpg-maker-translation-tools/rpgmtranslate
 edit_uri: blob/main/docs/docs
 
 nav:
