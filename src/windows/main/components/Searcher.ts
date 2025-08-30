@@ -43,7 +43,7 @@ export class Searcher {
     }
 
     public addSearchFlag(flag: SearchFlags): void {
-        this.#searchFlags &= flag;
+        this.#searchFlags |= flag;
     }
 
     public removeSearchFlag(flag: SearchFlags): void {
