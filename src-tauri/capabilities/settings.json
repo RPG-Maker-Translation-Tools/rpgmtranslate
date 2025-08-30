@@ -1,15 +1,19 @@
 {
     "identifier": "settings",
     "permissions": [
-        "core:event:allow-emit",
-        "core:event:allow-listen",
-        "core:event:allow-unlisten",
-        "core:window:allow-close",
-        "core:window:allow-destroy",
-        "fs:allow-read-dir",
-        "dialog:allow-message",
-        { "allow": ["$RESOURCE/**"], "identifier": "fs:scope" },
-        "os:allow-platform"
+        {
+            "allow": [
+                "$RESOURCE/**",
+                "/usr/share/fonts/**/*",
+                "C:/Windows/Fonts/**/*"
+            ],
+            "identifier": "fs:scope"
+        },
+        "core:default",
+        "fs:default",
+        "dialog:default",
+        "os:default",
+        "core:window:allow-destroy"
     ],
     "windows": ["settings"]
 }

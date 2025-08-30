@@ -12,7 +12,11 @@
             "allowDowngrades": true,
             "certificateThumbprint": null,
             "digestAlgorithm": null,
-            "nsis": { "languages": ["English", "Russian"], "installMode": "both", "displayLanguageSelector": true },
+            "nsis": {
+                "languages": ["English", "Russian"],
+                "installMode": "both",
+                "displayLanguageSelector": true
+            },
             "timestampUrl": null,
             "tsp": false,
             "wix": {
@@ -23,18 +27,26 @@
                 "type": "downloadBootstrapper"
             }
         },
+        "resources": ["resources/**/*.json"],
         "createUpdaterArtifacts": true,
-        "resources": ["res/**/*"],
-        "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ]
     },
     "productName": "rpgmtranslate",
     "mainBinaryName": "rpgmtranslate",
-    "version": "5.3.0",
+    "version": "6.0.0",
     "identifier": "com.savannstm.rpgmtranslate",
     "plugins": {
         "updater": {
             "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ1MzIxQ0RFQUFGMUUxQTEKUldTaDRmR3EzaHd5UmE3L2oyU0V3LzN0OWlKa1ZUa2hQRGl4NzZxSEd4dmFFVkc1cGtueVZaT0gK",
-            "endpoints": ["https://github.com/savannstm/rpgmtranslate/releases/latest/download/updater_info.json"],
+            "endpoints": [
+                "https://github.com/savannstm/rpgmtranslate/releases/latest/download/updater_info.json"
+            ],
             "windows": {
                 "installMode": "passive"
             }
@@ -43,21 +55,26 @@
     "app": {
         "security": {
             "assetProtocol": {
-                "scope": ["$RESOURCE/**"],
+                "scope": [
+                    "/usr/share/fonts/**/*",
+                    "C:/Windows/Fonts/**/*",
+                    "$RESOURCE/**/*.json"
+                ],
                 "enable": true
             },
             "csp": {
-                "default-src": "'self' customprotocol: asset:",
+                "default-src": "'self' customprotocol: asset: http://asset.localhost",
                 "connect-src": "ipc: http://ipc.localhost",
                 "img-src": "'self' asset: http://asset.localhost blob: data:",
                 "style-src": "'unsafe-inline' 'self'",
-                "font-src": "*"
+                "font-src": "asset: http://asset.localhost http://tauri.localhost",
+                "script-src": "asset: http://asset.localhost"
             }
         },
         "windows": [
             {
                 "title": "RPGMTranslate",
-                "url": "main.html",
+                "url": "windows/main/MainWindow.html",
                 "label": "main",
                 "maximized": true
             }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="../../assets/style.css" />
+        <link rel="stylesheet" href="../../assets/theme-styles.css" />
+        <script type="module" src="AboutWindow.ts" defer></script>
+    </head>
+    <body class="bg-dark p-8">
+        <div class="text-primary flex flex-col gap-4 text-2xl">
+            <div>
+                <span data-i18n="Version"></span>
+                <span id="version-number"></span>
+            </div>
+
+            <div>
+                <a
+                    class="text-third cursor-pointer hover:underline"
+                    id="repo-link"
+                    data-i18n="Program's repository"
+                ></a>
+            </div>
+
+            <div>
+                <span data-i18n="License"></span>
+                <a
+                    class="text-third cursor-pointer hover:underline"
+                    id="license-link"
+                    >WTFPL</a
+                >
+                <img
+                    src="../../assets/wtfpl-badge-4.png"
+                    width="80"
+                    height="15"
+                    alt="WTFPL"
+                />
+            </div>
+        </div>
+    </body>
+</html>

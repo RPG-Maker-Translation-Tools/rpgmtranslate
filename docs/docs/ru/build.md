@@ -1,39 +1,40 @@
 # Билдинг из исходного кода
 
-## Предварительные условия
+## Требования
 
 - Git
-- Node.js и npm
-- Rust (для Tauri)
+- `rustup` с установленным Rust тулчейном
+- Требования Tauri (<https://v2.tauri.app/start/prerequisites>)
+- Рантайм JavaScript (`nodejs`, `bun`, `deno`)
 
-## Этапы билдинга
+## Этапы
 
-Клонирование репозитория:
+Клонируем репозиторий:
 
 ```bash
 git clone https://github.com/savannstm/rpgmtranslate.git
 ```
 
-Перейдите в репозиторий и установите зависимости:
+Переходим и устанавливаем зависимости
 
 ```bash
 cd rpgmtranslate
-npm install
+npm install # или bun, или deno, или что угодно
 ```
 
-Запустите приложение:
+Билдим приложение:
 
 ```bash
-# Для режима разработки
-npm run tauri dev
+# Для дев билда
+npm run tauri dev # или bun, или deno, или что угодно
 
-# Для производственной сборки
-npm run tauri build
+# Для релизного билда
+npm run tauri build # или bun, или deno, или что угодно
 ```
 
 ## Структура проекта
 
-- Код фронтэнда: каталог `src`
-- Код бэкэнда: каталог `src-tauri/src`
-- Артефакты билдинга: `gui/src-tauri/target`
+- Код фронтэнда: директория `src`
+- Код бэкэнда: директория `src-tauri/src`
+- Артефакты билда: `gui/src-tauri/target`
     - Распространяемые пакеты: `target/bundle`

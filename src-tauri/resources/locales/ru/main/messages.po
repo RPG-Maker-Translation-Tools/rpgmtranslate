@@ -1,0 +1,611 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-08-10 00:10+0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ru\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/windows/main/html.ts:30
+#: src/windows/main/html.ts:32
+msgid " - "
+msgstr " - "
+
+#: src/windows/main/html.ts:45
+msgid "-Select Action-"
+msgstr "-Выберите действие-"
+
+#: src/windows/main/html.ts:49
+msgid "-Select Column-"
+msgstr "-Выберите столбец-"
+
+#: src/windows/main/html.ts:33
+msgid "-Select File-"
+msgstr "-Выберите файл-"
+
+#: src/windows/main/components/SearchPanel.ts:78
+msgid "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
+msgstr "<div id=\"no-results\" class=\"content-center h-full\">Нет совпадений</div>"
+
+#: src/windows/main/components/SearchPanel.ts:420
+#~ msgid "<option value=\"\">-Choose a file-</option>"
+#~ msgstr "<option value=\"\">-Выберите файл-</option>"
+
+#: src/windows/main/html.ts:12
+#: src/windows/main/MainWindow.ts:749
+msgid "About"
+msgstr "О программе"
+
+#: src/windows/main/components/WriteMenu.ts:129
+#~ msgid ""
+#~ "All files were written successfully.\n"
+#~ "Elapsed: {elapsed}"
+#~ msgstr ""
+
+#: src/windows/main/MainWindow.ts:503
+msgid ""
+"All files were written successfully.\n"
+"Elapsed: {executionTime}"
+msgstr ""
+"Все файлы были успешно записаны.\n"
+"Затрачено: {executionTime}"
+
+#: src/windows/main/html.ts:61
+msgid "Allow duplicates"
+msgstr "Разрешить дубликаты"
+
+#: src/windows/main/html.ts:57
+msgid "Append"
+msgstr "Добавление"
+
+#: src/windows/main/components/ReadMenu.ts:70
+#: src/windows/main/html.ts:60
+msgid "Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
+msgstr "Добавляет новый текст из игры в файлы перевода, если этого текста ещё не существует. Неиспользуемые строки будут удалены из перевода, а порядок строк будет отсортирован."
+
+#: src/windows/main/html.ts:43
+#: src/windows/main/html.ts:56
+msgid "Apply"
+msgstr "Применить"
+
+#: src/windows/main/html.ts:87
+msgid "Batch menu"
+msgstr "Меню обработки"
+
+#: src/windows/main/html.ts:85
+msgid "Bookmarks (Ctrl + B)"
+msgstr "Закладки (Ctrl + B)"
+
+#: src/windows/main/components/SearchPanel.ts:251
+msgid "Can't found row with {logSource} source text in file {filename} and entry {entry}."
+msgstr "Не удалось найти ряд с исходным текстом {logSource} в файле {filename} и записи {entry}."
+
+#: src/windows/main/components/SearchPanel.ts:277
+#~ msgid "Can't found row with {targetSource} source text in file {filename} and entry {entry}."
+#~ msgstr "Не удалось найти ряд с исходным текстом {targetSource} в файле {filename} и записи {entry}"
+
+#: src/windows/main/html.ts:44
+msgid "Cancel"
+msgstr "Отмена"
+
+#: src/windows/main/MainWindow.ts:659
+msgid "Cannot determine the type of the game's engine."
+msgstr "Не удалось определить тип движка игры."
+
+#: src/windows/main/html.ts:93
+msgid "Consider case (Alt + C)"
+msgstr "Учитывать регистр (Alt + C)"
+
+#: src/windows/main/html.ts:77
+msgid "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
+msgstr "Создать файл .rvpacker-ignore из удалённых строк, чтобы избежать их повторного появления в файлах"
+
+#: src/windows/main/html.ts:29
+msgid "Create theme"
+msgstr "Создать тему"
+
+#: src/windows/main/html.ts:50
+msgid "Create Theme"
+msgstr "Создать тему"
+
+#: src/windows/main/html.ts:13
+msgid "Dark background color"
+msgstr "Тёмный цвет фона"
+
+#: src/windows/main/html.ts:60
+#~ msgid "Defines how to read files."
+#~ msgstr "Определяет, как читать файлы."
+
+#: src/windows/main/components/TabContent.ts:401
+msgid "Deleting is disabled in settings."
+msgstr "Удаление рядов выключено в настройках."
+
+#: src/windows/main/html.ts:42
+msgid "Deselect All"
+msgstr "Убрать всё"
+
+#: src/windows/main/html.ts:53
+#: src/windows/main/html.ts:67
+#: src/windows/main/html.ts:74
+msgid "Disable Actors, Armors, Troops etc. processing"
+msgstr "Выключить обработку файлов Actors, Armors, Troops..."
+
+#: src/windows/main/html.ts:65
+#~ msgid "Disable custom processing"
+#~ msgstr "Выключить индивидуальную обработку"
+
+#: src/windows/main/html.ts:52
+#: src/windows/main/html.ts:66
+#: src/windows/main/html.ts:73
+msgid "Disable Mapxxx processing"
+msgstr "Выключить обработку файлов Mapxxx"
+
+#: src/windows/main/html.ts:55
+#: src/windows/main/html.ts:69
+#: src/windows/main/html.ts:76
+msgid "Disable plugins.js/Scripts processing"
+msgstr "Выключить обработку файла plugins.js/Scripts"
+
+#: src/windows/main/html.ts:54
+#: src/windows/main/html.ts:68
+#: src/windows/main/html.ts:75
+msgid "Disable System processing"
+msgstr "Выключить обработку файла System"
+
+#: src/windows/main/html.ts:65
+msgid "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
+msgstr "Выключает встроенную индивидуальную обработку, имплементированную для некоторых игр. Прямо сейчас, имплементирована для: \"LISA: The Painful\" и игр на основе, \"Fear & Hunger 2: Termina\"."
+
+#: src/windows/main/components/TabContent.ts:406
+msgid "Do you really want to delete this row? This action is irreversible!"
+msgstr "Вы действительно хотите удалить этот ряд? Это действие необратимо!"
+
+#: src/windows/main/html.ts:61
+#~ msgid "Duplicate mode"
+#~ msgstr "Режим дубликатов"
+
+#: src/windows/main/html.ts:7
+msgid "File"
+msgstr "Файл"
+
+#: src/windows/main/html.ts:21
+msgid "Focus border color"
+msgstr "Цвет границы при наводке"
+
+#: src/windows/main/html.ts:18
+msgid "Focused outline color"
+msgstr "Цвет обводки при наводке"
+
+#: src/windows/main/html.ts:58
+msgid "Force rewrite"
+msgstr "Перезаписать"
+
+#: src/windows/main/components/ReadMenu.ts:87
+#~ msgid "Force rewrites existing translation files"
+#~ msgstr "Принудительно переписывает существующие файлы перевода"
+
+#: src/windows/main/components/ReadMenu.ts:86
+msgid "Force rewrites existing translation files."
+msgstr "Принудительно переписывает существующие файлы перевода."
+
+#: src/windows/main/components/ReadMenu.ts:89
+#~ msgid "Forcefully rewrites translation files. Use, only if you need to completely re-read files using certain settings."
+#~ msgstr "Принудительно перезаписывает файлы перевода. Используйте, если вам нужно полностью перечитать файлы с определёнными настройками."
+
+#: src/windows/main/MainWindow.ts:1179
+#: src/windows/main/MainWindow.ts:1220
+#~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
+#~ msgstr "Файлы игры не обнаружены (нет директории original или data), так что возможно лишь редактировать и сохранять перевод."
+
+#: src/windows/main/MainWindow.ts:479
+#: src/windows/main/MainWindow.ts:1138
+#: src/windows/main/MainWindow.ts:1179
+msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
+msgstr "Файлы игры не существуют (нет директории original/data/Data), так что возможно лишь редактировать и сохранять перевод."
+
+#: src/windows/main/MainWindow.ts:432
+msgid "Go to row... from 1 to {lastRowNumber}"
+msgstr "Перейти на ряд... от 1 до {lastRowNumber}"
+
+#: src/windows/main/html.ts:8
+#: src/windows/main/html.ts:11
+#: src/windows/main/MainWindow.ts:282
+#: src/windows/main/MainWindow.ts:741
+msgid "Help"
+msgstr "Помощь"
+
+#: src/windows/main/html.ts:61
+#~ msgid "How to handle duplicates in text"
+#~ msgstr "Как поступить с дубликатами в тексте"
+
+#: src/windows/main/html.ts:63
+msgid "How to handle duplicates in text."
+msgstr "Как поступить с дубликатами в тексте."
+
+#: src/windows/main/html.ts:59
+msgid "How to read files."
+msgstr "Как читать файлы."
+
+#: src/windows/main/html.ts:64
+msgid "If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
+msgstr "Если вы парсите текст из японской игры, который содержит символы вроде 「」, которые просто являются японскими кавычками, они автоматически будут заменены на их западные эквиваленты (в этом случае, '')."
+
+#: src/windows/main/html.ts:70
+msgid "Ignore entries from .rvpacker-ignore file"
+msgstr "Игнорировать строки из файла .rvpacker-ignore"
+
+#: src/windows/main/components/ReadMenu.ts:73
+#: src/windows/main/html.ts:60
+#~ msgid "In case, when the game text you've parsed updates, or the GUI update, it makes sense to re-read files in this mode, to append new text to existing translation without overwriting the progress. Before reading ensure you've saved the translation!"
+#~ msgstr "В случае обновления игры, текст которой вы запарсили, либо же графического интерфейса, имеет смысл перечитать файлы в этом режиме, чтобы добавить новый текст к имеющемуся без потери прогресса."
+
+#: src/windows/main/MainWindow.ts:471
+#~ msgid "Install"
+#~ msgstr "Установить"
+
+#: src/windows/main/components/ThemeEditMenu.ts:54
+msgid "Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _."
+msgstr "Неверное название темы: Разрешённые символы: a-z, A-Z, 0-9, -, _."
+
+#: src/windows/main/html.ts:9
+msgid "Language"
+msgstr "Язык"
+
+#: src/windows/main/components/UtilsPanel.ts:201
+msgid "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or ja-JP"
+msgstr "Неверный языковой тег. Вы должны использовать существующий тег IANA BCP-47. Например, en-US или ja-JP"
+
+#: src/windows/main/components/UtilsPanel.ts:199
+#~ msgid "Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or jp-JP"
+#~ msgstr ""
+
+#: src/windows/main/html.ts:102
+msgid "Line length for wrapping"
+msgstr "Длина строки для переноса"
+
+#: src/windows/main/MainWindow.ts:254
+msgid "Loading project"
+msgstr "Загрузка проекта"
+
+#: src/windows/main/html.ts:96
+#~ msgid "Machine translation from language (e. g. en, ru-RU)"
+#~ msgstr "Машинный перевод с языка (напр. en, ru-RU)"
+
+#: src/windows/main/html.ts:97
+#~ msgid "Machine translation to language (e. g. en, ru-RU)"
+#~ msgstr "Машинный перевод на язык (напр. en, ru-RU)"
+
+#: src/windows/main/html.ts:91
+#~ msgid "Machive translation from language (e. g. en, ru-RU)"
+#~ msgstr ""
+
+#: src/windows/main/html.ts:92
+#~ msgid "Machive translation to language (e. g. en, ru-RU)"
+#~ msgstr ""
+
+#: src/windows/main/MainWindow.ts:468
+#~ msgid ""
+#~ "New version found: {version}\n"
+#~ "Current version: {currentVersion}\n"
+#~ "Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+#~ msgstr ""
+#~ "Обнаружена новая версия: {version}\n"
+#~ "Текущая версия: {currentVersion}\n"
+#~ "Списки изменений: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
+
+#: src/windows/main/MainWindow.ts:179
+msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
+msgstr "Проект не выбран. Выберите директорию проекта, используя кнопку \"открыть папку\" в левом верхнем углу."
+
+#: src/windows/main/html.ts:31
+msgid "of"
+msgstr "из"
+
+#: src/windows/main/html.ts:82
+msgid "Open directory"
+msgstr "Открыть директорию"
+
+#: src/windows/main/html.ts:14
+msgid "Primary background color"
+msgstr "Основной цвет фона"
+
+#: src/windows/main/html.ts:19
+msgid "Primary border color"
+msgstr "Основной цвет границы"
+
+#: src/windows/main/html.ts:23
+msgid "Primary hovered background color"
+msgstr "Основной цвет фона при наводке"
+
+#: src/windows/main/html.ts:15
+msgid "Primary outline color"
+msgstr "Основной цвет обводки"
+
+#: src/windows/main/html.ts:25
+msgid "Primary text color"
+msgstr "Основной цвет текста"
+
+#: src/windows/main/MainWindow.ts:461
+#~ msgid "Program is up to date."
+#~ msgstr "Программа обновлена до последней версии."
+
+#: src/windows/main/html.ts:78
+msgid "Purge"
+msgstr "Чистка"
+
+#: src/windows/main/html.ts:89
+msgid "Purge menu"
+msgstr "Меню чистки"
+
+#: src/windows/main/html.ts:92
+msgid "Put text to translation textarea of matching source text"
+msgstr "Заместить текст в поле перевода, если текст в поле исходного текста совпадает с искомым."
+
+#: src/windows/main/MainWindow.ts:596
+msgid "Quit without saving?"
+msgstr "Выйти без сохранения?"
+
+#: src/windows/main/html.ts:72
+msgid "Read"
+msgstr "Чтение"
+
+#: src/windows/main/html.ts:88
+msgid "Read menu"
+msgstr "Меню чтения"
+
+#: src/windows/main/html.ts:57
+#~ msgid "Read mode:"
+#~ msgstr "Режим чтения:"
+
+#: src/windows/main/html.ts:10
+msgid "Reload (F5)"
+msgstr "Перезагрузка (F5)"
+
+#: src/windows/main/html.ts:62
+msgid "Remove duplicates"
+msgstr "Удалить дубликаты"
+
+#: src/windows/main/html.ts:71
+#~ msgid "Remove the leading and trailing whitespace from extracted strings. Could lead to non-working or incorrect text writing."
+#~ msgstr "Удалить лишние начальные и конечные пробелы из распарсенного текста. Может привести к нерабочей или некорректной записи текста."
+
+#: src/windows/main/html.ts:63
+#~ msgid "Remove the leading and trailing whitespace from translation. Could lead to non-working or incorrect text writing."
+#~ msgstr "Удалить лишние начальные и конечные пробелы из перевода. Может привести к нерабочей или некорректной записи текста."
+
+#: src/windows/main/html.ts:71
+msgid "Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
+msgstr "Удаляет лишние начальные и конечные пробелы из текста. Не используйте эту опцию, если не уверены, что удаление лишних пробелов не вызовет никаких проблем"
+
+#: src/windows/main/html.ts:91
+msgid "Replace all matches"
+msgstr "Заменить все совпадения"
+
+#: src/windows/main/html.ts:101
+msgid "Replace input"
+msgstr "Ввод замены"
+
+#: src/windows/main/html.ts:39
+msgid "Rightmost filled"
+msgstr "Крайний заполненный"
+
+#: src/windows/main/components/TabContentHeader.ts:80
+msgid "Row"
+msgstr "Ряд"
+
+#: src/windows/main/html.ts:80
+msgid "Save (Ctrl + S)"
+msgstr "Сохранение (Ctrl + S)"
+
+#: src/windows/main/html.ts:90
+msgid "Search"
+msgstr "Поиск"
+
+#: src/windows/main/html.ts:86
+msgid "Search (Ctrl + F)"
+msgstr "Поиск (Ctrl + F)"
+
+#: src/windows/main/html.ts:95
+msgid "Search by regular expressions (Alt + R)"
+msgstr "Поиск по регулярным выражениям (Alt + R)"
+
+#: src/windows/main/html.ts:35
+msgid "Search everywhere"
+msgstr "Искать везде"
+
+#: src/windows/main/html.ts:100
+msgid "Search input"
+msgstr "Ввод поиска"
+
+#: src/windows/main/html.ts:34
+msgid "Search mode"
+msgstr "Режим поиска"
+
+#: src/windows/main/html.ts:96
+msgid "Search only in current tab (Alt + L)"
+msgstr "Поиск только в текущем файле (Alt + L)"
+
+#: src/windows/main/html.ts:36
+msgid "Search only in source text"
+msgstr "Искать только в исходном тексте"
+
+#: src/windows/main/html.ts:37
+msgid "Search only in translation"
+msgstr "Искать только в переводе"
+
+#: src/windows/main/html.ts:94
+msgid "Search the whole text (Alt + W)"
+msgstr "Искать текст целиком (Alt + W)"
+
+#: src/windows/main/html.ts:22
+msgid "Second background color"
+msgstr "Вторичный цвет фона"
+
+#: src/windows/main/html.ts:20
+msgid "Second border color"
+msgstr "Вторичный цвет границы"
+
+#: src/windows/main/html.ts:24
+msgid "Second hovered background color"
+msgstr "Вторичный цвет фона при наводке"
+
+#: src/windows/main/html.ts:16
+msgid "Second outline color"
+msgstr "Вторичный текст обводки"
+
+#: src/windows/main/html.ts:26
+msgid "Second text color"
+msgstr "Вторичный цвет текста"
+
+#: src/windows/main/html.ts:41
+msgid "Select All"
+msgstr "Выбрать всё"
+
+#: src/windows/main/html.ts:38
+msgid "Select column"
+msgstr "Выберите столбец"
+
+#: src/windows/main/html.ts:40
+msgid "Select files (You can hold LMB and drag to select multiple files)"
+msgstr "Выберите файлы (можно зажать ЛКМ и выделить несколько файлов)"
+
+#: src/windows/main/html.ts:51
+msgid "Select Output Path"
+msgstr "Выбрать выходной путь"
+
+#: src/windows/main/MainWindow.ts:647
+msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
+msgstr "Выбранная директория не содержит директории origina/data/Data, архива .rgss или директории translation. Проект не будет инициализирован."
+
+#: src/windows/main/MainWindow.ts:1079
+msgid "Selected directory is already opened in the program."
+msgstr "Выбранная директория уже открыта в программе."
+
+#: src/windows/main/MainWindow.ts:607
+msgid "Selected directory is missing. Project won't be initialized."
+msgstr "Выбранная директория отсутствует. Проект не будет инициализирован."
+
+#: src/windows/main/MainWindow.ts:648
+#~ msgid "Selected folder is missing. Project won't be initialized."
+#~ msgstr "Выбранная папка не существует. Проект не будет инициализирован."
+
+#: src/windows/main/html.ts:83
+#: src/windows/main/MainWindow.ts:1093
+msgid "Settings"
+msgstr "Настройки"
+
+#: src/windows/main/components/Searcher.ts:286
+#: src/windows/main/components/TabContentHeader.ts:83
+msgid "Source"
+msgstr "Исходник"
+
+#: src/windows/main/components/SearchPanel.ts:207
+msgid "Source text cannot be replaced."
+msgstr "Исходный текст нельзя заменить."
+
+#: src/windows/main/html.ts:97
+msgid "Source text language for machine translation (e. g. en-US, ru-RU)"
+msgstr "Исходный язык для машинного перевода (e. g. en-US, ru-RU)"
+
+#: src/windows/main/html.ts:79
+msgid "Tabs (Tab)"
+msgstr "Вкладки (Tab)"
+
+#~ msgid "Text was reverted to the original state"
+#~ msgstr "Текст был возвращён в прошлое состояние"
+
+#: src/windows/main/components/SearchPanel.ts:383
+msgid "Text was reverted to the previous state"
+msgstr "Текст был возвращён в прошлое состояние"
+
+#~ msgid "textReverted"
+#~ msgstr ""
+
+#: src/windows/main/html.ts:28
+#~ msgid "Theme name"
+#~ msgstr "Название темы"
+
+#: src/windows/main/html.ts:99
+msgid "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
+msgstr "Название темы. Разрешённые символы: a-z, A-Z, 0-9, -, _."
+
+#: src/windows/main/html.ts:84
+msgid "Themes"
+msgstr "Темы"
+
+#: src/windows/main/html.ts:28
+msgid "Third background color"
+msgstr "Третичный цвет фона"
+
+#: src/windows/main/html.ts:17
+msgid "Third outline color"
+msgstr "Третичный цвет обводки"
+
+#: src/windows/main/html.ts:27
+msgid "Third text color"
+msgstr "Третичный цвет текста"
+
+#: src/windows/main/html.ts:69
+#~ msgid "TODO createIgnoreDescription"
+#~ msgstr ""
+
+#: src/windows/main/html.ts:63
+#~ msgid "TODO trim"
+#~ msgstr ""
+
+#: src/windows/main/html.ts:57
+#~ msgid "TODO Whether to romanize text."
+#~ msgstr ""
+
+#: src/windows/main/html.ts:47
+msgid "Translate"
+msgstr "Перевод"
+
+#: src/windows/main/components/TabContentHeader.ts:146
+#: src/windows/main/MainWindow.ts:973
+#: src/windows/main/MainWindow.ts:977
+msgid "Translation"
+msgstr "Перевод"
+
+#: src/windows/main/html.ts:98
+msgid "Translation language for machine translation (e. g. en-US, ru-RU)"
+msgstr "Язык перевода для машинного перевода (e. g. en-US, ru-RU)"
+
+#: src/windows/main/components/UtilsPanel.ts:173
+#~ msgid "Translation languages are not selected. Input them to inputs above."
+#~ msgstr "Языки перевода не выбраны. Введите их в поля наверху."
+
+#: src/windows/main/components/BatchMenu.ts:362
+msgid "Translation languages are not set. Input them to the fields above."
+msgstr "Языки перевода не установлены. Введите их в поля сверху."
+
+#: src/windows/main/html.ts:46
+msgid "Trim"
+msgstr "Удаление пробелов"
+
+#: src/windows/main/MainWindow.ts:470
+#~ msgid "Update available"
+#~ msgstr "Доступно обновление"
+
+#: src/windows/main/html.ts:64
+#~ msgid "Whether to romanize text."
+#~ msgstr "Романизировать ли текст."
+
+#: src/windows/main/html.ts:48
+msgid "Wrap"
+msgstr "Перенос строк"
+
+#: src/windows/main/html.ts:81
+msgid "Write (Alt + C)"
+msgstr "Запись (Alt + C)"
+
+#: src/windows/main/MainWindow.ts:586
+msgid "You have unsaved changes. Save progress and quit?"
+msgstr "У вас остались несохранённые изменения. Сохранить прогресс и выйти?"
