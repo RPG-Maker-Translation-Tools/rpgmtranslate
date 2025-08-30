@@ -39,7 +39,7 @@ msgstr "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 #~ msgstr "<option value=\"\">-Choose a file-</option>"
 
 #: src/windows/main/html.ts:12
-#: src/windows/main/MainWindow.ts:743
+#: src/windows/main/MainWindow.ts:749
 msgid "About"
 msgstr "About"
 
@@ -51,7 +51,7 @@ msgstr "About"
 #~ "All files were written successfully.\n"
 #~ "Elapsed: {elapsed}"
 
-#: src/windows/main/MainWindow.ts:491
+#: src/windows/main/MainWindow.ts:503
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {executionTime}"
@@ -97,7 +97,7 @@ msgstr "Can't found row with {logSource} source text in file {filename} and entr
 msgid "Cancel"
 msgstr "Cancel"
 
-#: src/windows/main/MainWindow.ts:630
+#: src/windows/main/MainWindow.ts:659
 msgid "Cannot determine the type of the game's engine."
 msgstr "Cannot determine the type of the game's engine."
 
@@ -125,7 +125,7 @@ msgstr "Dark background color"
 #~ msgid "Defines how to read files."
 #~ msgstr "Defines how to read files."
 
-#: src/windows/main/components/TabContent.ts:403
+#: src/windows/main/components/TabContent.ts:401
 msgid "Deleting is disabled in settings."
 msgstr "Deleting is disabled in settings."
 
@@ -165,7 +165,7 @@ msgstr "Disable System processing"
 msgid "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 msgstr "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 
-#: src/windows/main/components/TabContent.ts:408
+#: src/windows/main/components/TabContent.ts:406
 msgid "Do you really want to delete this row? This action is irreversible!"
 msgstr "Do you really want to delete this row? This action is irreversible!"
 
@@ -206,20 +206,20 @@ msgstr "Force rewrites existing translation files."
 #~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 #~ msgstr "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 
-#: src/windows/main/MainWindow.ts:467
-#: src/windows/main/MainWindow.ts:1132
-#: src/windows/main/MainWindow.ts:1173
+#: src/windows/main/MainWindow.ts:479
+#: src/windows/main/MainWindow.ts:1138
+#: src/windows/main/MainWindow.ts:1179
 msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 msgstr "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 
-#: src/windows/main/MainWindow.ts:420
+#: src/windows/main/MainWindow.ts:432
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Go to row... from 1 to {lastRowNumber}"
 
 #: src/windows/main/html.ts:8
 #: src/windows/main/html.ts:11
 #: src/windows/main/MainWindow.ts:282
-#: src/windows/main/MainWindow.ts:735
+#: src/windows/main/MainWindow.ts:741
 msgid "Help"
 msgstr "Help"
 
@@ -272,7 +272,7 @@ msgstr "Language tag is invalid. You must use existing IANA BCP-47 language tag.
 msgid "Line length for wrapping"
 msgstr "Line length for wrapping"
 
-#: src/windows/main/MainWindow.ts:255
+#: src/windows/main/MainWindow.ts:254
 msgid "Loading project"
 msgstr "Loading project"
 
@@ -294,7 +294,7 @@ msgstr "Loading project"
 #~ "Current version: {currentVersion}\n"
 #~ "Release notes: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
 
-#: src/windows/main/MainWindow.ts:186
+#: src/windows/main/MainWindow.ts:179
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 
@@ -342,7 +342,7 @@ msgstr "Purge menu"
 msgid "Put text to translation textarea of matching source text"
 msgstr "Put text to translation textarea of matching source text"
 
-#: src/windows/main/MainWindow.ts:584
+#: src/windows/main/MainWindow.ts:596
 msgid "Quit without saving?"
 msgstr "Quit without saving?"
 
@@ -386,7 +386,7 @@ msgstr "Replace input"
 msgid "Rightmost filled"
 msgstr "Rightmost filled"
 
-#: src/windows/main/components/TabContentHeader.ts:79
+#: src/windows/main/components/TabContentHeader.ts:80
 msgid "Row"
 msgstr "Row"
 
@@ -470,15 +470,15 @@ msgstr "Select files (You can hold LMB and drag to select multiple files)"
 msgid "Select Output Path"
 msgstr "Select Output Path"
 
-#: src/windows/main/MainWindow.ts:618
+#: src/windows/main/MainWindow.ts:647
 msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 msgstr "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 
-#: src/windows/main/MainWindow.ts:1073
+#: src/windows/main/MainWindow.ts:1079
 msgid "Selected directory is already opened in the program."
 msgstr "Selected directory is already opened in the program."
 
-#: src/windows/main/MainWindow.ts:595
+#: src/windows/main/MainWindow.ts:607
 msgid "Selected directory is missing. Project won't be initialized."
 msgstr "Selected directory is missing. Project won't be initialized."
 
@@ -487,12 +487,12 @@ msgstr "Selected directory is missing. Project won't be initialized."
 #~ msgstr "Selected folder is missing. Project won't be initialized."
 
 #: src/windows/main/html.ts:83
-#: src/windows/main/MainWindow.ts:1087
+#: src/windows/main/MainWindow.ts:1093
 msgid "Settings"
 msgstr "Settings"
 
 #: src/windows/main/components/Searcher.ts:286
-#: src/windows/main/components/TabContentHeader.ts:82
+#: src/windows/main/components/TabContentHeader.ts:83
 msgid "Source"
 msgstr "Source"
 
@@ -508,7 +508,7 @@ msgstr "Source text language for machine translation (e. g. en-US, ru-RU)"
 msgid "Tabs (Tab)"
 msgstr "Tabs (Tab)"
 
-#: src/windows/main/components/SearchPanel.ts:385
+#: src/windows/main/components/SearchPanel.ts:383
 msgid "Text was reverted to the previous state"
 msgstr "Text was reverted to the previous state"
 
@@ -536,9 +536,9 @@ msgstr "Third text color"
 msgid "Translate"
 msgstr "Translate"
 
-#: src/windows/main/components/TabContentHeader.ts:131
-#: src/windows/main/MainWindow.ts:967
-#: src/windows/main/MainWindow.ts:971
+#: src/windows/main/components/TabContentHeader.ts:146
+#: src/windows/main/MainWindow.ts:973
+#: src/windows/main/MainWindow.ts:977
 msgid "Translation"
 msgstr "Translation"
 
@@ -574,6 +574,6 @@ msgstr "Wrap"
 msgid "Write (Alt + C)"
 msgstr "Write (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:574
+#: src/windows/main/MainWindow.ts:586
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "You have unsaved changes. Save progress and quit?"

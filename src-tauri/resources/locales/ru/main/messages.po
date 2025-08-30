@@ -39,7 +39,7 @@ msgstr "<div id=\"no-results\" class=\"content-center h-full\">Нет совпа
 #~ msgstr "<option value=\"\">-Выберите файл-</option>"
 
 #: src/windows/main/html.ts:12
-#: src/windows/main/MainWindow.ts:743
+#: src/windows/main/MainWindow.ts:749
 msgid "About"
 msgstr "О программе"
 
@@ -49,7 +49,7 @@ msgstr "О программе"
 #~ "Elapsed: {elapsed}"
 #~ msgstr ""
 
-#: src/windows/main/MainWindow.ts:491
+#: src/windows/main/MainWindow.ts:503
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {executionTime}"
@@ -95,7 +95,7 @@ msgstr "Не удалось найти ряд с исходным текстом
 msgid "Cancel"
 msgstr "Отмена"
 
-#: src/windows/main/MainWindow.ts:630
+#: src/windows/main/MainWindow.ts:659
 msgid "Cannot determine the type of the game's engine."
 msgstr "Не удалось определить тип движка игры."
 
@@ -123,7 +123,7 @@ msgstr "Тёмный цвет фона"
 #~ msgid "Defines how to read files."
 #~ msgstr "Определяет, как читать файлы."
 
-#: src/windows/main/components/TabContent.ts:403
+#: src/windows/main/components/TabContent.ts:401
 msgid "Deleting is disabled in settings."
 msgstr "Удаление рядов выключено в настройках."
 
@@ -163,7 +163,7 @@ msgstr "Выключить обработку файла System"
 msgid "Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 msgstr "Выключает встроенную индивидуальную обработку, имплементированную для некоторых игр. Прямо сейчас, имплементирована для: \"LISA: The Painful\" и игр на основе, \"Fear & Hunger 2: Termina\"."
 
-#: src/windows/main/components/TabContent.ts:408
+#: src/windows/main/components/TabContent.ts:406
 msgid "Do you really want to delete this row? This action is irreversible!"
 msgstr "Вы действительно хотите удалить этот ряд? Это действие необратимо!"
 
@@ -204,20 +204,20 @@ msgstr "Принудительно переписывает существующ
 #~ msgid "Game files do not exist (no original or data directories), so it's only possible to edit and save translation."
 #~ msgstr "Файлы игры не обнаружены (нет директории original или data), так что возможно лишь редактировать и сохранять перевод."
 
-#: src/windows/main/MainWindow.ts:467
-#: src/windows/main/MainWindow.ts:1132
-#: src/windows/main/MainWindow.ts:1173
+#: src/windows/main/MainWindow.ts:479
+#: src/windows/main/MainWindow.ts:1138
+#: src/windows/main/MainWindow.ts:1179
 msgid "Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation."
 msgstr "Файлы игры не существуют (нет директории original/data/Data), так что возможно лишь редактировать и сохранять перевод."
 
-#: src/windows/main/MainWindow.ts:420
+#: src/windows/main/MainWindow.ts:432
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Перейти на ряд... от 1 до {lastRowNumber}"
 
 #: src/windows/main/html.ts:8
 #: src/windows/main/html.ts:11
 #: src/windows/main/MainWindow.ts:282
-#: src/windows/main/MainWindow.ts:735
+#: src/windows/main/MainWindow.ts:741
 msgid "Help"
 msgstr "Помощь"
 
@@ -270,7 +270,7 @@ msgstr "Неверный языковой тег. Вы должны исполь
 msgid "Line length for wrapping"
 msgstr "Длина строки для переноса"
 
-#: src/windows/main/MainWindow.ts:255
+#: src/windows/main/MainWindow.ts:254
 msgid "Loading project"
 msgstr "Загрузка проекта"
 
@@ -300,7 +300,7 @@ msgstr "Загрузка проекта"
 #~ "Текущая версия: {currentVersion}\n"
 #~ "Списки изменений: https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest"
 
-#: src/windows/main/MainWindow.ts:186
+#: src/windows/main/MainWindow.ts:179
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "Проект не выбран. Выберите директорию проекта, используя кнопку \"открыть папку\" в левом верхнем углу."
 
@@ -348,7 +348,7 @@ msgstr "Меню чистки"
 msgid "Put text to translation textarea of matching source text"
 msgstr "Заместить текст в поле перевода, если текст в поле исходного текста совпадает с искомым."
 
-#: src/windows/main/MainWindow.ts:584
+#: src/windows/main/MainWindow.ts:596
 msgid "Quit without saving?"
 msgstr "Выйти без сохранения?"
 
@@ -396,7 +396,7 @@ msgstr "Ввод замены"
 msgid "Rightmost filled"
 msgstr "Крайний заполненный"
 
-#: src/windows/main/components/TabContentHeader.ts:79
+#: src/windows/main/components/TabContentHeader.ts:80
 msgid "Row"
 msgstr "Ряд"
 
@@ -480,15 +480,15 @@ msgstr "Выберите файлы (можно зажать ЛКМ и выде�
 msgid "Select Output Path"
 msgstr "Выбрать выходной путь"
 
-#: src/windows/main/MainWindow.ts:618
+#: src/windows/main/MainWindow.ts:647
 msgid "Selected directory does not contain original/data/Data directory, .rgss archive or translation directory. Project won't be initialized."
 msgstr "Выбранная директория не содержит директории origina/data/Data, архива .rgss или директории translation. Проект не будет инициализирован."
 
-#: src/windows/main/MainWindow.ts:1073
+#: src/windows/main/MainWindow.ts:1079
 msgid "Selected directory is already opened in the program."
 msgstr "Выбранная директория уже открыта в программе."
 
-#: src/windows/main/MainWindow.ts:595
+#: src/windows/main/MainWindow.ts:607
 msgid "Selected directory is missing. Project won't be initialized."
 msgstr "Выбранная директория отсутствует. Проект не будет инициализирован."
 
@@ -497,12 +497,12 @@ msgstr "Выбранная директория отсутствует. Прое
 #~ msgstr "Выбранная папка не существует. Проект не будет инициализирован."
 
 #: src/windows/main/html.ts:83
-#: src/windows/main/MainWindow.ts:1087
+#: src/windows/main/MainWindow.ts:1093
 msgid "Settings"
 msgstr "Настройки"
 
 #: src/windows/main/components/Searcher.ts:286
-#: src/windows/main/components/TabContentHeader.ts:82
+#: src/windows/main/components/TabContentHeader.ts:83
 msgid "Source"
 msgstr "Исходник"
 
@@ -521,7 +521,7 @@ msgstr "Вкладки (Tab)"
 #~ msgid "Text was reverted to the original state"
 #~ msgstr "Текст был возвращён в прошлое состояние"
 
-#: src/windows/main/components/SearchPanel.ts:385
+#: src/windows/main/components/SearchPanel.ts:383
 msgid "Text was reverted to the previous state"
 msgstr "Текст был возвращён в прошлое состояние"
 
@@ -568,9 +568,9 @@ msgstr "Третичный цвет текста"
 msgid "Translate"
 msgstr "Перевод"
 
-#: src/windows/main/components/TabContentHeader.ts:131
-#: src/windows/main/MainWindow.ts:967
-#: src/windows/main/MainWindow.ts:971
+#: src/windows/main/components/TabContentHeader.ts:146
+#: src/windows/main/MainWindow.ts:973
+#: src/windows/main/MainWindow.ts:977
 msgid "Translation"
 msgstr "Перевод"
 
@@ -606,6 +606,6 @@ msgstr "Перенос строк"
 msgid "Write (Alt + C)"
 msgstr "Запись (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:574
+#: src/windows/main/MainWindow.ts:586
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "У вас остались несохранённые изменения. Сохранить прогресс и выйти?"
