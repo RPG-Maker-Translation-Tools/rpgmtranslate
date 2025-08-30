@@ -1,10 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-
 import { ProjectSettings } from "@lib/classes";
 import { Saver } from "@windows/main/components";
-import { expect, test, vi } from "vitest";
+import { expect, Mock, test, vi } from "vitest";
 
 document.body.innerHTML = `
 <div>
@@ -39,12 +35,6 @@ import {
 } from "@tauri-apps/plugin-fs";
 
 test("saveSingle", async () => {
-    writeTextFile.mockImplementation((path, content) => {
-        expect(content).toBe(
-            "source text 1<#>translation 1\nsource text 2<#>translation 2",
-        );
-    });
-
     const saver = new Saver();
     saver.init({} as ProjectSettings, "");
 
@@ -52,23 +42,25 @@ test("saveSingle", async () => {
         "whatever",
         document.body.firstElementChild!.children as Rows,
     );
+
+    expect(writeTextFile).lastCalledWith(
+        expect.any(String),
+        "source text 1<#>translation 1\nsource text 2<#>translation 2",
+    );
 });
 
 test("saveAll", async () => {
-    readDir.mockResolvedValue([{ name: "1" }, { name: "2" }] as DirEntry[]);
+    (readDir as Mock<typeof readDir>).mockResolvedValue([
+        { name: "1" },
+        { name: "2" },
+    ] as DirEntry[]);
 
-    readTextFile.mockImplementation((path) => {
+    (readTextFile as Mock<typeof readTextFile>).mockImplementation((path) => {
         if (path === "/1") {
-            return "source text 1<#>translation 1";
+            return Promise.resolve("source text 1<#>translation 1");
         } else {
-            return "source text 2<#>translation 2";
+            return Promise.resolve("source text 2<#>translation 2");
         }
-    });
-
-    writeTextFile.mockImplementation((path, content) => {
-        expect(content).toBe(
-            "source text 1<#>translation 1\nsource text 2<#>translation 2",
-        );
     });
 
     const saver = new Saver();
@@ -77,5 +69,10 @@ test("saveAll", async () => {
     await saver.saveAll(
         null,
         document.body.firstElementChild!.children as Rows,
+    );
+
+    expect(writeTextFile).lastCalledWith(
+        expect.any(String),
+        "source text 1<#>translation 1\nsource text 2<#>translation 2",
     );
 });

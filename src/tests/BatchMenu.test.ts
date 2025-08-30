@@ -1,10 +1,8 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-
 import { ProjectSettings } from "@lib/classes";
+import * as fs from "@tauri-apps/plugin-fs";
+import * as invokes from "@utils/invokes";
 import { BatchMenu } from "@windows/main/components";
-import { expect, test, vi } from "vitest";
+import { describe, expect, Mock, test, vi } from "vitest";
 
 document.body.innerHTML = `
 <div
@@ -88,7 +86,6 @@ const body = document.querySelector("#body")!;
 const wrapLimitInput =
     document.querySelector<HTMLInputElement>("#wrap-limit-input")!;
 
-const checkbox = body.firstElementChild!.firstElementChild! as HTMLInputElement;
 vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, readTextFile: vi.fn(), writeTextFile: vi.fn() };
@@ -99,75 +96,99 @@ vi.mock(import("@utils/invokes"), async (importOriginal) => {
     return { ...actual, translate: vi.fn() };
 });
 
-import * as fs from "@tauri-apps/plugin-fs";
-import * as invokes from "@utils/invokes";
-
-test("trim", () => {
-    fs.readTextFile.mockResolvedValue("aboba<#>badwkoawdko   ");
-    fs.writeTextFile.mockImplementation((path, value) => {
-        expect(value).toBe("aboba<#>badwkoawdko");
-    });
-
-    const batchMenu = new BatchMenu();
-    batchMenu.init(
-        {} as TabInfo,
-        new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-        tabs,
-    );
-
-    columnSelect.value = "1";
-    batchAction.value = "1";
-
-    checkbox.click();
-    applyButton.click();
-});
-
-test("translate", () => {
-    fs.readTextFile.mockResolvedValue("example text for translation<#>");
-    invokes.translate.mockResolvedValue("примерный текст для перевода");
-    fs.writeTextFile.mockImplementation((path, value) => {
-        expect(value).toBe(
-            "example text for translation<#>примерный текст для перевода",
+describe.sequential("", () => {
+    test("trim", async () => {
+        (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
+            "aboba<#>badwkoawdko   ",
         );
+
+        const batchMenu = new BatchMenu();
+        batchMenu.init(
+            {} as TabInfo,
+            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
+            tabs,
+        );
+
+        columnSelect.value = "1";
+        batchAction.value = "1";
+
+        const checkbox = body.firstElementChild!
+            .firstElementChild! as HTMLInputElement;
+
+        checkbox.click();
+        applyButton.click();
+
+        await vi.waitFor(() => {
+            expect(fs.writeTextFile).toBeCalledWith(
+                expect.any(String),
+                "aboba<#>badwkoawdko",
+            );
+        });
     });
 
-    const batchMenu = new BatchMenu();
-    batchMenu.init(
-        {} as TabInfo,
-        new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-        tabs,
-    );
+    test("translate", async () => {
+        (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
+            "example text for translation<#>",
+        );
+        (invokes.translate as Mock<typeof invokes.translate>).mockResolvedValue(
+            "примерный текст для перевода",
+        );
 
-    batchMenu.sourceLanguage = "en";
-    batchMenu.translationLanguage = "ru";
+        const batchMenu = new BatchMenu();
+        batchMenu.init(
+            {} as TabInfo,
+            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
+            tabs,
+        );
 
-    columnSelect.value = "1";
-    batchAction.value = "2";
+        batchMenu.sourceLanguage = "en";
+        batchMenu.translationLanguage = "ru";
 
-    checkbox.click();
-    applyButton.click();
-});
+        columnSelect.value = "1";
+        batchAction.value = "2";
 
-test("wrap", () => {
-    fs.readTextFile.mockResolvedValue(
-        "text<#>text1 text2 text3 text4 text5 text6",
-    );
-    fs.writeTextFile.mockImplementation((path, value) => {
-        expect(value).toBe("text<#>text1 text2 text3\\#text4 text5 text6");
+        const checkbox = body.firstElementChild!
+            .firstElementChild! as HTMLInputElement;
+
+        checkbox.click();
+        applyButton.click();
+
+        await vi.waitFor(() => {
+            expect(fs.writeTextFile).lastCalledWith(
+                expect.any(String),
+                "example text for translation<#>примерный текст для перевода",
+            );
+        });
     });
 
-    const batchMenu = new BatchMenu();
-    batchMenu.init(
-        {} as TabInfo,
-        new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-        tabs,
-    );
+    test("wrap", async () => {
+        (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
+            "text<#>text1 text2 text3 text4 text5 text6",
+        );
 
-    wrapLimitInput.value = "20";
+        const batchMenu = new BatchMenu();
+        batchMenu.init(
+            {} as TabInfo,
+            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
+            tabs,
+        );
 
-    columnSelect.value = "1";
-    batchAction.value = "3";
+        wrapLimitInput.value = "20";
 
-    checkbox.click();
-    applyButton.click();
+        columnSelect.value = "1";
+        batchAction.value = "3";
+
+        const checkbox = body.firstElementChild!
+            .firstElementChild! as HTMLInputElement;
+
+        checkbox.click();
+        applyButton.click();
+
+        await vi.waitFor(() => {
+            expect(fs.writeTextFile).lastCalledWith(
+                expect.any(String),
+                "text<#>text1 text2 text3\\#text4 text5 text6",
+            );
+        });
+    });
 });
