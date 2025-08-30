@@ -172,7 +172,7 @@ export class Searcher {
         } else {
             const resultEntry = `${filename}-${entry}-${match.columnNumber}`;
 
-            if (!(filename in this.#searchResults.results)) {
+            if (!(resultEntry in this.#searchResults.results)) {
                 this.#searchResults.results[resultEntry] = [];
             }
 
