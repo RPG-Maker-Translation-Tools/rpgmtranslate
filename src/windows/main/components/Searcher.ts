@@ -247,7 +247,7 @@ export class Searcher {
         const fileComment = utils.getFileComment(filename);
         let entryIndex!: string;
 
-        for (let i = 0; i < rows.length - 1; i++) {
+        for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
             let parts!: string[];
 
