@@ -143,7 +143,7 @@ export function source(container: string[] | RowContainer): string {
 }
 
 export function sourceElement(container: RowContainer): HTMLDivElement {
-    return container.children[1] as HTMLDivElement;
+    return container.children[1];
 }
 
 export function translation(
@@ -157,7 +157,7 @@ export function translation(
         }
     } else {
         for (let i = container.childElementCount - 1; i >= 2; i--) {
-            const element = container.children[i] as HTMLTextAreaElement;
+            const element = container.children[i];
 
             if (element.value) {
                 return [element.value, i - 2];
@@ -172,14 +172,14 @@ export function translationElement(
     container: RowContainer,
 ): HTMLTextAreaElement {
     for (let i = container.childElementCount - 1; i >= 2; i--) {
-        const element = container.children[i] as HTMLTextAreaElement;
+        const element = container.children[i];
 
         if (element.value) {
             return element;
         }
     }
 
-    return container.children[2] as HTMLTextAreaElement;
+    return container.children[2];
 }
 
 export function translations(container: string[] | RowContainer): string[] {
@@ -189,9 +189,7 @@ export function translations(container: string[] | RowContainer): string[] {
         const translations: string[] = [];
 
         for (let i = 2; i < container.childElementCount; i++) {
-            translations.push(
-                (container.children[i] as HTMLTextAreaElement).value,
-            );
+            translations.push(container.children[i].value);
         }
 
         return translations;

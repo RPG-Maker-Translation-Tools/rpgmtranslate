@@ -153,9 +153,7 @@ export class Replacer {
         rowIndex: number,
         searchAction: SearchAction,
     ): number {
-        const textarea = rows[rowIndex].children[
-            columnIndex + 2
-        ] as HTMLTextAreaElement;
+        const textarea = rows[rowIndex].children[columnIndex + 2];
 
         let changedCount = 0;
         let newValue: string;

@@ -387,9 +387,7 @@ export class TabContent extends Component {
         }
 
         const nextRowContainer = this.children[rowIndex];
-        const nextTextArea = nextRowContainer.children[
-            columnIndex
-        ] as HTMLTextAreaElement;
+        const nextTextArea = nextRowContainer.children[columnIndex];
 
         focusedTextArea.blur();
         nextTextArea.scrollIntoView({ block: "center", inline: "center" });

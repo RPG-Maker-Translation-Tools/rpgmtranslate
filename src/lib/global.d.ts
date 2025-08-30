@@ -57,9 +57,9 @@ interface SearchResults {
     regexp: RegExp;
 }
 
-interface RowColumns
-    extends HTMLCollectionOf<HTMLDivElement | HTMLTextAreaElement> {
+interface RowColumns extends HTMLCollectionOf<HTMLTextAreaElement> {
     0: HTMLDivElement;
+    1: HTMLDivElement;
 }
 
 interface RowContainer extends HTMLDivElement {

@@ -333,9 +333,7 @@ export class SearchPanel extends Component {
                 }
 
                 const rowContainer = this.#tabContent.children[rowIndex];
-                const textarea = rowContainer.children[
-                    columnIndex + 2
-                ] as HTMLTextAreaElement;
+                const textarea = rowContainer.children[columnIndex + 2];
                 textarea.value = logOld;
             } else {
                 const filePath = utils.join(
