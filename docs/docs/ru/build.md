@@ -12,7 +12,7 @@
 Клонируем репозиторий:
 
 ```bash
-git clone https://github.com/savannstm/rpgmtranslate.git
+git clone https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate.git
 ```
 
 Переходим и устанавливаем зависимости

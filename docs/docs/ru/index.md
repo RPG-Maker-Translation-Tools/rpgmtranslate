@@ -11,11 +11,11 @@ RPGMTranslate - это открытый и простой инструмент �
 - [Чтение](read.md)
 - [Чистка](purge.md)
 
-**Также, помогите нам улучшить [документацию](https://github.com/savannstm/rpgmtranslate/tree/main/docs/docs/ru)!**
+**Также, помогите нам улучшить [документацию](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/tree/main/docs/docs/ru)!**
 
 ## Установка
 
-Загрузите последнюю версию с [GitHub](https://github.com/savannstm/rpgmtranslate/releases/latest). Программа доступна в виде:
+Загрузите последнюю версию с [GitHub](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest). Программа доступна в виде:
 
 - Установщика Windows: `.msi` **рекомендуется** или `.exe`
 - Пакета Linux: `.deb` или `.AppImage`

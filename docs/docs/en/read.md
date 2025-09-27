@@ -26,7 +26,7 @@ This will probably produce more readable text with less system things, that you 
 
 You may encounter a problem, when the exact same translation of one line is written to multiple places in-game, because some duplicates are eliminated.
 
-How to work around this: manually post-edit the files. [rvpacker-txt-rs](https://github.com/savannstm/rvpacker-txt-rs) provides the feature to generate `.json` representation of older engines' files and write them back with changes, and newer engines are directly editable `.json`. This way your translation will be way cleaner.
+How to work around this: manually post-edit the files. [rvpacker-txt-rs](https://github.com/RPG-Maker-Translation-Tools/rvpacker-txt-rs) provides the feature to generate `.json` representation of older engines' files and write them back with changes, and newer engines are directly editable `.json`. This way your translation will be way cleaner.
 
 ## Ignore entries from .rvpacker-ignore file
 

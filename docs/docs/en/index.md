@@ -11,11 +11,11 @@ For advanced usage, refer to:
 - [Read](read.md)
 - [Purge](purge.md)
 
-**Also, help us improve [the docs](https://github.com/savannstm/rpgmtranslate/tree/main/docs/docs/en)!**
+**Also, help us improve [the docs](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/tree/main/docs/docs/en)!**
 
 ## Installation
 
-Download the latest release from [GitHub](https://github.com/savannstm/rpgmtranslate/releases/latest). The program is available as:
+Download the latest release from [GitHub](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/releases/latest). The program is available as:
 
 - Windows: `.msi` (preferable) or `.exe` installer
 - Linux: `.deb` package or `.AppImage`

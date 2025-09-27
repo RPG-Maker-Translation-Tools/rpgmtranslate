@@ -12,7 +12,7 @@
 Clone the repository:
 
 ```bash
-git clone https://github.com/savannstm/rpgmtranslate.git
+git clone https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate.git
 ```
 
 Navigate to the repository and install dependencies:

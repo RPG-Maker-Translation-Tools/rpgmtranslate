@@ -8,9 +8,9 @@ A fast and light graphical interface, designed for editing and translating games
 
 Under the hood, this GUI uses:
 
-- [rvpacker-txt-rs-lib](https://github.com/savannstm/rvpacker-txt-rs-lib) to parse text from RPG Maker files and apply the translation.
-- [marshal-rs](https://github.com/savannstm/marshal-rs) to parse RPG Maker XP/VX/VX Ace files to JSON.
-- [rpgm-archive-decrypter-lib](https://github.com/savannstm/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
+- [rvpacker-txt-rs-lib](https://github.com/RPG-Maker-Translation-Tools/rvpacker-txt-rs-lib) to parse text from RPG Maker files and apply the translation.
+- [marshal-rs](https://github.com/RPG-Maker-Translation-Tools/marshal-rs) to parse RPG Maker XP/VX/VX Ace files to JSON.
+- [rpgm-archive-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
 
@@ -33,7 +33,7 @@ If you have troubled figuring out the program, check the `Help > Help` top menu 
 Clone the repository:
 
 ```bash
-git clone https://github.com/savannstm/rpgmtranslate.git
+git clone https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate.git
 ```
 
 Install JavaScript dependencies:
