@@ -1,6 +1,6 @@
 import { generateMessageId } from "@lingui/message-utils/generateMessageId";
 import { lingui } from "@lingui/vite-plugin";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { defineConfig, UserConfig } from "vite";
 import { ViteMinifyPlugin } from "vite-plugin-minify";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -70,10 +70,9 @@ export default defineConfig(
                         toplevel: true,
                         properties: false,
                     },
-                    output: {
+                    format: {
                         ecma: 2020,
                         comments: false,
-                        beautify: false,
                     },
                     module: true,
                     toplevel: true,
@@ -91,11 +90,13 @@ export default defineConfig(
             plugins: [
                 ViteMinifyPlugin(),
                 tsconfigPaths(),
+                resolveHTMLi18n(),
                 react({
-                    plugins: [["@lingui/swc-plugin", {}]],
+                    babel: {
+                        plugins: ["@lingui/babel-plugin-lingui-macro"],
+                    },
                 }),
                 lingui(),
-                resolveHTMLi18n(),
             ],
         }) satisfies UserConfig,
 );
