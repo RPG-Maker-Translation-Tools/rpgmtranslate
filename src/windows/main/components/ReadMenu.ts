@@ -4,6 +4,7 @@ import { AppEvent, ReadMode } from "@lib/enums";
 import { getFileFlags } from "@utils/functions";
 import { Component } from "./Component";
 
+import { BaseFlags } from "@lib/enums/BaseFlags";
 import { t } from "@lingui/core/macro";
 
 export class ReadMenu extends Component {
@@ -44,10 +45,15 @@ export class ReadMenu extends Component {
 
     public init(projectSettings: ProjectSettings): void {
         this.#projectSettings = projectSettings;
-        this.#trimCheckbox.checked = projectSettings.trim;
-        this.#romanizeCheckbox.checked = projectSettings.romanize;
-        this.#disableCustomProcessingCheckbox.checked =
-            projectSettings.disableCustomProcessing;
+        this.#trimCheckbox.checked = Boolean(
+            projectSettings.flags & BaseFlags.Trim,
+        );
+        this.#romanizeCheckbox.checked = Boolean(
+            projectSettings.flags & BaseFlags.Romanize,
+        );
+        this.#disableCustomProcessingCheckbox.checked = Boolean(
+            projectSettings.flags & BaseFlags.DisableCustomProcessing,
+        );
         this.#duplicateModeSelect.value =
             projectSettings.duplicateMode.toString();
     }
@@ -70,11 +76,17 @@ export class ReadMenu extends Component {
                         this.#readModeDescription.innerHTML = t`Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted.`;
                         this.#duplicateModeSelect.value =
                             this.#projectSettings.duplicateMode.toString();
-                        this.#trimCheckbox.checked = this.#projectSettings.trim;
-                        this.#romanizeCheckbox.checked =
-                            this.#projectSettings.romanize;
-                        this.#disableCustomProcessingCheckbox.checked =
-                            this.#projectSettings.disableCustomProcessing;
+
+                        this.#trimCheckbox.checked = Boolean(
+                            this.#projectSettings.flags & BaseFlags.Trim,
+                        );
+                        this.#romanizeCheckbox.checked = Boolean(
+                            this.#projectSettings.flags & BaseFlags.Romanize,
+                        );
+                        this.#disableCustomProcessingCheckbox.checked = Boolean(
+                            this.#projectSettings.flags &
+                                BaseFlags.DisableCustomProcessing,
+                        );
 
                         this.#trimCheckbox.disabled =
                             this.#romanizeCheckbox.disabled =

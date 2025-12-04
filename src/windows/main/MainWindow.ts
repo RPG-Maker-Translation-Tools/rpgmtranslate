@@ -60,6 +60,7 @@ import * as _ from "radashi";
 
 import { t } from "@lingui/core/macro";
 
+import { BaseFlags } from "@lib/enums/BaseFlags";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { resolveResource } from "@tauri-apps/api/path";
@@ -490,11 +491,8 @@ export class MainWindow {
             engineType: this.#projectSettings.engineType,
             duplicateMode: this.#projectSettings.duplicateMode,
             gameTitle: this.#utilsPanel.translationTitle,
-            romanize: this.#projectSettings.romanize,
-            disableCustomProcessing:
-                this.#projectSettings.disableCustomProcessing,
             fileFlags,
-            trim: this.#projectSettings.trim,
+            flags: this.#projectSettings.flags,
         })
             .then((executionTime) => {
                 this.#utilsPanel.toggleWriteAnimation();
@@ -1010,18 +1008,20 @@ export class MainWindow {
             );
             this.#utilsPanel.togglePurgeAnimation();
 
+            let flags = this.#projectSettings.flags;
+
+            if (createIgnore) {
+                flags |= BaseFlags.CreateIgnore;
+            }
+
             await purge({
                 sourcePath: this.#projectSettings.sourcePath,
                 translationPath: this.#projectSettings.translationPath,
                 engineType: this.#projectSettings.engineType,
                 duplicateMode: this.#projectSettings.duplicateMode,
                 gameTitle: this.#utilsPanel.sourceTitle,
-                romanize: this.#projectSettings.romanize,
-                disableCustomProcessing:
-                    this.#projectSettings.disableCustomProcessing,
                 fileFlags,
-                createIgnore,
-                trim: this.#projectSettings.trim,
+                flags,
             });
 
             await this.#reload();
@@ -1413,6 +1413,24 @@ export class MainWindow {
             ).catch(error);
         }
 
+        let flags: BaseFlags = 0;
+
+        if (romanize) {
+            flags |= BaseFlags.Romanize;
+        }
+
+        if (disableCustomProcessing) {
+            flags |= BaseFlags.DisableCustomProcessing;
+        }
+
+        if (trim) {
+            flags |= BaseFlags.Trim;
+        }
+
+        if (ignore) {
+            flags |= BaseFlags.Ignore;
+        }
+
         await read({
             projectPath: this.#settings.projectPath,
             sourcePath: this.#projectSettings.sourcePath,
@@ -1420,11 +1438,8 @@ export class MainWindow {
             engineType: this.#projectSettings.engineType,
             readMode,
             duplicateMode,
-            romanize,
-            disableCustomProcessing,
             fileFlags,
-            ignore,
-            trim,
+            flags,
         });
 
         this.#utilsPanel.toggleReadAnimation();

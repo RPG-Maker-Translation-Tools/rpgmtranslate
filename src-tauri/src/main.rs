@@ -1,7 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::needless_doctest_main)]
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::deref_addrof)]
 
 mod commands;
-use crate::commands::*;
+use crate::commands::{
+    escape_text, expand_scope, extract_archive, purge, read, read_last_line,
+    translate_text, walk_dir, write,
+};
 use tauri::{Builder, Manager, generate_context, generate_handler};
 
 fn main() {
@@ -38,9 +47,9 @@ fn main() {
             purge,
             expand_scope,
         ])
-        .setup(|_app| {
+        .setup(|app| {
             #[cfg(debug_assertions)]
-            _app.get_webview_window("main").unwrap().open_devtools();
+            app.get_webview_window("main").unwrap().open_devtools();
             Ok(())
         })
         .run(generate_context!())

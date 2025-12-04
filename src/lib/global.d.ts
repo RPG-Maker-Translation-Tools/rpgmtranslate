@@ -29,16 +29,13 @@ interface InvokeOptions extends Record<string, unknown> {
     translationPath: string;
     engineType: import("@enums/EngineType").EngineType;
     duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
-    romanize: boolean;
-    disableCustomProcessing: boolean;
     fileFlags: import("@enums/FileFlags").FileFlags;
-    trim: boolean;
+    flags: import("@enums/BaseFlags").BaseFlags;
 }
 
 interface ReadOptions extends InvokeOptions {
     readMode: import("@enums/ReadMode").ReadMode;
     projectPath: string;
-    ignore: boolean;
 }
 
 interface WriteOptions extends InvokeOptions {
@@ -48,7 +45,6 @@ interface WriteOptions extends InvokeOptions {
 
 interface PurgeOptions extends InvokeOptions {
     gameTitle: string;
-    createIgnore: boolean;
 }
 
 interface SearchResults {

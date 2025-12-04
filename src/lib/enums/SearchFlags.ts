@@ -1,8 +1,7 @@
-/* eslint-disable no-magic-numbers */
 export const enum SearchFlags {
     None = 0,
-    WholeWord = 1,
-    CaseSensitive = 2,
-    RegExp = 4,
-    OnlyCurrentTab = 8,
+    WholeWord = 1 << 0,
+    CaseSensitive = 1 << 1,
+    RegExp = 1 << 2,
+    OnlyCurrentTab = 1 << 3,
 }

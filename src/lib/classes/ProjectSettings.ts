@@ -3,6 +3,7 @@ import { DuplicateMode, EngineType } from "@enums/index";
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 
+import { BaseFlags } from "@enums/BaseFlags";
 import { exists, mkdir, writeTextFile } from "@tauri-apps/plugin-fs";
 import { expandScope } from "@utils/invokes";
 
@@ -10,9 +11,7 @@ export interface ProjectSettingsOptions {
     engineType?: import("@enums/EngineType").EngineType;
     translationLanguages?: TranslationLanguages;
     duplicateMode?: import("@enums/DuplicateMode").DuplicateMode;
-    romanize?: boolean;
-    disableCustomProcessing?: boolean;
-    trim?: boolean;
+    flags?: import("@enums/BaseFlags").BaseFlags;
 
     translationColumns?: [string, number][];
     translationColumnCount?: number;
@@ -30,14 +29,13 @@ export interface ProjectSettingsOptions {
 
 export class ProjectSettings implements ProjectSettingsOptions {
     public engineType = EngineType.New;
-    public romanize = false;
     public translationLanguages: TranslationLanguages = {
         source: "",
         translation: "",
     };
     public duplicateMode = DuplicateMode.Allow;
-    public disableCustomProcessing = false;
-    public trim = false;
+    public flags: BaseFlags = 0;
+
     public sourceDirectory = "Data";
     public rowColumnWidth = consts.DEFAULT_ROW_COLUMN_WIDTH;
     public sourceColumnWidth = consts.DEFAULT_COLUMN_WIDTH;
@@ -57,19 +55,17 @@ export class ProjectSettings implements ProjectSettingsOptions {
 
     public constructor(options: ProjectSettingsOptions = {}) {
         this.engineType = options.engineType ?? this.engineType;
-        this.romanize = options.romanize ?? this.romanize;
         this.translationLanguages =
             options.translationLanguages ?? this.translationLanguages;
         this.duplicateMode = options.duplicateMode ?? this.duplicateMode;
-        this.disableCustomProcessing =
-            options.disableCustomProcessing ?? this.disableCustomProcessing;
-        this.trim = options.trim ?? this.trim;
-        this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
+        this.flags = options.flags ?? this.flags;
+
         this.translationColumns =
             options.translationColumns ?? this.translationColumns;
         this.translationColumnCount =
             options.translationColumnCount ?? this.translationColumnCount;
 
+        this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
         this.#programDataPath =
             options.programDataPath ?? this.#programDataPath;
         this.#tempMapsPath = options.tempMapsPath ?? this.#tempMapsPath;

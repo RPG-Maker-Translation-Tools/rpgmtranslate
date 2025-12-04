@@ -21,9 +21,9 @@ log = "0.4.29"
 tokio = "1.48.0"
 walkdir = "2.5.0"
 thiserror = "2.0.17"
-marshal-rs = "1.1.1"
+marshal-rs = "2.0.0"
 rpgmad-lib = { version = "4.0.0", features = ["serde"] }
-rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "9.0.4" }
+rvpacker-lib = { package = "rvpacker-txt-rs-lib", version = "10.0.0" }
 tauri-plugin-process = "2.3.1"
 tauri-plugin-fs = "2.4.4"
 tauri-plugin-os = "2.3.2"

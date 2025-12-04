@@ -3,12 +3,12 @@ use log::error;
 use regex::{Regex, escape};
 use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_lib::{
-    DuplicateMode, EngineType, FileFlags, GameType, PurgerBuilder, ReadMode,
-    ReaderBuilder, WriterBuilder,
+    BaseFlags, DuplicateMode, EngineType, FileFlags, GameType, PurgerBuilder,
+    ReadMode, ReaderBuilder, WriterBuilder,
     constants::{NEW_LINE, SEPARATOR},
     get_ini_title, get_system_title,
 };
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Serialize, Serializer};
 use std::{
     fs::{self, File, OpenOptions, create_dir_all, read_to_string},
     io::{self, Read, Seek, SeekFrom, Write},
@@ -22,12 +22,6 @@ use thiserror::Error;
 use tokio::time::sleep;
 use translators::{GoogleTranslator, Translator};
 use walkdir::WalkDir;
-
-#[derive(Serialize, Deserialize, Clone, Copy)]
-pub enum Language {
-    English,
-    Russian,
-}
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -55,7 +49,6 @@ impl Serialize for Error {
 static GOOGLE_TRANS: LazyLock<GoogleTranslator> =
     LazyLock::new(GoogleTranslator::default);
 
-#[inline(always)]
 fn get_game_type(
     game_title: &str,
     disable_custom_processing: bool,
@@ -89,10 +82,10 @@ pub fn walk_dir(dir: &str) -> Vec<String> {
     let mut entries = Vec::new();
 
     for entry in WalkDir::new(dir).into_iter().flatten() {
-        if entry.file_type().is_file() {
-            if let Some(str) = entry.path().to_str() {
-                entries.push(str.into())
-            }
+        if entry.file_type().is_file()
+            && let Some(str) = entry.path().to_str()
+        {
+            entries.push(str.into());
         }
     }
 
@@ -107,18 +100,19 @@ pub fn write(
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
     game_title: &str,
-    romanize: bool,
-    disable_custom_processing: bool,
     file_flags: FileFlags,
-    trim: bool,
+    flags: BaseFlags,
 ) -> Result<String, Error> {
     let start_time = Instant::now();
-    let game_type = get_game_type(game_title, disable_custom_processing);
+    let game_type = get_game_type(
+        game_title,
+        flags.contains(BaseFlags::DisableCustomProcessing),
+    );
+
     let mut writer = WriterBuilder::new()
-        .with_flags(file_flags)
-        .romanize(romanize)
+        .with_files(file_flags)
+        .with_flags(flags)
         .game_type(game_type)
-        .trim(trim)
         .duplicate_mode(duplicate_mode)
         .build();
 
@@ -135,11 +129,8 @@ pub fn read(
     read_mode: ReadMode,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    romanize: bool,
-    disable_custom_processing: bool,
     file_flags: FileFlags,
-    ignore: bool,
-    trim: bool,
+    flags: BaseFlags,
 ) -> Result<(), Error> {
     let game_title: String = if engine_type.is_new() {
         let system_file_path = source_path.join("System.json");
@@ -154,15 +145,16 @@ pub fn read(
         String::from_utf8_lossy(&title).into_owned()
     };
 
-    let game_type = get_game_type(&game_title, disable_custom_processing);
+    let game_type = get_game_type(
+        &game_title,
+        flags.contains(BaseFlags::DisableCustomProcessing),
+    );
 
     let mut reader = ReaderBuilder::new()
-        .with_flags(file_flags)
-        .romanize(romanize)
+        .with_files(file_flags)
+        .with_flags(flags)
         .game_type(game_type)
         .read_mode(read_mode)
-        .ignore(ignore)
-        .trim(trim)
         .duplicate_mode(duplicate_mode)
         .build();
 
@@ -183,20 +175,18 @@ pub fn purge(
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
     game_title: &str,
-    romanize: bool,
-    disable_custom_processing: bool,
+    flags: BaseFlags,
     file_flags: FileFlags,
-    create_ignore: bool,
-    trim: bool,
 ) -> Result<(), Error> {
-    let game_type = get_game_type(game_title, disable_custom_processing);
+    let game_type = get_game_type(
+        game_title,
+        flags.contains(BaseFlags::DisableCustomProcessing),
+    );
 
     PurgerBuilder::new()
-        .with_flags(file_flags)
-        .romanize(romanize)
+        .with_files(file_flags)
+        .with_flags(flags)
         .game_type(game_type)
-        .create_ignore(create_ignore)
-        .trim(trim)
         .duplicate_mode(duplicate_mode)
         .build()
         .purge(source_path, translation_path, engine_type)?;
@@ -251,6 +241,7 @@ pub async fn translate_text(
 }
 
 #[command]
+#[allow(clippy::needless_pass_by_value)]
 pub fn expand_scope(app_handle: AppHandle, dir: PathBuf) -> Result<(), Error> {
     app_handle.fs_scope().allow_directory(&dir, true)?;
     Ok(())
@@ -264,9 +255,9 @@ pub fn extract_archive(
     let bytes = fs::read(input_path)
         .map_err(|err| Error::Io(input_path.to_path_buf(), err))?;
 
-    let decrypted_files = Decrypter::new().decrypt(&bytes)?;
+    let decrypted_entries = Decrypter::new().decrypt(&bytes)?;
 
-    for file in decrypted_files {
+    for file in decrypted_entries {
         let path = String::from_utf8_lossy(&file.path);
         let output_file_path = output_path.join(path.as_ref());
 
@@ -275,7 +266,7 @@ pub fn extract_archive(
                 .map_err(|err| Error::Io(parent.to_path_buf(), err))?;
         }
 
-        fs::write(&output_file_path, file.content)
+        fs::write(&output_file_path, file.data)
             .map_err(|err| Error::Io(output_file_path, err))?;
     }
 

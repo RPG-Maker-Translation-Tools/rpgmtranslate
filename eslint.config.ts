@@ -46,6 +46,7 @@ export default tseslint.config([
             "@typescript-eslint/member-ordering": "error",
             "@typescript-eslint/adjacent-overload-signatures": "off",
             "@typescript-eslint/explicit-function-return-type": "error",
+            "@typescript-eslint/prefer-literal-enum-member": "off",
         },
     },
     globalIgnores([
