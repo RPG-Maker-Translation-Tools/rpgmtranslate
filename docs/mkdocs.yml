@@ -1,43 +1,64 @@
 site_name: RPGMTranslate Documentation
 site_description: Documentation for RPGMTranslate
+site_author: savannstm
 
 repo_url: https://github.com/rpg-maker-translation-tools/rpgmtranslate
-repo_name: rpg-maker-translation-tools/rpgmtranslate
+site_url: https://rpg-maker-translation-tools.github.io/rpgmtranslate
 edit_uri: blob/main/docs/docs
+repo_name: rpg-maker-translation-tools/rpgmtranslate
+
+copyright: Licensed under WTFPL.
 
 nav:
-    - Home: en/index.md
+    - Home: index.md
     - User Guide:
-          - Search Features: en/search.md
-          - Text Editing: en/text-editing.md
-          - Batch Processing: en/batch-processing.md
-          - Settings: en/settings.md
-          - Read Menu: en/read.md
-          - Purge Menu: en/purge.md
-    - Building from Source: en/build.md
+          - Search Features: search.md
+          - Text Editing: text-editing.md
+          - Batch Processing: batch-processing.md
+          - Settings: settings.md
+          - Read Menu: read.md
+          - Purge Menu: purge.md
+          - Building from Source: build.md
 
 theme:
     name: material
+
     features:
         - content.action.edit
         - content.action.view
-        - navigation.instant
         - navigation.tabs
         - navigation.tabs.sticky
         - navigation.expand
         - navigation.path
         - navigation.top
+
     palette:
         scheme: slate
         primary: indigo
         accent: indigo
+
+    locale: en
     language: en
 
-extra:
-    alternate:
-        - name: English
-          link: /rpgmtranslate/en/
-          lang: en
-        - name: Русский
-          link: /rpgmtranslate/ru/
-          lang: ru
+plugins:
+    - i18n:
+          docs_structure: folder
+          languages:
+              - locale: en
+                default: true
+                name: English
+                build: true
+
+              - locale: ru
+                name: Русский
+                build: true
+                nav_translations:
+                    Home: Главная
+                    User Guide: Пользовательское руководство
+                    Search Features: Функции поиска
+                    Text Editing: Редактирование текста
+                    Batch Processing: Массовая обработка
+                    Settings: Настройки
+                    Read Menu: Меню чтения
+                    Purge Menu: Меню чистки
+                    Building from Source: Билдинг из исходного кода

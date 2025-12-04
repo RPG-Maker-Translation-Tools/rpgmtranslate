@@ -18,14 +18,20 @@ Using these tools, the program parses the text to `.txt` files, allows you to ed
 
 If you have troubled figuring out the program, check the `Help > Help` top menu option. That will probably help.
 
+## Installation
+
 **Download the latest version from the Releases section.**
+
+## Usage
+
+Documentation is available at <https://rpg-maker-translation-tools.github.io/rpgmtranslate/>.
 
 ## Manual building
 
 ### Prerequisites
 
 - `rustup` with an installed Rust toolchain.
-- Tauri prerequisites (https://v2.tauri.app/start/prerequisites).
+- Tauri prerequisites (<https://v2.tauri.app/start/prerequisites>).
 - JavaScript runtime (`nodejs`, `bun`, `deno`).
 
 ### Building
@@ -61,7 +67,7 @@ After the build, `target` directory will be created in the `gui/src-tauri` path,
 
 ## License
 
-The repository is licensed under [WTFPL](http://www.wtfpl.net/).
+Project is licensed under WTFPL.
 
 The repository contains third-party software, that is licensed under other conditions:
 

@@ -2,7 +2,7 @@
 
 ## Search Menu Layout
 
-![Search Menu Layout](../assets/search-menu-layout.png)
+![Search Menu Layout](assets/search-menu-layout.png)
 
 The search menu contains:
 
@@ -32,7 +32,7 @@ The search functionality is optimized with:
 
 ### Search Results Panel
 
-![Search results panel](../assets/search-results-panel-layout.png)
+![Search results panel](assets/search-results-panel-layout.png)
 
 Panel components:
 
@@ -62,7 +62,7 @@ But if you want to use regex in the program, here's a quick breakdown:
 
 Example of searching for `\c` pattern:
 
-![Regex demonstration](../assets/regex-demonstration.png)
+![Regex demonstration](assets/regex-demonstration.png)
 
 ## Replace
 

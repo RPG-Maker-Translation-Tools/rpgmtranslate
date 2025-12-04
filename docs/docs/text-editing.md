@@ -2,7 +2,7 @@
 
 ## Editing Area Layout
 
-![Editing area layout](../assets/layout.png)
+![Editing area layout](assets/layout.png)
 
 In the screenshot, editing area marked under number 5.
 

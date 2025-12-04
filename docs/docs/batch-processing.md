@@ -4,7 +4,7 @@ RPGMTranslate provides the features to batch-process translation files.
 
 ## Batch Menu
 
-![Batch Menu Layout](../assets/batch-menu.png)
+![Batch Menu Layout](assets/batch-menu.png)
 
 Almost everything in batch menu is self-explanatory, except action and column.
 

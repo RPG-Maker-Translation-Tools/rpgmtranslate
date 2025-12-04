@@ -23,7 +23,7 @@
 ### Предварительные требования
 
 - `rustup` с установленным Rust тулчейном.
-- Зависимости Tauri (https://v2.tauri.app/start/prerequisites).
+- Зависимости Tauri (<https://v2.tauri.app/start/prerequisites>).
 - Рантайм JavaScript (`nodejs`, `bun`, `deno`).
 
 ### Билдинг
