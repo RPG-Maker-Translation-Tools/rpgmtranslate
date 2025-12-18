@@ -33,11 +33,7 @@ import {
 import {
     BatchMenu,
     BookmarkMenu,
-    FileMenu,
     GoToRowInput,
-    HelpMenu,
-    LanguageMenu,
-    MenuBar,
     PurgeMenu,
     ReadMenu,
     Replacer,
@@ -63,6 +59,7 @@ import { t } from "@lingui/core/macro";
 import { BaseFlags } from "@lib/enums/BaseFlags";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { Menu, MenuItem, Submenu } from "@tauri-apps/api/menu";
 import { resolveResource } from "@tauri-apps/api/path";
 import {
     getCurrentWebviewWindow,
@@ -94,6 +91,7 @@ export class MainWindow {
     #projectSettings: ProjectSettings;
     #replacementLog: ReplacementLog;
     #themes: Themes;
+    #menu: Menu | null;
 
     readonly #appWindow = getCurrentWebviewWindow();
 
@@ -114,17 +112,14 @@ export class MainWindow {
     readonly #tabContent: TabContent;
     readonly #tabContentHeader: TabContentHeader;
     readonly #goToRowInput: GoToRowInput;
-    readonly #menuBar: MenuBar;
     readonly #scrollBar: ScrollBar;
-    readonly #fileMenu: FileMenu;
-    readonly #helpMenu: HelpMenu;
-    readonly #languageMenu: LanguageMenu;
 
     public constructor() {
         this.#settings = new Settings();
         this.#themes = {};
         this.#projectSettings = new ProjectSettings();
         this.#replacementLog = {};
+        this.#menu = null;
 
         this.#tabPanel = new TabPanel();
 
@@ -136,11 +131,6 @@ export class MainWindow {
         this.#writeMenu = new WriteMenu();
         this.#purgeMenu = new PurgeMenu();
         this.#bookmarkMenu = new BookmarkMenu();
-
-        this.#menuBar = new MenuBar();
-        this.#fileMenu = new FileMenu();
-        this.#helpMenu = new HelpMenu();
-        this.#languageMenu = new LanguageMenu();
 
         this.#tabContent = new TabContent();
         this.#tabContentHeader = new TabContentHeader();
@@ -170,6 +160,104 @@ export class MainWindow {
         await this.#initFont();
         await this.#retranslate(this.#settings.language);
         await this.#appWindow.setZoom(this.#settings.zoom);
+        await this.#settings.checkForUpdates();
+
+        const fileSubmenu = await Submenu.new({
+            id: "File",
+            text: t`File`,
+            items: [
+                await MenuItem.new({
+                    id: "Exit",
+                    text: t`Exit`,
+                    action: async () => {
+                        await this.#appWindow.close();
+                    },
+                }),
+                await MenuItem.new({
+                    id: "Reload",
+                    text: t`Reload`,
+                    action: async () => {
+                        await this.#reload();
+                    },
+                }),
+            ],
+        });
+
+        const languageSubmenu = await Submenu.new({
+            id: "Language",
+            text: t`Language`,
+            items: [
+                await MenuItem.new({
+                    id: "English",
+                    text: "English",
+                    action: async () => {
+                        if (this.#settings.language !== Language.English) {
+                            await this.#retranslate(Language.English);
+                        }
+                    },
+                }),
+                await MenuItem.new({
+                    id: "Русский",
+                    text: "Русский",
+                    action: async () => {
+                        if (this.#settings.language !== Language.Russian) {
+                            await this.#retranslate(Language.Russian);
+                        }
+                    },
+                }),
+            ],
+        });
+
+        const helpSubmenu = await Submenu.new({
+            id: "Help",
+            text: t`Help`,
+            items: [
+                await MenuItem.new({
+                    id: "About",
+                    text: t`About`,
+                    action: async () => {
+                        const aboutWindow = new WebviewWindow("about", {
+                            url: "windows/about/AboutWindow.html",
+                            title: t`About`,
+                            center: true,
+                            resizable: false,
+                            width: 480,
+                            height: 640,
+                        });
+
+                        await aboutWindow.once(
+                            "tauri://webview-created",
+                            async () => {
+                                await _.sleep(consts.SECOND_MS / 2);
+                                await aboutWindow.emit("settings", [
+                                    this.#settings,
+                                    this.#themes,
+                                    this.#projectSettings,
+                                ]);
+                            },
+                        );
+                    },
+                }),
+                await MenuItem.new({
+                    id: "Help",
+                    text: t`Help`,
+                    action: () => {
+                        // eslint-disable-next-line sonarjs/constructor-for-side-effects
+                        new WebviewWindow("help", {
+                            url: "https://rpg-maker-translation-tools.github.io/rpgmtranslate/",
+                            title: t`Help`,
+                            center: true,
+                        });
+                    },
+                }),
+            ],
+        });
+
+        this.#menu = await Menu.new({
+            items: [fileSubmenu, languageSubmenu, helpSubmenu],
+        });
+
+        await this.#menu.setAsWindowMenu();
 
         applyTheme(this.#themes, this.#settings.theme);
         this.#themeMenu.init(this.#themes);
@@ -216,6 +304,45 @@ export class MainWindow {
         this.#settings.language = language;
         await initializeLocalization("Main", language);
         retranslate();
+
+        if (this.#menu === null) {
+            return;
+        }
+
+        for (const item of await this.#menu.items()) {
+            const id = item.id;
+
+            switch (id) {
+                case "File":
+                    await item.setText(t`File`);
+                    break;
+                case "Language":
+                    await item.setText(t`Language`);
+                    break;
+                case "Help":
+                    await item.setText(t`Help`);
+                    break;
+            }
+
+            for (const subitem of await (item as Submenu).items()) {
+                const id = subitem.id;
+
+                switch (id) {
+                    case "Exit":
+                        await subitem.setText(t`Exit`);
+                        break;
+                    case "Reload":
+                        await subitem.setText(t`Reload`);
+                        break;
+                    case "About":
+                        await subitem.setText(t`About`);
+                        break;
+                    case "Help":
+                        await subitem.setText(t`Help`);
+                        break;
+                }
+            }
+        }
     }
 
     async #openProject(
@@ -732,71 +859,6 @@ export class MainWindow {
     }
 
     #attachListeners(): void {
-        emittery.on(AppEvent.ShowHelpWindow, () => {
-            // eslint-disable-next-line sonarjs/constructor-for-side-effects
-            new WebviewWindow("help", {
-                url: "https://rpg-maker-translation-tools.github.io/rpgmtranslate/",
-                title: t`Help`,
-                center: true,
-            });
-        });
-
-        emittery.on(AppEvent.ShowAboutWindow, async () => {
-            const aboutWindow = new WebviewWindow("about", {
-                url: "windows/about/AboutWindow.html",
-                title: t`About`,
-                center: true,
-                resizable: false,
-            });
-
-            await aboutWindow.once("tauri://webview-created", async () => {
-                await _.sleep(consts.SECOND_MS / 2);
-                await aboutWindow.emit("settings", [
-                    this.#settings,
-                    this.#themes,
-                    this.#projectSettings,
-                ]);
-            });
-        });
-
-        emittery.on(AppEvent.MenuBarButtonClick, (button) => {
-            switch (button) {
-                case this.#menuBar.fileMenuButton:
-                    if (this.#fileMenu.hidden) {
-                        this.#fileMenu.show(
-                            this.#menuBar.fileMenuButton.offsetLeft,
-                            this.#menuBar.fileMenuButton.offsetTop +
-                                this.#menuBar.fileMenuButton.offsetHeight,
-                        );
-                    } else {
-                        this.#fileMenu.hide();
-                    }
-                    break;
-                case this.#menuBar.helpMenuButton:
-                    if (this.#helpMenu.hidden) {
-                        this.#helpMenu.show(
-                            this.#menuBar.helpMenuButton.offsetLeft,
-                            this.#menuBar.helpMenuButton.offsetTop +
-                                this.#menuBar.helpMenuButton.offsetHeight,
-                        );
-                    } else {
-                        this.#helpMenu.hide();
-                    }
-                    break;
-                case this.#menuBar.languageMenuButton:
-                    if (this.#languageMenu.hidden) {
-                        this.#languageMenu.show(
-                            this.#menuBar.languageMenuButton.offsetLeft,
-                            this.#menuBar.languageMenuButton.offsetTop +
-                                this.#menuBar.languageMenuButton.offsetHeight,
-                        );
-                    } else {
-                        this.#languageMenu.hide();
-                    }
-                    break;
-            }
-        });
-
         emittery.on(AppEvent.AddLog, ([filename, source, data]) => {
             if (!(filename in this.#replacementLog)) {
                 this.#replacementLog[filename] = {};
@@ -982,16 +1044,8 @@ export class MainWindow {
             this.#bookmarkMenu.deleteBookmark(this.#tabInfo.tabName, rowNumber);
         });
 
-        emittery.on(AppEvent.Reload, async () => {
-            await this.#reload();
-        });
-
         emittery.on(AppEvent.UpdateSaved, (saved) => {
             this.#saver.saved = saved;
-        });
-
-        emittery.on(AppEvent.Retranslate, async (language) => {
-            await this.#retranslate(language);
         });
 
         emittery.on(AppEvent.SaveAll, async () => {

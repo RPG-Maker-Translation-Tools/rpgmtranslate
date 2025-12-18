@@ -12,33 +12,6 @@
     <body class="text-primary bg-dark overflow-x-hidden text-2xl">
         <header class="sticky top-0 z-40">
             <div
-                class="bg-primary mr-2 flex h-6 w-full items-center text-sm"
-                id="menu-bar"
-            >
-                <div class="hover-bg-second content-center">
-                    <button
-                        class="px-2"
-                        id="file-menu-button"
-                        data-i18n="File"
-                    ></button>
-                </div>
-                <div class="hover-bg-second content-center">
-                    <button
-                        class="px-2"
-                        id="help-menu-button"
-                        data-i18n="Help"
-                    ></button>
-                </div>
-                <div class="hover-bg-second content-center">
-                    <button
-                        class="px-2"
-                        id="language-menu-button"
-                        data-i18n="Language"
-                    ></button>
-                </div>
-            </div>
-
-            <div
                 class="bg-primary flex h-16 w-full items-center justify-between"
                 id="utils-panel"
             >
@@ -192,42 +165,6 @@
                 </div>
             </div>
         </header>
-
-        <div class="dropdown-menu border-second flex hidden" id="file-menu">
-            <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="reload-button"
-                data-i18n="Reload (F5)"
-            ></button>
-        </div>
-
-        <div class="dropdown-menu border-second flex hidden" id="help-menu">
-            <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="help-button"
-                data-i18n="Help"
-            ></button>
-            <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="about-button"
-                data-i18n="About"
-            ></button>
-        </div>
-
-        <div class="dropdown-menu border-second flex hidden" id="language-menu">
-            <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="ru-button"
-            >
-                Русский/Russian
-            </button>
-            <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="en-button"
-            >
-                English/Английский
-            </button>
-        </div>
 
         <div
             class="hidden w-full justify-start overflow-x-hidden p-8 pb-px text-lg whitespace-nowrap"
