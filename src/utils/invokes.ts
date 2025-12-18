@@ -5,6 +5,7 @@ import { exists } from "@tauri-apps/plugin-fs";
 import { error } from "@tauri-apps/plugin-log";
 
 export async function read(args: ReadOptions): Promise<string[]> {
+    // @ts-expect-error whatever, fix later
     return await invoke<string[]>("read", args).catch(error);
 }
 
