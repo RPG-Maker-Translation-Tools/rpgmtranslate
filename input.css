@@ -17,40 +17,45 @@
         margin: 0;
     }
 
-    /* TODO: Changeable colors */
-    input[type="checkbox"] {
-        cursor: pointer;
+    .custom-checkbox > input {
         position: absolute;
+        z-index: -1;
         opacity: 0;
     }
 
-    input[type="checkbox"] + label {
-        cursor: pointer;
+    .custom-checkbox > span {
+        display: inline-flex;
+        align-items: center;
+        user-select: none;
     }
 
-    input[type="checkbox"] + label:before {
+    .custom-checkbox > span::before {
         content: "";
-        border: 1px solid grey;
         display: inline-block;
-        width: 16px;
-        height: 16px;
-        margin-right: 0.25em;
-        margin-top: 0.25em;
-        vertical-align: -2px;
-    }
-
-    input[type="checkbox"]:checked + label:before {
-        background-image: url("./check.svg");
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+        flex-grow: 0;
+        border: 1px solid #adb5bd;
+        border-radius: 0.25em;
+        margin-right: 0.5em;
         background-repeat: no-repeat;
         background-position: center;
-        background-size: 16px;
-        background-color: var(--checkbox-bg, #666);
+        background-size: 100%;
     }
 
-    input[type="checkbox"]:disabled + label {
-        cursor: default;
-        color: black;
-        opacity: 0.5;
+    .custom-checkbox > input:not(:disabled):not(:checked) + span:hover::before {
+        border-color: #b3d7ff;
+    }
+
+    .custom-checkbox > input:checked + span::before {
+        border-color: oklch(44.2% 0.017 285.786);
+        background-color: oklch(44.2% 0.017 285.786);
+        background-image: url("./check.svg");
+    }
+
+    .custom-checkbox > input:disabled + span::before {
+        background-color: black;
     }
 }
 
@@ -82,5 +87,5 @@ Make sure disabled buttons don't get the pointer cursor.
 }
 
 .checkbox-container {
-    @apply flex flex-row items-center gap-2 p-0.5;
+    @apply flex flex-row items-center gap-2;
 }
