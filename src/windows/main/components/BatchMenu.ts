@@ -101,17 +101,17 @@ export class BatchMenu extends Component {
         this.#body.innerHTML = "";
 
         for (const tab of tabs) {
-            const checkboxContainer = document.createElement("div");
-            checkboxContainer.className = tw`checkbox-container`;
+            const checkboxContainer = document.createElement("label");
+            checkboxContainer.className = tw`checkbox-container custom-checkbox`;
             checkboxContainer.id = tab.id;
 
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            checkbox.className = tw`border-primary max-h-6 min-h-6 max-w-6 min-w-6`;
+            checkbox.className = tw`border-primary max-h-6 min-h-6 max-w-6 min-w-6 select-none`;
             checkboxContainer.appendChild(checkbox);
 
-            const checkboxLabel = document.createElement("label");
-            checkboxLabel.className = tw`text-second text-base`;
+            const checkboxLabel = document.createElement("span");
+            checkboxLabel.className = tw`text-second text-base select-none`;
             checkboxLabel.textContent = tab.firstElementChild!.textContent;
             checkboxContainer.appendChild(checkboxLabel);
 
@@ -298,10 +298,20 @@ export class BatchMenu extends Component {
     }
 
     async #onclick(event: MouseEvent): Promise<void> {
-        const target = event.target as HTMLElement | null;
+        let target = event.target as HTMLElement | null;
 
         if (!target) {
             return;
+        }
+
+        const input =
+            target.querySelector("input") ??
+            (this.#body.contains(target)
+                ? target.previousElementSibling
+                : null);
+
+        if (input) {
+            target = input as HTMLInputElement;
         }
 
         if (target instanceof HTMLInputElement) {
@@ -313,7 +323,7 @@ export class BatchMenu extends Component {
             case this.#selectAllButton:
                 for (const element of this.children) {
                     (element.firstElementChild as HTMLInputElement).checked =
-                        false;
+                        true;
                 }
                 break;
             case this.#applyButton: {
@@ -396,7 +406,7 @@ export class BatchMenu extends Component {
             case this.#deselectAllButton:
             case this.#cancelButton:
                 for (const element of this.#body.children) {
-                    (element.firstElementChild! as HTMLInputElement).checked =
+                    (element.firstElementChild as HTMLInputElement).checked =
                         false;
                 }
 
@@ -433,7 +443,15 @@ export class BatchMenu extends Component {
 
     #onmousemove(event: MouseEvent): void {
         if (event.buttons === 1) {
-            const target = event.target as HTMLInputElement | null;
+            let target = event.target as HTMLInputElement | null;
+
+            const input =
+                target?.querySelector("input") ??
+                target?.previousElementSibling;
+
+            if (input) {
+                target = input as HTMLInputElement;
+            }
 
             if (target instanceof HTMLInputElement) {
                 if (!this.#changedCheckboxes.has(target)) {

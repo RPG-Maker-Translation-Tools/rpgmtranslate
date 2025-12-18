@@ -28,7 +28,7 @@ export interface SettingsOptions {
     font?: string;
     language?: Language;
     displayGhostLines?: boolean;
-    checkForUpdates?: boolean;
+    updatesEnabled?: boolean;
 
     theme?: string;
 }
@@ -46,7 +46,7 @@ export class Settings implements SettingsOptions {
     public firstLaunch = true;
     public rowDeleteMode = RowDeleteMode.Disabled;
     public displayGhostLines = false;
-    public checkForUpdates = true;
+    public updatesEnabled = true;
     public zoom = 1;
 
     public constructor(options: SettingsOptions = {}) {
@@ -59,7 +59,7 @@ export class Settings implements SettingsOptions {
         this.rowDeleteMode = options.rowDeleteMode ?? this.rowDeleteMode;
         this.displayGhostLines =
             options.displayGhostLines ?? this.displayGhostLines;
-        this.checkForUpdates = options.checkForUpdates ?? this.checkForUpdates;
+        this.updatesEnabled = options.updatesEnabled ?? this.updatesEnabled;
         this.zoom = options.zoom ?? this.zoom;
     }
 
@@ -82,7 +82,6 @@ export class Settings implements SettingsOptions {
             settings = new Settings();
         }
 
-        await settings.#checkForUpdates();
         await expandScope(consts.SETTINGS_PATH);
         await writeTextFile(consts.SETTINGS_PATH, JSON.stringify(settings), {
             baseDir: consts.RESOURCE_DIRECTORY,
@@ -114,8 +113,9 @@ export class Settings implements SettingsOptions {
         }
     }
 
-    async #checkForUpdates(): Promise<void> {
-        if (!this.checkForUpdates) {
+    // TODO: Move this out of here?
+    public async checkForUpdates(): Promise<void> {
+        if (!this.updatesEnabled) {
             return;
         }
 

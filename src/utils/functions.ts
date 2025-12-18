@@ -1,5 +1,3 @@
-import { FileFlags } from "@enums/index";
-
 import * as consts from "@utils/constants";
 
 import { i18n, Messages } from "@lingui/core";
@@ -17,24 +15,6 @@ export const tw = (
 
 export function logErrorIO(path: string, err: unknown): void {
     void error(`${path}: IO error occured: ${err}`);
-}
-
-export function getFileComment(filename: string): string {
-    let fileComment: string;
-
-    if (filename.startsWith("map")) {
-        fileComment = consts.MAP_COMMENT;
-    } else if (filename.startsWith("system")) {
-        fileComment = consts.SYSTEM_ENTRY_COMMENT;
-    } else if (filename.startsWith("scripts")) {
-        fileComment = consts.SCRIPT_ID_COMMENT;
-    } else if (filename.startsWith("plugins")) {
-        fileComment = consts.PLUGIN_ID_COMMENT;
-    } else {
-        fileComment = consts.EVENT_ID_COMMENT;
-    }
-
-    return fileComment;
 }
 
 /**
@@ -81,43 +61,6 @@ export function objectIsEmpty(obj: object): boolean {
     }
 
     return true;
-}
-
-export function getFileFlags(menu: HTMLDivElement): FileFlags {
-    const disableMapProcessingCheckbox = menu.querySelector<HTMLInputElement>(
-        "#disable-map-processing-checkbox",
-    )!;
-    const disableOtherProcessingCheckbox = menu.querySelector<HTMLInputElement>(
-        "#disable-other-processing-checkbox",
-    )!;
-    const disableSystemProcessingCheckbox =
-        menu.querySelector<HTMLInputElement>(
-            "#disable-system-processing-checkbox",
-        )!;
-    const disablePluginProcessingCheckbox =
-        menu.querySelector<HTMLInputElement>(
-            "#disable-plugin-processing-checkbox",
-        )!;
-
-    let fileFlags = FileFlags.All;
-
-    if (disableMapProcessingCheckbox.checked) {
-        fileFlags &= ~FileFlags.Map;
-    }
-
-    if (disableOtherProcessingCheckbox.checked) {
-        fileFlags &= ~FileFlags.Other;
-    }
-
-    if (disableSystemProcessingCheckbox.checked) {
-        fileFlags &= ~FileFlags.System;
-    }
-
-    if (disablePluginProcessingCheckbox.checked) {
-        fileFlags &= ~FileFlags.Scripts;
-    }
-
-    return fileFlags;
 }
 
 export function parts(string: string): string[] | null {

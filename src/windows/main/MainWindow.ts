@@ -57,6 +57,7 @@ import * as _ from "radashi";
 import { t } from "@lingui/core/macro";
 
 import { BaseFlags } from "@lib/enums/BaseFlags";
+import { RPGMFileType } from "@lib/enums/RPGMFileType";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Menu, MenuItem, Submenu } from "@tauri-apps/api/menu";
@@ -75,7 +76,7 @@ import {
     remove as removePath,
     writeTextFile,
 } from "@tauri-apps/plugin-fs";
-import { attachConsole, error } from "@tauri-apps/plugin-log";
+import { attachConsole, attachLogger, error } from "@tauri-apps/plugin-log";
 
 // TODO: Implement movable menus
 
@@ -153,6 +154,15 @@ export class MainWindow {
 
     public async init(): Promise<void> {
         await attachConsole();
+        await attachLogger((e) => {
+            if (e.message.includes("rvpacker_txt_rs_lib")) {
+                this.#tabContent.innerHTML = e.message.slice(
+                    "[2025-12-18][07:44:45][rvpacker_txt_rs_lib::processors][INFO]"
+                        .length,
+                );
+            }
+        });
+
         this.#attachListeners();
 
         await this.#settings.init();
@@ -267,6 +277,9 @@ export class MainWindow {
         } else {
             this.#tabContent.textContent = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
         }
+
+        this.#tabPanel.style.top = `${this.#utilsPanel.clientHeight}px`;
+        this.#tabPanel.style.height = `${document.body.clientHeight - this.#utilsPanel.clientHeight}px`;
     }
 
     async #initFont(): Promise<void> {
@@ -379,27 +392,28 @@ export class MainWindow {
             this.#tabPanel.clear();
         }
 
-        this.#tabContent.innerHTML = t`Loading project`;
+        this.#tabContent.innerHTML = t`Loading project...`;
 
         this.#settings.projectPath = projectPath;
         this.#projectSettings = projectSettings;
-        await this.#projectSettings.setProjectPath(projectPath);
 
         this.#replacementLog = await this.#loadReplacementLog();
 
         if (!(await exists(this.#projectSettings.translationPath))) {
             if (await exists(rootTranslationPath)) {
                 await this.#copyTranslationFromRoot(rootTranslationPath);
+                this.#tabContent.innerHTML = t`Copying translation from root...`;
             } else {
                 await this.#invokeRead(
                     ReadMode.Default,
-                    FileFlags.All,
+                    FileFlags.None,
                     DuplicateMode.Allow,
-                    false,
-                    false,
-                    false,
+                    BaseFlags.None,
+                    [],
+                    [],
                     false,
                 );
+                this.#tabContent.innerHTML = t`Reading game files...`;
             }
         }
 
@@ -570,7 +584,7 @@ export class MainWindow {
                     await this.#appWindow.close();
                     break;
                 case "KeyC":
-                    await this.#invokeWrite(FileFlags.All);
+                    await this.#invokeWrite(FileFlags.None);
                     break;
             }
         } else {
@@ -588,7 +602,7 @@ export class MainWindow {
                 case "Tab":
                     event.preventDefault();
 
-                    if (this.#tabPanel.hidden) {
+                    if (this.#tabPanel.hidden && this.#settings.projectPath) {
                         this.#tabPanel.show();
                     } else {
                         this.#tabPanel.hide();
@@ -601,7 +615,11 @@ export class MainWindow {
         }
     }
 
-    async #invokeWrite(fileFlags: FileFlags): Promise<void> {
+    async #invokeWrite(
+        skipFiles: FileFlags,
+        skipMaps: number[] = [],
+        skipEvents: [RPGMFileType, number[]][] = [],
+    ): Promise<void> {
         if (!this.#settings.projectPath) {
             alert(
                 t`Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation.`,
@@ -618,8 +636,11 @@ export class MainWindow {
             engineType: this.#projectSettings.engineType,
             duplicateMode: this.#projectSettings.duplicateMode,
             gameTitle: this.#utilsPanel.translationTitle,
-            fileFlags,
+            skipFiles: skipFiles,
             flags: this.#projectSettings.flags,
+            skipMaps,
+            skipEvents,
+            hashes: this.#projectSettings.hashes,
         })
             .then((executionTime) => {
                 this.#utilsPanel.toggleWriteAnimation();
@@ -752,10 +773,12 @@ export class MainWindow {
         let translationExists = false;
 
         if (projectSettings) {
+            await projectSettings.setProjectPath(projectPath);
             translationExists = await exists(projectSettings.translationPath);
         } else {
             translationExists = await exists(rootTranslationPath);
             projectSettings = new ProjectSettings();
+            await projectSettings.setProjectPath(projectPath);
         }
 
         let sourceDirectoryFound =
@@ -833,13 +856,7 @@ export class MainWindow {
                     return;
                 }
 
-                const metadata = JSON.parse(value) as {
-                    duplicateMode: DuplicateMode;
-                    romanize: boolean;
-                    disableCustomProcessing: boolean;
-                    trim: boolean;
-                };
-
+                const metadata = JSON.parse(value) as Metadata;
                 Object.assign(this.#projectSettings, metadata);
             })
             .catch((err) => {
@@ -942,9 +959,12 @@ export class MainWindow {
             this.#themeEditMenu.show();
         });
 
-        emittery.on(AppEvent.InvokeWrite, async (fileFlags) => {
-            await this.#invokeWrite(fileFlags);
-        });
+        emittery.on(
+            AppEvent.InvokeWrite,
+            async ([skipFiles, skipMaps, skipEvents]) => {
+                await this.#invokeWrite(skipFiles, skipMaps, skipEvents);
+            },
+        );
 
         emittery.on(AppEvent.ChangeTab, async (filename) => {
             await this.#changeTab(filename);
@@ -1028,6 +1048,7 @@ export class MainWindow {
                 );
             }
 
+            // TODO: What?
             this.#searchMenu.updateColumn(
                 this.#projectSettings.translationColumnCount - 1,
                 t`Translation`,
@@ -1055,31 +1076,37 @@ export class MainWindow {
             );
         });
 
-        emittery.on(AppEvent.InvokePurge, async ([fileFlags, createIgnore]) => {
-            await this.#saver.saveAll(
-                this.#tabInfo.tabName,
-                this.#tabContent.children,
-            );
-            this.#utilsPanel.togglePurgeAnimation();
+        emittery.on(
+            AppEvent.InvokePurge,
+            async ([skipFiles, createIgnore, skipMaps, skipEvents]) => {
+                await this.#saver.saveAll(
+                    this.#tabInfo.tabName,
+                    this.#tabContent.children,
+                );
+                this.#utilsPanel.togglePurgeAnimation();
 
-            let flags = this.#projectSettings.flags;
+                let flags = this.#projectSettings.flags;
 
-            if (createIgnore) {
-                flags |= BaseFlags.CreateIgnore;
-            }
+                if (createIgnore) {
+                    flags |= BaseFlags.CreateIgnore;
+                }
 
-            await purge({
-                sourcePath: this.#projectSettings.sourcePath,
-                translationPath: this.#projectSettings.translationPath,
-                engineType: this.#projectSettings.engineType,
-                duplicateMode: this.#projectSettings.duplicateMode,
-                gameTitle: this.#utilsPanel.sourceTitle,
-                fileFlags,
-                flags,
-            });
+                await purge({
+                    sourcePath: this.#projectSettings.sourcePath,
+                    translationPath: this.#projectSettings.translationPath,
+                    engineType: this.#projectSettings.engineType,
+                    duplicateMode: this.#projectSettings.duplicateMode,
+                    gameTitle: this.#utilsPanel.sourceTitle,
+                    skipFiles,
+                    flags,
+                    skipMaps,
+                    skipEvents,
+                    hashes: this.#projectSettings.hashes,
+                });
 
-            await this.#reload();
-        });
+                await this.#reload();
+            },
+        );
 
         emittery.on(
             AppEvent.UtilsButtonClick,
@@ -1405,6 +1432,10 @@ export class MainWindow {
             this.#searcher.toggleFlag(flag);
         });
 
+        emittery.on(AppEvent.FileRead, (file) => {
+            this.#tabContent.innerHTML = `${file}: Successfully read.`;
+        });
+
         document.addEventListener("keydown", (event) => {
             if (event.code === "Tab") {
                 event.preventDefault();
@@ -1433,70 +1464,59 @@ export class MainWindow {
 
     async #invokeRead(
         readMode: ReadMode,
-        fileFlags: FileFlags,
+        skipFiles: FileFlags,
         duplicateMode: DuplicateMode,
-        romanize: boolean,
-        disableCustomProcessing: boolean,
-        trim: boolean,
-        ignore: boolean,
+        flags: BaseFlags,
+        skipMaps: number[],
+        skipEvents: [RPGMFileType, number[]][],
+        mapEvents: boolean,
     ): Promise<void> {
         this.#utilsPanel.toggleReadAnimation();
         await mkdir(this.#projectSettings.translationPath, { recursive: true });
 
-        if (readMode === ReadMode.Append) {
+        if (
+            readMode === ReadMode.AppendDefault ||
+            readMode === ReadMode.AppendForce
+        ) {
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
                 this.#tabContent.children,
             );
-        } else {
-            const metadata = {
-                disableCustomProcessing,
-                trim,
-                duplicateMode,
-                romanize,
-            };
-
-            Object.assign(this.#projectSettings, metadata);
-
-            await writeTextFile(
-                join(
-                    this.#projectSettings.translationPath,
-                    ".rvpacker-metadata",
-                ),
-                JSON.stringify(metadata),
-            ).catch(error);
         }
 
-        let flags: BaseFlags = 0;
-
-        if (romanize) {
-            flags |= BaseFlags.Romanize;
-        }
-
-        if (disableCustomProcessing) {
-            flags |= BaseFlags.DisableCustomProcessing;
-        }
-
-        if (trim) {
-            flags |= BaseFlags.Trim;
-        }
-
-        if (ignore) {
-            flags |= BaseFlags.Ignore;
-        }
-
-        await read({
+        const hashes = await read({
             projectPath: this.#settings.projectPath,
             sourcePath: this.#projectSettings.sourcePath,
             translationPath: this.#projectSettings.translationPath,
             engineType: this.#projectSettings.engineType,
             readMode,
             duplicateMode,
-            fileFlags,
+            skipFiles,
             flags,
+            skipMaps,
+            skipEvents,
+            mapEvents,
+            hashes: this.#projectSettings.hashes,
         });
 
         this.#utilsPanel.toggleReadAnimation();
+
+        const metadata: Metadata = {
+            disableCustomProcessing: Boolean(
+                flags & BaseFlags.DisableCustomProcessing,
+            ),
+            trim: Boolean(flags & BaseFlags.Trim),
+            duplicateMode,
+            romanize: Boolean(flags & BaseFlags.Romanize),
+            hashes,
+        };
+
+        Object.assign(this.#projectSettings, metadata);
+
+        await writeTextFile(
+            join(this.#projectSettings.translationPath, ".rvpacker-metadata"),
+            JSON.stringify(metadata),
+        ).catch(error);
 
         if (readMode !== ReadMode.Default) {
             await this.#reload();

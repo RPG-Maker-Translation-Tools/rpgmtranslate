@@ -1,10 +1,9 @@
 #![allow(clippy::too_many_arguments)]
-use log::error;
 use regex::{Regex, escape};
 use rpgmad_lib::{Decrypter, ExtractError};
 use rvpacker_lib::{
     BaseFlags, DuplicateMode, EngineType, FileFlags, GameType, PurgerBuilder,
-    ReadMode, ReaderBuilder, WriterBuilder,
+    RPGMFileType, ReadMode, ReaderBuilder, WriterBuilder,
     constants::{NEW_LINE, SEPARATOR},
     get_ini_title, get_system_title,
 };
@@ -100,8 +99,10 @@ pub fn write(
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
     game_title: &str,
-    file_flags: FileFlags,
     flags: BaseFlags,
+    skip_files: FileFlags,
+    skip_maps: Vec<u16>,
+    skip_events: Vec<(RPGMFileType, Vec<u16>)>,
 ) -> Result<String, Error> {
     let start_time = Instant::now();
     let game_type = get_game_type(
@@ -110,10 +111,12 @@ pub fn write(
     );
 
     let mut writer = WriterBuilder::new()
-        .with_files(file_flags)
+        .with_files(FileFlags::all() & !skip_files)
         .with_flags(flags)
         .game_type(game_type)
         .duplicate_mode(duplicate_mode)
+        .skip_maps(skip_maps)
+        .skip_events(skip_events)
         .build();
 
     writer.write(source_path, translation_path, output_path, engine_type)?;
@@ -129,9 +132,13 @@ pub fn read(
     read_mode: ReadMode,
     engine_type: EngineType,
     duplicate_mode: DuplicateMode,
-    file_flags: FileFlags,
+    skip_files: FileFlags,
     flags: BaseFlags,
-) -> Result<(), Error> {
+    skip_maps: Vec<u16>,
+    skip_events: Vec<(RPGMFileType, Vec<u16>)>,
+    map_events: bool,
+    hashes: Vec<String>,
+) -> Result<Vec<String>, Error> {
     let game_title: String = if engine_type.is_new() {
         let system_file_path = source_path.join("System.json");
         let system_file_content = read_to_string(&system_file_path)
@@ -151,11 +158,15 @@ pub fn read(
     );
 
     let mut reader = ReaderBuilder::new()
-        .with_files(file_flags)
+        .with_files(FileFlags::all() & !skip_files)
         .with_flags(flags)
         .game_type(game_type)
         .read_mode(read_mode)
         .duplicate_mode(duplicate_mode)
+        .skip_maps(skip_maps)
+        .skip_events(skip_events)
+        .map_events(map_events)
+        .hashes(hashes.iter().map(|s| s.parse::<u128>().unwrap()).collect())
         .build();
 
     reader.read(source_path, translation_path, engine_type)?;
@@ -165,7 +176,7 @@ pub fn read(
         &format!("{game_title}{SEPARATOR}"),
     )?;
 
-    Ok(())
+    Ok(reader.hashes().into_iter().map(|n| n.to_string()).collect())
 }
 
 #[command]
@@ -176,7 +187,9 @@ pub fn purge(
     duplicate_mode: DuplicateMode,
     game_title: &str,
     flags: BaseFlags,
-    file_flags: FileFlags,
+    skip_files: FileFlags,
+    skip_maps: Vec<u16>,
+    skip_events: Vec<(RPGMFileType, Vec<u16>)>,
 ) -> Result<(), Error> {
     let game_type = get_game_type(
         game_title,
@@ -184,10 +197,12 @@ pub fn purge(
     );
 
     PurgerBuilder::new()
-        .with_files(file_flags)
+        .with_files(FileFlags::all() & !skip_files)
         .with_flags(flags)
         .game_type(game_type)
         .duplicate_mode(duplicate_mode)
+        .skip_maps(skip_maps)
+        .skip_events(skip_events)
         .build()
         .purge(source_path, translation_path, engine_type)?;
 

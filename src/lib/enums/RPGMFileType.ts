@@ -1,0 +1,17 @@
+export const enum RPGMFileType {
+    Invalid,
+    Actors,
+    Armors,
+    Classes,
+    Events,
+    Enemies,
+    Items,
+    Map,
+    Skills,
+    States,
+    System,
+    Troops,
+    Weapons,
+    Scripts,
+    Plugins,
+}

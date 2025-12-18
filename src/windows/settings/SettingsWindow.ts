@@ -105,14 +105,12 @@ await once<[Settings, Themes, ProjectSettings]>("settings", async (event) => {
     UI.rowDeleteModeSelect.value = settings.rowDeleteMode.toString();
     UI.displayGhostLinesCheck.checked = settings.displayGhostLines;
 
-    UI.checkForUpdatesCheck.checked = settings.checkForUpdates;
+    UI.checkForUpdatesCheck.checked = settings.updatesEnabled;
 
     if (!UI.backupCheck.checked) {
         UI.backupSettings.classList.add("hidden");
-        UI.backupSettings.classList.add("-translate-y-full");
     } else {
         UI.backupSettings.classList.add("flex");
-        UI.backupSettings.classList.add("translate-y-0");
     }
 
     for (const [path, name] of Object.entries(

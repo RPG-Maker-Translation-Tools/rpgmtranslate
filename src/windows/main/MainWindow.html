@@ -9,7 +9,7 @@
         <script type="module" src="MainWindow.ts" defer></script>
     </head>
 
-    <body class="text-primary bg-dark overflow-x-hidden text-2xl">
+    <body class="text-primary bg-dark min-h-screen overflow-x-hidden text-2xl">
         <header class="sticky top-0 z-40">
             <div
                 class="bg-primary flex h-16 w-full items-center justify-between"
@@ -179,7 +179,7 @@
         </div>
 
         <div
-            class="sticky bottom-0 z-50 h-6 overflow-x-auto"
+            class="sticky bottom-0 z-30 h-6 overflow-x-auto"
             id="bottom-scroll-bar"
         >
             <div class="h-px w-auto" id="bottom-scroll-content"></div>
@@ -328,7 +328,7 @@
         </div>
 
         <div
-            class="bg-primary fixed top-[88px] z-30 flex h-[91.33%] w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
+            class="bg-primary fixed z-40 flex w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
             id="tab-panel"
         ></div>
 
@@ -507,7 +507,7 @@
         />
 
         <div
-            class="bg-primary text-primary outline-primary border-second fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
+            class="bg-primary text-primary outline-primary border-second fixed z-50 flex hidden max-h-5/6 w-7/12 flex-col gap-2 border-2 p-2 text-base"
             id="batch-menu"
         >
             <div
@@ -515,9 +515,11 @@
                 data-i18n="Select files (You can hold LMB and drag to select multiple files)"
             ></div>
 
-            <div class="h-fit columns-8 gap-2 overflow-y-auto"></div>
+            <div
+                class="grid max-h-4/6 grid-cols-7 items-start overflow-x-hidden overflow-y-auto"
+            ></div>
 
-            <div class="flex flex-row items-center justify-center gap-4">
+            <div class="flex flex-row items-center justify-center gap-2">
                 <button
                     class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
                     id="select-all-button"
@@ -530,7 +532,7 @@
                 ></button>
             </div>
 
-            <div class="flex flex-row items-center justify-center gap-4">
+            <div class="flex flex-row items-center justify-center gap-2">
                 <button
                     class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
                     id="apply-button"
@@ -570,13 +572,13 @@
         <div class="dropdown-menu border-second flex hidden" id="theme-menu">
             <button
                 class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
-                id="create-theme"
+                id="create-theme-button"
                 data-i18n="Create Theme"
             ></button>
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl p-2 text-base"
+            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl gap-2 p-2 text-base"
             id="write-menu"
         >
             <button
@@ -593,45 +595,72 @@
                 type="text"
             />
 
-            <div class="flex flex-col gap-2 py-2">
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-map-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label data-i18n="Disable Mapxxx processing"></label>
+            <div class="flex flex-col gap-2">
+                <div>
+                    <div data-i18n="Skip files:"></div>
+                    <select
+                        class="bg-second p-1"
+                        id="skip-files-select"
+                        multiple
+                    >
+                        <option value="1">Map</option>
+                        <option value="2">Actors</option>
+                        <option value="4">Armors</option>
+                        <option value="8">Classes</option>
+                        <option value="16">CommonEvents</option>
+                        <option value="32">Enemies</option>
+                        <option value="64">Items</option>
+                        <option value="128">Skills</option>
+                        <option value="256">States</option>
+                        <option value="512">Troops</option>
+                        <option value="1024">Weapons</option>
+                        <option value="2048">System</option>
+                        <option value="4096">Scripts</option>
+                    </select>
                 </div>
-
-                <div class="checkbox-container">
+                <div>
+                    <div data-i18n="Skip maps:"></div>
                     <input
-                        class="size-8"
-                        id="disable-other-processing-checkbox"
-                        type="checkbox"
+                        class="input bg-second h-8 w-80"
+                        id="skip-maps-input"
+                        type="text"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        data-i18n-placeholder="Map indices, e.g. 5,30,18..."
                     />
-                    <label
-                        data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></label>
                 </div>
+                <div>
+                    <div data-i18n="Skip events:"></div>
 
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-system-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label data-i18n="Disable System processing"></label>
-                </div>
-
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-plugin-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label
-                        data-i18n="Disable plugins.js/Scripts processing"
-                    ></label>
+                    <span class="flex flex-row gap-2">
+                        <select
+                            class="bg-second p-1"
+                            id="skip-events-select"
+                            multiple
+                        >
+                            <option value="2">Actors</option>
+                            <option value="3">Armors</option>
+                            <option value="4">Classes</option>
+                            <option value="5">CommonEvents</option>
+                            <option value="6">Enemies</option>
+                            <option value="7">Items</option>
+                            <option value="8">Skills</option>
+                            <option value="9">States</option>
+                            <option value="10">Troops</option>
+                            <option value="11">Weapons</option>
+                            <option value="12">System</option>
+                            <option value="13">Scripts</option>
+                            <option value="14">Plugins</option>
+                        </select>
+                        <input
+                            class="input bg-second h-8 w-80"
+                            id="skip-events-input"
+                            type="text"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            data-i18n-placeholder="Event indices, e.g. 5,30,18..."
+                        />
+                    </span>
                 </div>
             </div>
 
@@ -645,124 +674,166 @@
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary hidden max-w-3xl gap-2 p-2 text-base"
+            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl flex-col gap-4 p-2 text-base"
             id="read-menu"
         >
             <div>
+                <label data-i18n="How to read files."></label>
+
                 <select class="bg-second rounded-xs" id="read-mode-select">
-                    <option data-i18n="Append" value="1"></option>
-                    <option data-i18n="Force rewrite" value="2"></option>
+                    <option data-i18n="Force Rewrite" value="1"></option>
+                    <option data-i18n="Default Append" value="2"></option>
+                    <option data-i18n="Force Append" value="3"></option>
                 </select>
 
-                <label data-i18n="How to read files."></label>
-                <div
-                    id="mode-description"
-                    data-i18n="Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted."
-                ></div>
+                <div id="mode-description" data-i18n=""></div>
             </div>
 
-            <div class="flex flex-row gap-2 pt-2">
+            <div>
+                <label data-i18n="How to handle duplicates in text."></label>
+
                 <select
                     class="bg-second rounded-xs"
                     id="duplicate-mode-select"
                     disabled
                 >
-                    <option data-i18n="Allow duplicates" value="0"></option>
                     <option data-i18n="Remove duplicates" value="1"></option>
+                    <option data-i18n="Allow duplicates" value="0"></option>
                 </select>
 
-                <label data-i18n="How to handle duplicates in text."></label>
                 <div id="duplicate-mode-description"></div>
             </div>
 
-            <div class="flex flex-col gap-2 py-2">
-                <div class="checkbox-container">
+            <div class="flex flex-col gap-2">
+                <label class="checkbox-container custom-checkbox">
                     <input
                         class="size-8"
                         id="romanize-checkbox"
-                        disabled
                         type="checkbox"
                     />
 
-                    <label
-                        data-i18n="If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
-                    ></label>
-                </div>
+                    <span
+                        data-i18n="Romanize: If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
+                    ></span>
+                </label>
 
-                <div class="checkbox-container">
+                <label
+                    class="checkbox-container custom-checkbox"
+                    id="trim-container"
+                >
+                    <input class="size-8" id="trim-checkbox" type="checkbox" />
+
+                    <span
+                        data-i18n="Trim: Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
+                    ></span>
+                </label>
+
+                <label class="checkbox-container custom-checkbox">
                     <input
                         class="size-8"
                         id="custom-processing-checkbox"
-                        disabled
                         type="checkbox"
                     />
-                    <label
-                        data-i18n="Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
-                    ></label>
-                </div>
 
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-map-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label data-i18n="Disable Mapxxx processing"></label>
-                </div>
+                    <span
+                        data-i18n="Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
+                    ></span>
+                </label>
 
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-other-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label
-                        data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></label>
-                </div>
-
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-system-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label data-i18n="Disable System processing"></label>
-                </div>
-
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-plugin-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label
-                        data-i18n="Disable plugins.js/Scripts processing"
-                    ></label>
-                </div>
-
-                <div class="checkbox-container" id="ignore-container">
+                <label
+                    class="checkbox-container custom-checkbox"
+                    id="ignore-container"
+                >
                     <input
                         class="size-8"
                         id="ignore-checkbox"
                         type="checkbox"
                     />
-                    <label
-                        data-i18n="Ignore entries from .rvpacker-ignore file"
-                    ></label>
+
+                    <span
+                        data-i18n="Ignore: Ignore entries from .rvpacker-ignore file"
+                    ></span>
+                </label>
+
+                <div>
+                    <div data-i18n="Skip files:"></div>
+                    <select
+                        class="bg-second p-1"
+                        id="skip-files-select"
+                        multiple
+                    >
+                        <option value="1">Map</option>
+                        <option value="2">Actors</option>
+                        <option value="4">Armors</option>
+                        <option value="8">Classes</option>
+                        <option value="16">CommonEvents</option>
+                        <option value="32">Enemies</option>
+                        <option value="64">Items</option>
+                        <option value="128">Skills</option>
+                        <option value="256">States</option>
+                        <option value="512">Troops</option>
+                        <option value="1024">Weapons</option>
+                        <option value="2048">System</option>
+                        <option value="4096">Scripts</option>
+                    </select>
+                </div>
+                <div>
+                    <div data-i18n="Skip maps:"></div>
+                    <input
+                        class="input bg-second h-8 w-80"
+                        id="skip-maps-input"
+                        type="text"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        data-i18n-placeholder="Map indices, e.g. 5,30,18..."
+                    />
+                </div>
+                <div>
+                    <div data-i18n="Skip events:"></div>
+
+                    <span class="flex flex-row gap-2">
+                        <select
+                            class="bg-second p-1"
+                            id="skip-events-select"
+                            multiple
+                        >
+                            <option value="2">Actors</option>
+                            <option value="3">Armors</option>
+                            <option value="4">Classes</option>
+                            <option value="5">CommonEvents</option>
+                            <option value="6">Enemies</option>
+                            <option value="7">Items</option>
+                            <option value="8">Skills</option>
+                            <option value="9">States</option>
+                            <option value="10">Troops</option>
+                            <option value="11">Weapons</option>
+                            <option value="12">System</option>
+                            <option value="13">Scripts</option>
+                            <option value="14">Plugins</option>
+                        </select>
+                        <input
+                            class="input bg-second h-8 w-80"
+                            id="skip-events-input"
+                            type="text"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            data-i18n-placeholder="Event indices, e.g. 5,30,18..."
+                        />
+                    </span>
                 </div>
 
-                <div class="checkbox-container" id="trim-container">
+                <label
+                    class="checkbox-container custom-checkbox"
+                    id="map-events-container"
+                >
                     <input
                         class="size-8"
-                        id="trim-checkbox"
+                        id="map-events-checkbox"
                         type="checkbox"
-                        disabled
                     />
-                    <label
-                        data-i18n="Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
-                    ></label>
-                </div>
+
+                    <span data-i18n="Parse event metadata from maps"></span>
+                </label>
             </div>
 
             <div class="flex items-center justify-center">
@@ -775,60 +846,87 @@
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary hidden max-w-3xl gap-2 p-2 text-base"
+            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl flex-col gap-2 p-2 text-base"
             id="purge-menu"
         >
-            <div class="flex flex-col gap-2 py-2">
-                <div class="checkbox-container">
+            <div class="flex flex-col gap-2">
+                <div>
+                    <div data-i18n="Skip files:"></div>
+                    <select
+                        class="bg-second p-1"
+                        id="skip-files-select"
+                        multiple
+                    >
+                        <option value="1">Map</option>
+                        <option value="2">Actors</option>
+                        <option value="4">Armors</option>
+                        <option value="8">Classes</option>
+                        <option value="16">CommonEvents</option>
+                        <option value="32">Enemies</option>
+                        <option value="64">Items</option>
+                        <option value="128">Skills</option>
+                        <option value="256">States</option>
+                        <option value="512">Troops</option>
+                        <option value="1024">Weapons</option>
+                        <option value="2048">System</option>
+                        <option value="4096">Scripts</option>
+                    </select>
+                </div>
+                <div>
+                    <div data-i18n="Skip maps:"></div>
                     <input
-                        class="size-8"
-                        id="disable-map-processing-checkbox"
-                        type="checkbox"
+                        class="input bg-second h-8 w-80"
+                        id="skip-maps-input"
+                        type="text"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        data-i18n-placeholder="Map indices, e.g. 5,30,18..."
                     />
-                    <label data-i18n="Disable Mapxxx processing"></label>
+                </div>
+                <div>
+                    <div data-i18n="Skip events:"></div>
+
+                    <span class="flex flex-row gap-2">
+                        <select
+                            class="bg-second p-1"
+                            id="skip-events-select"
+                            multiple
+                        >
+                            <option value="2">Actors</option>
+                            <option value="3">Armors</option>
+                            <option value="4">Classes</option>
+                            <option value="5">CommonEvents</option>
+                            <option value="6">Enemies</option>
+                            <option value="7">Items</option>
+                            <option value="8">Skills</option>
+                            <option value="9">States</option>
+                            <option value="10">Troops</option>
+                            <option value="11">Weapons</option>
+                            <option value="12">System</option>
+                            <option value="13">Scripts</option>
+                            <option value="14">Plugins</option>
+                        </select>
+                        <input
+                            class="input bg-second h-8 w-80"
+                            id="skip-events-input"
+                            type="text"
+                            autocapitalize="off"
+                            autocomplete="off"
+                            data-i18n-placeholder="Event indices, e.g. 5,30,18..."
+                        />
+                    </span>
                 </div>
 
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-other-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label
-                        data-i18n="Disable Actors, Armors, Troops etc. processing"
-                    ></label>
-                </div>
-
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-system-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label data-i18n="Disable System processing"></label>
-                </div>
-
-                <div class="checkbox-container">
-                    <input
-                        class="size-8"
-                        id="disable-plugin-processing-checkbox"
-                        type="checkbox"
-                    />
-                    <label
-                        data-i18n="Disable plugins.js/Scripts processing"
-                    ></label>
-                </div>
-
-                <div class="checkbox-container">
+                <label class="checkbox-container custom-checkbox">
                     <input
                         class="size-8"
                         id="create-ignore-checkbox"
                         type="checkbox"
                     />
-                    <label
+                    <span
                         data-i18n="Create .rvpacker-ignore file from purged lines to prevent their further appearance"
-                    ></label>
-                </div>
+                    ></span>
+                </label>
             </div>
 
             <div class="flex items-center justify-center">

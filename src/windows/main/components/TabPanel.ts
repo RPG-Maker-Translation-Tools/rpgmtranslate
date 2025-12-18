@@ -106,6 +106,8 @@ export class TabPanel extends Component {
 
                 this.addTab(basename, contentLines);
             }
+
+            await emittery.emit(AppEvent.FileRead, translationFile.name);
         }
     }
 
@@ -142,7 +144,14 @@ export class TabPanel extends Component {
             if (line.startsWith(consts.COMMENT_PREFIX)) {
                 total--;
             } else {
-                const translation = utils.translation(utils.parts(line)!)[0];
+                const parts = utils.parts(line);
+
+                if (!parts) {
+                    // todo
+                    continue;
+                }
+
+                const translation = utils.translation(parts)[0];
 
                 if (translation) {
                     translated++;
@@ -246,7 +255,7 @@ export class TabPanel extends Component {
                     i + 1,
                 ]);
             } else {
-                if (source === consts.MAP_COMMENT) {
+                if (source === consts.ID_COMMENT) {
                     mapIndices.push(Number(translation));
 
                     if (result.length > 0) {

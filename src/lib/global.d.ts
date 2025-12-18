@@ -29,13 +29,17 @@ interface InvokeOptions extends Record<string, unknown> {
     translationPath: string;
     engineType: import("@enums/EngineType").EngineType;
     duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
-    fileFlags: import("@enums/FileFlags").FileFlags;
+    skipFiles: import("@enums/FileFlags").FileFlags;
     flags: import("@enums/BaseFlags").BaseFlags;
+    skipMaps: number[];
+    skipEvents: [import("@enums/RPGMFileType").RPGMFileType, number[]][];
+    hashes: string[];
 }
 
 interface ReadOptions extends InvokeOptions {
     readMode: import("@enums/ReadMode").ReadMode;
     projectPath: string;
+    mapEvents: boolean;
 }
 
 interface WriteOptions extends InvokeOptions {
@@ -67,4 +71,12 @@ interface Match {
     type: MatchType;
     columnName: string;
     columnNumber: number;
+}
+
+interface Metadata {
+    duplicateMode: DuplicateMode;
+    romanize: boolean;
+    disableCustomProcessing: boolean;
+    trim: boolean;
+    hashes: string[];
 }

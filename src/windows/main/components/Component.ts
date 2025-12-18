@@ -41,6 +41,18 @@ export class Component {
         return this.element.scrollWidth;
     }
 
+    public get clientHeight(): number {
+        return this.element.clientHeight;
+    }
+
+    public get classList(): DOMTokenList {
+        return this.element.classList;
+    }
+
+    public get style(): CSSStyleDeclaration {
+        return this.element.style;
+    }
+
     public set outerHTML(html: string) {
         this.element.outerHTML = html;
     }
@@ -51,6 +63,11 @@ export class Component {
 
     public set textContent(text: string) {
         this.element.textContent = text;
+    }
+
+    public move(x: number, y: number): void {
+        this.style.x = `${x}px`;
+        this.style.y = `${y}px`;
     }
 
     public focus(): void {
@@ -65,10 +82,16 @@ export class Component {
         return this.element.contains(node);
     }
 
-    public show(x: number, y: number): void {
+    public show(x?: number, y?: number): void {
         this.element.classList.remove("hidden");
-        this.element.style.left = `${x}px`;
-        this.element.style.top = `${y}px`;
+
+        if (x !== undefined) {
+            this.element.style.left = `${x}px`;
+        }
+
+        if (y !== undefined) {
+            this.element.style.top = `${y}px`;
+        }
     }
 
     public hide(): void {

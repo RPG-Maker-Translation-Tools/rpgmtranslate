@@ -1,8 +1,8 @@
 import { emittery } from "@classes/emittery";
-import { AppEvent } from "@lib/enums";
-import { getFileFlags } from "@utils/functions";
+import { AppEvent, FileFlags } from "@lib/enums";
 import { Component } from "./Component";
 
+import { RPGMFileType } from "@lib/enums/RPGMFileType";
 import { open } from "@tauri-apps/plugin-dialog";
 
 export class WriteMenu extends Component {
@@ -11,10 +11,12 @@ export class WriteMenu extends Component {
     readonly #selectOutputPathButton: HTMLButtonElement;
     readonly #outputPathInput: HTMLInputElement;
 
-    readonly #disableMapProcessingCheckbox: HTMLInputElement;
-    readonly #disableOtherProcessingCheckbox: HTMLInputElement;
-    readonly #disableSystemProcessingCheckbox: HTMLInputElement;
-    readonly #disablePluginProcessingCheckbox: HTMLInputElement;
+    readonly #skipFilesSelect: HTMLSelectElement;
+    readonly #skipMapsInput: HTMLInputElement;
+    readonly #skipEventsSelect: HTMLSelectElement;
+    readonly #skipEventsInput: HTMLInputElement;
+    readonly #skipEvents: Record<string, string> = {};
+    #prevOption = "";
 
     readonly #applyButton: HTMLButtonElement;
 
@@ -29,23 +31,58 @@ export class WriteMenu extends Component {
         this.#outputPathInput =
             this.element.querySelector("#output-path-input")!;
 
-        this.#disableMapProcessingCheckbox = this.element.querySelector(
-            "#disable-map-processing-checkbox",
+        this.#skipFilesSelect =
+            this.element.querySelector("#skip-files-select")!;
+        this.#skipMapsInput = this.element.querySelector("#skip-maps-input")!;
+        this.#skipEventsSelect = this.element.querySelector(
+            "#skip-events-select",
         )!;
-        this.#disableOtherProcessingCheckbox = this.element.querySelector(
-            "#disable-other-processing-checkbox",
-        )!;
-        this.#disableSystemProcessingCheckbox = this.element.querySelector(
-            "#disable-system-processing-checkbox",
-        )!;
-        this.#disablePluginProcessingCheckbox = this.element.querySelector(
-            "#disable-plugin-processing-checkbox",
-        )!;
+        this.#skipEventsInput =
+            this.element.querySelector("#skip-events-input")!;
 
         this.#applyButton = this.element.querySelector("#apply-button")!;
 
         this.element.onclick = async (e): Promise<void> => {
             await this.#onclick(e);
+        };
+
+        this.#skipMapsInput.oninput = (): void => {
+            const charCode = this.#skipMapsInput.value.charCodeAt(
+                this.#skipMapsInput.value.length - 1,
+            );
+
+            if (Number.isNaN(charCode)) {
+                return;
+            }
+
+            if (
+                (charCode < "1".charCodeAt(0) ||
+                    charCode > "0".charCodeAt(0)) &&
+                charCode != ",".charCodeAt(0)
+            ) {
+                this.#skipMapsInput.value = this.#skipMapsInput.value.slice(
+                    0,
+                    -1,
+                );
+            }
+        };
+
+        this.#skipEventsSelect.onchange = (e): void => {
+            const selected = [...this.#skipEventsSelect.selectedOptions];
+
+            if (selected.length > 1) {
+                selected.slice(0, -1).forEach((o) => (o.selected = false));
+            }
+
+            if (e.target === null) {
+                return;
+            }
+
+            const optionValue = (e.target as HTMLOptionElement).value;
+
+            this.#skipEvents[this.#prevOption] = this.#skipEventsInput.value;
+            this.#skipEventsInput.value = this.#skipEvents[optionValue] || "";
+            this.#prevOption = optionValue;
         };
     }
 
@@ -57,11 +94,6 @@ export class WriteMenu extends Component {
         super.show(x, y);
 
         this.#outputPathInput.value = this.#programDataPath;
-        this.#disableMapProcessingCheckbox.checked =
-            this.#disableOtherProcessingCheckbox.checked =
-            this.#disableSystemProcessingCheckbox.checked =
-            this.#disablePluginProcessingCheckbox.checked =
-                false;
     }
 
     async #onclick(event: MouseEvent): Promise<void> {
@@ -77,10 +109,30 @@ export class WriteMenu extends Component {
                 this.#outputPathInput.value = directory;
             }
         } else if (target === this.#applyButton) {
-            await emittery.emit(
-                AppEvent.InvokeWrite,
-                getFileFlags(this.element),
-            );
+            let skipFiles = FileFlags.None;
+
+            for (const option of this.#skipFilesSelect.selectedOptions) {
+                skipFiles |= Number(option.value);
+            }
+
+            const skipMaps: number[] = this.#skipMapsInput.value
+                .split(",")
+                .map((x) => Number(x));
+
+            const skipEvents: [RPGMFileType, number[]][] = [];
+
+            for (const key in this.#skipEvents) {
+                skipEvents.push([
+                    Number(key),
+                    this.#skipEvents[key].split(",").map((x) => Number(x)),
+                ]);
+            }
+
+            await emittery.emit(AppEvent.InvokeWrite, [
+                skipFiles,
+                skipMaps,
+                skipEvents,
+            ]);
         }
     }
 }

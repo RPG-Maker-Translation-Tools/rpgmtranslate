@@ -1,5 +1,6 @@
 export const enum ReadMode {
     Default,
-    Append,
-    Force,
+    DefaultForce,
+    AppendDefault,
+    AppendForce,
 }

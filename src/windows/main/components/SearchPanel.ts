@@ -224,8 +224,6 @@ export class SearchPanel extends Component {
         entry: string,
         logSource: string,
     ): number {
-        const fileComment = utils.getFileComment(filename);
-
         let rowIndex = -1;
         let found = false;
 
@@ -234,7 +232,7 @@ export class SearchPanel extends Component {
             const source = utils.source(rowContainer);
             const translation = utils.translation(rowContainer)[0];
 
-            if (source === fileComment && translation === entry) {
+            if (source === consts.ID_COMMENT && translation === entry) {
                 if (found) {
                     break;
                 }
@@ -261,8 +259,6 @@ export class SearchPanel extends Component {
         logSource: string,
         translationLines: string[],
     ): number {
-        const fileComment = utils.getFileComment(filename);
-
         let rowIndex = -1;
         let found = false;
 
@@ -278,7 +274,7 @@ export class SearchPanel extends Component {
             const source = utils.source(parts);
             const translation = utils.translation(parts)[0];
 
-            if (source === fileComment && translation === entry) {
+            if (source === consts.ID_COMMENT && translation === entry) {
                 if (found) {
                     break;
                 }

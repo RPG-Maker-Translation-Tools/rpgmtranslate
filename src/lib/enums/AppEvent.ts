@@ -38,4 +38,5 @@ export const enum AppEvent {
     SearchFlagChanged,
     ReplaceSingle,
     InvokePurge,
+    FileRead,
 }

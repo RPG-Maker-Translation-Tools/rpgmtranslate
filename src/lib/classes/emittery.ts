@@ -3,12 +3,13 @@ import {
     DuplicateMode,
     FileFlags,
     JumpDirection,
-    Language,
     ReadMode,
     SearchAction,
     SearchFlags,
     SearchMode,
 } from "@lib/enums";
+import { BaseFlags } from "@lib/enums/BaseFlags";
+import { RPGMFileType } from "@lib/enums/RPGMFileType";
 import Emittery from "emittery";
 
 export const emittery = new Emittery<{
@@ -20,7 +21,7 @@ export const emittery = new Emittery<{
     [AppEvent.UpdateSaved]: boolean;
     [AppEvent.ChangeTab]: string | null;
     [AppEvent.ColumnResized]: [number, number];
-    [AppEvent.InvokeWrite]: FileFlags;
+    [AppEvent.InvokeWrite]: [FileFlags, number[], [RPGMFileType, number[]][]];
     [AppEvent.ScrollIntoRow]: number;
     [AppEvent.UtilsButtonClick]: HTMLButtonElement;
     [AppEvent.ReplaceText]: [string, string, number, SearchMode, SearchAction];
@@ -28,7 +29,6 @@ export const emittery = new Emittery<{
     [AppEvent.AddBookmark]: [string | undefined, string, number];
     [AppEvent.TogglePurgeAnimation]: undefined;
     [AppEvent.Reload]: undefined;
-    [AppEvent.Retranslate]: Language;
     [AppEvent.SaveAll]: undefined;
     [AppEvent.ToggleSaveAnimation]: undefined;
     [AppEvent.AddTheme]: [string, Record<string, string>];
@@ -40,9 +40,6 @@ export const emittery = new Emittery<{
     [AppEvent.TranslateTextArea]: [string, HTMLTextAreaElement];
     [AppEvent.ShowThemeEditMenu]: undefined;
     [AppEvent.AddLog]: [string, string, [string, number, string, string]];
-    [AppEvent.MenuBarButtonClick]: HTMLButtonElement;
-    [AppEvent.ShowHelpWindow]: undefined;
-    [AppEvent.ShowAboutWindow]: undefined;
     [AppEvent.UpdateProgressMeter]: undefined;
     [AppEvent.LanguageTags]: [string, string];
     [AppEvent.ColumnRenamed]: [number, string];
@@ -51,9 +48,9 @@ export const emittery = new Emittery<{
         ReadMode,
         FileFlags,
         DuplicateMode,
-        boolean,
-        boolean,
-        boolean,
+        BaseFlags,
+        number[],
+        [RPGMFileType, number[]][],
         boolean,
     ];
     [AppEvent.LogEntryReverted]: [string, string];
@@ -67,5 +64,11 @@ export const emittery = new Emittery<{
         number,
         SearchAction,
     ];
-    [AppEvent.InvokePurge]: [FileFlags, boolean];
+    [AppEvent.InvokePurge]: [
+        FileFlags,
+        boolean,
+        number[],
+        [RPGMFileType, number[]][],
+    ];
+    [AppEvent.FileRead]: string;
 }>();

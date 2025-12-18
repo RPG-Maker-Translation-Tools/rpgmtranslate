@@ -8,7 +8,11 @@
         <script type="module" src="AboutWindow.ts" defer></script>
     </head>
     <body class="bg-dark p-8">
-        <div class="text-primary flex flex-col gap-4 text-2xl">
+        <div
+            class="text-primary flex flex-col items-center justify-center gap-4 text-2xl"
+        >
+            <img src="../../assets/icon.png" />
+
             <div>
                 <span data-i18n="Version"></span>
                 <span id="version-number"></span>
@@ -23,19 +27,21 @@
             </div>
 
             <div>
-                <span data-i18n="License"></span>
-                <a
+                <span data-i18n="Licensed under "></span
+                ><a
                     class="text-third cursor-pointer hover:underline"
                     id="license-link"
-                    >WTFPL</a
                 >
-                <img
-                    src="../../assets/wtfpl-badge-4.png"
-                    width="80"
-                    height="15"
-                    alt="WTFPL"
-                />
+                    WTFPL</a
+                >
             </div>
+
+            <img
+                src="../../assets/wtfpl-badge-4.png"
+                width="80"
+                height="15"
+                alt="WTFPL"
+            />
         </div>
     </body>
 </html>

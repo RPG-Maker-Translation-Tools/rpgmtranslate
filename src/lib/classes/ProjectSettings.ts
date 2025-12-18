@@ -12,6 +12,7 @@ export interface ProjectSettingsOptions {
     translationLanguages?: TranslationLanguages;
     duplicateMode?: import("@enums/DuplicateMode").DuplicateMode;
     flags?: import("@enums/BaseFlags").BaseFlags;
+    hashes?: string[];
 
     translationColumns?: [string, number][];
     translationColumnCount?: number;
@@ -35,6 +36,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
     };
     public duplicateMode = DuplicateMode.Allow;
     public flags: BaseFlags = 0;
+    public hashes: string[] = [];
 
     public sourceDirectory = "Data";
     public rowColumnWidth = consts.DEFAULT_ROW_COLUMN_WIDTH;
@@ -59,6 +61,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
             options.translationLanguages ?? this.translationLanguages;
         this.duplicateMode = options.duplicateMode ?? this.duplicateMode;
         this.flags = options.flags ?? this.flags;
+        this.hashes = options.hashes ?? this.hashes;
 
         this.translationColumns =
             options.translationColumns ?? this.translationColumns;

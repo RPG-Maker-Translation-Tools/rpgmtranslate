@@ -47,7 +47,7 @@ export const COMMENT_SUFFIX_LENGTH = COMMENT_SUFFIX.length;
 export const COMMENT_PREFIX = "<!--";
 export const COMMENT_PREFIX_LENGTH = COMMENT_PREFIX.length;
 
-export const MAP_DISPLAY_NAME_COMMENT_PREFIX = "<!-- In-game Displayed Name: ";
+export const MAP_DISPLAY_NAME_COMMENT_PREFIX = "<!-- IN-GAME DISPLAYED NAME: ";
 export const MAP_DISPLAY_NAME_COMMENT_PREFIX_LENGTH =
     MAP_DISPLAY_NAME_COMMENT_PREFIX.length;
 
@@ -58,11 +58,7 @@ export const JSON_EXTENSION = ".json";
 export const JSON_EXTENSION_LENGTH = JSON_EXTENSION.length;
 
 export const BOOKMARK_COMMENT = "<!-- Bookmark -->";
-export const MAP_COMMENT = "<!-- Map -->";
-export const EVENT_ID_COMMENT = "<!-- Event ID -->";
-export const SYSTEM_ENTRY_COMMENT = "<!-- System Entry -->";
-export const SCRIPT_ID_COMMENT = "<!-- Script ID -->";
-export const PLUGIN_ID_COMMENT = "<!-- Plugin ID -->";
+export const ID_COMMENT = "<!-- ID -->";
 
 export const RVPACKER_METADATA_FILE = ".rvpacker-metadata";
 

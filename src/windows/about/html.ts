@@ -6,5 +6,5 @@ export function _htmlTranslations() {
     // These calls exist purely so LinguiJS can extract them
     t`Version`;
     t`Program's repository`;
-    t`License`;
+    t`Licensed under `;
 }

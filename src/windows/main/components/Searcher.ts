@@ -244,7 +244,6 @@ export class Searcher {
             this.#searchMode !== SearchMode.Source &&
             this.#searchAction !== SearchAction.Put;
 
-        const fileComment = utils.getFileComment(filename);
         let entryIndex!: string;
 
         for (let i = 0; i < rows.length; i++) {
@@ -266,14 +265,14 @@ export class Searcher {
                 isArray ? parts : (row as RowContainer),
             );
 
-            if (source === fileComment) {
+            if (source === consts.ID_COMMENT) {
                 entryIndex = utils.translations(
                     isArray ? parts : (row as RowContainer),
                 )[0];
 
                 if (
                     tabs &&
-                    source === consts.MAP_COMMENT &&
+                    filename.startsWith("map") &&
                     !(`map${entryIndex}` in tabs)
                 ) {
                     break;
