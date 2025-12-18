@@ -131,25 +131,27 @@ await once<[Settings, Themes, ProjectSettings]>("settings", async (event) => {
 
         switch (target) {
             case UI.checkForUpdatesCheck:
-                if (!UI.checkForUpdatesCheck.checked) {
-                    settings.checkForUpdates = true;
+                if (UI.checkForUpdatesCheck.checked) {
+                    settings.updatesEnabled = true;
                 } else {
-                    settings.checkForUpdates = false;
+                    settings.updatesEnabled = false;
                 }
                 break;
             case UI.displayGhostLinesCheck:
-                if (!UI.displayGhostLinesCheck.checked) {
+                if (UI.displayGhostLinesCheck.checked) {
                     settings.displayGhostLines = true;
                 } else {
                     settings.displayGhostLines = false;
                 }
                 break;
             case UI.backupCheck:
-                if (!UI.backupCheck.checked) {
+                if (UI.backupCheck.checked) {
                     UI.backupSettings.classList.replace("hidden", "flex");
 
                     settings.backup.enabled = true;
                 } else {
+                    UI.backupSettings.classList.replace("flex", "hidden");
+
                     settings.backup.enabled = false;
                 }
                 break;
