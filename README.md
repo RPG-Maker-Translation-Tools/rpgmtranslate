@@ -65,6 +65,18 @@ npm run tauri build
 
 After the build, `target` directory will be created in the `gui/src-tauri` path, containing binary file with program build and distributable bundled packages in the `target/bundle` directory.
 
+## Support
+
+[Me](https://github.com/savannstm), the maintainer of this project, is a poor college student from Eastern Europe.
+
+If you could, please consider supporting us through:
+
+- [Ko-fi](https://ko-fi.com/savannstm)
+- [Patreon](https://www.patreon.com/cw/savannstm)
+- [Boosty](https://boosty.to/mcdeimos)
+
+Even if you don't, it's fine. We'll continue to do as we right now.
+
 ## License
 
 Project is licensed under WTFPL.
