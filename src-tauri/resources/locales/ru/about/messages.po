@@ -14,8 +14,8 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: src/windows/about/html.ts:9
-msgid "License"
-msgstr "Лицензия"
+msgid "Licensed under "
+msgstr "Лицензировано под "
 
 #: src/windows/about/html.ts:8
 msgid "Program's repository"
