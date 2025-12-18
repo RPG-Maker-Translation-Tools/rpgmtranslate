@@ -40,6 +40,9 @@ theme:
     locale: en
     language: en
 
+    logo: assets/icon.png
+    favicon: assets/icon.png
+
 plugins:
     - i18n:
           docs_structure: folder
@@ -62,3 +65,5 @@ plugins:
                     Read Menu: Меню чтения
                     Purge Menu: Меню чистки
                     Building from Source: Билдинг из исходного кода
+                site_name: "Документация для RPGMTranslate"
+                site_description: "Документация для RPGMTranslate"
