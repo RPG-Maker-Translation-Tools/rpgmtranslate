@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"POT-Creation-Date: 2025-08-10 00:10+0500\n"
+"POT-Creation-Date: 2025-12-27 21:20+0500\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,54 +13,224 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/windows/settings/html.ts:11
-msgid "(min 1, max 99)"
-msgstr "(мин. 1, макс. 99)"
+#: src/windows/settings/html.ts:34
+msgid "AI receives source and translaton languages as BCP-47 tags."
+msgstr ""
 
-#: src/windows/settings/html.ts:17
-msgid "Allowed"
-msgstr "Разрешить"
-
-#: src/windows/settings/html.ts:16
-msgid "Ask for confirmation"
-msgstr "Подтверждение"
-
-#: src/windows/settings/html.ts:7
-msgid "Backup"
-msgstr "Резервное копирование"
-
-#: src/windows/settings/html.ts:13
-msgid "Check for updates"
-msgstr "Проверка обновлений"
-
-#: src/windows/settings/html.ts:8
-msgid "Create backup every:"
-msgstr "Создавать копии каждые:"
-
-#: src/windows/settings/html.ts:19
-msgid "Default"
-msgstr "По умолчанию"
-
-#: src/windows/settings/html.ts:15
-msgid "Disabled"
-msgstr "Выключить"
-
-#: src/windows/settings/html.ts:12
-msgid "Display lines breaks in text areas"
-msgstr "Отображать переносы строк в полях перевода"
+#: src/windows/settings/html.ts:33
+msgid "AI response must be an array of strings in the same order as input."
+msgstr ""
 
 #: src/windows/settings/html.ts:18
-msgid "Font"
-msgstr "Шрифт"
+msgid "Allowed"
+msgstr ""
 
-#: src/windows/settings/html.ts:10
-msgid "Max number of backups:"
-msgstr "Максимальное количество копии:"
+#: src/windows/settings/html.ts:8
+msgid "Appearance"
+msgstr ""
 
-#: src/windows/settings/html.ts:14
-msgid "Row delete mode"
-msgstr "Режим удаления рядов"
+#: src/windows/settings/html.ts:17
+msgid "Ask for confirmation"
+msgstr ""
+
+#: src/windows/settings/html.ts:12
+msgid "Backup"
+msgstr ""
+
+#: src/windows/settings/html.ts:13
+msgid "Backup Interval (secs, 60-3600)"
+msgstr ""
+
+#: src/windows/settings/html.ts:19
+msgid "Check for updates"
+msgstr ""
 
 #: src/windows/settings/html.ts:9
-msgid "seconds (min 60, max 3600)"
-msgstr "секунд (мин. 60, макс. 3600)"
+msgid "Controls"
+msgstr ""
+
+#: src/windows/settings/html.ts:7
+msgid "Core"
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:551
+msgid "Custom font was not found. Ensure it's installed on your system."
+msgstr ""
+
+#: src/windows/settings/html.ts:21
+msgid "Default"
+msgstr ""
+
+#: src/windows/settings/html.ts:31
+msgid "Default System Prompt"
+msgstr ""
+
+#: src/windows/settings/html.ts:16
+msgid "Disabled"
+msgstr ""
+
+#: src/windows/settings/html.ts:22
+msgid "Display lines breaks in text areas"
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:417
+msgid "Failed to validate key."
+msgstr ""
+
+#: src/windows/settings/html.ts:40
+msgid "File Context"
+msgstr ""
+
+#: src/windows/settings/html.ts:20
+msgid "Font"
+msgstr ""
+
+#: src/windows/settings/html.ts:36
+msgid "If you have glossary enabled, advise AI to use it, because otherwise it won't."
+msgstr ""
+
+#: src/windows/settings/html.ts:14
+msgid "Max Backups (1-99)"
+msgstr ""
+
+#: src/windows/settings/html.ts:11
+msgid "Project"
+msgstr ""
+
+#: src/windows/settings/html.ts:39
+msgid "Project Context"
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:429
+msgid ""
+"Role:\n"
+"You are a professional videogame localization expert and linguist. You translate game text with high fidelity, cultural awareness, consistency, and attention to gameplay context, UI constraints, and narrative tone.\n"
+"\n"
+"Action:\n"
+"Translate all provided strings from sourceLanguage to translationLanguage. Use all available context to produce natural, player-facing translations suitable for a shipped videogame.\n"
+"\n"
+"Context:\n"
+"You will receive a JSON object containing files, blocks, and strings.\n"
+"Each Block represents a logical unit of text.\n"
+"Text belongs to a JRPG/RPG/Visual Novel game, made with RPG Maker.\n"
+"Use these context signals aggressively:\n"
+"\n"
+"* name: Treat this as critical semantic context. It often describes what the block or filename refers to (location/setting).\n"
+"* filename: Indicates file purpose (map, system, items, etc.).\n"
+"* before_strings / after_strings: Provide neighboring context; use them to resolve ambiguity but do not translate them.\n"
+"* glossary: Mandatory terminology. Always prefer glossary translations and respect notes.\n"
+"* project_context and local_context: High-level and situational guidance; use them to maintain tone, register, and lore consistency.\n"
+"  Special case - map files:\n"
+"* Strings may contain a line like <!-- EVENT NAME -->.\n"
+"* This line marks the start of a new event and possibly a new context.\n"
+"* Do not translate the marker itself.\n"
+"* Use the event name and the block name to re-evaluate context for the following strings.\n"
+"\n"
+"General rules:\n"
+"\n"
+"* Preserve meaning, intent, emotional tone, and gameplay function.\n"
+"* Prefer concise, idiomatic translations suitable for UI and dialog.\n"
+"* Keep placeholders, variables, tags, markup, and control codes unchanged.\n"
+"* Maintain consistency across files and blocks.\n"
+"* Do not add explanations, comments, or extra text.\n"
+"\n"
+"Execute:\n"
+"Process each file, then each block inside it, and translate only the strings array.\n"
+"Return ONLY a JSON object in the following exact structure:\n"
+"\n"
+"```json\n"
+"{\n"
+"    \"filename\": {\n"
+"        \"id\": {\n"
+"            \"strings\": [...]\n"
+"        }\n"
+"    }\n"
+"}\n"
+"```\n"
+"\n"
+"No additional keys, no reordered structure, no commentary."
+msgstr ""
+
+#: src/windows/settings/html.ts:15
+msgid "Row Delete Mode"
+msgstr ""
+
+#: src/windows/settings/html.ts:38
+msgid "Row Length Hint"
+msgstr ""
+
+#: src/windows/settings/html.ts:26
+msgid "Select model to use. If model you want isn't in the list, you might need to allow it in provider's settings. For example, OpenAI does not allow using GPT-5 by default."
+msgstr ""
+
+#: src/windows/settings/html.ts:41
+msgid "System Prompt"
+msgstr ""
+
+#: src/windows/settings/html.ts:28
+msgid "Temperature to use. Lower values produce more deterministic outputs, so it's advised to use something in range of 0.0-0.3. High values may be worse since they tune the model to be more 'creative'."
+msgstr ""
+
+#: src/windows/settings/html.ts:27
+msgid "Token limit for request. RPGMTranslate sends files to LLMs for translation in batches, and if summed tokens of the text in all those files exceed the limit, the rest of the files will be sent in a separate request. Very high limits are discouraged because AI might hallucinate/forget, and very low limits are discouraged because your tokens will burn. RPGMTranslate also uses OpenAI's tiktoken for tokenizing inputs, and it's hardcoded even for non-OpenAI models."
+msgstr ""
+
+#: src/windows/settings/html.ts:10
+msgid "Translation"
+msgstr ""
+
+#: src/windows/settings/html.ts:23
+msgid "Translation Endpoint"
+msgstr ""
+
+#: src/windows/settings/html.ts:37
+msgid "Translation is most likely to be better if you will empower AI with the great knowledge about the source material. If it's shitty JRPG with intentionally bad humor and some specific lore, include that in system prompt."
+msgstr ""
+
+#: src/windows/settings/html.ts:29
+msgid "Use glossary in the request. Very handy if you actually took your time to fill it, as it will make translation more consistent."
+msgstr ""
+
+#: src/windows/settings/html.ts:30
+msgid "Use thinking/reasoning, if available for the model. Translating with thinking most likely will use more tokens."
+msgstr ""
+
+#: src/windows/settings/html.ts:25
+msgid "Validate Key"
+msgstr ""
+
+#: src/windows/settings/html.ts:32
+msgid "When writing system prompt, keep in mind that:"
+msgstr ""
+
+#: src/windows/settings/html.ts:24
+msgid "You also need a folder ID from Yandex. You can find it in the same link."
+msgstr ""
+
+#: src/windows/settings/html.ts:35
+msgid "You can advise AI to use delimiter comments like ID, because most likely that means a new text source and a new content."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:267
+msgid "You need an API key from Anthropic. Check out <a class=\"text-third cursor-pointer hover:underline\">https://platform.claude.com/settings/keys</a> on how to get it."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:261
+msgid "You need an API key from DeepL. Check out <a class=\"text-third cursor-pointer hover:underline\">https://support.deepl.com/hc/en-us/articles/360020695820-API-key-for-DeepL-API</a> on how to get it."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:270
+msgid "You need an API key from DeepSeek. Check out <a class=\"text-third cursor-pointer hover:underline\">https://platform.deepseek.com/api_keys</a> on how to get it."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:273
+msgid "You need an API key from Google. Check out <a class=\"text-third cursor-pointer hover:underline\">https://ai.google.dev/gemini-api/docs/api-key</a> on how to get it."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:264
+msgid "You need an API key from OpenAI. Check out <a class=\"text-third cursor-pointer hover:underline\">https://platform.openai.com/api-keys</a> on how to get it."
+msgstr ""
+
+#: src/windows/settings/SettingsWindow.ts:257
+msgid "You need an API key from Yandex. Check out <a class=\"text-third cursor-pointer hover:underline\">https://yandex.com/dev/dictionary/keys/get/</a> on how to get it."
+msgstr ""

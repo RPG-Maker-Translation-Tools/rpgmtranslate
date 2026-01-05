@@ -1,18 +1,20 @@
 import { emittery } from "@classes/emittery";
+
 import { ProjectSettings } from "@lib/classes";
 import { AppEvent } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
-
 import {
-    copyFile,
+    isErr,
     mkdir,
     readDir,
     readTextFile,
-    remove,
     writeTextFile,
-} from "@tauri-apps/plugin-fs";
+} from "@utils/invokes";
+
+import { copyFile, DirEntry, remove } from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 
 export class Saver {
     public saved = true;
@@ -43,7 +45,7 @@ export class Saver {
         this.#sourceTitle = sourceTitle;
     }
 
-    public async saveSingle(tabName: string, rows: Rows): Promise<void> {
+    public async saveSingle(tabName: string, rows: Rows): Promise<boolean> {
         const outputArray: string[] = [];
 
         for (const rowContainer of rows) {
@@ -78,7 +80,14 @@ export class Saver {
             filePath,
         );
 
-        await writeTextFile(savePath, outputArray.join("\n"));
+        const result = await writeTextFile(savePath, outputArray.join("\n"));
+
+        if (isErr(result)) {
+            void error(result[0]!);
+            return false;
+        }
+
+        return true;
     }
 
     public disableBackup(): void {
@@ -96,44 +105,77 @@ export class Saver {
         }, period * consts.SECOND_MS);
     }
 
-    public async saveAll(tabName: string | null, rows: Rows): Promise<void> {
+    public async saveAll(tabName: string | null, rows: Rows): Promise<boolean> {
         if (this.#saving) {
-            return;
+            return true;
         }
 
         await emittery.emit(AppEvent.ToggleSaveAnimation);
         this.#saving = true;
+        let saved = true;
 
         if (tabName !== null) {
             await this.saveSingle(tabName, rows);
         }
 
-        const tempMapEntries = (await readDir(this.#tempMapsPath)).sort(
-            (a, b) =>
-                Number(
-                    a.name.slice("map".length, -consts.TXT_EXTENSION_LENGTH),
-                ) -
-                Number(
-                    b.name.slice("map".length, -consts.TXT_EXTENSION_LENGTH),
-                ),
+        let result: Result<DirEntry[] | undefined> = await readDir(
+            this.#tempMapsPath,
         );
+
+        let tempMapEntries: DirEntry[] = [];
+
+        if (isErr(result)) {
+            void error(result[0]!);
+            saved = false;
+        } else {
+            tempMapEntries = result[1]!.sort(
+                (a, b) =>
+                    Number(
+                        a.name.slice(
+                            "map".length,
+                            -consts.TXT_EXTENSION_LENGTH,
+                        ),
+                    ) -
+                    Number(
+                        b.name.slice(
+                            "map".length,
+                            -consts.TXT_EXTENSION_LENGTH,
+                        ),
+                    ),
+            );
+        }
 
         const outputArray: string[] = [];
 
         for (const entry of tempMapEntries) {
-            outputArray.push(
-                await readTextFile(utils.join(this.#tempMapsPath, entry.name)),
+            const result = await readTextFile(
+                utils.join(this.#tempMapsPath, entry.name),
             );
+
+            if (isErr(result)) {
+                void error(result[0]!);
+                saved = false;
+                break;
+            }
+
+            outputArray.push(result[1]!);
         }
 
-        await writeTextFile(
+        result = (await writeTextFile(
             utils.join(this.#translationPath, "maps.txt"),
             outputArray.join("\n"),
-        );
+        )) as Result<undefined>;
+
+        if (isErr(result)) {
+            void error(result[0]!);
+            saved = false;
+        }
 
         await emittery.emit(AppEvent.ToggleSaveAnimation);
         this.#saving = false;
-        this.saved = true;
+        this.saved = saved;
+
+        return this.saved;
     }
 
     public async awaitSave(): Promise<void> {
@@ -152,11 +194,18 @@ export class Saver {
         this.#saving = true;
         const backupFolderEntries = await readDir(this.#backupPath);
 
-        if (backupFolderEntries.length >= this.#maxBackups) {
-            await remove(
-                utils.join(this.#backupPath, backupFolderEntries[0].name),
-                { recursive: true },
-            );
+        if (isErr(backupFolderEntries)) {
+            void error(backupFolderEntries[0]!);
+        } else {
+            if (backupFolderEntries[1]!.length >= this.#maxBackups) {
+                await remove(
+                    utils.join(
+                        this.#backupPath,
+                        backupFolderEntries[1]![0].name,
+                    ),
+                    { recursive: true },
+                );
+            }
         }
 
         const date = new Date();
@@ -179,7 +228,21 @@ export class Saver {
             utils.join(backupDirectoryPath, consts.TRANSLATION_DIRECTORY),
         );
 
-        for (const entry of await readDir(this.#translationPath)) {
+        const entries = await readDir(this.#translationPath);
+
+        if (isErr(entries)) {
+            void error(entries[0]!);
+            return;
+        }
+
+        const mapEntries = await readDir(this.#tempMapsPath);
+
+        if (isErr(mapEntries)) {
+            void error(mapEntries[0]!);
+            return;
+        }
+
+        for (const entry of entries[1]!) {
             await copyFile(
                 utils.join(this.#translationPath, entry.name),
                 utils.join(
@@ -190,7 +253,7 @@ export class Saver {
             );
         }
 
-        for (const entry of await readDir(this.#tempMapsPath)) {
+        for (const entry of mapEntries[1]!) {
             await copyFile(
                 utils.join(this.#tempMapsPath, entry.name),
                 utils.join(

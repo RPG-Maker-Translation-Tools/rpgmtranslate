@@ -1,6 +1,6 @@
 import { Component } from "./Component";
-import { TabContent } from "./TabContent";
-import { TabContentHeader } from "./TabContentHeader";
+
+import { TabContent, TabContentHeader } from "./";
 
 export class ScrollBar extends Component {
     declare protected readonly element: HTMLDivElement;

@@ -4,15 +4,13 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../../assets/style.css" />
-        <link rel="stylesheet" href="../../assets/theme-styles.css" />
-        <link rel="stylesheet" href="../../assets/material.css" />
         <script type="module" src="MainWindow.ts" defer></script>
     </head>
 
-    <body class="text-primary bg-dark min-h-screen overflow-x-hidden text-2xl">
+    <body class="bg-dark min-h-screen overflow-x-hidden text-2xl select-none">
         <header class="sticky top-0 z-40">
             <div
-                class="bg-primary flex h-16 w-full items-center justify-between"
+                class="bg-primary flex h-16 w-full flex-row items-center justify-between gap-2 pr-6"
                 id="utils-panel"
             >
                 <div
@@ -20,7 +18,7 @@
                     id="utils-panel-buttons"
                 >
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="tab-panel-button"
                         data-i18n-title="Tabs (Tab)"
                     >
@@ -28,7 +26,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="save-button"
                         data-i18n-title="Save (Ctrl + S)"
                     >
@@ -36,7 +34,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="write-button"
                         data-i18n-title="Write (Alt + C)"
                     >
@@ -44,7 +42,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="open-directory-button"
                         data-i18n-title="Open directory"
                     >
@@ -52,7 +50,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="settings-button"
                         data-i18n-title="Settings"
                     >
@@ -60,7 +58,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="theme-button"
                         data-i18n-title="Themes"
                     >
@@ -68,7 +66,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="bookmarks-button"
                         data-i18n-title="Bookmarks (Ctrl + B)"
                     >
@@ -76,7 +74,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="search-button"
                         data-i18n-title="Search (Ctrl + F)"
                     >
@@ -84,7 +82,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="batch-button"
                         data-i18n-title="Batch menu"
                     >
@@ -92,7 +90,7 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="read-button"
                         data-i18n-title="Read menu"
                     >
@@ -100,60 +98,57 @@
                     </button>
 
                     <button
-                        class="button font-material hover-bg-primary text-third size-16 p-4"
+                        class="font-material size-16 p-4"
                         id="purge-button"
                         data-i18n-title="Purge menu"
                     >
                         mop
                     </button>
+
+                    <button
+                        class="font-material size-16 p-4"
+                        id="glossary-button"
+                        data-i18n-title="Glossary"
+                    >
+                        book_3
+                    </button>
                 </div>
 
                 <div
-                    class="invisible flex h-full w-full flex-col gap-2 pl-4 text-base"
-                    id="language-inputs"
+                    class="invisible flex h-fit w-full flex-col gap-1 text-sm"
+                    id="language-selects"
                 >
-                    <input
-                        class="input bg-second text-second h-6"
-                        id="source-language-input"
-                        autocapitalize="off"
-                        autocomplete="off"
-                        type="text"
-                        data-i18n-placeholder="Source text language for machine translation (e. g. en-US, ru-RU)"
-                    />
-                    <input
-                        class="input bg-second text-second h-6"
-                        id="translation-language-input"
-                        autocapitalize="off"
-                        autocomplete="off"
-                        type="text"
-                        data-i18n-placeholder="Translation language for machine translation (e. g. en-US, ru-RU)"
-                    />
+                    <select class="h-6" id="source-language-select"></select>
+                    <select
+                        class="h-6"
+                        id="translation-language-select"
+                    ></select>
                 </div>
 
                 <div
-                    class="invisible flex h-full gap-4 p-4"
+                    class="invisible flex h-fit min-w-2/6 gap-2"
                     id="metadata-container"
                 >
                     <div
-                        class="flex w-24 items-center justify-center text-sm"
+                        class="flex min-w-24 items-center justify-center text-sm"
                         id="current-tab"
                     ></div>
 
-                    <div class="w-32 content-center">
-                        <div class="bg-second w-full rounded-xs">
+                    <div class="min-w-32 content-center">
+                        <div class="bg-second w-full rounded-sm">
                             <div
-                                class="bg-third text-primary rounded-xs p-0.5 text-center text-xs leading-none font-medium"
+                                class="bg-third p-0.5 text-center text-xs leading-none font-medium"
                                 id="progress-meter"
                             ></div>
                         </div>
                     </div>
 
                     <div
-                        class="flex flex-col items-center justify-center text-sm"
+                        class="flex w-full flex-col items-center justify-center text-sm"
                         id="game-info"
                     >
                         <input
-                            class="input text-second bg-second min-h-8 w-96"
+                            class="h-6 w-full rounded-sm"
                             id="game-title-input"
                             type="text"
                             autocomplete="off"
@@ -179,21 +174,21 @@
         </div>
 
         <div
-            class="sticky bottom-0 z-30 h-6 overflow-x-auto"
+            class="sticky bottom-0 z-30 hidden h-6 overflow-x-auto"
             id="bottom-scroll-bar"
         >
             <div class="h-px w-auto" id="bottom-scroll-content"></div>
         </div>
 
         <div
-            class="bg-primary fixed bottom-0 z-50 hidden size-fit p-2 text-lg"
+            class="bg-primary fixed bottom-0 z-50 hidden size-fit p-2 text-base"
             id="theme-edit-menu"
         >
             <div class="flex items-end justify-end">
                 <button class="font-material" id="close-button">close</button>
             </div>
 
-            <div class="columns-2 gap-4 p-2">
+            <div class="grid grid-cols-2 gap-2 p-2">
                 <div class="flex flex-row gap-2">
                     <input id="--bg-dark" type="color" />
                     <label
@@ -310,7 +305,7 @@
 
             <div class="flex items-center justify-center p-2">
                 <input
-                    class="input text-second bg-second h-8 w-full"
+                    class="h-8 w-full rounded-sm"
                     id="theme-name-input"
                     type="text"
                     autocomplete="off"
@@ -320,24 +315,26 @@
 
             <div class="flex items-center justify-center p-2">
                 <button
-                    class="bg-second hover-bg-primary h-8 w-32 rounded-lg"
+                    class="border-second flex h-8 w-32 items-center justify-center rounded-sm border-2"
                     id="create-theme"
-                    data-i18n="Create theme"
+                    data-i18n="Create Theme"
                 ></button>
             </div>
         </div>
 
         <div
-            class="bg-primary fixed z-40 flex w-32 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
+            class="bg-primary fixed z-40 flex h-[93.3%] w-48 -translate-x-full flex-col overflow-x-hidden overflow-y-scroll text-xs transition-all duration-500"
             id="tab-panel"
         ></div>
 
         <div
-            class="bg-primary outline-third fixed top-0 right-0 z-40 flex h-screen w-64 translate-x-full flex-col overflow-y-auto p-4 outline-2 transition-transform duration-500"
+            class="bg-primary border-second fixed z-40 flex hidden h-screen w-64 min-w-64 resize flex-col gap-2 overflow-y-auto border-2 p-4"
             id="search-panel"
         >
+            <header class="h-8 min-h-8"></header>
+
             <button
-                class="font-material hover-bg-primary mb-2 h-12 w-full content-center text-3xl select-none"
+                class="font-material h-12 w-full content-center text-3xl select-none"
                 id="switch-panel-button"
             >
                 search
@@ -374,23 +371,19 @@
                 <option data-i18n="-Select File-" value=""></option>
             </select>
 
-            <div
-                class="w-full flex-col text-base"
-                id="search-panel-content"
-            ></div>
+            <div class="w-full text-base" id="search-panel-content"></div>
         </div>
 
         <div
             class="bg-primary border-second fixed z-50 hidden h-auto w-96 border-2"
             id="search-menu"
         >
+            <header class="h-8 min-h-8"></header>
+
             <div class="flex h-auto flex-col">
-                <div
-                    class="flex h-auto flex-row items-center p-4"
-                    id="search-field"
-                >
+                <div class="flex h-auto items-center p-4" id="search-field">
                     <textarea
-                        class="input text-second bg-second h-auto text-base"
+                        class="h-auto resize-none rounded-sm text-base"
                         id="search-input"
                         rows="1"
                         cols="50"
@@ -401,21 +394,21 @@
                     class="font-material flex flex-row items-center justify-center"
                 >
                     <button
-                        class="button hover-bg-primary text-third w-16"
+                        class="w-16"
                         id="search-button"
                         data-i18n-title="Search"
                     >
                         search
                     </button>
                     <button
-                        class="button hover-bg-primary text-third w-16"
+                        class="w-16"
                         id="replace-button"
                         data-i18n-title="Replace all matches"
                     >
                         arrow_downward
                     </button>
                     <button
-                        class="button hover-bg-primary text-third w-16"
+                        class="w-16"
                         id="put-button"
                         data-i18n-title="Put text to translation textarea of matching source text"
                     >
@@ -423,9 +416,9 @@
                     </button>
                 </div>
 
-                <div class="flex flex-row items-center p-4" id="replace-field">
+                <div class="flex items-center p-4" id="replace-field">
                     <textarea
-                        class="input text-second bg-second h-auto text-base"
+                        class="h-auto resize-none rounded-sm text-base"
                         id="replace-input"
                         rows="1"
                         cols="50"
@@ -435,28 +428,28 @@
             </div>
             <div class="flex flex-row justify-center">
                 <button
-                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    class="font-material size-16 p-2"
                     id="case-button"
                     data-i18n-title="Consider case (Alt + C)"
                 >
                     match_case
                 </button>
                 <button
-                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    class="font-material size-16 p-2"
                     id="whole-button"
                     data-i18n-title="Search the whole text (Alt + W)"
                 >
                     match_word
                 </button>
                 <button
-                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    class="font-material size-16 p-2"
                     id="regex-button"
                     data-i18n-title="Search by regular expressions (Alt + R)"
                 >
                     regular_expression
                 </button>
                 <button
-                    class="button font-material hover-bg-primary text-third size-16 p-2"
+                    class="font-material size-16 p-2"
                     id="location-button"
                     data-i18n-title="Search only in current tab (Alt + L)"
                 >
@@ -470,7 +463,7 @@
                     for="search-mode-select"
                     data-i18n="Search mode"
                 ></label>
-                <select class="bg-second rounded-xs" id="search-mode-select">
+                <select id="search-mode-select">
                     <option value="0" data-i18n="Search everywhere"></option>
                     <option
                         value="1"
@@ -489,59 +482,82 @@
                     for="search-column-select"
                     data-i18n="Select column"
                 ></label>
-                <select class="bg-second rounded-xs" id="search-column-select">
+                <select id="search-column-select">
                     <option value="-1" data-i18n="Rightmost filled"></option>
                 </select>
             </div>
         </div>
 
         <div
-            class="bg-primary fixed z-50 flex hidden h-auto max-h-32 w-48 flex-col overflow-auto text-sm"
+            class="bg-primary fixed z-50 flex hidden h-auto max-h-32 w-48 flex-col overflow-auto rounded-sm text-sm"
             id="bookmark-menu"
         ></div>
 
         <input
-            class="bg-primary border-second focus-border-primary fixed top-8 right-1/4 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid p-1 text-base"
+            class="bg-primary border-second focus-border-primary fixed top-8 right-1/4 z-50 hidden h-12 w-6/12 rounded-md border-2 border-solid text-base"
             id="go-to-row-input"
             type="number"
         />
 
         <div
-            class="bg-primary text-primary outline-primary border-second fixed z-50 flex hidden max-h-5/6 w-7/12 flex-col gap-2 border-2 p-2 text-base"
+            class="bg-primary outline-primary border-second @container fixed z-50 flex hidden size-3/6 resize flex-col justify-around gap-2 overflow-hidden border-2 p-2 text-base"
             id="batch-menu"
         >
-            <div
+            <header
                 class="flex h-8 flex-row items-center justify-center text-lg"
                 data-i18n="Select files (You can hold LMB and drag to select multiple files)"
+            ></header>
+
+            <div
+                class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
             ></div>
 
             <div
-                class="grid max-h-4/6 grid-cols-7 items-start overflow-x-hidden overflow-y-auto"
-            ></div>
+                class="flex hidden w-full flex-col gap-2"
+                id="context-container"
+            >
+                <div data-i18n="Context"></div>
 
-            <div class="flex flex-row items-center justify-center gap-2">
+                <div class="flex w-full flex-row gap-2">
+                    <textarea
+                        class="w-full rounded-sm"
+                        id="context-input"
+                        data-i18n-placeholder="Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
+                    ></textarea>
+
+                    <div class="flex flex-col gap-2">
+                        <div data-i18n="Use file context"></div>
+                        <select
+                            class="rounded-sm"
+                            id="use-context-select"
+                            multiple
+                        ></select>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="flex h-8 w-full flex-row items-center justify-center gap-2"
+            >
                 <button
-                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    class="border-primary flex items-center justify-center rounded-md border-2"
+                    id="apply-button"
+                    data-i18n="Process"
+                ></button>
+                <button
+                    class="border-primary flex items-center justify-center rounded-md border-2"
+                    id="cancel-button"
+                    data-i18n="Cancel"
+                ></button>
+                <button
+                    class="border-primary flex items-center justify-center rounded-md border-2"
                     id="select-all-button"
                     data-i18n="Select All"
                 ></button>
                 <button
-                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+                    class="border-primary flex items-center justify-center rounded-md border-2"
                     id="deselect-all-button"
                     data-i18n="Deselect All"
-                ></button>
-            </div>
-
-            <div class="flex flex-row items-center justify-center gap-2">
-                <button
-                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
-                    id="apply-button"
-                    data-i18n="Apply"
-                ></button>
-                <button
-                    class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
-                    id="cancel-button"
-                    data-i18n="Cancel"
                 ></button>
             </div>
 
@@ -549,19 +565,19 @@
                 class="flex flex-row items-center justify-center gap-2"
                 id="batch-menu-footer"
             >
-                <select class="bg-second w-64" id="batch-action-select">
+                <select class="w-64" id="batch-action-select">
                     <option value="0" data-i18n="-Select Action-"></option>
                     <option value="1" data-i18n="Trim"></option>
                     <option value="2" data-i18n="Translate"></option>
                     <option value="3" data-i18n="Wrap"></option>
                 </select>
 
-                <select class="bg-second w-64" id="translation-column-select">
+                <select class="w-64" id="translation-column-select">
                     <option value="0" data-i18n="-Select Column-"></option>
                 </select>
 
                 <input
-                    class="input bg-second hidden h-6 text-base"
+                    class="hidden rounded-sm"
                     id="wrap-limit-input"
                     type="number"
                     data-i18n-placeholder="Line length for wrapping"
@@ -569,26 +585,29 @@
             </div>
         </div>
 
-        <div class="dropdown-menu border-second flex hidden" id="theme-menu">
+        <div
+            class="border-second bg-primary fixed z-50 flex hidden flex-col rounded-sm border-2"
+            id="theme-menu"
+        >
             <button
-                class="bg-primary hover-bg-primary h-8 content-center p-1 text-base"
+                class="h-8 content-center text-base"
                 id="create-theme-button"
                 data-i18n="Create Theme"
             ></button>
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl gap-2 p-2 text-base"
+            class="border-second bg-primary fixed z-50 flex hidden max-w-3xl flex-col gap-2 border-2 p-2 text-base"
             id="write-menu"
         >
             <button
-                class="bg-second hover-bg-primary h-8 content-center rounded-xs p-1"
+                class="bg-second h-8 content-center rounded-sm"
                 id="select-output-path-button"
                 data-i18n="Select Output Path"
             ></button>
 
             <input
-                class="input text-second bg-second"
+                class="w-full rounded-sm"
                 id="output-path-input"
                 autocapitalize="off"
                 autocomplete="off"
@@ -598,11 +617,7 @@
             <div class="flex flex-col gap-2">
                 <div>
                     <div data-i18n="Skip files:"></div>
-                    <select
-                        class="bg-second p-1"
-                        id="skip-files-select"
-                        multiple
-                    >
+                    <select class="rounded-sm" id="skip-files-select" multiple>
                         <option value="1">Map</option>
                         <option value="2">Actors</option>
                         <option value="4">Armors</option>
@@ -621,7 +636,7 @@
                 <div>
                     <div data-i18n="Skip maps:"></div>
                     <input
-                        class="input bg-second h-8 w-80"
+                        class="h-8 w-80 rounded-sm"
                         id="skip-maps-input"
                         type="text"
                         autocapitalize="off"
@@ -632,9 +647,9 @@
                 <div>
                     <div data-i18n="Skip events:"></div>
 
-                    <span class="flex flex-row gap-2">
+                    <span class="flex flex-col gap-2">
                         <select
-                            class="bg-second p-1"
+                            class="w-80 rounded-sm"
                             id="skip-events-select"
                             multiple
                         >
@@ -653,7 +668,7 @@
                             <option value="14">Plugins</option>
                         </select>
                         <input
-                            class="input bg-second h-8 w-80"
+                            class="h-8 w-80 rounded-sm"
                             id="skip-events-input"
                             type="text"
                             autocapitalize="off"
@@ -666,37 +681,28 @@
 
             <div class="flex items-center justify-center">
                 <button
-                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    class="border-primary flex h-8 w-48 items-center justify-center rounded-md border-2"
                     id="apply-button"
-                    data-i18n="Apply"
+                    data-i18n="Write"
                 ></button>
             </div>
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl flex-col gap-4 p-2 text-base"
+            class="border-second bg-primary fixed z-50 flex hidden max-w-3xl flex-col gap-4 border-2 p-2 text-base"
             id="read-menu"
         >
             <div>
                 <label data-i18n="How to read files."></label>
 
-                <select class="bg-second rounded-xs" id="read-mode-select">
-                    <option data-i18n="Force Rewrite" value="1"></option>
-                    <option data-i18n="Default Append" value="2"></option>
-                    <option data-i18n="Force Append" value="3"></option>
-                </select>
-
-                <div id="mode-description" data-i18n=""></div>
+                <select class="rounded-sm" id="read-mode-select"></select>
+                <div id="mode-description"></div>
             </div>
 
             <div>
                 <label data-i18n="How to handle duplicates in text."></label>
 
-                <select
-                    class="bg-second rounded-xs"
-                    id="duplicate-mode-select"
-                    disabled
-                >
+                <select class="rounded-sm" id="duplicate-mode-select">
                     <option data-i18n="Remove duplicates" value="1"></option>
                     <option data-i18n="Allow duplicates" value="0"></option>
                 </select>
@@ -705,7 +711,7 @@
             </div>
 
             <div class="flex flex-col gap-2">
-                <label class="checkbox-container custom-checkbox">
+                <label class="custom-checkbox">
                     <input
                         class="size-8"
                         id="romanize-checkbox"
@@ -717,10 +723,7 @@
                     ></span>
                 </label>
 
-                <label
-                    class="checkbox-container custom-checkbox"
-                    id="trim-container"
-                >
+                <label class="custom-checkbox" id="trim-container">
                     <input class="size-8" id="trim-checkbox" type="checkbox" />
 
                     <span
@@ -728,7 +731,7 @@
                     ></span>
                 </label>
 
-                <label class="checkbox-container custom-checkbox">
+                <label class="custom-checkbox">
                     <input
                         class="size-8"
                         id="custom-processing-checkbox"
@@ -740,10 +743,7 @@
                     ></span>
                 </label>
 
-                <label
-                    class="checkbox-container custom-checkbox"
-                    id="ignore-container"
-                >
+                <label class="custom-checkbox" id="ignore-container">
                     <input
                         class="size-8"
                         id="ignore-checkbox"
@@ -757,11 +757,7 @@
 
                 <div>
                     <div data-i18n="Skip files:"></div>
-                    <select
-                        class="bg-second p-1"
-                        id="skip-files-select"
-                        multiple
-                    >
+                    <select class="rounded-sm" id="skip-files-select" multiple>
                         <option value="1">Map</option>
                         <option value="2">Actors</option>
                         <option value="4">Armors</option>
@@ -780,7 +776,7 @@
                 <div>
                     <div data-i18n="Skip maps:"></div>
                     <input
-                        class="input bg-second h-8 w-80"
+                        class="h-8 w-80 rounded-sm"
                         id="skip-maps-input"
                         type="text"
                         autocapitalize="off"
@@ -791,9 +787,9 @@
                 <div>
                     <div data-i18n="Skip events:"></div>
 
-                    <span class="flex flex-row gap-2">
+                    <span class="flex flex-col gap-2">
                         <select
-                            class="bg-second p-1"
+                            class="w-80 rounded-sm"
                             id="skip-events-select"
                             multiple
                         >
@@ -812,7 +808,7 @@
                             <option value="14">Plugins</option>
                         </select>
                         <input
-                            class="input bg-second h-8 w-80"
+                            class="h-8 w-80 rounded-sm"
                             id="skip-events-input"
                             type="text"
                             autocapitalize="off"
@@ -822,10 +818,7 @@
                     </span>
                 </div>
 
-                <label
-                    class="checkbox-container custom-checkbox"
-                    id="map-events-container"
-                >
+                <label class="custom-checkbox" id="map-events-container">
                     <input
                         class="size-8"
                         id="map-events-checkbox"
@@ -838,7 +831,7 @@
 
             <div class="flex items-center justify-center">
                 <button
-                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    class="border-primary flex h-8 w-48 items-center justify-center rounded-md border-2"
                     id="apply-button"
                     data-i18n="Read"
                 ></button>
@@ -846,17 +839,13 @@
         </div>
 
         <div
-            class="dropdown-menu border-second bg-primary flex hidden max-w-3xl flex-col gap-2 p-2 text-base"
+            class="border-second bg-primary fixed z-50 flex hidden max-w-3xl flex-col gap-2 border-2 p-2 text-base"
             id="purge-menu"
         >
             <div class="flex flex-col gap-2">
                 <div>
                     <div data-i18n="Skip files:"></div>
-                    <select
-                        class="bg-second p-1"
-                        id="skip-files-select"
-                        multiple
-                    >
+                    <select class="rounded-sm" id="skip-files-select" multiple>
                         <option value="1">Map</option>
                         <option value="2">Actors</option>
                         <option value="4">Armors</option>
@@ -875,7 +864,7 @@
                 <div>
                     <div data-i18n="Skip maps:"></div>
                     <input
-                        class="input bg-second h-8 w-80"
+                        class="h-8 w-80 rounded-sm"
                         id="skip-maps-input"
                         type="text"
                         autocapitalize="off"
@@ -886,9 +875,9 @@
                 <div>
                     <div data-i18n="Skip events:"></div>
 
-                    <span class="flex flex-row gap-2">
+                    <span class="flex flex-col gap-2">
                         <select
-                            class="bg-second p-1"
+                            class="w-80 rounded-sm"
                             id="skip-events-select"
                             multiple
                         >
@@ -907,7 +896,7 @@
                             <option value="14">Plugins</option>
                         </select>
                         <input
-                            class="input bg-second h-8 w-80"
+                            class="h-8 w-80 rounded-sm"
                             id="skip-events-input"
                             type="text"
                             autocapitalize="off"
@@ -917,7 +906,7 @@
                     </span>
                 </div>
 
-                <label class="checkbox-container custom-checkbox">
+                <label class="custom-checkbox">
                     <input
                         class="size-8"
                         id="create-ignore-checkbox"
@@ -931,11 +920,106 @@
 
             <div class="flex items-center justify-center">
                 <button
-                    class="button border-primary hover-bg-primary text-third h-8 w-48 rounded-md border-2"
+                    class="border-primary flex h-8 w-48 items-center justify-center rounded-md border-2"
                     id="apply-button"
                     data-i18n="Purge"
                 ></button>
             </div>
         </div>
+
+        <div
+            class="bg-primary border-second fixed z-50 hidden max-h-2/6 w-1/2 overflow-x-hidden overflow-y-auto border-2 text-base"
+            id="glossary-menu"
+        >
+            <header
+                class="flex h-8 flex-row items-center justify-between gap-2 pr-1"
+            >
+                <span class="p-1" data-i18n="Glossary"></span>
+
+                <button
+                    class="bg-second flex h-6 items-center justify-center rounded-sm"
+                    id="match-menu-button"
+                    data-i18n="Match Menu"
+                ></button>
+
+                <span class="flex items-center justify-center gap-2">
+                    <input
+                        class="h-6 rounded-sm"
+                        id="search-input"
+                        type="text"
+                    />
+                    <button
+                        class="font-material flex h-6 items-center justify-center rounded-sm"
+                        id="search-button"
+                    >
+                        search
+                    </button>
+                </span>
+
+                <label class="custom-checkbox">
+                    <input id="check-only-current" type="checkbox" />
+                    <span data-i18n="Check only current file"></span>
+                </label>
+
+                <button
+                    class="bg-second flex h-6 items-center justify-center rounded-sm"
+                    id="qc-button"
+                >
+                    QC
+                </button>
+            </header>
+
+            <table class="size-full table-auto text-left">
+                <thead class="bg-primary border-second sticky top-0 border-y-4">
+                    <tr>
+                        <th data-i18n="Source"></th>
+                        <th data-i18n="Translation"></th>
+                        <th data-i18n="Note"></th>
+                        <th class="font-material text-center" id="check">
+                            search
+                        </th>
+                        <th class="font-material text-center" id="edit">
+                            edit
+                        </th>
+                        <th class="font-material text-center" id="remove">
+                            close
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+
+        <div
+            class="border-primary bg-primary fixed z-50 hidden max-h-5/6 min-h-16 w-full resize overflow-x-hidden overflow-y-auto border-2 text-base"
+            id="match-menu"
+        >
+            <table class="size-full table-auto text-left">
+                <thead
+                    class="bg-primary border-second sticky top-0 h-8 min-h-8 border-y-4"
+                >
+                    <tr>
+                        <th data-i18n="File"></th>
+                        <th data-i18n="Line"></th>
+                        <th data-i18n="Term"></th>
+                        <th data-i18n="Result"></th>
+                        <th data-i18n="Info"></th>
+                        <th
+                            class="font-material bg-second hover-bg-primary w-8 cursor-pointer text-center"
+                        >
+                            close
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+
+        <div
+            class="pointer-events-none fixed bottom-16 z-50 flex w-full items-center justify-center text-xl"
+            id="debug-output"
+        ></div>
     </body>
 </html>

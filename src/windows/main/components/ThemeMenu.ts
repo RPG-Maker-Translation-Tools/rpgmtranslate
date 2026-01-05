@@ -1,7 +1,10 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent } from "@lib/enums";
-import { tw } from "@utils/functions";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { AppEvent, ElementToShow } from "@lib/enums";
+
+import { tw } from "@utils/functions";
 
 export class ThemeMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -20,7 +23,7 @@ export class ThemeMenu extends Component {
     }
 
     public init(themes: Themes): void {
-        for (const themeName of Object.keys(themes)) {
+        for (const themeName in themes) {
             this.addTheme(themeName);
         }
     }
@@ -28,7 +31,7 @@ export class ThemeMenu extends Component {
     public addTheme(name: string): void {
         const themeButton = document.createElement("button");
         themeButton.textContent = name;
-        themeButton.className = tw`bg-primary hover-bg-primary h-8 p-1 text-base`;
+        themeButton.className = tw`h-8 p-1 text-base`;
 
         this.element.insertBefore(themeButton, this.element.lastElementChild);
     }
@@ -41,7 +44,10 @@ export class ThemeMenu extends Component {
         }
 
         if (target === this.#createThemeButton) {
-            void emittery.emit(AppEvent.ShowThemeEditMenu);
+            void emittery.emit(AppEvent.ShowElement, [
+                ElementToShow.ThemeEditMenu,
+                false,
+            ]);
         } else {
             void emittery.emit(AppEvent.ApplyTheme, target.textContent);
         }

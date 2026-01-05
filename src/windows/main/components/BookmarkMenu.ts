@@ -1,7 +1,10 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent } from "@lib/enums";
-import { objectIsEmpty, tw } from "@utils/functions";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { AppEvent } from "@lib/enums";
+
+import { objectIsEmpty, tw } from "@utils/functions";
 
 export class BookmarkMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -41,7 +44,7 @@ export class BookmarkMenu extends Component {
         rowNumber: number,
     ): void {
         const bookmarkElement = document.createElement("button");
-        bookmarkElement.className = tw`bg-primary hover-bg-second flex h-auto flex-row items-center justify-center p-1`;
+        bookmarkElement.className = tw`flex h-auto flex-row items-center justify-center p-1`;
         bookmarkElement.innerHTML = `${file}-${rowNumber}<br>${description}`;
 
         if (!(file in this.#bookmarks)) {

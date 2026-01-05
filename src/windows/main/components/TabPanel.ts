@@ -1,23 +1,49 @@
-import { emittery } from "@classes/emittery";
-import { ProjectSettings } from "@lib/classes";
-import { AppEvent } from "@lib/enums";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { ProjectSettings } from "@lib/classes";
+import { AppEvent, BatchAction, TokenizerAlgorithm } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
+import {
+    detectLang,
+    getLang,
+    isErr,
+    readDir,
+    readTextFile,
+    writeTextFile,
+} from "@utils/invokes";
 
-import { readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { t } from "@lingui/core/macro";
+
+import { error, info } from "@tauri-apps/plugin-log";
 
 export class TabPanel extends Component {
     declare protected readonly element: HTMLDivElement;
+
+    #projectSettings!: ProjectSettings;
     #tempMapsPath = "";
+    #completed: string[] = [];
+
+    #submenu: HTMLDivElement | null = null;
 
     public constructor() {
         super("tab-panel");
 
         this.element.onclick = async (e): Promise<void> => {
             await this.#onclick(e);
+        };
+
+        this.element.oncontextmenu = (e): void => {
+            this.#oncontextmenu(e);
+        };
+
+        this.element.blur = (): void => {
+            this.contextMenu?.remove();
+            this.contextMenu = null;
         };
     }
 
@@ -26,93 +52,82 @@ export class TabPanel extends Component {
     }
 
     public get tabCount(): number {
-        return super.childCount;
+        return this.childCount;
     }
 
     public get tabs(): HTMLCollectionOf<HTMLButtonElement> {
-        return super.children as HTMLCollectionOf<HTMLButtonElement>;
+        return this.children;
     }
 
     public override get hidden(): boolean {
         return this.element.classList.contains("-translate-x-full");
     }
 
-    public async init(projectSettings: ProjectSettings): Promise<void> {
+    public async init(
+        projectSettings: ProjectSettings,
+    ): Promise<string | undefined> {
+        this.#projectSettings = projectSettings;
         this.#tempMapsPath = projectSettings.tempMapsPath;
+        this.#completed = projectSettings.completed;
 
-        const translationFiles = await readDir(
-            projectSettings.translationPath,
-        ).catch((err) => {
-            utils.logErrorIO(projectSettings.translationPath, err);
-        });
+        const translationFiles = await readDir(projectSettings.translationPath);
 
-        if (!translationFiles) {
+        if (isErr(translationFiles)) {
+            void error(translationFiles[0]!);
             return;
         }
 
-        for (const translationFile of translationFiles) {
-            if (!translationFile.name.endsWith(consts.TXT_EXTENSION)) {
+        for (const file of translationFiles[1]!) {
+            if (!file.name.endsWith(consts.TXT_EXTENSION)) {
                 continue;
             }
 
-            const translationFileContent = await readTextFile(
-                utils.join(
-                    projectSettings.translationPath,
-                    translationFile.name,
-                ),
-            ).catch((err) => {
-                utils.logErrorIO(projectSettings.translationPath, err);
-                return "";
-            });
-
-            if (!translationFileContent) {
-                continue;
-            }
-
-            const contentLines = utils.lines(translationFileContent);
-
-            if (contentLines.length === 1) {
-                continue;
-            }
-
-            const basename = translationFile.name.slice(
-                0,
-                translationFile.name.lastIndexOf("."),
+            const content = await readTextFile(
+                utils.join(projectSettings.translationPath, file.name),
             );
 
-            if (basename.startsWith("map")) {
-                await this.#parseMap(contentLines, basename);
-            } else {
-                for (let i = 0; i < contentLines.length; i++) {
-                    const line = contentLines[i];
-                    const parts = utils.parts(line);
-
-                    if (!parts) {
-                        // todo
-                        continue;
-                    }
-
-                    const source = utils.source(parts);
-                    const translation = utils.translation(parts)[0];
-
-                    if (source === consts.BOOKMARK_COMMENT) {
-                        await emittery.emit(AppEvent.AddBookmark, [
-                            basename,
-                            translation,
-                            i + 1,
-                        ]);
-                    }
-                }
-
-                this.addTab(basename, contentLines);
+            if (isErr(content)) {
+                void error(content[0]!);
+                continue;
             }
 
-            await emittery.emit(AppEvent.FileRead, translationFile.name);
+            const lines = utils.lines(content[1]!);
+
+            if (lines.length === 1) {
+                continue;
+            }
+
+            const basename = file.name.slice(0, file.name.lastIndexOf("."));
+
+            if (basename.startsWith("map")) {
+                await this.#parseMap(
+                    lines,
+                    basename,
+                    projectSettings.translationLanguages.sourceLanguage,
+                );
+            } else {
+                this.addTab(
+                    basename,
+                    lines,
+                    projectSettings.translationLanguages.sourceLanguage,
+                );
+            }
+
+            void info(`${file.name}: Successfully read.`);
+        }
+
+        if (
+            projectSettings.translationLanguages.sourceLanguage ===
+            TokenizerAlgorithm.None
+        ) {
+            return await getLang();
+        } else {
+            return undefined;
         }
     }
 
     public tab(index: number): HTMLButtonElement {
-        return super.childAt(index) as HTMLButtonElement;
+        return this.childAt(index) as HTMLButtonElement;
     }
 
     public override hide(): void {
@@ -127,7 +142,11 @@ export class TabPanel extends Component {
         this.element.innerHTML = "";
     }
 
-    public addTab(name: string, rows: string[]): void {
+    public addTab(
+        name: string,
+        rows: string[],
+        sourceLanguage: TokenizerAlgorithm,
+    ): void {
         if (name === "system") {
             // Remove the game title row
             rows = rows.slice(0, -1);
@@ -140,18 +159,36 @@ export class TabPanel extends Component {
             return;
         }
 
-        for (const line of rows) {
+        for (let l = 0; l < rows.length; l++) {
+            const line = rows[l];
+            const parts = utils.parts(line);
+
+            if (!parts) {
+                utils.logSplitError(name, l);
+                continue;
+            }
+
+            const source = utils.source(parts);
+            const translation = utils.translation(parts)[0];
+
+            if (source === consts.BOOKMARK_COMMENT) {
+                void emittery.emit(AppEvent.AddBookmark, [
+                    name,
+                    translation,
+                    l + 1,
+                ]);
+            }
+
             if (line.startsWith(consts.COMMENT_PREFIX)) {
                 total--;
             } else {
-                const parts = utils.parts(line);
-
-                if (!parts) {
-                    // todo
-                    continue;
+                if (
+                    sourceLanguage === TokenizerAlgorithm.None &&
+                    name !== "scripts" &&
+                    name !== "plugins"
+                ) {
+                    detectLang(source);
                 }
-
-                const translation = utils.translation(parts)[0];
 
                 if (translation) {
                     translated++;
@@ -170,7 +207,7 @@ export class TabPanel extends Component {
         const tabIndex = this.tabCount;
 
         const tabButton = document.createElement("button");
-        tabButton.className = tw`bg-primary hover-bg-primary flex max-h-8 w-full cursor-pointer flex-row justify-center p-1`;
+        tabButton.className = tw`flex max-h-8 w-full cursor-pointer flex-row justify-between p-1`;
         tabButton.id = tabIndex.toString();
 
         const stateSpan = document.createElement("span");
@@ -181,8 +218,8 @@ export class TabPanel extends Component {
         const progressBar = document.createElement("div");
         const progressMeter = document.createElement("div");
 
-        progressBar.className = tw`bg-second w-full rounded-xs`;
-        progressMeter.className = tw`bg-third text-primary rounded-xs p-0.5 text-center text-xs leading-none font-medium`;
+        progressBar.className = tw`bg-second w-16 rounded-xs`;
+        progressMeter.className = tw`bg-third rounded-xs p-0.5 text-center text-xs leading-none font-medium`;
         progressMeter.style.width =
             progressMeter.textContent = `${percentage}%`;
 
@@ -193,6 +230,10 @@ export class TabPanel extends Component {
         progressBar.appendChild(progressMeter);
         tabButton.appendChild(progressBar);
         this.element.appendChild(tabButton);
+
+        if (this.#completed.includes(name)) {
+            tabButton.style.color = "lime";
+        }
 
         void emittery.emit(AppEvent.TabAdded, [
             name,
@@ -217,7 +258,11 @@ export class TabPanel extends Component {
         }
     }
 
-    async #parseMap(lines: string[], filename: string): Promise<void> {
+    async #parseMap(
+        lines: string[],
+        filename: string,
+        sourceLanguage: TokenizerAlgorithm,
+    ): Promise<void> {
         const result: string[] = [];
         const mapIndices: number[] = [];
 
@@ -228,43 +273,39 @@ export class TabPanel extends Component {
                 `map${mapID}${consts.TXT_EXTENSION}`,
             );
 
-            await writeTextFile(tempMapPath, result.join("\n")).catch((err) => {
-                utils.logErrorIO(tempMapPath, err);
-            });
+            const res = await writeTextFile(tempMapPath, result.join("\n"));
 
-            this.addTab(`map${mapID}`, result);
+            if (isErr(res)) {
+                void error(res[0]!);
+            } else {
+                this.addTab(`map${mapID}`, result, sourceLanguage);
+            }
+
             result.length = 0;
         };
 
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const parts = utils.parts(line);
+        for (let l = 0; l < lines.length; l++) {
+            const line = lines[l];
 
-            if (!parts) {
-                // todo
+            if (line.startsWith(consts.BOOKMARK_COMMENT)) {
                 continue;
-            }
+            } else if (line.startsWith(consts.ID_COMMENT)) {
+                const parts = utils.parts(line);
 
-            const source = utils.source(parts);
-            const translation = utils.translation(parts)[0];
-
-            if (source === consts.BOOKMARK_COMMENT) {
-                await emittery.emit(AppEvent.AddBookmark, [
-                    filename,
-                    translation,
-                    i + 1,
-                ]);
-            } else {
-                if (source === consts.ID_COMMENT) {
-                    mapIndices.push(Number(translation));
-
-                    if (result.length > 0) {
-                        await parseMapComment();
-                    }
+                if (!parts) {
+                    utils.logSplitError(filename, l);
+                    continue;
                 }
 
-                result.push(line);
+                const translation = utils.translation(parts)[0];
+                mapIndices.push(Number(translation));
+
+                if (result.length > 0) {
+                    await parseMapComment();
+                }
             }
+
+            result.push(line);
         }
 
         await parseMapComment();
@@ -285,5 +326,111 @@ export class TabPanel extends Component {
             AppEvent.ChangeTab,
             target.firstElementChild!.textContent,
         );
+    }
+
+    #oncontextmenu(e: MouseEvent): void {
+        e.preventDefault();
+
+        let tab = e.target as HTMLElement | null;
+
+        if (!tab) {
+            return;
+        }
+
+        while (tab.tagName !== "BUTTON") {
+            tab = tab.parentElement!;
+        }
+
+        const tabName = tab.firstElementChild!.textContent;
+
+        this.contextMenu = document.createElement("div");
+        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
+
+        for (const [id, label] of [
+            t`Mark Complete`,
+            t`Batch Translate`,
+            t`Batch Trim`,
+            t`Batch Wrap`,
+        ].entries()) {
+            const button = document.createElement("button");
+            button.className = tw`h-fit w-full p-1`;
+            button.innerHTML = label;
+            button.id = id.toString();
+
+            if (id !== 0) {
+                button.onmouseenter = (): void => {
+                    this.#submenu?.remove();
+                    this.#submenu = document.createElement("div");
+                    this.#submenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
+
+                    this.#submenu.onclick = (): void => {
+                        switch (id) {
+                            case 1:
+                                void emittery.emit(AppEvent.BatchAction, [
+                                    tabName,
+                                    BatchAction.Translate,
+                                    this.#projectSettings
+                                        .translationColumns[0][1],
+                                ]);
+                                break;
+                            case 2:
+                                void emittery.emit(AppEvent.BatchAction, [
+                                    tabName,
+                                    BatchAction.Trim,
+                                    this.#projectSettings
+                                        .translationColumns[0][1],
+                                ]);
+                                break;
+                            case 3:
+                                void emittery.emit(AppEvent.BatchAction, [
+                                    tabName,
+                                    BatchAction.Wrap,
+                                    this.#projectSettings
+                                        .translationColumns[0][1],
+                                ]);
+                                break;
+                        }
+                    };
+
+                    for (const [columnName, columnIndex] of this
+                        .#projectSettings.translationColumns) {
+                        const button = document.createElement("button");
+                        button.className = tw`h-fit w-full p-1`;
+                        button.innerHTML = `${columnName} (${columnIndex})`;
+
+                        this.#submenu.appendChild(button);
+                    }
+
+                    const rect = button.getBoundingClientRect();
+
+                    this.#submenu.style.top = `${rect.top}px`;
+                    this.#submenu.style.left = `${rect.left + rect.width}px`;
+
+                    this.contextMenu!.appendChild(this.#submenu);
+                };
+            }
+
+            this.contextMenu.appendChild(button);
+        }
+
+        this.contextMenu.style.top = `${e.y}px`;
+        this.contextMenu.style.left = `${e.x}px`;
+
+        this.contextMenu.onclick = (e): void => {
+            const target = e.target as HTMLElement | null;
+
+            if (!target) {
+                return;
+            }
+
+            if (target.id === "0") {
+                this.#completed.push(tabName);
+                tab.style.color = "lime";
+            }
+        };
+
+        document.body.appendChild(this.contextMenu);
+
+        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

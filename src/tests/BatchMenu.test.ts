@@ -1,12 +1,11 @@
 import { ProjectSettings } from "@lib/classes";
 import * as fs from "@tauri-apps/plugin-fs";
-import * as invokes from "@utils/invokes";
 import { BatchMenu } from "@windows/main/components";
 import { describe, expect, Mock, test, vi } from "vitest";
 
 document.body.innerHTML = `
 <div
-    class="bg-primary text-primary outline-primary border-second fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
+    class="  border-second fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
     id="batch-menu"
 >
     <div
@@ -18,12 +17,12 @@ document.body.innerHTML = `
 
     <div class="flex flex-row items-center justify-center gap-4">
         <button
-            class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+            class="button  h-8 w-32 rounded-md border-2 p-1"
             id="select-all-button"
             data-i18n="Select All"
         ></button>
         <button
-            class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+            class="button  h-8 w-32 rounded-md border-2 p-1"
             id="deselect-all-button"
             data-i18n="Deselect All"
         ></button>
@@ -31,12 +30,12 @@ document.body.innerHTML = `
 
     <div class="flex flex-row items-center justify-center gap-4">
         <button
-            class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+            class="button  h-8 w-32 rounded-md border-2 p-1"
             id="apply-button"
             data-i18n="Apply"
         ></button>
         <button
-            class="button border-primary hover-bg-primary bg-primary h-8 w-32 rounded-md border-2 p-1"
+            class="button  h-8 w-32 rounded-md border-2 p-1"
             id="cancel-button"
             data-i18n="Cancel"
         ></button>
@@ -46,19 +45,19 @@ document.body.innerHTML = `
         class="flex flex-row items-center justify-center gap-2"
         id="batch-menu-footer"
     >
-        <select class="bg-second w-64" id="batch-action-select">
+        <select class="w-64" id="batch-action-select">
             <option value="0" data-i18n="-Select Action-"></option>
             <option value="1" data-i18n="Trim"></option>
             <option value="2" data-i18n="Translate"></option>
             <option value="3" data-i18n="Wrap"></option>
         </select>
 
-        <select class="bg-second w-64" id="translation-column-select">
+        <select class="w-64" id="translation-column-select">
             <option value="-1" data-i18n="-Select Column-"></option>
         </select>
 
         <input
-            class="input bg-second hidden h-6 text-base"
+            class="input hidden h-6 text-base"
             id="wrap-limit-input"
             type="number"
         />
@@ -96,6 +95,8 @@ vi.mock(import("@utils/invokes"), async (importOriginal) => {
     return { ...actual, translate: vi.fn() };
 });
 
+// TODO: Mock translate
+
 describe.sequential("", () => {
     test("trim", async () => {
         (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
@@ -103,11 +104,10 @@ describe.sequential("", () => {
         );
 
         const batchMenu = new BatchMenu();
-        batchMenu.init(
-            {} as TabInfo,
-            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-            tabs,
-        );
+
+        // TODO
+        // @ts-expect-error
+        batchMenu.init({} as TabInfo, new ProjectSettings(), {}, {}, tabs);
 
         columnSelect.value = "1";
         batchAction.value = "1";
@@ -130,19 +130,11 @@ describe.sequential("", () => {
         (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
             "example text for translation<#>",
         );
-        (invokes.translate as Mock<typeof invokes.translate>).mockResolvedValue(
-            "примерный текст для перевода",
-        );
 
         const batchMenu = new BatchMenu();
-        batchMenu.init(
-            {} as TabInfo,
-            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-            tabs,
-        );
-
-        batchMenu.sourceLanguage = "en";
-        batchMenu.translationLanguage = "ru";
+        // TODO
+        // @ts-expect-error
+        batchMenu.init({} as TabInfo, new ProjectSettings(), {}, {}, tabs);
 
         columnSelect.value = "1";
         batchAction.value = "2";
@@ -167,11 +159,10 @@ describe.sequential("", () => {
         );
 
         const batchMenu = new BatchMenu();
-        batchMenu.init(
-            {} as TabInfo,
-            new ProjectSettings({ tempMapsPath: "./", translationPath: "./" }),
-            tabs,
-        );
+
+        // TODO
+        // @ts-expect-error
+        batchMenu.init({} as TabInfo, new ProjectSettings({}), {}, {}, tabs);
 
         wrapLimitInput.value = "20";
 

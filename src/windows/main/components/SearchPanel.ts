@@ -1,16 +1,21 @@
+import { Component } from "./Component";
+
+import { TabContent } from "./";
+
 import { emittery } from "@classes/emittery";
-import { AppEvent, MouseButton, SearchAction } from "@enums/index";
+
 import { ProjectSettings } from "@lib/classes";
-import { Component, TabContent } from "./index";
+import { AppEvent, MouseButton, SearchAction } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
+import { isErr, readTextFile, writeTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 
 export class SearchPanel extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -29,6 +34,9 @@ export class SearchPanel extends Component {
     #tabContent!: TabContent;
     #projectSettings!: ProjectSettings;
     #replacementLog!: ReplacementLog;
+
+    #startX = 0;
+    #startY = 0;
 
     public constructor() {
         super("search-panel");
@@ -65,10 +73,10 @@ export class SearchPanel extends Component {
         this.element.onclick = (e): void => {
             this.#onclick(e);
         };
-    }
 
-    public override get hidden(): boolean {
-        return this.element.classList.contains("translate-x-full");
+        this.element.oncontextmenu = (e): void => {
+            this.#oncontextmenu(e);
+        };
     }
 
     public updateResults(pages: number): void {
@@ -81,10 +89,6 @@ export class SearchPanel extends Component {
             this.#searchTotalPages.textContent = pages.toString();
             void this.loadSearchMatch(1);
         }
-    }
-
-    public override hide(): void {
-        this.element.classList.replace("translate-x-0", "translate-x-full");
     }
 
     public init(
@@ -105,19 +109,15 @@ export class SearchPanel extends Component {
             const option = document.createElement("option");
             option.innerHTML = filename;
             option.value = filename;
-            this.#logFileSelect.appendChild(option);
+            this.#logFileSelect.add(option);
         }
-    }
-
-    public override show(): void {
-        this.element.classList.replace("translate-x-full", "translate-x-0");
     }
 
     public addLog(filename: string): void {
         const option = document.createElement("option");
         option.innerHTML = filename;
         option.value = filename;
-        this.#logFileSelect.appendChild(option);
+        this.#logFileSelect.add(option);
     }
 
     public removeLog(filename: string): void {
@@ -136,10 +136,10 @@ export class SearchPanel extends Component {
             [counterpartInfo, counterpartMatch],
         ] of matchObject) {
             const matchContainer = document.createElement("div");
-            matchContainer.className = tw`text-second bg-second border-primary my-1 cursor-pointer border-2 p-1`;
+            matchContainer.className = tw`text-second border-primary my-1 cursor-pointer border-2 p-1`;
 
             const matchDiv = document.createElement("div");
-            matchDiv.innerHTML = match;
+            matchDiv.innerHTML = this.#escapeHtmlExceptSpans(match);
             matchDiv.className = tw`whitespace-pre-wrap`;
             matchContainer.appendChild(matchDiv);
 
@@ -186,7 +186,11 @@ export class SearchPanel extends Component {
 
         const target = (event.target as HTMLElement).closest<HTMLDivElement>(
             ".cursor-pointer",
-        )!;
+        );
+
+        if (!target) {
+            return;
+        }
 
         const matchInfo = target.children[1].innerHTML;
         const [filename, entry, type, columnString, row] =
@@ -339,17 +343,14 @@ export class SearchPanel extends Component {
                     `${filename}${consts.TXT_EXTENSION}`,
                 );
 
-                const fileContent = await readTextFile(filePath).catch(
-                    (err) => {
-                        utils.logErrorIO(filePath, err);
-                    },
-                );
+                const fileContent = await readTextFile(filePath);
 
-                if (fileContent === undefined) {
+                if (isErr(fileContent)) {
+                    void error(fileContent[0]!);
                     return;
                 }
 
-                const translationLines = utils.lines(fileContent);
+                const translationLines = utils.lines(fileContent[1]!);
 
                 const rowIndex = this.#findExternalRequiredRow(
                     filename,
@@ -367,12 +368,14 @@ export class SearchPanel extends Component {
                 parts[columnIndex + 1] = utils.dlbtoclb(logOld);
                 translationLines[rowIndex] = utils.joinParts(parts);
 
-                await writeTextFile(
+                const result = await writeTextFile(
                     filePath,
                     translationLines.join("\n"),
-                ).catch((err) => {
-                    utils.logErrorIO(filePath, err);
-                });
+                );
+
+                if (isErr(result)) {
+                    void error(result[0]!);
+                }
             }
 
             await emittery.emit(AppEvent.LogEntryReverted, [filename, logOld]);
@@ -386,28 +389,56 @@ export class SearchPanel extends Component {
         this.#searchPanelContent.innerHTML = "";
 
         const matchFile = utils.join(
-            this.#projectSettings.programDataPath,
+            this.#projectSettings.matchesPath,
             `match${matchIndex}${consts.JSON_EXTENSION}`,
         );
 
         const matchContent = await readTextFile(matchFile);
-        const matchObject = JSON.parse(matchContent) as MatchObject;
 
-        return matchObject;
+        if (isErr(matchContent)) {
+            void error(matchContent[0]!);
+            return {} as MatchObject;
+        }
+
+        return JSON.parse(matchContent[1]!) as MatchObject;
     }
 
-    async #onmousedown(event: MouseEvent): Promise<void> {
-        const target = event.target as HTMLElement | null;
+    async #onmousedown(e: MouseEvent): Promise<void> {
+        const target = e.target as HTMLElement | null;
 
         if (!target) {
             return;
         }
 
+        if (
+            target.tagName === "HEADER" &&
+            (e.button as MouseButton) === MouseButton.Left
+        ) {
+            this.element.style.cursor = "grabbing";
+
+            this.#startX = e.clientX - this.x;
+            this.#startY = e.clientY - this.y;
+
+            this.element.onmousemove = (e): void => {
+                this.x = e.clientX - this.#startX;
+                this.y = e.clientY - this.#startY;
+
+                this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+
+                this.element.onmouseup = (): void => {
+                    this.element.style.cursor = "auto";
+                    this.element.onmouseup = null;
+                    this.element.onmousemove = null;
+                };
+            };
+            return;
+        }
+
         if (this.#searchPanelContent.contains(target)) {
             if (this.#switchPanelButton.innerHTML === "menu_book") {
-                await this.#handleLogRecordClick(event);
+                await this.#handleLogRecordClick(e);
             } else {
-                await this.#handleSearchMatchClick(event);
+                await this.#handleSearchMatchClick(e);
             }
         }
     }
@@ -497,5 +528,98 @@ export class SearchPanel extends Component {
 
             this.#searchPanelContent.appendChild(entryContainer);
         }
+    }
+
+    #escapeHtmlExceptSpans(input: string): string {
+        let result = "";
+        let i = 0;
+        let inSpan = false;
+
+        while (i < input.length) {
+            if (!inSpan && input.startsWith("<span", i)) {
+                const end = input.indexOf(">", i);
+                inSpan = true;
+                result += input.slice(i, end + 1);
+                i = end + 1;
+                continue;
+            }
+
+            if (inSpan && input.startsWith("</span>", i)) {
+                inSpan = false;
+                result += "</span>";
+                i += 7;
+                continue;
+            }
+
+            const char = input[i];
+
+            if (inSpan) {
+                result += char;
+            } else {
+                switch (char) {
+                    case "&":
+                        result += "&amp;";
+                        break;
+                    case "<":
+                        result += "&lt;";
+                        break;
+                    case ">":
+                        result += "&gt;";
+                        break;
+                    case '"':
+                        result += "&quot;";
+                        break;
+                    case "'":
+                        result += "&#39;";
+                        break;
+                    default:
+                        result += char;
+                }
+            }
+
+            i++;
+        }
+
+        return result;
+    }
+
+    #oncontextmenu(e: MouseEvent): void {
+        e.preventDefault();
+
+        const target = e.target as HTMLElement;
+
+        if (target.tagName !== "HEADER") {
+            return;
+        }
+
+        this.contextMenu = document.createElement("div");
+        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
+
+        for (const [id, label] of [t`Restore Position`].entries()) {
+            const button = document.createElement("button");
+            button.className = tw`h-fit w-full p-1`;
+            button.innerHTML = label;
+            button.id = id.toString();
+            this.contextMenu.appendChild(button);
+        }
+
+        this.contextMenu.style.top = `${e.y}px`;
+        this.contextMenu.style.left = `${e.x}px`;
+
+        this.contextMenu.onclick = (e): void => {
+            const target = e.target as HTMLElement | null;
+
+            if (!target) {
+                return;
+            }
+
+            if (target.id === "0") {
+                this.move(0, 0);
+            }
+        };
+
+        document.body.appendChild(this.contextMenu);
+
+        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

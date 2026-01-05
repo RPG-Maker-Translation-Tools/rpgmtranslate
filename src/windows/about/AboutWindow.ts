@@ -9,8 +9,8 @@ import { open as openLink } from "@tauri-apps/plugin-shell";
 await once<[Settings, Themes, ProjectSettings]>("settings", async (event) => {
     const [settings, themes] = event.payload;
 
-    utils.applyTheme(themes, settings.theme);
-    await utils.initializeLocalization("About", settings.language);
+    utils.applyTheme(themes, settings.appearance.theme);
+    await utils.initializeLocalization("about", settings.appearance.language);
     utils.retranslate();
 
     document.getElementById("version-number")!.innerHTML = await getVersion();

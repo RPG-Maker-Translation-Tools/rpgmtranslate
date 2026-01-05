@@ -13,7 +13,8 @@
         "fs:default",
         "dialog:default",
         "os:default",
-        "core:window:allow-destroy"
+        "core:window:allow-destroy",
+        "log:allow-log"
     ],
     "windows": ["settings"]
 }

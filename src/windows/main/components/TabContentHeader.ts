@@ -1,9 +1,12 @@
+import { Component } from "./Component";
+
 import { emittery } from "@classes/emittery";
+
 import { ProjectSettings } from "@lib/classes";
 import { AppEvent, MouseButton } from "@lib/enums";
+
 import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
 import { tw } from "@utils/functions";
-import { Component } from "./Component";
 
 import { t } from "@lingui/core/macro";
 
@@ -97,7 +100,8 @@ export class TabContentHeader extends Component {
                 columnElement.innerHTML = columnName;
             } else {
                 const columnInput = document.createElement("input");
-                columnInput.className = tw`w-full`;
+                columnInput.className = tw`w-full p-0`;
+                columnInput.style.backgroundColor = "var(--bg-primary)";
                 columnInput.spellcheck = false;
                 columnInput.value = columnName;
                 columnElement.appendChild(columnInput);
@@ -141,7 +145,8 @@ export class TabContentHeader extends Component {
         columnElement.style.width = `${DEFAULT_COLUMN_WIDTH}px`;
 
         const columnInput = document.createElement("input");
-        columnInput.className = tw`w-full`;
+        columnInput.className = tw`w-full p-0`;
+        columnInput.style.backgroundColor = "var(--bg-primary)";
         columnInput.spellcheck = false;
         columnInput.value = t`Translation`;
 
@@ -330,7 +335,7 @@ export class TabContentHeader extends Component {
         this.#widthInput = document.createElement("input");
         this.#widthInput.type = "number";
         this.#widthInput.value = Number.parseInt(target.style.width).toString();
-        this.#widthInput.className = tw`bg-second absolute z-50 rounded-md p-1 text-base`;
+        this.#widthInput.className = tw`absolute z-50 rounded-md p-1 text-base`;
         this.#widthInput.style.left = `${event.x}px`;
         this.#widthInput.style.top = `${event.y}px`;
 

@@ -39,7 +39,7 @@
     },
     "productName": "rpgmtranslate",
     "mainBinaryName": "rpgmtranslate",
-    "version": "7.0.0",
+    "version": "8.0.0",
     "identifier": "com.savannstm.rpgmtranslate",
     "plugins": {
         "updater": {
@@ -67,7 +67,7 @@
                 "connect-src": "ipc: http://ipc.localhost",
                 "img-src": "'self' asset: http://asset.localhost blob: data:",
                 "style-src": "'unsafe-inline' 'self'",
-                "font-src": "asset: http://asset.localhost http://tauri.localhost",
+                "font-src": "asset: http://asset.localhost http://tauri.localhost tauri://localhost",
                 "script-src": "asset: http://asset.localhost"
             }
         },

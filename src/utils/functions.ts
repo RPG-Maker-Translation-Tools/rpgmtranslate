@@ -1,9 +1,9 @@
 import * as consts from "@utils/constants";
+import { isErr, readTextFile } from "@utils/invokes";
 
 import { i18n, Messages } from "@lingui/core";
 
 import { resolveResource } from "@tauri-apps/api/path";
-import { readTextFile } from "@tauri-apps/plugin-fs";
 import { error } from "@tauri-apps/plugin-log";
 
 export const join = (...strings: string[]): string => strings.join("/");
@@ -12,10 +12,6 @@ export const tw = (
     strings: TemplateStringsArray,
     ...values: string[]
 ): string => String.raw({ raw: strings }, ...values);
-
-export function logErrorIO(path: string, err: unknown): void {
-    void error(`${path}: IO error occured: ${err}`);
-}
 
 /**
  * Compares two strings with different line break styles, in this case, `\#` and `\n`.
@@ -129,14 +125,30 @@ export function translations(container: string[] | RowContainer): string[] {
     if (Array.isArray(container)) {
         return container.slice(1);
     } else {
-        const translations: string[] = [];
+        const translations: string[] = new Array(
+            container.childElementCount - 2,
+        );
 
         for (let i = 2; i < container.childElementCount; i++) {
-            translations.push(container.children[i].value);
+            translations[i - 2] = container.children[i].value;
         }
 
         return translations;
     }
+}
+
+export function translationElements(
+    container: RowContainer,
+): HTMLTextAreaElement[] {
+    const translations: HTMLTextAreaElement[] = new Array(
+        container.childElementCount - 2,
+    );
+
+    for (let i = 2; i < container.childElementCount; i++) {
+        translations[i - 2] = container.children[i];
+    }
+
+    return translations;
 }
 
 export function rowNumberElement(container: RowContainer): HTMLSpanElement {
@@ -257,18 +269,22 @@ export function applyTheme(themes: Themes, theme: string): void {
 }
 
 export async function initializeLocalization(
-    window: "About" | "Main" | "Settings",
+    window: "about" | "main" | "settings",
     locale: string,
 ): Promise<void> {
-    const { messages } = JSON.parse(
-        await readTextFile(
-            await resolveResource(
-                `resources/locales/${locale}/${window}/messages.json`,
-            ),
+    const content = await readTextFile(
+        await resolveResource(
+            `resources/locales/${locale}/${window}/messages.json`,
         ),
-    ) as { messages: Messages };
-    i18n.load(locale, messages);
-    i18n.activate(locale);
+    );
+
+    if (isErr(content)) {
+        void error(content[0]!);
+    } else {
+        const { messages } = JSON.parse(content[1]!) as { messages: Messages };
+        i18n.load(locale, messages);
+        i18n.activate(locale);
+    }
 }
 
 export function retranslate(): void {
@@ -290,5 +306,87 @@ export function retranslate(): void {
         element.placeholder = i18n._(
             element.getAttribute("data-i18n-placeholder")!,
         );
+    }
+}
+
+export function* parseBlocks(
+    lines: string[],
+): IterableIterator<[string, SourceBlock]> {
+    let currentID: string | null = null;
+    let currentName: string | null = null;
+    let content: string[] = [];
+
+    for (const line of lines) {
+        if (line.startsWith("<!-- ID --><#>")) {
+            if (currentID !== null && currentName !== null) {
+                yield [
+                    currentID,
+                    {
+                        name: currentName,
+                        strings: content,
+                    },
+                ];
+            }
+
+            currentID = line.slice("<!-- ID --><#>".length).trim();
+            currentName = null;
+            content = [];
+            continue;
+        }
+
+        if (line.startsWith("<!-- NAME --><#>")) {
+            currentName = line.slice("<!-- NAME --><#>".length).trim();
+            continue;
+        }
+
+        if (currentID !== null && currentName !== null) {
+            content.push(line);
+        }
+    }
+
+    if (currentID !== null && currentName !== null) {
+        yield [
+            currentID,
+            {
+                name: currentName,
+                strings: content,
+            },
+        ];
+    }
+}
+
+export function deepAssign(
+    target: Record<string, unknown>,
+    source: Record<string, unknown> | null,
+): void {
+    if (source == null) {
+        return;
+    }
+
+    for (const key in source) {
+        const sourceField = source[key];
+        const targetField = target[key];
+
+        if (targetField === undefined) {
+            target[key] = sourceField;
+            continue;
+        }
+
+        if (Array.isArray(sourceField)) {
+            for (const [i, val] of sourceField.entries()) {
+                (target[key] as unknown[])[i] = val;
+            }
+            continue;
+        }
+
+        if (typeof sourceField === "object") {
+            deepAssign(
+                target[key] as Record<string, unknown>,
+                sourceField as Record<string, unknown>,
+            );
+            continue;
+        }
+
+        target[key] = sourceField;
     }
 }

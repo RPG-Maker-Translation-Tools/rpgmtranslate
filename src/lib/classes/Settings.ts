@@ -1,16 +1,16 @@
-import { Language, RowDeleteMode } from "@enums/index";
+import { Language, RowDeleteMode, TranslationEndpoint } from "@lib/enums";
+
 import * as consts from "@utils/constants";
-import { logErrorIO } from "@utils/functions";
-import { expandScope } from "@utils/invokes";
+import { isErr, readTextFile, writeTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
 import { ask } from "@tauri-apps/plugin-dialog";
-import { exists, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { error, info } from "@tauri-apps/plugin-log";
 import { locale as getLocale } from "@tauri-apps/plugin-os";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
+import { deepAssign } from "@utils/functions";
 
 interface Backup {
     enabled: boolean;
@@ -18,78 +18,127 @@ interface Backup {
     max: number;
 }
 
+export interface CoreSettings {
+    projectPath: string;
+    firstLaunch: boolean;
+    backup: Backup;
+    rowDeleteMode: RowDeleteMode;
+    updatesEnabled: boolean;
+    recentProjects: string[];
+}
+
+export interface AppearanceSettings {
+    displayGhostLines: boolean;
+    zoom: number;
+    font: string;
+    uiFont: string;
+    theme: string;
+    language: Language;
+}
+
+export interface TranslationSettings {
+    translationEndpoint: TranslationEndpoint;
+    model: string;
+    apiKey: string;
+    yandexFolderId: string;
+    systemPrompt: string;
+    useGlossary: boolean;
+    thinking: boolean;
+    temperature: number;
+    tokenLimit: number;
+}
+
+export interface ControlSettings extends Record<string, string> {
+    openResultsPanel: string;
+    openTabPanel: string;
+    // TODO: More
+}
+
 export interface SettingsOptions {
-    projectPath?: string;
-
-    firstLaunch?: boolean;
-    backup?: Backup;
-    rowDeleteMode?: RowDeleteMode;
-    zoom?: number;
-    font?: string;
-    language?: Language;
-    displayGhostLines?: boolean;
-    updatesEnabled?: boolean;
-
-    theme?: string;
+    core?: Partial<CoreSettings>;
+    appearance?: Partial<AppearanceSettings>;
+    controls?: Partial<ControlSettings>;
+    translation?: Partial<TranslationSettings>;
 }
 
 export class Settings implements SettingsOptions {
-    public projectPath = "";
-    public language = Language.English;
-    public backup: Backup = {
-        enabled: true,
-        period: consts.MIN_BACKUP_PERIOD,
-        max: consts.MAX_BACKUPS,
+    public core: CoreSettings = {
+        projectPath: "",
+        firstLaunch: true,
+        backup: {
+            enabled: true,
+            period: consts.MIN_BACKUP_PERIOD,
+            max: consts.MAX_BACKUPS,
+        },
+        rowDeleteMode: RowDeleteMode.Disabled,
+        updatesEnabled: true,
+        recentProjects: [],
     };
-    public theme = "cool-zinc";
-    public font = "";
-    public firstLaunch = true;
-    public rowDeleteMode = RowDeleteMode.Disabled;
-    public displayGhostLines = false;
-    public updatesEnabled = true;
-    public zoom = 1;
 
-    public constructor(options: SettingsOptions = {}) {
-        this.projectPath = options.projectPath ?? this.projectPath;
-        this.language = options.language ?? this.language;
-        this.backup = options.backup ?? this.backup;
-        this.theme = options.theme ?? this.theme;
-        this.font = options.font ?? this.font;
-        this.firstLaunch = options.firstLaunch ?? this.firstLaunch;
-        this.rowDeleteMode = options.rowDeleteMode ?? this.rowDeleteMode;
-        this.displayGhostLines =
-            options.displayGhostLines ?? this.displayGhostLines;
-        this.updatesEnabled = options.updatesEnabled ?? this.updatesEnabled;
-        this.zoom = options.zoom ?? this.zoom;
+    public appearance: AppearanceSettings = {
+        displayGhostLines: false,
+        zoom: 1,
+        font: "",
+        uiFont: "",
+        theme: "cool-zinc",
+        language: Language.English,
+    };
+
+    public controls: ControlSettings = {
+        openResultsPanel: "KeyR",
+        openTabPanel: "Tab",
+    };
+
+    public translation: TranslationSettings = {
+        translationEndpoint: TranslationEndpoint.Google,
+        model: "",
+        apiKey: "",
+        yandexFolderId: "",
+        systemPrompt: "",
+        useGlossary: true,
+        thinking: true,
+        temperature: consts.DEFAULT_TEMPERATURE,
+        tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+    };
+
+    public constructor(options: Partial<SettingsOptions> = {}) {
+        deepAssign(this as unknown as Record<string, unknown>, options);
     }
 
-    public async init(): Promise<void> {
+    public async new(): Promise<boolean> {
         let settings: Settings;
 
-        if (
-            await exists(consts.SETTINGS_PATH, {
-                baseDir: consts.RESOURCE_DIRECTORY,
-            })
-        ) {
-            settings = new Settings(
-                JSON.parse(
-                    await readTextFile(consts.SETTINGS_PATH, {
-                        baseDir: consts.RESOURCE_DIRECTORY,
-                    }),
-                ) as SettingsOptions,
-            );
-        } else {
-            settings = new Settings();
-        }
-
-        await expandScope(consts.SETTINGS_PATH);
-        await writeTextFile(consts.SETTINGS_PATH, JSON.stringify(settings), {
+        const settingsContent = await readTextFile(consts.SETTINGS_PATH, {
             baseDir: consts.RESOURCE_DIRECTORY,
-        }).catch((err) => {
-            logErrorIO(consts.SETTINGS_PATH, err);
         });
 
-        Object.assign(this, settings);
+        if (isErr(settingsContent) || !settingsContent[1]!) {
+            void error(settingsContent[0]!);
+            settings = new Settings();
+        } else {
+            settings = new Settings(
+                JSON.parse(settingsContent[1]) as SettingsOptions,
+            );
+        }
+
+        const written = await writeTextFile(
+            consts.SETTINGS_PATH,
+            JSON.stringify(settings),
+            {
+                baseDir: consts.RESOURCE_DIRECTORY,
+            },
+        );
+
+        if (isErr(written)) {
+            void error(written[0]!);
+            return false;
+        }
+
+        deepAssign(
+            this as unknown as Record<string, unknown>,
+            settings as unknown as Record<string, unknown>,
+        );
+        return true;
     }
 
     public async setLanguageFromLocale(): Promise<void> {
@@ -105,17 +154,16 @@ export class Settings implements SettingsOptions {
             case "ru":
             case "uk":
             case "be":
-                this.language = Language.Russian;
+                this.appearance.language = Language.Russian;
                 break;
             default:
-                this.language = Language.English;
+                this.appearance.language = Language.English;
                 break;
         }
     }
 
-    // TODO: Move this out of here?
     public async checkForUpdates(): Promise<void> {
-        if (!this.updatesEnabled) {
+        if (!this.core.updatesEnabled) {
             return;
         }
 

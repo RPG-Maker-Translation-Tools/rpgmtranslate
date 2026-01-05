@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+@font-face {
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: 400;
+    src: url("./material-symbols-outlined.woff2") format("woff2");
+}
+
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: "liga";
+    -moz-font-feature-settings: "liga";
+    -moz-osx-font-smoothing: grayscale;
+}
+
 @theme {
     --font-*: initial;
     --font-material: Material Symbols Outlined;
@@ -57,6 +81,135 @@
     .custom-checkbox > input:disabled + span::before {
         background-color: black;
     }
+
+    input,
+    button,
+    textarea,
+    select[multiple],
+    th,
+    td {
+        padding: var(--spacing);
+    }
+
+    :root {
+        --bg-dark: #18181b;
+        --bg-primary: #27272a;
+        --bg-second: #3f3f46;
+        --bg-third: #71717a;
+        --hover-bg-primary: #52525b;
+        --hover-bg-second: #3f3f46;
+
+        --outline-primary: #3f3f46;
+        --outline-second: #71717a;
+        --outline-third: #52525b;
+        --focus-outline-primary: #a1a1aa;
+
+        --text-primary: #d4d4d8;
+        --text-second: #e4e4e7;
+        --text-third: #a1a1aa;
+
+        --border-primary: #52525b;
+        --border-second: #3f3f46;
+        --focus-border-primary: #a1a1aa;
+    }
+
+    .bg-dark {
+        background-color: var(--bg-dark);
+    }
+
+    .bg-dark * {
+        color: var(--text-primary);
+    }
+
+    .bg-dark select,
+    .bg-dark input,
+    .bg-dark textarea {
+        background-color: var(--bg-primary);
+    }
+
+    .bg-primary {
+        background-color: var(--bg-primary);
+    }
+
+    .bg-primary select,
+    .bg-primary input,
+    .bg-primary textarea {
+        background-color: var(--bg-second);
+    }
+
+    .bg-primary * {
+        color: var(--text-primary);
+    }
+
+    .bg-primary button:hover {
+        background-color: var(--hover-bg-primary);
+    }
+
+    .bg-second {
+        background-color: var(--bg-second);
+    }
+
+    .bg-second select,
+    .bg-second input,
+    .bg-second textarea {
+        background-color: var(--bg-third);
+    }
+
+    .bg-second * {
+        color: var(--text-primary);
+    }
+
+    .bg-third {
+        background-color: var(--bg-third);
+    }
+
+    .hover-bg-primary:hover {
+        background-color: var(--hover-bg-primary);
+    }
+
+    .hover-bg-second:hover {
+        background-color: var(--hover-bg-second);
+    }
+
+    .outline-primary {
+        outline-color: var(--outline-primary);
+    }
+
+    .outline-second {
+        outline-color: var(--outline-second);
+    }
+
+    .outline-third {
+        outline-color: var(--outline-third);
+    }
+
+    .focus-outline-primary:focus {
+        outline-color: var(--focus-outline-primary);
+    }
+
+    .text-primary {
+        color: var(--text-primary);
+    }
+
+    .text-second {
+        color: var(--text-second);
+    }
+
+    .text-third {
+        color: var(--text-third);
+    }
+
+    .border-primary {
+        border-color: var(--border-primary);
+    }
+
+    .border-second {
+        border-color: var(--border-second);
+    }
+
+    .focus-border-primary:focus {
+        border-color: var(--focus-border-primary);
+    }
 }
 
 /*
@@ -74,18 +227,6 @@ Make sure disabled buttons don't get the pointer cursor.
     cursor: default;
 }
 
-.button {
-    @apply flex cursor-pointer items-center justify-center select-none;
-}
-
-.input {
-    @apply resize-none rounded-xs p-2;
-}
-
-.dropdown-menu {
-    @apply fixed z-50 flex-col rounded-md border-2;
-}
-
-.checkbox-container {
+.custom-checkbox {
     @apply flex flex-row items-center gap-2;
 }

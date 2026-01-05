@@ -1,14 +1,17 @@
+import { Component } from "./Component";
+
 import { emittery } from "@classes/emittery";
+
 import { ProjectSettings } from "@lib/classes";
-import { AppEvent } from "@lib/enums";
+import {
+    AppEvent,
+    TokenizerAlgorithm,
+    TokenizerAlgorithmNames,
+} from "@lib/enums";
+
 import { ENGINE_NAMES, PERCENT_MULTIPLIER } from "@utils/constants";
 import { join, parts } from "@utils/functions";
 import { readLastLine } from "@utils/invokes";
-import { Component } from "./Component";
-
-import { t } from "@lingui/core/macro";
-
-import { check } from "language-tags";
 
 export class UtilsPanel extends Component {
     public readonly saveButton: HTMLButtonElement;
@@ -22,12 +25,14 @@ export class UtilsPanel extends Component {
     public readonly searchButton: HTMLButtonElement;
     public readonly batchButton: HTMLButtonElement;
     public readonly settingsButton: HTMLButtonElement;
+    public readonly glossaryButton: HTMLButtonElement;
 
     declare protected readonly element: HTMLDivElement;
 
-    readonly #languageInputs: HTMLDivElement;
-    readonly #sourceLanguageInput: HTMLInputElement;
-    readonly #translationLanguageInput: HTMLInputElement;
+    #translationLanguages!: TranslationLanguages;
+    readonly #languageSelects: HTMLDivElement;
+    readonly #sourceLanguageSelect: HTMLSelectElement;
+    readonly #translationLanguageSelect: HTMLSelectElement;
 
     readonly #gameEngine: HTMLDivElement;
     readonly #gameTitleInput: HTMLInputElement;
@@ -67,13 +72,16 @@ export class UtilsPanel extends Component {
             this.#utilsPanelButtons.querySelector("#batch-button")!;
         this.settingsButton =
             this.#utilsPanelButtons.querySelector("#settings-button")!;
+        this.glossaryButton =
+            this.#utilsPanelButtons.querySelector("#glossary-button")!;
 
-        this.#languageInputs = this.element.querySelector("#language-inputs")!;
-        this.#sourceLanguageInput = this.element.querySelector(
-            "#source-language-input",
+        this.#languageSelects =
+            this.element.querySelector("#language-selects")!;
+        this.#sourceLanguageSelect = this.element.querySelector(
+            "#source-language-select",
         )!;
-        this.#translationLanguageInput = this.element.querySelector(
-            "#translation-language-input",
+        this.#translationLanguageSelect = this.element.querySelector(
+            "#translation-language-select",
         )!;
 
         this.#metadataContainer = this.element.querySelector(
@@ -88,25 +96,50 @@ export class UtilsPanel extends Component {
         this.#gameTitleInput =
             this.#metadataContainer.querySelector("#game-title-input")!;
 
+        this.#languageSelects.onchange = (e): void => {
+            const target = e.target as HTMLSelectElement;
+
+            if (target === this.#sourceLanguageSelect) {
+                this.#translationLanguages.sourceLanguage = Number(
+                    target.value,
+                );
+            } else if (target === this.#translationLanguageSelect) {
+                this.#translationLanguages.translationLanguage = Number(
+                    target.value,
+                );
+            }
+        };
+
         this.#utilsPanelButtons.onclick = async (e): Promise<void> => {
             await this.#onbuttonclick(e);
         };
 
-        this.element.addEventListener("focusout", (e) => {
+        this.element.addEventListener("focusout", (e): void => {
             this.#onfocusout(e);
         });
+
+        for (
+            let i = TokenizerAlgorithm.Arabic;
+            i <= TokenizerAlgorithm.None;
+            i++
+        ) {
+            const option = document.createElement("option");
+            option.value = i.toString();
+            option.setAttribute("data-i18n", TokenizerAlgorithmNames[i]);
+
+            this.#sourceLanguageSelect.add(
+                option.cloneNode() as HTMLOptionElement,
+            );
+            this.#translationLanguageSelect.add(option);
+        }
+
+        this.#sourceLanguageSelect.value = TokenizerAlgorithm.None.toString();
+        this.#translationLanguageSelect.value =
+            TokenizerAlgorithm.None.toString();
     }
 
     public get gameEngine(): string {
         return this.#gameEngine.textContent;
-    }
-
-    public get sourceLanguage(): string {
-        return this.#sourceLanguageInput.value;
-    }
-
-    public get translationLanguage(): string {
-        return this.#translationLanguageInput.value;
     }
 
     public get translationTitle(): string {
@@ -117,25 +150,19 @@ export class UtilsPanel extends Component {
         return this.#gameTitleInput.placeholder;
     }
 
-    public set sourceLanguage(language: string) {
-        this.#sourceLanguageInput.value = language;
-    }
-
-    public set translationLanguage(language: string) {
-        this.#translationLanguageInput.value = language;
-    }
-
     public set tabName(name: string) {
         this.#currentTab.textContent = name;
     }
 
     public async init(projectSettings: ProjectSettings): Promise<void> {
         this.#metadataContainer.classList.remove("invisible");
-        this.#languageInputs.classList.remove("invisible");
+        this.#languageSelects.classList.remove("invisible");
 
-        this.translationLanguage =
-            projectSettings.translationLanguages.translation;
-        this.sourceLanguage = projectSettings.translationLanguages.source;
+        this.#translationLanguages = projectSettings.translationLanguages;
+        this.#sourceLanguageSelect.value =
+            this.#translationLanguages.sourceLanguage.toString();
+        this.#translationLanguageSelect.value =
+            this.#translationLanguages.translationLanguage.toString();
 
         const systemFilePath = join(
             projectSettings.translationPath,
@@ -153,7 +180,7 @@ export class UtilsPanel extends Component {
 
     public clear(): void {
         this.#metadataContainer.classList.add("invisible");
-        this.#languageInputs.classList.add("invisible");
+        this.#languageSelects.classList.add("invisible");
     }
 
     public updateProgressMeter(tabInfo: TabInfo): void {
@@ -186,44 +213,11 @@ export class UtilsPanel extends Component {
         this.purgeButton.firstElementChild!.classList.toggle("animate-spin");
     }
 
-    #checkLangaugeTag(input: HTMLInputElement): boolean {
-        if (!input.value) {
-            return true;
-        }
-
-        const valid = check(input.value);
-
-        if (valid) {
-            return true;
-        }
-
-        alert(
-            t`Language tag is invalid. You must use existing IANA BCP-47 language tag. For example, en-US or ja-JP`,
-        );
-
-        input.value = "";
-        return false;
-    }
-
     #onfocusout(e: FocusEvent): void {
         const target = e.target as HTMLInputElement;
 
-        switch (target) {
-            case this.#sourceLanguageInput:
-            case this.#translationLanguageInput:
-                this.#checkLangaugeTag(target);
-
-                void emittery.emit(AppEvent.LanguageTags, [
-                    this.sourceLanguage,
-                    this.translationLanguage,
-                ]);
-                break;
-            case this.#gameTitleInput:
-                void emittery.emit(
-                    AppEvent.TitleTranslationChanged,
-                    target.value,
-                );
-                break;
+        if (target === this.#gameTitleInput) {
+            void emittery.emit(AppEvent.TitleTranslationChanged, target.value);
         }
     }
 

@@ -1,11 +1,20 @@
-import { emittery } from "@classes/emittery";
-import { ProjectSettings } from "@lib/classes";
-import { AppEvent, DuplicateMode, FileFlags, ReadMode } from "@lib/enums";
 import { Component } from "./Component";
 
-import { BaseFlags } from "@lib/enums/BaseFlags";
-import { RPGMFileType } from "@lib/enums/RPGMFileType";
+import { emittery } from "@classes/emittery";
+
+import { ProjectSettings } from "@lib/classes";
+import {
+    AppEvent,
+    BaseFlags,
+    DuplicateMode,
+    FileFlags,
+    ReadMode,
+    RPGMFileType,
+} from "@lib/enums";
+
 import { t } from "@lingui/core/macro";
+
+// TODO: Implement generic files support introduced in rvpacker-txt-rs-lib v11.1.0
 
 export class ReadMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -26,12 +35,13 @@ export class ReadMenu extends Component {
     readonly #skipEventsSelect: HTMLSelectElement;
     readonly #skipEventsInput: HTMLInputElement;
     readonly #skipEvents: Record<string, string> = {};
-    #prevOption = "";
     readonly #mapEventsCheckbox: HTMLInputElement;
 
     readonly #applyReadButton: HTMLButtonElement;
 
     #projectSettings!: ProjectSettings;
+
+    #prevOption = "";
 
     public constructor() {
         super("read-menu");
@@ -69,6 +79,12 @@ export class ReadMenu extends Component {
 
         this.#applyReadButton = this.element.querySelector("#apply-button")!;
 
+        const defaultOption = document.createElement("option");
+        // TODO: This is possibly untranslated?
+        defaultOption.setAttribute("data-i18n", "Default");
+        defaultOption.value = ReadMode.Default.toString();
+        this.#readModeSelect.add(defaultOption);
+
         this.element.onclick = async (e): Promise<void> => {
             await this.#onclick(e);
         };
@@ -85,7 +101,7 @@ export class ReadMenu extends Component {
             if (
                 (charCode < "1".charCodeAt(0) ||
                     charCode > "0".charCodeAt(0)) &&
-                charCode != ",".charCodeAt(0)
+                charCode !== ",".charCodeAt(0)
             ) {
                 this.#skipMapsInput.value = this.#skipMapsInput.value.slice(
                     0,
@@ -117,6 +133,8 @@ export class ReadMenu extends Component {
             this.#changeReadModeDesc();
 
             switch (readMode) {
+                case ReadMode.Default:
+                    break;
                 case ReadMode.AppendForce:
                 case ReadMode.AppendDefault: {
                     this.#duplicateModeSelect.value =
@@ -176,6 +194,23 @@ export class ReadMenu extends Component {
         );
         this.#duplicateModeSelect.value =
             projectSettings.duplicateMode.toString();
+
+        this.#readModeSelect.innerHTML = "";
+
+        for (let i = ReadMode.DefaultForce; i <= ReadMode.AppendForce; i++) {
+            const option = document.createElement("option");
+
+            if (i === ReadMode.DefaultForce) {
+                option.innerHTML = t`Force`;
+            } else if (i === ReadMode.AppendDefault) {
+                option.innerHTML = t`Append`;
+            } else if (i === ReadMode.AppendForce) {
+                option.innerHTML = t`Force Append`;
+            }
+
+            option.value = i.toString();
+            this.#readModeSelect.add(option);
+        }
     }
 
     public override show(x?: number, y?: number): void {
@@ -208,7 +243,7 @@ export class ReadMenu extends Component {
             case ReadMode.AppendForce:
             case ReadMode.AppendDefault: {
                 const post =
-                    readMode == ReadMode.AppendDefault
+                    readMode === ReadMode.AppendDefault
                         ? t`Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode.`
                         : "";
 
@@ -230,7 +265,7 @@ export class ReadMenu extends Component {
             return;
         }
 
-        if (target == this.#applyReadButton) {
+        if (target === this.#applyReadButton) {
             const readMode = this.readMode();
 
             const duplicateMode = Number(this.#duplicateModeSelect.value);

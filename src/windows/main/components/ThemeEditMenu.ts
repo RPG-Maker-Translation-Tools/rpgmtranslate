@@ -1,6 +1,8 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent } from "@lib/enums";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { AppEvent } from "@lib/enums";
 
 import { t } from "@lingui/core/macro";
 

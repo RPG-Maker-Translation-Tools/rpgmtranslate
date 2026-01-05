@@ -1,8 +1,9 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent, FileFlags } from "@lib/enums";
 import { Component } from "./Component";
 
-import { RPGMFileType } from "@lib/enums/RPGMFileType";
+import { emittery } from "@classes/emittery";
+
+import { AppEvent, FileFlags, RPGMFileType } from "@lib/enums";
+
 import { open } from "@tauri-apps/plugin-dialog";
 
 export class WriteMenu extends Component {
@@ -58,7 +59,7 @@ export class WriteMenu extends Component {
             if (
                 (charCode < "1".charCodeAt(0) ||
                     charCode > "0".charCodeAt(0)) &&
-                charCode != ",".charCodeAt(0)
+                charCode !== ",".charCodeAt(0)
             ) {
                 this.#skipMapsInput.value = this.#skipMapsInput.value.slice(
                     0,

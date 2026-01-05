@@ -1,52 +1,64 @@
-import { DuplicateMode, EngineType } from "@enums/index";
+import {
+    BaseFlags,
+    DuplicateMode,
+    EngineType,
+    TokenizerAlgorithm,
+} from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
+import { expandScope, mkdir } from "@utils/invokes";
 
-import { BaseFlags } from "@enums/BaseFlags";
-import { exists, mkdir, writeTextFile } from "@tauri-apps/plugin-fs";
-import { expandScope } from "@utils/invokes";
+import { exists } from "@tauri-apps/plugin-fs";
 
 export interface ProjectSettingsOptions {
-    engineType?: import("@enums/EngineType").EngineType;
-    translationLanguages?: TranslationLanguages;
-    duplicateMode?: import("@enums/DuplicateMode").DuplicateMode;
-    flags?: import("@enums/BaseFlags").BaseFlags;
-    hashes?: string[];
+    engineType: import("@enums/EngineType").EngineType;
+    translationLanguages: {
+        sourceLanguage: TokenizerAlgorithm;
+        translationLanguage: TokenizerAlgorithm;
+    };
+    duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
+    flags: import("@enums/BaseFlags").BaseFlags;
+    hashes: string[];
+    lineLengthHint: number;
+    completed: string[];
 
-    translationColumns?: [string, number][];
-    translationColumnCount?: number;
+    translationColumns: [string, number][];
+    translationColumnCount: number;
 
-    sourceDirectory?: string;
-    programDataPath?: string;
-    tempMapsPath?: string;
-    sourcePath?: string;
-    translationPath?: string;
-    logPath?: string;
-    projectSettingsPath?: string;
-    backupPath?: string;
-    outputPath?: string;
+    sourceDirectory: string;
+
+    projectContext: string;
+    fileContexts: Record<string, string>;
 }
 
 export class ProjectSettings implements ProjectSettingsOptions {
     public engineType = EngineType.New;
-    public translationLanguages: TranslationLanguages = {
-        source: "",
-        translation: "",
+    public translationLanguages = {
+        sourceLanguage: TokenizerAlgorithm.None,
+        translationLanguage: TokenizerAlgorithm.None,
     };
     public duplicateMode = DuplicateMode.Allow;
-    public flags: BaseFlags = 0;
+    public flags = BaseFlags.None;
     public hashes: string[] = [];
+    public lineLengthHint = 0;
+    public completed: string[] = [];
 
-    public sourceDirectory = "Data";
-    public rowColumnWidth = consts.DEFAULT_ROW_COLUMN_WIDTH;
-    public sourceColumnWidth = consts.DEFAULT_COLUMN_WIDTH;
+    public rowColumnWidth: number = consts.DEFAULT_ROW_COLUMN_WIDTH;
+    public sourceColumnWidth: number = consts.DEFAULT_COLUMN_WIDTH;
+
     public translationColumns: [string, number][] = [
         ["Translation", consts.DEFAULT_COLUMN_WIDTH],
     ];
     public translationColumnCount = 1;
 
+    public sourceDirectory = "Data";
+
+    public projectContext = "";
+    public fileContexts: Record<string, string> = {};
+
     #programDataPath = "";
+    #matchesPath = "";
     #tempMapsPath = "";
     #sourcePath = "";
     #translationPath = "";
@@ -54,36 +66,18 @@ export class ProjectSettings implements ProjectSettingsOptions {
     #projectSettingsPath = "";
     #backupPath = "";
     #outputPath = "";
+    #glossaryPath = "";
 
-    public constructor(options: ProjectSettingsOptions = {}) {
-        this.engineType = options.engineType ?? this.engineType;
-        this.translationLanguages =
-            options.translationLanguages ?? this.translationLanguages;
-        this.duplicateMode = options.duplicateMode ?? this.duplicateMode;
-        this.flags = options.flags ?? this.flags;
-        this.hashes = options.hashes ?? this.hashes;
-
-        this.translationColumns =
-            options.translationColumns ?? this.translationColumns;
-        this.translationColumnCount =
-            options.translationColumnCount ?? this.translationColumnCount;
-
-        this.sourceDirectory = options.sourceDirectory ?? this.sourceDirectory;
-        this.#programDataPath =
-            options.programDataPath ?? this.#programDataPath;
-        this.#tempMapsPath = options.tempMapsPath ?? this.#tempMapsPath;
-        this.#sourcePath = options.sourcePath ?? this.#sourcePath;
-        this.#translationPath =
-            options.translationPath ?? this.#translationPath;
-        this.#logPath = options.logPath ?? this.#logPath;
-        this.#projectSettingsPath =
-            options.projectSettingsPath ?? this.#projectSettingsPath;
-        this.#backupPath = options.backupPath ?? this.#backupPath;
-        this.#outputPath = options.outputPath ?? this.#outputPath;
+    public constructor(options: Partial<ProjectSettingsOptions> = {}) {
+        utils.deepAssign(this as unknown as Record<string, unknown>, options);
     }
 
     public get programDataPath(): string {
         return this.#programDataPath;
+    }
+
+    public get matchesPath(): string {
+        return this.#matchesPath;
     }
 
     public get tempMapsPath(): string {
@@ -112,6 +106,10 @@ export class ProjectSettings implements ProjectSettingsOptions {
 
     public get outputPath(): string {
         return this.#outputPath;
+    }
+
+    public get glossaryPath(): string {
+        return this.#glossaryPath;
     }
 
     public columnName(index: number): string {
@@ -150,7 +148,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
     public async findSourceDirectory(projectPath: string): Promise<boolean> {
         let sourceDirectoryFound = false;
 
-        for (const directory of ["Data", "data", "original"]) {
+        for (const directory of ["Data", "data"]) {
             if (await exists(utils.join(projectPath, directory))) {
                 this.sourceDirectory = directory;
                 sourceDirectoryFound = true;
@@ -165,6 +163,10 @@ export class ProjectSettings implements ProjectSettingsOptions {
         this.#programDataPath = utils.join(
             projectPath,
             consts.PROGRAM_DATA_DIRECTORY,
+        );
+        this.#matchesPath = utils.join(
+            this.#programDataPath,
+            consts.MATCHES_DIRECTORY,
         );
         this.#tempMapsPath = utils.join(
             this.#programDataPath,
@@ -189,15 +191,15 @@ export class ProjectSettings implements ProjectSettingsOptions {
             this.#programDataPath,
             consts.BACKUP_DIRECTORY,
         );
+        this.#glossaryPath = utils.join(
+            this.#programDataPath,
+            consts.GLOSSARY_FILE,
+        );
 
         await expandScope(this.#programDataPath);
         await mkdir(this.#programDataPath, { recursive: true });
         await mkdir(this.#tempMapsPath, { recursive: true });
         await mkdir(this.#backupPath, { recursive: true });
-
-        if (!(await exists(this.#logPath))) {
-            await writeTextFile(this.#logPath, "{}");
-        }
     }
 
     public addColumn(): void {

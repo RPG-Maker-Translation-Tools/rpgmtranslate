@@ -10,7 +10,7 @@ function replaceTws() {
         name: "replace-tws",
         transform(code: string) {
             return {
-                code: code.replace(/tw`(.*)`/g, '"$1"'),
+                code: code.replace(/tw`([^`]*)`/g, '"$1"'),
             };
         },
     };
@@ -45,11 +45,6 @@ export default defineConfig(
                         main: "./src/windows/main/MainWindow.html",
                         settings: "./src/windows/settings/SettingsWindow.html",
                         about: "./src/windows/about/AboutWindow.html",
-                    },
-                    output: {
-                        manualChunks: {
-                            "language-tags": ["language-tags"],
-                        },
                     },
                     plugins: [replaceTws()],
                 },

@@ -1,11 +1,13 @@
 import { emittery } from "@classes/emittery";
-import { AppEvent, SearchAction } from "@enums/index";
+
 import { ProjectSettings } from "@lib/classes";
+import { AppEvent, SearchAction } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
+import { isErr, readTextFile, writeTextFile } from "@utils/invokes";
 
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 
 export class Replacer {
     #tempMapsPath = "";
@@ -46,12 +48,19 @@ export class Replacer {
                 `${filename}${consts.TXT_EXTENSION}`,
             );
 
-            const contentLines = utils.lines(await readTextFile(filePath));
+            const fileContent = await readTextFile(filePath);
+
+            if (isErr(fileContent)) {
+                void error(fileContent[0]!);
+                return;
+            }
+
+            const lines = utils.lines(fileContent[1]!);
 
             this.#replaceExternalFile(
                 regexp,
                 replacerText,
-                contentLines,
+                lines,
                 filename,
                 entry,
                 columnIndex,
@@ -59,7 +68,11 @@ export class Replacer {
                 searchAction,
             );
 
-            await writeTextFile(filePath, contentLines.join("\n"));
+            const result = await writeTextFile(filePath, lines.join("\n"));
+
+            if (isErr(result)) {
+                void error(result[0]!);
+            }
         }
 
         await emittery.emit(AppEvent.UpdateSaved, false);
@@ -101,13 +114,20 @@ export class Replacer {
                     resultEntry.slice(0, resultEntry.lastIndexOf("-")),
                 );
 
-                const fileContent = utils.lines(await readTextFile(filePath));
+                const fileContent = await readTextFile(filePath);
+
+                if (isErr(fileContent)) {
+                    void error(fileContent[0]!);
+                    return;
+                }
+
+                const lines = utils.lines(fileContent[1]!);
 
                 for (const rowIndex of rowNumbers) {
                     changedCount += this.#replaceExternalFile(
                         results.regexp,
                         replacerText,
-                        fileContent,
+                        lines,
                         filename,
                         entry,
                         column,
@@ -116,7 +136,11 @@ export class Replacer {
                     );
                 }
 
-                await writeTextFile(filePath, fileContent.join("\n"));
+                const result = await writeTextFile(filePath, lines.join("\n"));
+
+                if (isErr(result)) {
+                    void error(result[0]!);
+                }
             }
 
             await emittery.emit(AppEvent.UpdateTranslatedLineCount, [

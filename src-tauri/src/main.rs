@@ -8,8 +8,9 @@
 
 mod commands;
 use crate::commands::{
-    escape_text, expand_scope, extract_archive, purge, read, read_last_line,
-    translate_text, walk_dir, write,
+    detect_lang, expand_scope, extract_archive, find_all_matches, find_match,
+    get_lang, get_models, purge, read, read_last_line, translate, walk_dir,
+    write,
 };
 use tauri::{Builder, Manager, generate_context, generate_handler};
 
@@ -37,15 +38,19 @@ fn main() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(generate_handler![
-            escape_text,
             read,
             write,
             read_last_line,
-            translate_text,
+            translate,
             extract_archive,
             walk_dir,
             purge,
             expand_scope,
+            find_match,
+            find_all_matches,
+            detect_lang,
+            get_lang,
+            get_models
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

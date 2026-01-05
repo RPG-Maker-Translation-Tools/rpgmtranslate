@@ -6,6 +6,7 @@
         "core:webview:allow-set-webview-zoom",
         "core:webview:allow-create-webview-window",
         "core:window:allow-destroy",
+        "core:window:allow-close",
         "dialog:default",
         "fs:default",
         "fs:allow-write-text-file",

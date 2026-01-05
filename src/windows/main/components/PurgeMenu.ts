@@ -1,7 +1,8 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent, FileFlags } from "@lib/enums";
-import { RPGMFileType } from "@lib/enums/RPGMFileType";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { AppEvent, FileFlags, RPGMFileType } from "@lib/enums";
 
 export class PurgeMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -51,7 +52,7 @@ export class PurgeMenu extends Component {
             if (
                 (charCode < "1".charCodeAt(0) ||
                     charCode > "0".charCodeAt(0)) &&
-                charCode != ",".charCodeAt(0)
+                charCode !== ",".charCodeAt(0)
             ) {
                 this.#skipMapsInput.value = this.#skipMapsInput.value.slice(
                     0,

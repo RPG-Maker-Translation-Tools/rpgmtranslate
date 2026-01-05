@@ -1,8 +1,15 @@
 export class Component {
+    public x: number;
+    public y: number;
+
     protected readonly element: HTMLElement;
+
+    protected contextMenu: HTMLDivElement | null = null;
 
     protected constructor(id: string) {
         this.element = document.getElementById(id)!;
+        this.x = 0;
+        this.y = 0;
     }
 
     public get hidden(): boolean {
@@ -65,9 +72,19 @@ export class Component {
         this.element.textContent = text;
     }
 
+    public set left(left: string) {
+        this.element.style.left = left;
+    }
+
+    public set top(top: string) {
+        this.element.style.top = top;
+    }
+
     public move(x: number, y: number): void {
-        this.style.x = `${x}px`;
-        this.style.y = `${y}px`;
+        this.x = x;
+        this.y = y;
+
+        this.style.transform = `translate(${x}px, ${y}px)`;
     }
 
     public focus(): void {
@@ -85,12 +102,13 @@ export class Component {
     public show(x?: number, y?: number): void {
         this.element.classList.remove("hidden");
 
-        if (x !== undefined) {
-            this.element.style.left = `${x}px`;
-        }
-
-        if (y !== undefined) {
-            this.element.style.top = `${y}px`;
+        if (x !== undefined && y !== undefined) {
+            if (this.x && this.y) {
+                this.element.style.transform = `translate(${x}px, ${y}px)`;
+            } else {
+                this.element.style.left = `${x}px`;
+                this.element.style.top = `${y}px`;
+            }
         }
     }
 
@@ -100,5 +118,9 @@ export class Component {
 
     public childAt(index: number): HTMLElement {
         return this.element.children[index] as HTMLElement;
+    }
+
+    public querySelectorAll(query: string): NodeListOf<HTMLElement> {
+        return this.element.querySelectorAll(query);
     }
 }

@@ -1,21 +1,23 @@
-import { MatchType, SearchAction, SearchFlags, SearchMode } from "@enums/index";
 import { ProjectSettings } from "@lib/classes";
-import { escapeText } from "@utils/invokes";
+import { MatchType, SearchAction, SearchFlags, SearchMode } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
+import {
+    isErr,
+    mkdir,
+    readDir,
+    readTextFile,
+    remove as removePath,
+    writeTextFile,
+} from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
 import XRegExp from "xregexp";
 
 import { message } from "@tauri-apps/plugin-dialog";
-import {
-    readDir,
-    readTextFile,
-    remove as removePath,
-    writeTextFile,
-} from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 
 interface Match {
     text: string;
@@ -99,9 +101,7 @@ export class Searcher {
         }
 
         let expression =
-            this.#searchFlags & SearchFlags.RegExp
-                ? text
-                : await escapeText(text);
+            this.#searchFlags & SearchFlags.RegExp ? text : RegExp.escape(text);
 
         if (this.#searchFlags & SearchFlags.WholeWord) {
             expression = `(?<!\\p{L})${expression}(?!\\p{L})`;
@@ -200,33 +200,30 @@ export class Searcher {
             i += count;
         }
 
+        await mkdir(this.#projectSettings.matchesPath);
+
         for (const chunk of chunks) {
             this.#searchResults.pages++;
 
             const filePath = utils.join(
-                this.#projectSettings.programDataPath,
+                this.#projectSettings.matchesPath,
                 `match${this.#searchResults.pages}.json`,
             );
 
-            await writeTextFile(filePath, JSON.stringify(chunk));
+            const result = await writeTextFile(filePath, JSON.stringify(chunk));
+
+            if (isErr(result)) {
+                void error(result[0]!);
+            }
         }
 
         this.#matchObject = [];
     }
 
     async #removeOldMatches(): Promise<void> {
-        const files = await readDir(this.#projectSettings.programDataPath);
-
-        for (const file of files) {
-            if (file.name.startsWith("match")) {
-                await removePath(
-                    utils.join(
-                        this.#projectSettings.programDataPath,
-                        file.name,
-                    ),
-                );
-            }
-        }
+        await removePath(this.#projectSettings.matchesPath, {
+            recursive: true,
+        });
     }
 
     #searchRows(
@@ -371,36 +368,53 @@ export class Searcher {
         columnIndex: number,
         tabs: Tabs,
     ): Promise<void> {
-        const mapEntries = (
-            await readDir(this.#projectSettings.tempMapsPath)
-        ).sort(
+        const mapsEntries = await readDir(this.#projectSettings.tempMapsPath);
+
+        if (isErr(mapsEntries)) {
+            void error(mapsEntries[0]!);
+            return;
+        }
+
+        const maps = mapsEntries[1]!.sort(
             (a, b) => Number(a.name.slice(3, -4)) - Number(b.name.slice(3, -4)),
         );
 
-        const otherEntries = await readDir(
-            this.#projectSettings.translationPath,
-        );
+        const other = await readDir(this.#projectSettings.translationPath);
 
-        for (const entry of mapEntries.concat(otherEntries)) {
-            const filename = entry.name;
+        if (isErr(other)) {
+            void error(other[0]!);
+            return;
+        }
+
+        for (let f = 0; f < maps.length + other.length - 1; f++) {
+            const name = (
+                f >= maps.length ? other[1]![f - maps.length] : maps[f]
+            ).name;
 
             if (
-                !filename.endsWith(consts.TXT_EXTENSION) ||
-                filename.slice(0, -consts.TXT_EXTENSION_LENGTH) === tabName ||
-                filename === "maps.txt"
+                !name.endsWith(consts.TXT_EXTENSION) ||
+                name.slice(0, -consts.TXT_EXTENSION_LENGTH) === tabName ||
+                name === "maps.txt"
             ) {
                 continue;
             }
 
             const filePath = utils.join(
-                filename.startsWith("map")
+                name.startsWith("map")
                     ? this.#projectSettings.tempMapsPath
                     : this.#projectSettings.translationPath,
-                filename,
+                name,
             );
 
-            const lines = utils.lines(await readTextFile(filePath));
-            this.#searchRows(filename, lines, columnIndex, tabs);
+            const content = await readTextFile(filePath);
+
+            if (isErr(content)) {
+                void error(content[0]!);
+                continue;
+            }
+
+            const lines = utils.lines(content[1]!);
+            this.#searchRows(name, lines, columnIndex, tabs);
 
             await this.#writeMatches();
         }

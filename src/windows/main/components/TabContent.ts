@@ -1,4 +1,7 @@
+import { Component } from "./Component";
+
 import { emittery } from "@classes/emittery";
+
 import { ProjectSettings, Settings } from "@lib/classes";
 import {
     AppEvent,
@@ -6,17 +9,18 @@ import {
     RowDeleteMode,
     TextAreaStatus,
 } from "@lib/enums";
-import { Component } from "./Component";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
+import { isErr, readTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { exists, readTextFile } from "@tauri-apps/plugin-fs";
+import { exists } from "@tauri-apps/plugin-fs";
+import { error } from "@tauri-apps/plugin-log";
 
 export class TabContent extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -33,11 +37,12 @@ export class TabContent extends Component {
     readonly #selectedTextareas = new Map<HTMLTextAreaElement, string>();
     readonly #replacedTextareas = new Map<HTMLTextAreaElement, string>();
 
-    #font = "";
     #displayGhostLines = false;
     #rowDeleteMode = RowDeleteMode.Disabled;
 
     #projectSettings!: ProjectSettings;
+
+    #hintDiv: HTMLDivElement | null = null;
 
     public constructor() {
         super("tab-content");
@@ -105,9 +110,8 @@ export class TabContent extends Component {
     }
 
     public init(settings: Settings, projectSettings: ProjectSettings): void {
-        this.#font = settings.font;
-        this.#displayGhostLines = settings.displayGhostLines;
-        this.#rowDeleteMode = settings.rowDeleteMode;
+        this.#displayGhostLines = settings.appearance.displayGhostLines;
+        this.#rowDeleteMode = settings.core.rowDeleteMode;
 
         this.#projectSettings = projectSettings;
     }
@@ -152,16 +156,14 @@ export class TabContent extends Component {
             );
         }
 
-        const content = await readTextFile(contentPath).catch((err) => {
-            utils.logErrorIO(contentPath, err);
-            return null;
-        });
+        const content = await readTextFile(contentPath);
 
-        if (content === null) {
+        if (isErr(content)) {
+            void error(content[0]!);
             return;
         }
 
-        const contentLines = utils.lines(content);
+        const contentLines = utils.lines(content[1]!);
 
         if (filename === "system") {
             contentLines.pop();
@@ -221,7 +223,7 @@ export class TabContent extends Component {
         const translationdlb = utils.clbtodlb(translation);
         const translationTextArea = document.createElement("textarea");
         translationTextArea.rows = utils.countLines(translationdlb);
-        translationTextArea.className = tw`outline-primary focus-outline-primary bg-primary font resize-none p-1 outline outline-2 focus:z-10`;
+        translationTextArea.className = tw`outline-primary focus-outline-primary bg-primary resize-none p-1 outline outline-2 focus:z-10`;
         translationTextArea.style.minWidth =
             translationTextArea.style.width = `${width}px`;
         translationTextArea.style.minHeight = `${height}px`;
@@ -231,12 +233,27 @@ export class TabContent extends Component {
         translationTextArea.autocapitalize = "off";
         translationTextArea.autofocus = false;
 
-        if (this.#font) {
-            translationTextArea.style.fontFamily = "font";
-        }
-
         translationTextArea.value = translationdlb;
         rowContainer.appendChild(translationTextArea);
+    }
+
+    #getLineLengthHintX(textarea: HTMLTextAreaElement): number {
+        const { fontSize, fontFamily } = window.getComputedStyle(textarea);
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d")!;
+        context.font = `${fontSize} ${fontFamily}`;
+
+        const width = context.measureText(
+            "a".repeat(this.#projectSettings.lineLengthHint),
+        ).width;
+
+        const rect = textarea.getBoundingClientRect();
+
+        if (width > textarea.clientWidth) {
+            return rect.left + window.scrollX + textarea.clientWidth;
+        }
+
+        return rect.left + window.scrollX + width;
     }
 
     #getNewLinePositions(
@@ -253,8 +270,8 @@ export class TabContent extends Component {
 
         let top = textarea.offsetTop;
 
-        for (let i = 0; i < lines.length - 1; i++) {
-            const line = lines[i];
+        for (let l = 0; l < lines.length - 1; l++) {
+            const line = lines[l];
             const textWidth = context.measureText(`${line} `).width;
             const left = textarea.offsetLeft + textWidth;
 
@@ -297,11 +314,11 @@ export class TabContent extends Component {
         rowNumberButtonDiv.className = tw`text-third flex w-full items-start justify-end gap-0.5 p-0.5 text-lg`;
 
         const bookmarkButton = document.createElement("button");
-        bookmarkButton.className = tw`border-primary hover-bg-primary font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
+        bookmarkButton.className = tw`border-primary font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
         bookmarkButton.textContent = "bookmark";
 
         const deleteButton = document.createElement("button");
-        deleteButton.className = tw`border-primary hover-bg-primary font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
+        deleteButton.className = tw`border-primary font-material flex max-h-6 max-w-6 items-center justify-center rounded-md border-2`;
         deleteButton.textContent = "close";
 
         rowNumberButtonDiv.appendChild(deleteButton);
@@ -311,15 +328,12 @@ export class TabContent extends Component {
         rowContainer.appendChild(rowNumberContainer);
 
         const sourceTextDiv = document.createElement("div");
-        sourceTextDiv.className = tw`outline-primary bg-primary font cursor-pointer p-1 whitespace-pre-wrap outline outline-2`;
+        sourceTextDiv.tabIndex = 0;
+        sourceTextDiv.className = tw`outline-primary bg-primary p-1 whitespace-pre-wrap outline outline-2 select-text`;
         sourceTextDiv.style.minWidth =
             sourceTextDiv.style.width = `${this.#projectSettings.sourceColumnWidth}px`;
         sourceTextDiv.textContent = utils.clbtodlb(source);
         rowContainer.appendChild(sourceTextDiv);
-
-        if (this.#font) {
-            sourceTextDiv.style.fontFamily = "font";
-        }
 
         // From text-lg:
         // font-size: var(--text-lg); /* 1.125rem (18px) */
@@ -420,7 +434,7 @@ export class TabContent extends Component {
                 const source = utils.source(rowContainer);
                 const translation = utils.translation(rowContainer)[0];
 
-                if (source === "<!-- Bookmark -->") {
+                if (source === consts.BOOKMARK_COMMENT) {
                     await emittery.emit(AppEvent.RemoveBookmark, rowNumber);
                 }
 
@@ -449,7 +463,7 @@ export class TabContent extends Component {
         const rowNumber = utils.rowNumber(rowContainer);
 
         const bookmarkDescriptionInput = document.createElement("input");
-        bookmarkDescriptionInput.className = tw`input text-second bg-second absolute z-50 h-7 w-auto p-1 text-base`;
+        bookmarkDescriptionInput.className = tw`input text-second absolute z-50 h-7 w-auto p-1 text-base`;
         bookmarkDescriptionInput.style.left = `${target.offsetLeft + target.clientWidth}px`;
         bookmarkDescriptionInput.style.top = `${target.offsetTop}px`;
         document.body.appendChild(bookmarkDescriptionInput);
@@ -464,7 +478,7 @@ export class TabContent extends Component {
                 bookmarkDescriptionInput.remove();
 
                 const bookmarkRow = this.#createRow(
-                    `<!-- Bookmark -->`,
+                    consts.BOOKMARK_COMMENT,
                     [description],
                     rowNumber,
                 );
@@ -487,14 +501,24 @@ export class TabContent extends Component {
         };
     }
 
-    #trackFocus(focusedElement: Event): void {
+    #trackLength(textarea: HTMLTextAreaElement): void {
+        if (this.#hintDiv) {
+            for (const line of textarea.value.split("\n")) {
+                if (line.length > this.#projectSettings.lineLengthHint) {
+                    this.#hintDiv.style.backgroundColor = "red";
+                } else {
+                    this.#hintDiv.style.backgroundColor = "lime";
+                }
+            }
+        }
+    }
+
+    #trackFocus(textarea: HTMLTextAreaElement): void {
         for (const ghost of this.#activeGhostLines) {
             ghost.remove();
         }
 
-        const result = this.#getNewLinePositions(
-            focusedElement.target as HTMLTextAreaElement,
-        );
+        const result = this.#getNewLinePositions(textarea);
 
         for (const { left, top } of result) {
             const ghostNewLineDiv = document.createElement("div");
@@ -513,6 +537,28 @@ export class TabContent extends Component {
 
         if (!(target instanceof HTMLTextAreaElement)) {
             return;
+        }
+
+        void emittery.emit(AppEvent.TermCheck, [
+            -1,
+            [
+                undefined,
+                utils.rowNumber(target.parentElement! as RowContainer) - 1,
+            ],
+        ]);
+
+        if (this.#projectSettings.lineLengthHint !== 0) {
+            const hintX = this.#getLineLengthHintX(target);
+
+            this.#hintDiv = document.createElement("div");
+            this.#hintDiv.className = tw`absolute z-50`;
+            this.#hintDiv.style.backgroundColor = "lime";
+            this.#hintDiv.style.width = "2px";
+            this.#hintDiv.style.height = `${target.clientHeight}px`;
+            this.#hintDiv.style.left = `${hintX}px`;
+            this.#hintDiv.style.top = `${target.offsetTop}px`;
+
+            document.body.appendChild(this.#hintDiv);
         }
 
         if (target !== this.#currentFocusedElement[0]) {
@@ -575,6 +621,9 @@ export class TabContent extends Component {
                 undefined,
             ]);
         });
+
+        this.#hintDiv?.remove();
+        this.#hintDiv = null;
     }
 
     #onkeyup(event: KeyboardEvent): void {
@@ -588,8 +637,14 @@ export class TabContent extends Component {
     #oninput(event: Event): void {
         const target = event.target as HTMLTextAreaElement;
 
-        if (target instanceof HTMLTextAreaElement && this.#displayGhostLines) {
-            this.#trackFocus(event);
+        if (target instanceof HTMLTextAreaElement) {
+            if (this.#displayGhostLines) {
+                this.#trackFocus(target);
+            }
+
+            if (this.#projectSettings.lineLengthHint) {
+                this.#trackLength(target);
+            }
         }
     }
 
@@ -718,7 +773,8 @@ export class TabContent extends Component {
 
         if (
             target instanceof HTMLDivElement &&
-            target.parentElement!.parentElement === this.element
+            target.parentElement!.parentElement === this.element &&
+            event.ctrlKey
         ) {
             await writeText(target.textContent);
         }
@@ -793,9 +849,34 @@ export class TabContent extends Component {
     }
 
     async #handleCtrlKeydown(event: KeyboardEvent): Promise<void> {
-        const target = event.target as HTMLTextAreaElement;
+        const target = event.target as HTMLTextAreaElement | HTMLDivElement;
 
         if (!(target instanceof HTMLTextAreaElement)) {
+            if (
+                target instanceof HTMLDivElement &&
+                target.parentElement!.parentElement === this.element
+            ) {
+                const selection = window.getSelection();
+
+                if (!selection || selection.rangeCount === 0) {
+                    return;
+                }
+
+                const selectedText = selection.toString();
+                const range = selection.getRangeAt(0);
+                const isInside = target.contains(range.commonAncestorContainer);
+
+                if (!isInside) {
+                    return;
+                }
+
+                if (event.code === "KeyE") {
+                    void emittery.emit(AppEvent.AddTerm, selectedText);
+                } else if (event.code === "KeyC") {
+                    await writeText(selectedText);
+                }
+            }
+
             return;
         }
 
@@ -841,14 +922,41 @@ export class TabContent extends Component {
                 this.#replacedTextareas.clear();
                 break;
             case "KeyT": {
-                const selectedTextArea = event.target as HTMLTextAreaElement;
-                const rowContainer =
-                    selectedTextArea.parentElement as RowContainer;
-                const sourceText = utils.source(rowContainer);
+                const rowIndices: number[] = new Array(
+                    this.#selectedTextareas.size,
+                );
+                let columnIndex = -1;
 
-                await emittery.emit(AppEvent.TranslateTextArea, [
-                    sourceText,
-                    selectedTextArea,
+                const keys = this.#selectedTextareas.keys();
+
+                for (let i = 0; i < this.#selectedTextareas.size; i++) {
+                    const textarea = keys.next().value!;
+
+                    if (textarea.value) {
+                        continue;
+                    }
+
+                    const row = textarea.parentElement as RowContainer;
+                    rowIndices[i] = utils.rowNumber(row) - 1;
+
+                    if (columnIndex !== -1) {
+                        const translationElements =
+                            utils.translationElements(row);
+
+                        for (let j = 0; j < translationElements.length; j++) {
+                            const translationElement = translationElements[j];
+
+                            if (translationElement === textarea) {
+                                columnIndex = j + 2;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                await emittery.emit(AppEvent.TranslateTextareas, [
+                    rowIndices,
+                    columnIndex,
                 ]);
                 break;
             }
@@ -967,10 +1075,6 @@ export class TabContent extends Component {
                     await emittery.emit(AppEvent.JumpToTab, JumpDirection.Up);
                     break;
             }
-        }
-
-        if (!(target instanceof HTMLTextAreaElement)) {
-            return;
         }
 
         if (event.ctrlKey) {

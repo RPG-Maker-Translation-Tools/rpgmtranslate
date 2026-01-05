@@ -1,6 +1,8 @@
-import { emittery } from "@classes/emittery";
-import { AppEvent } from "@lib/enums";
 import { Component } from "./Component";
+
+import { emittery } from "@classes/emittery";
+
+import { AppEvent } from "@lib/enums";
 
 export class GoToRowInput extends Component {
     declare protected readonly element: HTMLInputElement;

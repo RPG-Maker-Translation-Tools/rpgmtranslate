@@ -3,7 +3,6 @@ import { SearchAction, SearchFlags, SearchMode } from "@lib/enums";
 import { i18n } from "@lingui/core";
 import * as fs from "@tauri-apps/plugin-fs";
 import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
-import * as invokes from "@utils/invokes";
 import { Searcher } from "@windows/main/components";
 import { beforeEach, describe, expect, Mock, test, vi } from "vitest";
 
@@ -45,7 +44,7 @@ rowsHTML.innerHTML = rowsData
 
 vi.mock(import("@utils/invokes"), async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, escapeText: vi.fn() };
+    return { ...actual };
 });
 
 vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
@@ -254,10 +253,6 @@ describe.each([
         ),
     );
 
-    (invokes.escapeText as Mock<typeof invokes.escapeText>).mockImplementation(
-        (text) => Promise.resolve(text),
-    );
-
     i18n.activate("en");
 
     const searcher = new Searcher();
@@ -265,10 +260,8 @@ describe.each([
 
     beforeEach(() => {
         searcher.init(
+            // TODO
             new ProjectSettings({
-                programDataPath: "program",
-                tempMapsPath: "temp",
-                translationPath: external ? "translation" : undefined,
                 translationColumns: [
                     ["Translation", DEFAULT_COLUMN_WIDTH],
                     ["Translation", DEFAULT_COLUMN_WIDTH],

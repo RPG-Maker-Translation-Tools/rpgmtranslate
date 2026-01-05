@@ -4,103 +4,300 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="../../assets/style.css" />
-        <link rel="stylesheet" href="../../assets/material.css" />
-        <link rel="stylesheet" href="../../assets/theme-styles.css" />
         <script type="module" src="SettingsWindow.ts" defer></script>
     </head>
-    <body class="bg-dark text-primary text-lg">
-        <div class="flex flex-col p-8" id="options-menu">
-            <label
-                class="bg-dark custom-checkbox z-50 flex flex-row gap-2 py-4"
-            >
-                <input
-                    class="size-8 text-xl"
-                    id="backup-check"
-                    type="checkbox"
-                />
-                <span id="backup" data-i18n="Backup"></span>
-            </label>
 
-            <div class="overflow-hidden">
-                <div class="z-30 flex-col" id="backup-settings">
-                    <div class="flex flex-row py-4" id="backup-period">
-                        <span
-                            class="mr-2"
-                            id="backup-period-label"
-                            data-i18n="Create backup every:"
-                        ></span>
+    <body class="bg-dark text-base">
+        <div class="flex flex-row select-none" id="options-menu">
+            <div class="bg-primary min-h-screen w-1/6" id="settings-sections">
+                <button
+                    class="h-fit w-full p-2"
+                    id="core-settings-button"
+                    data-i18n="Core"
+                ></button>
+                <button
+                    class="h-fit w-full p-2"
+                    id="appearance-settings-button"
+                    data-i18n="Appearance"
+                ></button>
+                <button
+                    class="h-fit w-full p-2"
+                    id="controls-settings-button"
+                    data-i18n="Controls"
+                ></button>
+                <button
+                    class="h-fit w-full p-2"
+                    id="translation-settings-button"
+                    data-i18n="Translation"
+                ></button>
+                <button
+                    class="h-fit w-full p-2"
+                    id="project-settings-button"
+                    data-i18n="Project"
+                ></button>
+            </div>
 
-                        <input
-                            class="bg-second mr-2 h-8 w-auto rounded-md p-2 text-xl"
-                            id="backup-period-input"
-                            type="number"
-                        />
+            <main class="flex flex-col gap-2 p-4" id="core-settings">
+                <label class="custom-checkbox">
+                    <input id="backup-check" type="checkbox" />
 
-                        <span
-                            id="backup-period-note"
-                            data-i18n="seconds (min 60, max 3600)"
-                        ></span>
-                    </div>
+                    <span id="backup" data-i18n="Backup"></span>
+                </label>
 
-                    <div class="flex flex-row py-4" id="backup-max">
-                        <span
-                            class="mr-2"
-                            id="backup-max-label"
-                            data-i18n="Max number of backups:"
-                        ></span>
-                        <input
-                            class="bg-second mr-2 h-8 w-auto rounded-md p-2 text-xl"
-                            id="backup-max-input"
-                            type="number"
-                        />
-                        <span
-                            id="backup-max-note"
-                            data-i18n="(min 1, max 99)"
-                        ></span>
+                <div class="overflow-hidden">
+                    <div class="z-30 flex-col gap-1" id="backup-settings">
+                        <div
+                            class="flex flex-row items-center gap-2"
+                            id="backup-period"
+                        >
+                            <span
+                                id="backup-period-label"
+                                data-i18n="Backup Interval (secs, 60-3600)"
+                            ></span>
+
+                            <input
+                                class="w-auto rounded-sm"
+                                id="backup-period-input"
+                                type="number"
+                            />
+                        </div>
+
+                        <div
+                            class="flex flex-row items-center gap-2"
+                            id="backup-max"
+                        >
+                            <span
+                                id="backup-max-label"
+                                data-i18n="Max Backups (1-99)"
+                            >
+                            </span>
+
+                            <input
+                                class="w-auto rounded-sm"
+                                id="backup-max-input"
+                                type="number"
+                            />
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <label
-                class="bg-dark custom-checkbox z-50 flex flex-row gap-2 py-4"
-            >
-                <input
-                    class="size-8 min-h-8 min-w-8"
-                    id="display-ghost-lines-check"
-                    type="checkbox"
-                />
-                <span data-i18n="Display lines breaks in text areas"></span>
-            </label>
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Row Delete Mode"></label>
 
-            <label
-                class="bg-dark custom-checkbox z-50 flex flex-row gap-2 py-4"
-            >
-                <input
-                    class="size-8 min-h-8 min-w-8"
-                    id="check-for-updates-check"
-                    type="checkbox"
-                />
-                <span data-i18n="Check for updates"></span>
-            </label>
+                    <select class="rounded-xs" id="row-delete-mode-select">
+                        <option data-i18n="Disabled" value="0"></option>
+                        <option
+                            data-i18n="Ask for confirmation"
+                            value="1"
+                        ></option>
+                        <option data-i18n="Allowed" value="2"></option>
+                    </select>
+                </div>
 
-            <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <label data-i18n="Row delete mode"></label>
-                <select
-                    class="bg-second rounded-xs"
-                    id="row-delete-mode-select"
-                >
-                    <option data-i18n="Disabled" value="0"></option>
-                    <option data-i18n="Ask for confirmation" value="1"></option>
-                    <option data-i18n="Allowed" value="2"></option>
-                </select>
-            </div>
+                <label class="custom-checkbox">
+                    <input id="check-for-updates-check" type="checkbox" />
 
-            <div class="bg-dark z-50 flex flex-row gap-2 py-4">
-                <label data-i18n="Font"></label>
-                <select class="bg-second rounded-xs" id="font-select">
-                    <option data-i18n="Default" value="default"></option>
-                </select>
-            </div>
+                    <span data-i18n="Check for updates"></span>
+                </label>
+            </main>
+
+            <main class="hidden flex-col gap-2 p-4" id="appearance-settings">
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Font"></label>
+
+                    <select class="rounded-xs" id="font-select">
+                        <option data-i18n="Default" value="default"></option>
+                    </select>
+                </div>
+
+                <label class="custom-checkbox">
+                    <input id="display-ghost-lines-check" type="checkbox" />
+
+                    <span data-i18n="Display lines breaks in text areas"></span>
+                </label>
+            </main>
+
+            <main
+                class="hidden flex-col gap-2 p-4"
+                id="controls-settings"
+            ></main>
+
+            <main class="hidden flex-col gap-2 p-4" id="translation-settings">
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Translation Endpoint"></label>
+
+                    <select class="rounded-xs" id="translation-endpoint-select">
+                        <option value="0">Google</option>
+                        <option value="1">Yandex</option>
+                        <option value="2">DeepL</option>
+                        <option value="3">OpenAI (ChatGPT)</option>
+                        <option value="4">Anthropic (Claude)</option>
+                        <option value="5">DeepSeek</option>
+                        <option value="6">Gemini</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col gap-2" id="endpoint-key-container">
+                    <div class="flex flex-col gap-2">
+                        <label id="api-key-desc"></label>
+                        <input
+                            class="bg-second rounded-sm"
+                            id="api-key-input"
+                            type="text"
+                            placeholder="sk-..."
+                        />
+                    </div>
+
+                    <div
+                        class="flex flex-col gap-2"
+                        id="yandex-folder-id-container"
+                    >
+                        <label
+                            data-i18n="You also need a folder ID from Yandex. You can find it in the same link."
+                        ></label>
+
+                        <input
+                            class="bg-second rounded-sm"
+                            id="yandex-folder-input"
+                            type="text"
+                            placeholder="ID"
+                        />
+                    </div>
+
+                    <button
+                        class="hover-bg-second bg-primary h-8 w-full rounded-sm"
+                        id="validate-key-button"
+                        data-i18n="Validate Key"
+                    ></button>
+                </div>
+
+                <div class="flex hidden flex-col gap-2" id="ai-things">
+                    <div class="flex flex-col gap-2">
+                        <label
+                            data-i18n="Select model to use. If model you want isn't in the list, you might need to allow it in provider's settings. For example, OpenAI does not allow using GPT-5 by default."
+                        ></label>
+                        <select id="model-select"></select>
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label
+                            data-i18n="Token limit for request. RPGMTranslate sends files to LLMs for translation in batches, and if summed tokens of the text in all those files exceed the limit, the rest of the files will be sent in a separate request. Very high limits are discouraged because AI might hallucinate/forget, and very low limits are discouraged because your tokens will burn. RPGMTranslate also uses OpenAI's tiktoken for tokenizing inputs, and it's hardcoded even for non-OpenAI models."
+                        ></label>
+
+                        <input
+                            class="bg-second rounded-sm"
+                            id="token-limit-input"
+                            type="text"
+                        />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label
+                            data-i18n="Temperature to use. Lower values produce more deterministic outputs, so it's advised to use something in range of 0.0-0.3. High values may be worse since they tune the model to be more 'creative'."
+                        ></label>
+
+                        <input
+                            class="bg-second rounded-sm"
+                            id="temperature-input"
+                            type="text"
+                        />
+                    </div>
+
+                    <label class="custom-checkbox">
+                        <input id="use-glossary-checkbox" type="checkbox" />
+                        <span
+                            data-i18n="Use glossary in the request. Very handy if you actually took your time to fill it, as it will make translation more consistent."
+                        ></span>
+                    </label>
+
+                    <label class="custom-checkbox">
+                        <input id="thinking-checkbox" type="checkbox" />
+                        <span
+                            data-i18n="Use thinking/reasoning, if available for the model. Translating with thinking most likely will use more tokens."
+                        ></span>
+                    </label>
+
+                    <div class="flex flex-col gap-2">
+                        <textarea
+                            class="min-h-32 w-full resize-none rounded-sm"
+                            id="system-prompt-textarea"
+                            name="system-prompt"
+                            data-i18n-placeholder="System Prompt"
+                        ></textarea>
+
+                        <button
+                            class="hover-bg-second bg-primary h-8 w-full rounded-sm"
+                            id="default-system-prompt-button"
+                            data-i18n="Default System Prompt"
+                        ></button>
+
+                        <div
+                            data-i18n="When writing system prompt, keep in mind that:"
+                        ></div>
+
+                        <ul class="list-disc pl-8">
+                            <li
+                                data-i18n="AI response must be an array of strings in the same order as input."
+                            ></li>
+                            <li
+                                data-i18n="AI receives source and translaton languages as BCP-47 tags."
+                            ></li>
+                            <li
+                                data-i18n="You can advise AI to use delimiter comments like ID, because most likely that means a new text source and a new content."
+                            ></li>
+                            <li
+                                data-i18n="If you have glossary enabled, advise AI to use it, because otherwise it won't."
+                            ></li>
+                            <li
+                                data-i18n="Translation is most likely to be better if you will empower AI with the great knowledge about the source material. If it's shitty JRPG with intentionally bad humor and some specific lore, include that in system prompt."
+                            ></li>
+                        </ul>
+                    </div>
+                </div>
+            </main>
+
+            <main
+                class="hidden flex-col gap-2 p-2"
+                id="controls-settings"
+            ></main>
+
+            <main class="hidden flex-col gap-2 p-2" id="project-settings">
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Row Length Hint"></label>
+
+                    <input
+                        class="w-auto rounded-sm"
+                        id="line-length-hint-input"
+                        type="number"
+                    />
+                </div>
+
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Project Context"></label>
+
+                    <textarea
+                        class="rounded-sm"
+                        id="project-context-input"
+                    ></textarea>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label data-i18n="File Context"></label>
+
+                    <div class="flex flex-row gap-2">
+                        <select
+                            class="rounded-sm"
+                            id="file-context-select"
+                            multiple
+                        ></select>
+
+                        <textarea
+                            class="rounded-sm"
+                            id="file-context-input"
+                        ></textarea>
+                    </div>
+                </div>
+            </main>
         </div>
     </body>
 </html>

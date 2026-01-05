@@ -1,15 +1,17 @@
 import {
     AppEvent,
+    BaseFlags,
+    BatchAction,
     DuplicateMode,
+    ElementToShow,
     FileFlags,
     JumpDirection,
     ReadMode,
+    RPGMFileType,
     SearchAction,
     SearchFlags,
     SearchMode,
 } from "@lib/enums";
-import { BaseFlags } from "@lib/enums/BaseFlags";
-import { RPGMFileType } from "@lib/enums/RPGMFileType";
 import Emittery from "emittery";
 
 export const emittery = new Emittery<{
@@ -37,11 +39,9 @@ export const emittery = new Emittery<{
     [AppEvent.JumpToTab]: JumpDirection;
     [AppEvent.ApplyTheme]: string;
     [AppEvent.TabAdded]: [string, number, number, number];
-    [AppEvent.TranslateTextArea]: [string, HTMLTextAreaElement];
-    [AppEvent.ShowThemeEditMenu]: undefined;
+    [AppEvent.TranslateTextareas]: [number[], number];
     [AppEvent.AddLog]: [string, string, [string, number, string, string]];
     [AppEvent.UpdateProgressMeter]: undefined;
-    [AppEvent.LanguageTags]: [string, string];
     [AppEvent.ColumnRenamed]: [number, string];
     [AppEvent.TitleTranslationChanged]: string;
     [AppEvent.InvokeRead]: [
@@ -70,5 +70,9 @@ export const emittery = new Emittery<{
         number[],
         [RPGMFileType, number[]][],
     ];
-    [AppEvent.FileRead]: string;
+    [AppEvent.ContextMenuChanged]: HTMLDivElement | null;
+    [AppEvent.BatchAction]: [string, BatchAction, number];
+    [AppEvent.TermCheck]: [number, Either<boolean, number>];
+    [AppEvent.AddTerm]: string;
+    [AppEvent.ShowElement]: [ElementToShow, boolean];
 }>();
