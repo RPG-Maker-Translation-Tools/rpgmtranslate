@@ -17,7 +17,9 @@ export function _htmlTranslations() {
     t`Ask for confirmation`;
     t`Allowed`;
     t`Check for updates`;
-    t`Font`;
+    t`UI Font`;
+    t`Default`;
+    t`Translation Table Font`;
     t`Default`;
     t`Display lines breaks in text areas`;
     t`Translation Endpoint`;
@@ -29,12 +31,7 @@ export function _htmlTranslations() {
     t`Use glossary in the request. Very handy if you actually took your time to fill it, as it will make translation more consistent.`;
     t`Use thinking/reasoning, if available for the model. Translating with thinking most likely will use more tokens.`;
     t`Default System Prompt`;
-    t`When writing system prompt, keep in mind that:`;
-    t`AI response must be an array of strings in the same order as input.`;
-    t`AI receives source and translaton languages as BCP-47 tags.`;
-    t`You can advise AI to use delimiter comments like ID, because most likely that means a new text source and a new content.`;
-    t`If you have glossary enabled, advise AI to use it, because otherwise it won't.`;
-    t`Translation is most likely to be better if you will empower AI with the great knowledge about the source material. If it's shitty JRPG with intentionally bad humor and some specific lore, include that in system prompt.`;
+    t`If you want to write your own system prompt, rely on the guidelines default one establishes.`;
     t`Row Length Hint`;
     t`Project Context`;
     t`File Context`;

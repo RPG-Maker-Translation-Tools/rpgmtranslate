@@ -15,12 +15,12 @@ msgstr ""
 
 #: src/windows/about/html.ts:9
 msgid "Licensed under "
-msgstr ""
+msgstr "Лицензировано под "
 
 #: src/windows/about/html.ts:8
 msgid "Program's repository"
-msgstr ""
+msgstr "Репозиторий программы"
 
 #: src/windows/about/html.ts:7
 msgid "Version"
-msgstr ""
+msgstr "Версия"

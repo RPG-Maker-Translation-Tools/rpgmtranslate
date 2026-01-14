@@ -15,26 +15,26 @@ export const tw = (
 
 /**
  * Compares two strings with different line break styles, in this case, `\#` and `\n`.
- * @param clbStr - string with custom `\#` line breaks.
- * @param dlbStr - string with default `\n` line breaks.
+ * @param customLBString - string with custom `\#` line breaks.
+ * @param LFString - string with default `\n` line breaks.
  */
-export function lbcmp(clbStr: string, dlbStr: string): boolean {
+export function compareLB(customLBString: string, LFString: string): boolean {
     let i = 0,
         j = 0;
 
-    while (i < clbStr.length && j < dlbStr.length) {
-        const clbChar = clbStr[i];
-        const dlbChar = dlbStr[j];
+    while (i < customLBString.length && j < LFString.length) {
+        const customLBChar = customLBString[i];
+        const lfChar = LFString[j];
 
-        if (clbChar === "\\" && clbStr[i + 1] === "#") {
-            if (dlbChar !== "\n") {
+        if (customLBChar === "\\" && customLBString[i + 1] === "#") {
+            if (lfChar !== "\n") {
                 return false;
             }
 
             i += 2;
             j += 1;
         } else {
-            if (clbChar !== dlbChar) {
+            if (customLBChar !== lfChar) {
                 return false;
             }
 
@@ -43,7 +43,7 @@ export function lbcmp(clbStr: string, dlbStr: string): boolean {
         }
     }
 
-    return i === clbStr.length && j === dlbStr.length;
+    return i === customLBString.length && j === LFString.length;
 }
 
 export function logSplitError(filename: string, row: number): void {
@@ -73,7 +73,7 @@ export function joinParts(parts: string[]): string {
     return parts.join(consts.SEPARATOR);
 }
 
-export function source(container: string[] | RowContainer): string {
+export function source(container: string[] | TabRow): string {
     if (Array.isArray(container)) {
         return container[0];
     } else {
@@ -81,13 +81,11 @@ export function source(container: string[] | RowContainer): string {
     }
 }
 
-export function sourceElement(container: RowContainer): HTMLDivElement {
+export function sourceElement(container: TabRow): HTMLDivElement {
     return container.children[1];
 }
 
-export function translation(
-    container: string[] | RowContainer,
-): [string, number] {
+export function translation(container: string[] | TabRow): [string, number] {
     if (Array.isArray(container)) {
         for (let i = container.length - 1; i > 0; i--) {
             if (container[i].length) {
@@ -95,8 +93,10 @@ export function translation(
             }
         }
     } else {
+        const children = container.children;
+
         for (let i = container.childElementCount - 1; i >= 2; i--) {
-            const element = container.children[i];
+            const element = children[i].querySelector("textarea")!;
 
             if (element.value) {
                 return [element.value, i - 2];
@@ -107,21 +107,19 @@ export function translation(
     return ["", -1];
 }
 
-export function translationElement(
-    container: RowContainer,
-): HTMLTextAreaElement {
+export function translationElement(container: TabRow): HTMLTextAreaElement {
     for (let i = container.childElementCount - 1; i >= 2; i--) {
-        const element = container.children[i];
+        const element = container.querySelector("textarea")!;
 
         if (element.value) {
             return element;
         }
     }
 
-    return container.children[2];
+    return container.querySelector("textarea")!;
 }
 
-export function translations(container: string[] | RowContainer): string[] {
+export function translations(container: string[] | TabRow): string[] {
     if (Array.isArray(container)) {
         return container.slice(1);
     } else {
@@ -129,34 +127,34 @@ export function translations(container: string[] | RowContainer): string[] {
             container.childElementCount - 2,
         );
 
+        const children = container.children;
+
         for (let i = 2; i < container.childElementCount; i++) {
-            translations[i - 2] = container.children[i].value;
+            translations[i - 2] = children[i].querySelector("textarea")!.value;
         }
 
         return translations;
     }
 }
 
-export function translationElements(
-    container: RowContainer,
-): HTMLTextAreaElement[] {
+export function translationElements(container: TabRow): HTMLTextAreaElement[] {
     const translations: HTMLTextAreaElement[] = new Array(
         container.childElementCount - 2,
     );
 
     for (let i = 2; i < container.childElementCount; i++) {
-        translations[i - 2] = container.children[i];
+        translations[i - 2] = container.querySelector("textarea")!;
     }
 
     return translations;
 }
 
-export function rowNumberElement(container: RowContainer): HTMLSpanElement {
-    return container.children[0].firstElementChild! as HTMLSpanElement;
+export function rowNumberElement(container: TabRow): HTMLSpanElement {
+    return container.querySelector("span")!;
 }
 
-export function rowNumber(container: RowContainer): number {
-    return Number(container.children[0].firstElementChild!.textContent);
+export function rowNumber(container: TabRow): number {
+    return Number(container.querySelector("span")!.innerHTML);
 }
 
 export function stripSuffix(string: string, suffix: string): string {
@@ -235,25 +233,17 @@ export function count(input: string, pattern: string): number {
     return count;
 }
 
-export function dlbtoclb(input: string): string {
+export function toCustomLB(input: string): string {
     return input.replaceAll("\n", consts.NEW_LINE);
 }
 
-export function clbtodlb(input: string): string {
+export function toLF(input: string): string {
     return input.replaceAll(consts.NEW_LINE, "\n");
 }
 
 export function calculateHeight(textarea: HTMLTextAreaElement): void {
-    const { lineHeight, paddingTop } = window.getComputedStyle(textarea);
-
-    const newHeight =
-        countLines(textarea.value) * Number.parseFloat(lineHeight) +
-        Number.parseFloat(paddingTop) * 2;
-
-    for (const child of (textarea.parentElement?.children ??
-        []) as HTMLCollectionOf<HTMLElement>) {
-        child.style.height = `${newHeight}px`;
-    }
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
 export function toggleMultiple(element: Element, ...classes: string[]): void {
@@ -373,8 +363,8 @@ export function deepAssign(
         }
 
         if (Array.isArray(sourceField)) {
-            for (const [i, val] of sourceField.entries()) {
-                (target[key] as unknown[])[i] = val;
+            for (let i = 0; i < sourceField.length; i++) {
+                (target[key] as unknown[])[i] = sourceField[i];
             }
             continue;
         }

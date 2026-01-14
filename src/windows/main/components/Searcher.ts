@@ -34,7 +34,7 @@ export class Searcher {
         pages: 0,
         regexp: / /,
     };
-    #matchObject: MatchObject = [];
+    #matchObject: SearchMatchArray = [];
     #searchMode?: SearchMode;
     #searchAction?: SearchAction;
 
@@ -44,11 +44,11 @@ export class Searcher {
         this.#searchFlags ^= flag;
     }
 
-    public addSearchFlag(flag: SearchFlags): void {
+    public enableFlag(flag: SearchFlags): void {
         this.#searchFlags |= flag;
     }
 
-    public removeSearchFlag(flag: SearchFlags): void {
+    public disableFlag(flag: SearchFlags): void {
         this.#searchFlags &= ~flag;
     }
 
@@ -59,7 +59,7 @@ export class Searcher {
     public async search(
         tabName: string | null,
         tabs: Tabs,
-        rows: Rows | null,
+        rows: TabRows | null,
         text: string,
         columnIndex: number,
         searchMode: SearchMode,
@@ -189,7 +189,7 @@ export class Searcher {
         }
 
         let i = 0;
-        const chunks: MatchObject[] = [];
+        const chunks: SearchMatchArray[] = [];
 
         while (i < this.#matchObject.length) {
             const count = Math.min(
@@ -223,12 +223,12 @@ export class Searcher {
     async #removeOldMatches(): Promise<void> {
         await removePath(this.#projectSettings.matchesPath, {
             recursive: true,
-        });
+        }).catch(error);
     }
 
     #searchRows(
         filename: string,
-        rows: string[] | Rows,
+        rows: string[] | TabRows,
         columnIndex: number,
         tabs?: Tabs,
     ): void {
@@ -258,13 +258,11 @@ export class Searcher {
                 parts = _parts;
             }
 
-            const source = utils.source(
-                isArray ? parts : (row as RowContainer),
-            );
+            const source = utils.source(isArray ? parts : (row as TabRow));
 
             if (source === consts.ID_COMMENT) {
                 entryIndex = utils.translations(
-                    isArray ? parts : (row as RowContainer),
+                    isArray ? parts : (row as TabRow),
                 )[0];
 
                 if (
@@ -277,7 +275,7 @@ export class Searcher {
             }
 
             const sourceMatch: Match = {
-                text: isArray ? utils.clbtodlb(source) : source,
+                text: isArray ? utils.toLF(source) : source,
                 type: MatchType.Source,
                 columnName: t`Source`,
                 columnNumber: 0,
@@ -289,18 +287,18 @@ export class Searcher {
 
                 if (columnIndex === -1) {
                     [translation, column] = utils.translation(
-                        isArray ? parts : (row as RowContainer),
+                        isArray ? parts : (row as TabRow),
                     );
                 } else {
                     const translations = utils.translations(
-                        isArray ? parts : (row as RowContainer),
+                        isArray ? parts : (row as TabRow),
                     );
 
                     translation = translations[columnIndex];
                 }
 
                 const translationMatch: Match = {
-                    text: isArray ? utils.clbtodlb(translation) : translation,
+                    text: isArray ? utils.toLF(translation) : translation,
                     type: MatchType.Translation,
                     columnName:
                         this.#projectSettings.translationColumns[column][0],
@@ -318,7 +316,7 @@ export class Searcher {
 
             if (searchTranslation) {
                 const translations = utils.translations(
-                    isArray ? parts : (row as RowContainer),
+                    isArray ? parts : (row as TabRow),
                 );
 
                 const start = columnIndex === -1 ? 0 : columnIndex;
@@ -333,9 +331,7 @@ export class Searcher {
                     }
 
                     const translationMatch: Match = {
-                        text: isArray
-                            ? utils.clbtodlb(translation)
-                            : translation,
+                        text: isArray ? utils.toLF(translation) : translation,
                         type: MatchType.Translation,
                         columnName:
                             this.#projectSettings.translationColumns[j][0],
@@ -357,7 +353,7 @@ export class Searcher {
     async #searchCurrentTab(
         tabName: string,
         columnIndex: number,
-        rows: Rows,
+        rows: TabRows,
     ): Promise<void> {
         this.#searchRows(tabName, rows, columnIndex);
         await this.#writeMatches(true);

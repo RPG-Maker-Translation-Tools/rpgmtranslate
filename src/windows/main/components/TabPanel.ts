@@ -346,25 +346,27 @@ export class TabPanel extends Component {
         this.contextMenu = document.createElement("div");
         this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
 
-        for (const [id, label] of [
+        const items = [
             t`Mark Complete`,
             t`Batch Translate`,
             t`Batch Trim`,
             t`Batch Wrap`,
-        ].entries()) {
+        ];
+
+        for (let i = 0; i < items.length; i++) {
             const button = document.createElement("button");
             button.className = tw`h-fit w-full p-1`;
-            button.innerHTML = label;
-            button.id = id.toString();
+            button.innerHTML = items[i];
+            button.id = i.toString();
 
-            if (id !== 0) {
+            if (i !== 0) {
                 button.onmouseenter = (): void => {
                     this.#submenu?.remove();
                     this.#submenu = document.createElement("div");
                     this.#submenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
 
                     this.#submenu.onclick = (): void => {
-                        switch (id) {
+                        switch (i) {
                             case 1:
                                 void emittery.emit(AppEvent.BatchAction, [
                                     tabName,

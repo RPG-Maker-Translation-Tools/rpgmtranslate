@@ -5,39 +5,63 @@ import { describe, expect, Mock, test, vi } from "vitest";
 
 document.body.innerHTML = `
 <div
-    class="  border-second fixed z-50 hidden max-h-4/6 w-7/12 flex-col gap-1 border-2 p-2 text-base"
+    class="bg-primary outline-primary border-second @container fixed z-50 flex hidden size-3/6 resize flex-col justify-around gap-2 overflow-hidden border-2 p-2 text-base"
     id="batch-menu"
 >
-    <div
+    <header
         class="flex h-8 flex-row items-center justify-center text-lg"
-        data-i18n="Select files (You can hold LMB and drag to select multiple files)"
+        id="menu-header"
+        data-i18n="Hold and drag to select multiple files"
+    ></header>
+
+    <div
+        class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
+        id="body"
     ></div>
 
-    <div class="h-fit columns-8 gap-2 overflow-y-auto" id="body"></div>
+    <div
+        class="flex hidden w-full flex-col gap-2"
+        id="context-container"
+    >
+        <div data-i18n="Context"></div>
 
-    <div class="flex flex-row items-center justify-center gap-4">
+        <div class="flex w-full flex-row gap-2">
+            <textarea
+                class="w-full rounded-sm"
+                id="context-input"
+                data-i18n-placeholder="Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
+            ></textarea>
+
+            <select
+                class="rounded-sm"
+                id="use-context-select"
+                multiple
+            ></select>
+        </div>
+    </div>
+
+    <div
+        class="flex h-8 w-full flex-row items-center justify-center gap-2"
+    >
         <button
-            class="button  h-8 w-32 rounded-md border-2 p-1"
+            class="border-primary flex items-center justify-center rounded-md border-2"
+            id="apply-button"
+            data-i18n="Process"
+        ></button>
+        <button
+            class="border-primary flex items-center justify-center rounded-md border-2"
+            id="cancel-button"
+            data-i18n="Cancel"
+        ></button>
+        <button
+            class="border-primary flex items-center justify-center rounded-md border-2"
             id="select-all-button"
             data-i18n="Select All"
         ></button>
         <button
-            class="button  h-8 w-32 rounded-md border-2 p-1"
+            class="border-primary flex items-center justify-center rounded-md border-2"
             id="deselect-all-button"
             data-i18n="Deselect All"
-        ></button>
-    </div>
-
-    <div class="flex flex-row items-center justify-center gap-4">
-        <button
-            class="button  h-8 w-32 rounded-md border-2 p-1"
-            id="apply-button"
-            data-i18n="Apply"
-        ></button>
-        <button
-            class="button  h-8 w-32 rounded-md border-2 p-1"
-            id="cancel-button"
-            data-i18n="Cancel"
         ></button>
     </div>
 
@@ -53,14 +77,29 @@ document.body.innerHTML = `
         </select>
 
         <select class="w-64" id="translation-column-select">
-            <option value="-1" data-i18n="-Select Column-"></option>
+            <option value="0" data-i18n="-Select Column-"></option>
         </select>
 
         <input
-            class="input hidden h-6 text-base"
+            class="hidden rounded-sm"
             id="wrap-limit-input"
             type="number"
+            data-i18n-placeholder="Line length for wrapping"
         />
+
+        <select
+            class="hidden rounded-md"
+            id="translation-endpoint-select"
+        >
+            <option value="">None</option>
+            <option value="0">Google</option>
+            <option value="1">Yandex</option>
+            <option value="2">DeepL</option>
+            <option value="3">ChatGPT</option>
+            <option value="4">Claude</option>
+            <option value="5">DeepSeek</option>
+            <option value="6">Gemini</option>
+        </select>
     </div>
 </div>
 `;
@@ -92,10 +131,13 @@ vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
 
 vi.mock(import("@utils/invokes"), async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, translate: vi.fn() };
+    return { ...actual, translate: vi.fn(), expandScope: vi.fn() };
 });
 
 // TODO: Mock translate
+
+const projectSettings = new ProjectSettings();
+await projectSettings.setProjectPath(".");
 
 describe.sequential("", () => {
     test("trim", async () => {
@@ -104,10 +146,7 @@ describe.sequential("", () => {
         );
 
         const batchMenu = new BatchMenu();
-
-        // TODO
-        // @ts-expect-error
-        batchMenu.init({} as TabInfo, new ProjectSettings(), {}, {}, tabs);
+        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
 
         columnSelect.value = "1";
         batchAction.value = "1";
@@ -132,9 +171,7 @@ describe.sequential("", () => {
         );
 
         const batchMenu = new BatchMenu();
-        // TODO
-        // @ts-expect-error
-        batchMenu.init({} as TabInfo, new ProjectSettings(), {}, {}, tabs);
+        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
 
         columnSelect.value = "1";
         batchAction.value = "2";
@@ -159,10 +196,7 @@ describe.sequential("", () => {
         );
 
         const batchMenu = new BatchMenu();
-
-        // TODO
-        // @ts-expect-error
-        batchMenu.init({} as TabInfo, new ProjectSettings({}), {}, {}, tabs);
+        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
 
         wrapLimitInput.value = "20";
 

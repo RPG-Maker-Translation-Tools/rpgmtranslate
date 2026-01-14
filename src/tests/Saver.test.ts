@@ -38,14 +38,15 @@ test("saveSingle", async () => {
     const saver = new Saver();
     saver.init({} as ProjectSettings, "");
 
-    await saver.saveSingle(
+    await saver.saveCurrentTab(
         "whatever",
-        document.body.firstElementChild!.children as Rows,
+        document.body.firstElementChild!.children as TabRows,
     );
 
     expect(writeTextFile).lastCalledWith(
         expect.any(String),
         "source text 1<#>translation 1\nsource text 2<#>translation 2",
+        undefined,
     );
 });
 
@@ -68,11 +69,12 @@ test("saveAll", async () => {
 
     await saver.saveAll(
         null,
-        document.body.firstElementChild!.children as Rows,
+        document.body.firstElementChild!.children as TabRows,
     );
 
     expect(writeTextFile).lastCalledWith(
         expect.any(String),
         "source text 1<#>translation 1\nsource text 2<#>translation 2",
+        undefined,
     );
 });

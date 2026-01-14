@@ -5,4 +5,5 @@ export const enum BaseFlags {
     Ignore = 1 << 2,
     CreateIgnore = 1 << 3,
     DisableCustomProcessing = 1 << 4,
+    SkipObsolete = 1 << 5,
 }

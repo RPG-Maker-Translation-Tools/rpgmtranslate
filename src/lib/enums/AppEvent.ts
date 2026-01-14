@@ -21,7 +21,6 @@ export const enum AppEvent {
     JumpToTab,
     ApplyTheme,
     TabAdded,
-    TranslateTextareas,
     AddLog,
     UpdateProgressMeter,
     ColumnRenamed,
@@ -37,6 +36,7 @@ export const enum AppEvent {
     TermCheck,
     AddTerm,
     ShowElement,
+    ShowTranslations,
 }
 
 export const enum ElementToShow {

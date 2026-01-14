@@ -18,6 +18,7 @@ import {
     SearchAction,
     TokenizerAlgorithm,
     TokenizerAlgorithmNames,
+    TranslationEndpoint,
 } from "@lib/enums";
 import {
     applyTheme,
@@ -37,6 +38,7 @@ import {
     readDir,
     readFile,
     readTextFile,
+    saveAPIKeys,
     write,
     writeTextFile,
 } from "@utils/invokes";
@@ -50,15 +52,14 @@ import {
     ReadMenu,
     Replacer,
     Saver,
-    ScrollBar,
     Searcher,
     SearchMenu,
     SearchPanel,
-    TabContent,
-    TabContentHeader,
     TabPanel,
     ThemeEditMenu,
     ThemeMenu,
+    TranslationsMenu,
+    TranslationTable,
     UtilsPanel,
     WriteMenu,
 } from "./components";
@@ -79,6 +80,11 @@ import {
 import { ask, message, open } from "@tauri-apps/plugin-dialog";
 import { copyFile, exists, remove as removePath } from "@tauri-apps/plugin-fs";
 import { attachConsole, attachLogger, error } from "@tauri-apps/plugin-log";
+
+const enum FontPlace {
+    Tab,
+    UI,
+}
 
 export class MainWindow {
     #changeTabTimer = -1;
@@ -113,11 +119,10 @@ export class MainWindow {
     readonly #bookmarkMenu: BookmarkMenu;
     readonly #glossaryMenu: GlossaryMenu;
     readonly #matchMenu: MatchMenu;
+    readonly #translationsMenu: TranslationsMenu;
 
-    readonly #tabContent: TabContent;
-    readonly #tabContentHeader: TabContentHeader;
+    readonly #translationTable: TranslationTable;
     readonly #goToRowInput: GoToRowInput;
-    readonly #scrollBar: ScrollBar;
     readonly #debugOutput: HTMLDivElement = document.getElementById(
         "debug-output",
     ) as HTMLDivElement;
@@ -149,16 +154,11 @@ export class MainWindow {
         this.#bookmarkMenu = new BookmarkMenu();
         this.#glossaryMenu = new GlossaryMenu();
         this.#matchMenu = new MatchMenu();
+        this.#translationsMenu = new TranslationsMenu();
 
-        this.#tabContent = new TabContent();
-        this.#tabContentHeader = new TabContentHeader();
+        this.#translationTable = new TranslationTable();
 
         this.#goToRowInput = new GoToRowInput();
-
-        this.#scrollBar = new ScrollBar(
-            this.#tabContent,
-            this.#tabContentHeader,
-        );
 
         this.#saver = new Saver();
         this.#searcher = new Searcher();
@@ -177,8 +177,7 @@ export class MainWindow {
             this.#debugInputOpacity = 100;
 
             if (this.#debugInputInterval === -1) {
-                // @ts-expect-error bun brings node.js types
-                this.#debugInputInterval = setInterval(
+                this.#debugInputInterval = window.setInterval(
                     () => {
                         if (this.#debugInputOpacity === 0) {
                             clearInterval(this.#debugInputInterval);
@@ -209,7 +208,7 @@ export class MainWindow {
             void error("Failed to initialize themes");
         }
 
-        initialized = await this.#initFont();
+        initialized = await this.#updateFonts();
 
         if (!initialized) {
             void error("Failed to initialize font");
@@ -245,6 +244,9 @@ export class MainWindow {
                             async (item) =>
                                 await MenuItem.new({
                                     text: item,
+                                    action: async () => {
+                                        await this.#openProject(item);
+                                    },
                                 }),
                         ),
                     ),
@@ -305,6 +307,7 @@ export class MainWindow {
                             resizable: false,
                             width: consts.ABOUT_WINDOW_WIDTH,
                             height: consts.ABOUT_WINDOW_HEIGHT,
+                            parent: this.#appWindow,
                         });
 
                         await aboutWindow.once(
@@ -329,6 +332,7 @@ export class MainWindow {
                             url: "https://rpg-maker-translation-tools.github.io/rpgmtranslate/",
                             title: t`Help`,
                             center: true,
+                            parent: this.#appWindow,
                         });
                     },
                 }),
@@ -343,29 +347,12 @@ export class MainWindow {
 
         applyTheme(this.#themes, this.#settings.appearance.theme);
         this.#themeMenu.init(this.#themes);
-
-        this.#tabPanel.style.top = `${this.#utilsPanel.clientHeight}px`;
+        this.#tabPanel.top = `${this.#utilsPanel.clientHeight}px`;
 
         if (this.#settings.core.projectPath) {
-            await this.#openProject(this.#settings.core.projectPath, false);
+            await this.#openProject(this.#settings.core.projectPath);
         } else {
-            const noProjectContainer = document.createElement("div");
-            noProjectContainer.innerHTML = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
-            this.#tabContent.append(noProjectContainer);
-
-            if (this.#settings.core.recentProjects.length !== 0) {
-                const recentProjectsContainer = document.createElement("div");
-                recentProjectsContainer.innerHTML = t`Recent projects:`;
-
-                for (const path of this.#settings.core.recentProjects) {
-                    const projectLink = document.createElement("a");
-                    projectLink.innerHTML = path;
-
-                    recentProjectsContainer.appendChild(projectLink);
-                }
-
-                this.#tabContent.append(recentProjectsContainer);
-            }
+            this.#resetTable();
         }
     }
 
@@ -383,27 +370,62 @@ export class MainWindow {
         }
     }
 
-    async #initFont(): Promise<boolean> {
-        if (!this.#settings.appearance.font) {
-            this.#tabContent.style.fontFamily = "inherit";
+    async #updateFont(place: FontPlace): Promise<boolean> {
+        const fontPath: string =
+            place === FontPlace.Tab
+                ? this.#settings.appearance.translationTableFont
+                : this.#settings.appearance.uiFont;
+
+        if (!fontPath) {
+            if (place === FontPlace.Tab) {
+                this.#translationTable.style.setProperty(
+                    "--translation-table-font",
+                    "system-ui",
+                );
+            } else {
+                document.body.style.setProperty("--ui-font", "system-ui");
+            }
+
             return true;
         }
 
-        await expandScope(this.#settings.appearance.font);
+        await expandScope(fontPath);
 
-        const fontData = await readFile(this.#settings.appearance.font);
+        const fontData = await readFile(fontPath);
 
         if (isErr(fontData)) {
             void error(fontData[0]!);
             return false;
         }
 
-        const font = await new FontFace("CustomFont", fontData[1]!).load();
-
+        const font = await new FontFace(
+            place === FontPlace.Tab
+                ? "CustomTranslationTableFont"
+                : "CustomUIFont",
+            fontData[1]!,
+        ).load();
         document.fonts.add(font);
-        this.#tabContent.style.fontFamily = "CustomFont";
+
+        if (place === FontPlace.Tab) {
+            this.#translationTable.style.setProperty(
+                "--translation-table-font",
+                "CustomTranslationTableFont",
+            );
+        } else {
+            document.body.style.setProperty("--ui-font", "CustomUIFont");
+        }
 
         return true;
+    }
+
+    async #updateFonts(): Promise<boolean> {
+        const result = await this.#updateFont(FontPlace.Tab);
+
+        if (!result) {
+            return false;
+        }
+
+        return await this.#updateFont(FontPlace.UI);
     }
 
     async #reload(): Promise<void> {
@@ -458,13 +480,14 @@ export class MainWindow {
         }
     }
 
-    async #initializeProject(): Promise<void> {
+    async #loadProject(): Promise<void> {
         if (this.#settings.core.firstLaunch) {
             // eslint-disable-next-line sonarjs/constructor-for-side-effects
             new WebviewWindow("help", {
                 url: "https://rpg-maker-translation-tools.github.io/rpgmtranslate/",
                 title: t`Help`,
                 center: true,
+                parent: this.#appWindow,
             });
             this.#settings.core.firstLaunch = false;
         }
@@ -507,7 +530,7 @@ export class MainWindow {
 
             if (enumLang !== -1) {
                 this.#projectSettings.translationLanguages.sourceLanguage =
-                    enumLang;
+                    enumLang - 1;
                 alert(t`Auto-determined language as ${determinedLang}.`);
             }
         }
@@ -524,19 +547,24 @@ export class MainWindow {
         this.#readMenu.init(this.#projectSettings);
         this.#searchPanel.init(
             this.#tabInfo,
-            this.#tabContent,
+            this.#translationTable,
             this.#projectSettings,
             this.#replacementLog,
         );
         this.#writeMenu.init(this.#projectSettings.programDataPath);
-        this.#tabContentHeader.init(this.#projectSettings);
-        this.#tabContent.init(this.#settings, this.#projectSettings);
+        this.#translationTable.init(this.#settings, this.#projectSettings);
         this.#saver.init(this.#projectSettings, this.#utilsPanel.sourceTitle);
         this.#searcher.init(this.#projectSettings);
         this.#replacer.init(this.#projectSettings);
         this.#glossaryMenu.init(this.#glossary);
+        this.#translationsMenu.init(
+            this.#projectSettings,
+            this.#settings.translation,
+            this.#glossary,
+            this.#tabInfo,
+        );
 
-        this.#tabContent.innerHTML = "";
+        this.#translationTable.innerHTML = "";
         this.#updateProgressMeter();
 
         if (
@@ -567,15 +595,17 @@ export class MainWindow {
 
         for (const path of this.#settings.core.recentProjects) {
             await recentProjectsSubmenu.append(
-                await MenuItem.new({ text: path }),
+                await MenuItem.new({
+                    text: path,
+                    action: async () => {
+                        await this.#openProject(path);
+                    },
+                }),
             );
         }
     }
 
-    async #openProject(
-        projectPath: string,
-        openingNew: boolean,
-    ): Promise<void> {
+    async #openProject(projectPath: string): Promise<void> {
         if (!projectPath) {
             return;
         }
@@ -596,17 +626,17 @@ export class MainWindow {
             return;
         }
 
-        if (openingNew) {
+        if (this.#settings.core.projectPath) {
             await this.#changeTab(null);
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
-                this.#tabContent.children,
+                this.#translationTable.rows,
             );
             await this.#saveProject();
             this.#tabPanel.clear();
         }
 
-        this.#tabContent.innerHTML = t`Loading project...`;
+        this.#translationTable.innerHTML = t`Loading project...`;
 
         this.#settings.core.projectPath = projectPath;
         this.#projectSettings = projectSettings;
@@ -619,10 +649,10 @@ export class MainWindow {
 
                 if (proceed) {
                     await this.#copyTranslationFromRoot(rootTranslationPath);
-                    this.#tabContent.innerHTML = t`Copying translation from root...`;
+                    this.#translationTable.innerHTML = t`Copying translation from root...`;
                 }
 
-                await this.#initializeProject();
+                await this.#loadProject();
             } else {
                 this.#readMenu.show(
                     this.#utilsPanel.readButton.offsetLeft,
@@ -634,7 +664,7 @@ export class MainWindow {
                 return;
             }
         } else {
-            await this.#initializeProject();
+            await this.#loadProject();
         }
     }
 
@@ -650,9 +680,9 @@ export class MainWindow {
         await this.#saver.awaitSave();
 
         if (this.#tabInfo.tabName) {
-            await this.#saver.saveSingle(
+            await this.#saver.saveCurrentTab(
                 this.#tabInfo.tabName,
-                this.#tabContent.children,
+                this.#translationTable.rows,
             );
             const activeTab = this.#tabPanel.tab(
                 this.#tabInfo.tabs[this.#tabInfo.tabName].index,
@@ -660,11 +690,10 @@ export class MainWindow {
             activeTab.classList.remove("bg-third");
         }
 
-        this.#tabContent.innerHTML = "";
+        this.#translationTable.innerHTML = "";
 
         if (filename === null) {
-            this.#scrollBar.hide();
-            this.#tabContentHeader.hide();
+            this.#translationTable.hide();
             this.#tabInfo.tabName = this.#utilsPanel.tabName = "";
         } else {
             this.#utilsPanel.tabName = this.#tabInfo.tabName = filename;
@@ -674,12 +703,11 @@ export class MainWindow {
             );
             activeTab.classList.add("bg-third");
 
-            await this.#tabContent.fill(
+            await this.#translationTable.fill(
                 filename,
                 this.#projectSettings.translationColumnCount,
             );
-            this.#tabContentHeader.show();
-            this.#scrollBar.show();
+            this.#translationTable.show();
         }
 
         this.#changeTabTimer = window.setTimeout(() => {
@@ -687,7 +715,7 @@ export class MainWindow {
             // eslint-disable-next-line no-magic-numbers
         }, consts.SECOND_MS / 10);
 
-        this.#tabContent.clearTextAreaHistory();
+        this.#translationTable.clearTextAreaHistory();
     }
 
     #showSearchPanel(): void {
@@ -720,7 +748,7 @@ export class MainWindow {
                 case "KeyS":
                     await this.#saver.saveAll(
                         this.#tabInfo.tabName,
-                        this.#tabContent.children,
+                        this.#translationTable.rows,
                     );
                     break;
                 case "KeyB":
@@ -746,7 +774,8 @@ export class MainWindow {
                             this.#goToRowInput.show();
                             this.#goToRowInput.focus();
 
-                            const lastRowContainer = this.#tabContent.lastRow;
+                            const lastRowContainer =
+                                this.#translationTable.lastRow;
                             const lastRowNumber = rowNumber(lastRowContainer);
                             this.#goToRowInput.placeholder = t`Go to row... from 1 to ${lastRowNumber}`;
                         } else {
@@ -806,7 +835,7 @@ export class MainWindow {
     ): Promise<void> {
         if (!this.#settings.core.projectPath) {
             alert(
-                t`Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation.`,
+                t`Game files do not exist (no data/Data directory), so it's only possible to edit and save translation.`,
             );
             return;
         }
@@ -840,6 +869,20 @@ export class MainWindow {
     }
 
     async #saveProject(): Promise<void> {
+        const keys: string[] = [];
+
+        for (
+            let i = TranslationEndpoint.Google;
+            i <= TranslationEndpoint.Gemini;
+            i++
+        ) {
+            keys.push(this.#settings.translation.endpoints[i].apiKey);
+            // @ts-expect-error we are doing this for serialization
+            delete this.#settings.translation.endpoints[i].apiKey;
+        }
+
+        saveAPIKeys(keys);
+
         let writeResult = await writeTextFile(
             consts.SETTINGS_PATH,
             JSON.stringify(this.#settings),
@@ -915,7 +958,7 @@ export class MainWindow {
         if (exitWithSave) {
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
-                this.#tabContent.children,
+                this.#translationTable.rows,
             );
             return true;
         } else {
@@ -929,9 +972,7 @@ export class MainWindow {
         rootTranslationPath: string,
     ): Promise<ProjectSettings | null> {
         if (!(await exists(projectPath))) {
-            await message(
-                t`Selected directory is missing. Project won't be initialized.`,
-            );
+            await message(t`Selected directory is missing.`);
             return null;
         }
 
@@ -971,7 +1012,7 @@ export class MainWindow {
                     await projectSettings.findSourceDirectory(projectPath);
             } else if (!translationExists) {
                 await message(
-                    t`Selected directory does not contain data/Data directory, .rgss archive or translation directory. Project won't be initialized.`,
+                    t`Selected directory does not contain data/Data directory, .rgss archive or translation directory.`,
                 );
                 return null;
             }
@@ -1079,63 +1120,8 @@ export class MainWindow {
             }
         });
 
-        emittery.on(
-            AppEvent.TranslateTextareas,
-            // @ts-expect-error
-            async ([rowIndices, columnIndex]) => {
-                // TODO: Return translation here
-                // for (let i = 0; i < rowIndices.length - 1; i++) {
-                //     if (rowIndices[i] > rowIndices[i + 1]) {
-                //         alert(t`Cannot translate non-contiguous rows.`);
-                //         return;
-                //     }
-                // }
-                // const rows = this.#tabContent.children;
-                // const lines: string[] = new Array(rows.length);
-                // const blocks: Record<string, SourceBlock> = {};
-                // for (const block of utils.parseBlocks(lines)) {
-                //     blocks[block.id] = block;
-                // }
-                // if (strings.length < 5) {
-                //     if (
-                //         this.#settings.translation.translationEndpoint >
-                //         TranslationEndpoint.Google
-                //     ) {
-                //         alert(
-                //             t`Please, select more strings to not waste tokens with endpoints.`,
-                //         );
-                //         return;
-                //     }
-                // }
-                // const glossary: Record<string, string> = {};
-                // for (const term of this.#glossary) {
-                //     glossary[term.source] = term.translation;
-                // }
-                // const result = await translate({
-                //     ...this.#settings.translation,
-                //     ...this.#projectSettings.translationLanguages,
-                //     projectContext: this.#projectSettings.projectContext,
-                //     filename: this.#tabInfo.tabName,
-                //     files: blocks,
-                //     glossary,
-                //     normalize: false,
-                // });
-                // if (isErr(result)) {
-                //     void error(result[0]!);
-                //     return;
-                // }
-                // const translations = result[1]!;
-                // for (let i = 0; i < rowIndices.length; i++) {
-                //     const rowIndex = rowIndices[i];
-                //     const row = rows[rowIndex];
-                //     const textarea = row.children[columnIndex];
-                //     textarea.value = translations[i];
-                // }
-            },
-        );
-
         emittery.on(AppEvent.ScrollIntoRow, (row) => {
-            this.#tabContent.children[row].scrollIntoView({
+            this.#translationTable.rows[row].scrollIntoView({
                 inline: "center",
                 block: "center",
             });
@@ -1164,7 +1150,9 @@ export class MainWindow {
                         if (this.#matchMenu.hidden) {
                             this.#matchMenu.show(
                                 this.#matchMenu.x || 0,
-                                this.#matchMenu.y || window.innerHeight - 64,
+                                this.#matchMenu.y ||
+                                    window.innerHeight -
+                                        consts.MATCH_MENU_HEIGHT,
                             );
                         } else {
                             this.#matchMenu.hide();
@@ -1172,7 +1160,8 @@ export class MainWindow {
                     } else {
                         this.#matchMenu.show(
                             this.#matchMenu.x || 0,
-                            this.#matchMenu.y || window.innerHeight - 64,
+                            this.#matchMenu.y ||
+                                window.innerHeight - consts.MATCH_MENU_HEIGHT,
                         );
                     }
 
@@ -1195,8 +1184,8 @@ export class MainWindow {
         });
 
         emittery.on(AppEvent.ColumnResized, ([columnIndex, width]) => {
-            for (const rowContainer of this.#tabContent.children) {
-                const element = rowContainer.children[columnIndex];
+            for (const row of this.#translationTable.rows) {
+                const element = row.children[columnIndex];
                 element.style.minWidth = element.style.width = `${width}px`;
             }
         });
@@ -1263,13 +1252,8 @@ export class MainWindow {
         emittery.on(AppEvent.ColumnAdded, () => {
             this.#projectSettings.addColumn();
 
-            for (const rowContainer of this.#tabContent.children) {
-                this.#tabContent.addTextAreaCell(
-                    rowContainer,
-                    "",
-                    Number.parseInt(rowContainer.style.minHeight),
-                    consts.DEFAULT_COLUMN_WIDTH,
-                );
+            for (const row of this.#translationTable.rows) {
+                this.#translationTable.addTextAreaCell(row, "");
             }
 
             // This is search menu
@@ -1283,8 +1267,6 @@ export class MainWindow {
                 this.#projectSettings.translationColumnCount - 1,
                 t`Translation`,
             );
-
-            this.#scrollBar.width = this.#tabContent.scrollWidth;
         });
 
         emittery.on(AppEvent.RemoveBookmark, (rowNumber) => {
@@ -1298,7 +1280,7 @@ export class MainWindow {
         emittery.on(AppEvent.SaveAll, async () => {
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
-                this.#tabContent.children,
+                this.#translationTable.rows,
             );
         });
 
@@ -1307,8 +1289,10 @@ export class MainWindow {
             async ([skipFiles, createIgnore, skipMaps, skipEvents]) => {
                 await this.#saver.saveAll(
                     this.#tabInfo.tabName,
-                    this.#tabContent.children,
+                    this.#translationTable.rows,
                 );
+                await this.#changeTab(null);
+
                 this.#utilsPanel.togglePurgeAnimation();
 
                 let flags = this.#projectSettings.flags;
@@ -1330,7 +1314,11 @@ export class MainWindow {
                     hashes: this.#projectSettings.hashes,
                 });
 
-                await this.#reload();
+                await removePath(this.#projectSettings.tempMapsPath, {
+                    recursive: true,
+                });
+                this.#tabPanel.clear();
+                await this.#tabPanel.init(this.#projectSettings);
             },
         );
 
@@ -1339,7 +1327,7 @@ export class MainWindow {
             async (button): Promise<void> => {
                 if (
                     !this.#settings.core.projectPath &&
-                    button !== this.#utilsPanel.openDirectoryButton
+                    button !== this.#utilsPanel.openFolderButton
                 ) {
                     return;
                 }
@@ -1355,10 +1343,10 @@ export class MainWindow {
                     case this.#utilsPanel.saveButton:
                         await this.#saver.saveAll(
                             this.#tabInfo.tabName,
-                            this.#tabContent.children,
+                            this.#translationTable.rows,
                         );
                         break;
-                    case this.#utilsPanel.writeButton: {
+                    case this.#utilsPanel.writeButton:
                         if (this.#writeMenu.hidden) {
                             this.#writeMenu.show(
                                 this.#utilsPanel.writeButton.offsetLeft,
@@ -1369,8 +1357,7 @@ export class MainWindow {
                             this.#writeMenu.hide();
                         }
                         break;
-                    }
-                    case this.#utilsPanel.openDirectoryButton: {
+                    case this.#utilsPanel.openFolderButton: {
                         const directory =
                             (await open({
                                 directory: true,
@@ -1388,32 +1375,18 @@ export class MainWindow {
                             return;
                         }
 
-                        await this.#openProject(
-                            directory,
-                            Boolean(this.#settings.core.projectPath),
-                        );
+                        await this.#openProject(directory);
                         break;
                     }
                     case this.#utilsPanel.settingsButton: {
-                        const settingsWindow = new WebviewWindow("settings", {
+                        // eslint-disable-next-line sonarjs/constructor-for-side-effects
+                        new WebviewWindow("settings", {
                             url: "windows/settings/SettingsWindow.html",
                             title: t`Settings`,
                             center: true,
                             resizable: false,
+                            parent: this.#appWindow,
                         });
-
-                        await settingsWindow.once(
-                            "tauri://webview-created",
-                            async () => {
-                                await _.sleep(consts.SECOND_MS / 2);
-                                await settingsWindow.emit("settings", [
-                                    this.#settings,
-                                    this.#themes,
-                                    this.#projectSettings,
-                                    this.#tabInfo.tabs,
-                                ]);
-                            },
-                        );
 
                         break;
                     }
@@ -1440,10 +1413,10 @@ export class MainWindow {
                             this.#bookmarkMenu.hide();
                         }
                         break;
-                    case this.#utilsPanel.readButton: {
+                    case this.#utilsPanel.readButton:
                         if (!this.#projectSettings.sourceDirectory) {
                             alert(
-                                t`Game files do not exist (no original/data/Data directory), so it's only possible to edit and save translation.`,
+                                t`Game files do not exist (no data/Data directory), so it's only possible to edit and save translation.`,
                             );
                             return;
                         }
@@ -1458,14 +1431,12 @@ export class MainWindow {
                             this.#readMenu.hide();
 
                             if (this.#pendingRead) {
-                                this.#tabContent.innerHTML = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
-
+                                this.#resetTable();
                                 this.#settings.core.projectPath = "";
                                 this.#projectSettings = new ProjectSettings();
                             }
                         }
                         break;
-                    }
                     case this.#utilsPanel.searchButton:
                         this.#showSearchMenu();
                         break;
@@ -1483,7 +1454,7 @@ export class MainWindow {
                             this.#batchMenu.hide();
                         }
                         break;
-                    case this.#utilsPanel.purgeButton: {
+                    case this.#utilsPanel.purgeButton:
                         if (this.#purgeMenu.hidden) {
                             this.#purgeMenu.show(
                                 this.#utilsPanel.purgeButton.offsetLeft,
@@ -1494,8 +1465,8 @@ export class MainWindow {
                             this.#purgeMenu.hide();
                         }
                         break;
-                    }
-                    case this.#utilsPanel.glossaryButton: {
+
+                    case this.#utilsPanel.glossaryButton:
                         if (this.#glossaryMenu.hidden) {
                             this.#glossaryMenu.show(
                                 this.#glossaryMenu.x ||
@@ -1508,7 +1479,23 @@ export class MainWindow {
                         } else {
                             this.#glossaryMenu.hide();
                         }
-                    }
+                        break;
+                    case this.#utilsPanel.translationsButton:
+                        if (this.#translationsMenu.hidden) {
+                            this.#translationsMenu.show(
+                                this.#translationsMenu.x ||
+                                    this.#utilsPanel.translationsButton
+                                        .offsetLeft,
+                                this.#translationsMenu.y ||
+                                    this.#utilsPanel.translationsButton
+                                        .offsetTop +
+                                        this.#utilsPanel.translationsButton
+                                            .clientHeight,
+                            );
+                        } else {
+                            this.#translationsMenu.hide();
+                        }
+                        break;
                 }
 
                 await this.#appWindow.onCloseRequested(async (event) => {
@@ -1556,7 +1543,7 @@ export class MainWindow {
                 ))!;
 
                 await this.#replacer.replaceSingle(
-                    this.#tabContent.children,
+                    this.#translationTable.rows,
                     this.#tabInfo.tabName,
                     regexp,
                     replacerText,
@@ -1590,7 +1577,7 @@ export class MainWindow {
                 const results = await this.#searcher.search(
                     this.#tabInfo.tabName,
                     this.#tabInfo.tabs,
-                    this.#tabContent.children,
+                    this.#translationTable.rows,
                     predicate,
                     columnIndex,
                     searchMode,
@@ -1603,7 +1590,7 @@ export class MainWindow {
 
                 await this.#replacer.replaceAll(
                     results,
-                    this.#tabContent.children,
+                    this.#translationTable.rows,
                     this.#tabInfo.tabName,
                     replacerText,
                     searchAction,
@@ -1617,7 +1604,7 @@ export class MainWindow {
                 const results = await this.#searcher.search(
                     this.#tabInfo.tabName,
                     this.#tabInfo.tabs,
-                    this.#tabContent.children,
+                    this.#translationTable.rows,
                     predicate,
                     columnIndex,
                     searchMode,
@@ -1641,7 +1628,6 @@ export class MainWindow {
 
         emittery.on(AppEvent.AdditionalColumnRequired, () => {
             this.#projectSettings.addColumn();
-            this.#scrollBar.width = this.#tabContent.scrollWidth;
         });
 
         emittery.on(AppEvent.ToggleSaveAnimation, () => {
@@ -1683,12 +1669,12 @@ export class MainWindow {
             } = this.#projectSettings.translationLanguages;
 
             if (sourceAlgorithm === TokenizerAlgorithm.None) {
-                alert(t`Source language is not set.`);
+                this.#matchMenu.showError(t`Source language is not set.`);
                 return;
             }
 
             if (translationAlgorithm === TokenizerAlgorithm.None) {
-                alert(t`Translation language is not set.`);
+                this.#matchMenu.showError(t`Translation language is not set.`);
                 return;
             }
 
@@ -1718,8 +1704,8 @@ export class MainWindow {
 
             if (checkSpecificRow || checkOnlyCurrentFile) {
                 const rowsToCheck = checkSpecificRow
-                    ? [this.#tabContent.row(mode[1]!)]
-                    : this.#tabContent.children;
+                    ? [this.#translationTable.row(mode[1])]
+                    : this.#translationTable.rows;
 
                 for (const row of rowsToCheck) {
                     const source = utils.source(row);
@@ -1771,10 +1757,8 @@ export class MainWindow {
                         continue;
                     }
 
-                    let source = utils.clbtodlb(utils.source(split));
-                    const translation = utils.clbtodlb(
-                        utils.translation(split)[0],
-                    );
+                    let source = utils.toLF(utils.source(split));
+                    const translation = utils.toLF(utils.translation(split)[0]);
 
                     const isComment = source.startsWith(consts.COMMENT_PREFIX);
                     const isMapComment = source.startsWith(
@@ -1795,6 +1779,10 @@ export class MainWindow {
                     await processRow(source, translation, filename, l + 1);
                 }
             }
+        });
+
+        emittery.on(AppEvent.ShowTranslations, async (text) => {
+            await this.#translationsMenu.showTranslations(text);
         });
 
         emittery.on(AppEvent.AddTerm, (source) => {
@@ -1832,7 +1820,7 @@ export class MainWindow {
         });
 
         void listen<[Settings, ProjectSettings]>(
-            "get-settings",
+            "close-settings",
             async (res) => {
                 utils.deepAssign(
                     this.#settings as unknown as Record<string, unknown>,
@@ -1852,13 +1840,16 @@ export class MainWindow {
                     this.#saver.disableBackup();
                 }
 
-                await this.#initFont();
-                this.#tabContent.init(this.#settings, this.#projectSettings);
+                await this.#updateFonts();
+                this.#translationTable.init(
+                    this.#settings,
+                    this.#projectSettings,
+                );
             },
         );
 
-        void listen("send-settings", async () => {
-            await emit("settings", [
+        void listen("awaiting-settings", async () => {
+            await emit("open-settings", [
                 this.#settings,
                 this.#themes,
                 this.#projectSettings,
@@ -1875,7 +1866,7 @@ export class MainWindow {
         await this.#changeTab(null);
         await this.#saver.saveAll(
             this.#tabInfo.tabName,
-            this.#tabContent.children,
+            this.#translationTable.rows,
         );
         await this.#saveProject();
         this.#tabPanel.clear();
@@ -1883,25 +1874,7 @@ export class MainWindow {
         this.#settings.core.projectPath = "";
         this.#projectSettings = new ProjectSettings();
 
-        this.#tabContent.innerHTML = "";
-
-        const noProjectContainer = document.createElement("div");
-        noProjectContainer.innerHTML = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
-        this.#tabContent.append(noProjectContainer);
-
-        if (this.#settings.core.recentProjects.length !== 0) {
-            const recentProjectsContainer = document.createElement("div");
-            recentProjectsContainer.innerHTML = t`Recent projects:`;
-
-            for (const path of this.#settings.core.recentProjects) {
-                const projectLink = document.createElement("a");
-                projectLink.innerHTML = path;
-
-                recentProjectsContainer.appendChild(projectLink);
-            }
-
-            this.#tabContent.append(recentProjectsContainer);
-        }
+        this.#resetTable();
     }
 
     async #invokeRead(
@@ -1914,7 +1887,7 @@ export class MainWindow {
         mapEvents: boolean,
     ): Promise<void> {
         if (this.#pendingRead) {
-            this.#tabContent.innerHTML = t`Reading game files...`;
+            this.#translationTable.innerHTML = t`Reading game files...`;
         }
 
         this.#utilsPanel.toggleReadAnimation();
@@ -1927,7 +1900,7 @@ export class MainWindow {
         ) {
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
-                this.#tabContent.children,
+                this.#translationTable.rows,
             );
         }
 
@@ -1986,7 +1959,38 @@ export class MainWindow {
         } else {
             this.#readMenu.hide();
             this.#pendingRead = false;
-            await this.#initializeProject();
+            await this.#loadProject();
+        }
+    }
+
+    #resetTable(): void {
+        this.#translationTable.innerHTML = "";
+
+        const noProjectContainer = document.createElement("div");
+        noProjectContainer.innerHTML = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
+        this.#translationTable.append(noProjectContainer);
+
+        if (this.#settings.core.recentProjects.length !== 0) {
+            const recentProjectsContainer = document.createElement("div");
+            recentProjectsContainer.innerHTML = t`Recent projects:`;
+
+            for (const path of this.#settings.core.recentProjects) {
+                const projectLink = document.createElement("a");
+                projectLink.innerHTML = path;
+
+                recentProjectsContainer.appendChild(projectLink);
+            }
+
+            this.#translationTable.append(recentProjectsContainer);
+            recentProjectsContainer.onclick = async (e): Promise<void> => {
+                const target = e.target as HTMLElement;
+
+                if (target.tagName !== "A") {
+                    return;
+                }
+
+                await this.#openProject(target.innerHTML);
+            };
         }
     }
 }

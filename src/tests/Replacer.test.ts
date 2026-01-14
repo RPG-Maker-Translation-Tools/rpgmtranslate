@@ -24,16 +24,16 @@ const thirdRow = {
 
 const rowsData = [firstRow, secondRow, thirdRow];
 
-const rowsHTML = document.createElement("div");
+const rowsHTML = document.createElement("tbody");
 rowsHTML.innerHTML = rowsData
     .map(
         (row) => `
-            <div>
-                <div></div>
-                <div>${row.source}</div>
-                <textarea>${row.firstTranslation}</textarea>
-                <textarea>${row.secondTranslation}</textarea>
-            </div>
+            <tr>
+                <td></td>
+                <td>${row.source}</td>
+                <td><textarea>${row.firstTranslation}</textarea></td>
+                <td><textarea>${row.secondTranslation}</textarea></td>
+            </tr>
         `,
     )
     .join("");
@@ -62,7 +62,7 @@ vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
     ),
 );
 
-const rows = rowsHTML.children as Rows;
+const rows = rowsHTML.children as TabRows;
 
 interface Scenario {
     name: string;
@@ -88,7 +88,7 @@ const scenarios: Scenario[] = [
         rowIndex: 0,
         action: SearchAction.Replace,
         expectFn: (): void => {
-            expect(rows[0].children[2].value).toBe(
+            expect(rows[0].children[2].querySelector("textarea")?.value).toBe(
                 rowsData[0].firstTranslation.replace(
                     "translation",
                     replaceText,
@@ -110,6 +110,7 @@ const scenarios: Scenario[] = [
                 `${rowsData[0].source}<#>${rowsData[0].firstTranslation.replace("translation", replaceText)}<#>${rowsData[0].secondTranslation}
 ${rowsData[1].source}<#>${rowsData[1].firstTranslation}<#>${rowsData[1].secondTranslation}
 ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTranslation}`,
+                undefined,
             );
         },
     },
@@ -122,7 +123,9 @@ ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTr
         rowIndex: 0,
         action: SearchAction.Put,
         expectFn: (): void => {
-            expect(rows[0].children[2].value).toBe(replaceText);
+            expect(rows[0].children[2].querySelector("textarea")?.value).toBe(
+                replaceText,
+            );
         },
     },
     {
@@ -139,6 +142,7 @@ ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTr
                 `${rowsData[0].source}<#>${replaceText}<#>${rowsData[0].secondTranslation}
 ${rowsData[1].source}<#>${rowsData[1].firstTranslation}<#>${rowsData[1].secondTranslation}
 ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTranslation}`,
+                undefined,
             );
         },
     },

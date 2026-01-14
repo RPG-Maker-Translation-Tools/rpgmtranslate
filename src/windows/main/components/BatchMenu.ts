@@ -3,12 +3,7 @@ import { Component } from "./Component";
 import { emittery } from "@classes/emittery";
 
 import { ProjectSettings, TranslationSettings } from "@lib/classes";
-import {
-    AppEvent,
-    BatchAction,
-    MouseButton,
-    TokenizerAlgorithm,
-} from "@lib/enums";
+import { AppEvent, BatchAction, TokenizerAlgorithm } from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
@@ -17,8 +12,9 @@ import { isErr, readTextFile, translate, writeTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
-import { message } from "@tauri-apps/plugin-dialog";
 import { error, warn } from "@tauri-apps/plugin-log";
+
+// TODO: Allow to select rows to process
 
 export class BatchMenu extends Component {
     declare protected readonly element: HTMLElement;
@@ -26,6 +22,8 @@ export class BatchMenu extends Component {
     readonly #body: HTMLDivElement;
 
     readonly #wrapLimitInput: HTMLInputElement;
+    readonly #translationEndpointSelect: HTMLSelectElement;
+
     readonly #batchActionSelect: HTMLSelectElement;
     readonly #translationColumnSelect: HTMLSelectElement;
 
@@ -54,15 +52,16 @@ export class BatchMenu extends Component {
 
     #glossary!: Glossary;
 
-    #startX = 0;
-    #startY = 0;
-
     public constructor() {
         super("batch-menu");
 
         this.#body = this.element.children[1] as HTMLDivElement;
 
         this.#wrapLimitInput = this.element.querySelector("#wrap-limit-input")!;
+        this.#translationEndpointSelect = this.element.querySelector(
+            "#translation-endpoint-select",
+        )!;
+
         this.#batchActionSelect = this.element.querySelector(
             "#batch-action-select",
         )!;
@@ -85,9 +84,7 @@ export class BatchMenu extends Component {
             "#use-context-select",
         )!;
 
-        this.element.onmousedown = (e): void => {
-            this.#onmousedown(e);
-        };
+        this.setDraggable(true);
 
         this.element.onmouseup = (): void => {
             this.#onmouseup();
@@ -103,10 +100,6 @@ export class BatchMenu extends Component {
 
         this.element.onclick = async (e): Promise<void> => {
             await this.#onclick(e);
-        };
-
-        this.element.oncontextmenu = (e): void => {
-            this.#oncontextmenu(e);
         };
     }
 
@@ -223,28 +216,35 @@ export class BatchMenu extends Component {
             return;
         }
 
-        if (
-            this.#batchAction === BatchAction.Translate &&
-            (this.#translationLanguages.sourceLanguage ===
-                TokenizerAlgorithm.None ||
+        if (this.#batchAction === BatchAction.Translate) {
+            if (
+                this.#translationLanguages.sourceLanguage ===
+                TokenizerAlgorithm.None
+            ) {
+                alert(t`Source language is not set.`);
+                return;
+            }
+
+            if (
                 this.#translationLanguages.translationLanguage ===
-                    TokenizerAlgorithm.None)
-        ) {
-            await message(
-                t`Translation languages are not set. Select them in fields above.`,
-            );
-            return;
+                TokenizerAlgorithm.None
+            ) {
+                alert(t`Translation language is not set.`);
+                return;
+            }
+
+            if (this.#translationEndpointSelect.value === "") {
+                alert(t`Translation endpoint is not selected.`);
+                return;
+            }
         }
 
-        if (fileData !== undefined) {
-            await this.#processFile(fileData[0]);
-        } else {
-            const files: SourceFiles = {};
-            const originalStrings: Record<
-                string,
-                Record<string, string[]>
-            > = {};
+        const files: SourceFiles = {};
+        const originalStrings: Record<string, Record<string, string[]>> = {};
 
+        if (fileData !== undefined) {
+            await this.#processFile(fileData[0], files, originalStrings);
+        } else {
             for (const container of this.#body.children) {
                 const label = container.lastElementChild as HTMLLabelElement;
                 label.style.color = "inherit";
@@ -265,62 +265,16 @@ export class BatchMenu extends Component {
                     await emittery.emit(AppEvent.ChangeTab, null);
                 }
 
+                await this.#processFile(filename, files, originalStrings);
+
                 if (this.#batchAction !== BatchAction.Translate) {
-                    await this.#processFile(filename);
                     label.style.color = "lime";
-                    continue;
                 }
-
-                const contentPath = utils.join(
-                    filename.startsWith("map")
-                        ? this.#tempMapsPath
-                        : this.#translationPath,
-                    `${filename}${consts.TXT_EXTENSION}`,
-                );
-
-                const content = await readTextFile(contentPath);
-
-                if (isErr(content)) {
-                    void error(content[0]!);
-                    return;
-                }
-
-                const lines = utils.lines(content[1]!);
-                const blocks: Record<string, SourceBlock> = {};
-                originalStrings[filename] = {};
-
-                for (const [id, block] of utils.parseBlocks(lines)) {
-                    originalStrings[filename][id] = block.strings;
-
-                    const newStrings: string[] = [];
-
-                    for (const string of block.strings) {
-                        if (string.startsWith("<!-- EVENT NAME")) {
-                            newStrings.push(string);
-                            continue;
-                        }
-
-                        if (string.startsWith(consts.COMMENT_PREFIX)) {
-                            continue;
-                        }
-
-                        newStrings.push(
-                            string
-                                .slice(0, string.indexOf(consts.SEPARATOR))
-                                .replaceAll(consts.NEW_LINE, "\n"),
-                        );
-                    }
-
-                    block.strings = newStrings;
-                    blocks[id] = block;
-                }
-
-                files[filename] = blocks;
             }
+        }
 
-            if (this.#batchAction === BatchAction.Translate) {
-                await this.#translateFiles(files, originalStrings);
-            }
+        if (this.#batchAction === BatchAction.Translate) {
+            await this.#translateFiles(files, originalStrings);
         }
 
         await emittery.emit(AppEvent.UpdateSaved, false);
@@ -330,9 +284,14 @@ export class BatchMenu extends Component {
         files: SourceFiles,
         sourceStrings: Record<string, Record<string, string[]>>,
     ): Promise<void> {
+        const translationSettings =
+            this.#translationSettings.endpoints[
+                Number(this.#translationEndpointSelect.value)
+            ];
+
         const glossary = [];
 
-        if (this.#translationSettings.useGlossary) {
+        if (translationSettings.useGlossary) {
             for (const term of this.#glossary) {
                 glossary.push({
                     term: term.source,
@@ -341,8 +300,9 @@ export class BatchMenu extends Component {
                 });
             }
         }
+
         const result = await translate({
-            ...this.#translationSettings,
+            ...translationSettings,
             ...this.#translationLanguages,
             projectContext: this.#projectSettings.projectContext,
             localContext: this.#contextInput.value,
@@ -381,7 +341,7 @@ export class BatchMenu extends Component {
             let newLinesPos = 0;
 
             for (const id in sourceFile) {
-                const translatedBlock = translatedFile[id];
+                const translatedBlock = translatedFile[id].strings;
                 const sourceBlock = sourceFile[id];
                 const strings = sourceStrings[filename][id];
 
@@ -390,13 +350,17 @@ export class BatchMenu extends Component {
                 newLines[newLinesPos++] =
                     `<!-- NAME -->${consts.SEPARATOR}${sourceBlock.name}`;
 
+                let translatedCount = 0;
+
                 for (let i = 0; i < strings.length; i++) {
-                    if (strings[i].startsWith(consts.COMMENT_PREFIX)) {
-                        newLines[newLinesPos++] = strings[i];
+                    const string = strings[i];
+
+                    if (string.startsWith(consts.COMMENT_PREFIX)) {
+                        newLines[newLinesPos++] = string;
                         continue;
                     }
 
-                    const split = utils.parts(strings[i]);
+                    const split = utils.parts(string);
 
                     if (!split) {
                         utils.logSplitError(sourceBlock.name, i + 1);
@@ -409,7 +373,7 @@ export class BatchMenu extends Component {
                         split[j] ??= "";
                     }
 
-                    const translation = translatedBlock[i];
+                    const translation = translatedBlock[translatedCount++];
 
                     split[this.#translationColumnIndex] = translation;
                     newLines[newLinesPos++] = split.join(consts.SEPARATOR);
@@ -435,6 +399,8 @@ export class BatchMenu extends Component {
 
     async #processFile(
         filename: string,
+        files: SourceFiles,
+        originalStrings: Record<string, Record<string, string[]>>,
     ): Promise<[string, SourceBlock] | undefined> {
         const contentPath = utils.join(
             filename.startsWith("map")
@@ -451,9 +417,6 @@ export class BatchMenu extends Component {
         }
 
         const lines = utils.lines(content[1]!);
-
-        const files: SourceFiles = {};
-        const originalStrings: Record<string, Record<string, string[]>> = {};
         const blocks: Record<string, SourceBlock> = {};
         originalStrings[filename] = {};
 
@@ -477,9 +440,7 @@ export class BatchMenu extends Component {
                     }
 
                     newStrings.push(
-                        string
-                            .slice(0, string.indexOf(consts.SEPARATOR))
-                            .replaceAll(consts.NEW_LINE, "\n"),
+                        string.slice(0, string.indexOf(consts.SEPARATOR)),
                     );
                 }
 
@@ -487,6 +448,7 @@ export class BatchMenu extends Component {
                 blocks[id] = block;
                 continue;
             }
+
             newLines[newLinesPos++] =
                 `${consts.ID_COMMENT}${consts.SEPARATOR}${id}`;
             newLines[newLinesPos++] =
@@ -514,9 +476,6 @@ export class BatchMenu extends Component {
                     continue;
                 }
 
-                const source = utils.source(split);
-                const isComment = source.startsWith(consts.COMMENT_PREFIX);
-
                 const translation = split[this.#translationColumnIndex];
                 const translationTrimmed = translation.trim();
                 const translationExists = Boolean(translationTrimmed);
@@ -524,6 +483,9 @@ export class BatchMenu extends Component {
                 if (!translationExists) {
                     continue;
                 }
+
+                const source = utils.source(split);
+                const isComment = source.startsWith(consts.COMMENT_PREFIX);
 
                 if (this.#batchAction === BatchAction.Trim) {
                     split[this.#translationColumnIndex] = translationTrimmed;
@@ -541,7 +503,6 @@ export class BatchMenu extends Component {
 
         if (this.#batchAction === BatchAction.Translate) {
             files[filename] = blocks;
-            await this.#translateFiles(files, originalStrings);
             return;
         }
 
@@ -609,13 +570,13 @@ export class BatchMenu extends Component {
             target = input as HTMLInputElement;
         }
 
-        if (target instanceof HTMLInputElement) {
+        if (target.tagName === "INPUT") {
             for (const container of this.#body.children) {
                 const label = container.lastElementChild as HTMLLabelElement;
                 label.style.color = "inherit";
             }
 
-            this.#changedCheckboxes.add(target);
+            this.#changedCheckboxes.add(target as HTMLInputElement);
             return;
         }
 
@@ -666,8 +627,10 @@ export class BatchMenu extends Component {
 
             if (this.#batchAction === BatchAction.Translate) {
                 this.#contextContainer.classList.remove("hidden");
+                this.#translationEndpointSelect.classList.remove("hidden");
             } else {
                 this.#contextContainer.classList.add("hidden");
+                this.#translationEndpointSelect.classList.add("hidden");
             }
 
             this.#batchActionSelect.classList.remove(
@@ -705,7 +668,7 @@ export class BatchMenu extends Component {
                 target = input as HTMLInputElement;
             }
 
-            if (target instanceof HTMLInputElement) {
+            if (target?.tagName === "INPUT") {
                 if (!this.#changedCheckboxes.has(target)) {
                     if (!target.checked) {
                         target.checked = true;
@@ -717,76 +680,5 @@ export class BatchMenu extends Component {
                 }
             }
         }
-    }
-
-    #onmousedown(e: MouseEvent): void {
-        if (
-            (e.target as HTMLElement).tagName === "HEADER" &&
-            (e.button as MouseButton) === MouseButton.Left
-        ) {
-            this.element.style.cursor = "grabbing";
-
-            this.#startX = e.clientX - this.x;
-            this.#startY = e.clientY - this.y;
-
-            this.element.onmousemove = (e): void => {
-                this.x = e.clientX - this.#startX;
-                this.y = e.clientY - this.#startY;
-
-                this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-                this.element.onmouseup = (): void => {
-                    this.element.style.cursor = "auto";
-
-                    this.element.onmouseup = (): void => {
-                        this.#onmouseup();
-                    };
-
-                    this.element.onmousemove = (e): void => {
-                        this.#onmousemove(e);
-                    };
-                };
-            };
-        }
-    }
-
-    #oncontextmenu(e: MouseEvent): void {
-        e.preventDefault();
-
-        const target = e.target as HTMLElement;
-
-        if (target.tagName !== "HEADER") {
-            return;
-        }
-
-        this.contextMenu = document.createElement("div");
-        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
-
-        for (const [id, label] of [t`Restore Position`].entries()) {
-            const button = document.createElement("button");
-            button.className = tw`h-fit w-full p-1`;
-            button.innerHTML = label;
-            button.id = id.toString();
-            this.contextMenu.appendChild(button);
-        }
-
-        this.contextMenu.style.top = `${e.y}px`;
-        this.contextMenu.style.left = `${e.x}px`;
-
-        this.contextMenu.onclick = (e): void => {
-            const target = e.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "0") {
-                this.move(0, 0);
-            }
-        };
-
-        document.body.appendChild(this.contextMenu);
-
-        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

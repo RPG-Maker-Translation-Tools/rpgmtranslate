@@ -1,3 +1,8 @@
+import { emittery } from "@lib/classes/emittery";
+import { AppEvent, MouseButton } from "@lib/enums";
+import { t } from "@lingui/core/macro";
+import { tw } from "@utils/functions";
+
 export class Component {
     public x: number;
     public y: number;
@@ -6,10 +11,36 @@ export class Component {
 
     protected contextMenu: HTMLDivElement | null = null;
 
+    #draggable = false;
+    #dragging = false;
+
+    #startX = 0;
+    #startY = 0;
+
     protected constructor(id: string) {
         this.element = document.getElementById(id)!;
         this.x = 0;
         this.y = 0;
+
+        this.element.addEventListener("mousedown", (e) => {
+            if (!this.#draggable) {
+                return;
+            }
+
+            this.#mousedownDraggableCb(e);
+        });
+
+        this.element.addEventListener("mousemove", (e) => {
+            this.#mousemoveDraggableCb(e);
+        });
+
+        this.element.addEventListener("mouseup", () => {
+            this.#mouseupDraggableCb();
+        });
+
+        this.element.addEventListener("contextmenu", (e) => {
+            this.#createRestorePositionMenu(e);
+        });
     }
 
     public get hidden(): boolean {
@@ -122,5 +153,87 @@ export class Component {
 
     public querySelectorAll(query: string): NodeListOf<HTMLElement> {
         return this.element.querySelectorAll(query);
+    }
+
+    public setDraggable(enabled: boolean): void {
+        this.#draggable = enabled;
+    }
+
+    #mouseupDraggableCb(): void {
+        this.element.style.cursor = "auto";
+        this.#dragging = false;
+    }
+
+    #mousedownDraggableCb(e: MouseEvent): void {
+        const target = e.target as HTMLElement;
+
+        if (target.id !== "menu-header" && !target.closest("#menu-header")) {
+            return;
+        }
+
+        if ((e.button as MouseButton) === MouseButton.Left) {
+            this.#dragging = true;
+            this.element.style.cursor = "grabbing";
+
+            this.#startX = e.x - this.x;
+            this.#startY = e.y - this.y;
+        }
+    }
+
+    #mousemoveDraggableCb(e: MouseEvent): void {
+        if (!this.#dragging) {
+            return;
+        }
+
+        this.x = e.x - this.#startX;
+        this.y = e.y - this.#startY;
+
+        this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
+    }
+
+    #createRestorePositionMenu(e: MouseEvent): void {
+        if (!this.#draggable) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const target = e.target as HTMLElement;
+
+        if (target.tagName !== "HEADER") {
+            return;
+        }
+
+        this.contextMenu = document.createElement("div");
+        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
+
+        const items = [t`Restore Position`];
+
+        for (let i = 0; i < items.length; i++) {
+            const button = document.createElement("button");
+            button.className = tw`h-fit w-full p-1`;
+            button.innerHTML = items[i];
+            button.id = i.toString();
+            this.contextMenu.appendChild(button);
+        }
+
+        this.contextMenu.style.top = `${e.y}px`;
+        this.contextMenu.style.left = `${e.x}px`;
+
+        this.contextMenu.onclick = (e): void => {
+            const target = e.target as HTMLElement | null;
+
+            if (!target) {
+                return;
+            }
+
+            if (target.id === "0") {
+                this.move(0, 0);
+            }
+        };
+
+        document.body.appendChild(this.contextMenu);
+
+        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

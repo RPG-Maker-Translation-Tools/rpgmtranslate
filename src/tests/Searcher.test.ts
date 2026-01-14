@@ -28,23 +28,23 @@ const predicate = "1";
 
 const rowsData = [firstRow, secondRow, thirdRow];
 
-const rowsHTML = document.createElement("div");
+const rowsHTML = document.createElement("tbody");
 rowsHTML.innerHTML = rowsData
     .map(
         (row) => `
-            <div>
-                <div></div>
-                <div>${row.source}</div>
-                <textarea>${row.firstTranslation}</textarea>
-                <textarea>${row.secondTranslation}</textarea>
-            </div>
+            <tr>
+                <td></td>
+                <td>${row.source}</td>
+                <td><textarea>${row.firstTranslation}</textarea></td>
+                <td><textarea>${row.secondTranslation}</textarea></td>
+            </tr>
         `,
     )
     .join("");
 
 vi.mock(import("@utils/invokes"), async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual };
+    return { ...actual, expandScope: vi.fn() };
 });
 
 vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
@@ -123,16 +123,19 @@ function buildExpected(
     replace: Record<string, number[]>;
     put: Record<string, number[]>;
 } {
-    const rows = rowsHTML.children as Rows;
+    const rows = rowsHTML.children as TabRows;
     const results: string[][][] = [];
     const replace: Record<string, number[]> = {};
     const put: Record<string, number[]> = {};
 
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
         const row = rows[rowIndex];
-
-        const source = row.children[1].textContent;
-        const translations = [row.children[2].value, row.children[3].value];
+        const cells = row.children;
+        const source = cells[1].textContent;
+        const translations = [
+            cells[2].querySelector("textarea")!.value,
+            cells[3].querySelector("textarea")!.value,
+        ];
 
         if (action === SearchAction.Put) {
             if (mode === SearchMode.Translation) {
@@ -234,43 +237,44 @@ function buildExpected(
     };
 }
 
+(fs.readTextFile as Mock<typeof fs.readTextFile>).mockImplementation(() =>
+    Promise.resolve(
+        `${firstRow.source}<#>${firstRow.firstTranslation}<#>${firstRow.secondTranslation}
+            ${secondRow.source}<#>${secondRow.firstTranslation}<#>${secondRow.secondTranslation}
+            ${thirdRow.source}<#>${thirdRow.firstTranslation}<#>${thirdRow.secondTranslation}`,
+    ),
+);
+
 describe.each([
     { context: "current tab", external: false },
     { context: "external file", external: true },
 ])("$context", ({ external }) => {
     (fs.readDir as Mock<typeof fs.readDir>).mockImplementation((dir) => {
-        if (dir === "translation" && external) {
+        if (dir === "./.rpgmtranslate/translation" && external) {
             return Promise.resolve([{ name: "tab.txt" } as fs.DirEntry]);
         }
+
         return Promise.resolve([] as fs.DirEntry[]);
     });
-
-    (fs.readTextFile as Mock<typeof fs.readTextFile>).mockImplementation(() =>
-        Promise.resolve(
-            `${firstRow.source}<#>${firstRow.firstTranslation}<#>${firstRow.secondTranslation}
-            ${secondRow.source}<#>${secondRow.firstTranslation}<#>${secondRow.secondTranslation}
-            ${thirdRow.source}<#>${thirdRow.firstTranslation}<#>${thirdRow.secondTranslation}`,
-        ),
-    );
 
     i18n.activate("en");
 
     const searcher = new Searcher();
     const tabs = { one: {} as TabEntry };
 
-    beforeEach(() => {
-        searcher.init(
-            // TODO
-            new ProjectSettings({
-                translationColumns: [
-                    ["Translation", DEFAULT_COLUMN_WIDTH],
-                    ["Translation", DEFAULT_COLUMN_WIDTH],
-                ],
-            }),
-        );
+    beforeEach(async () => {
+        const settings = new ProjectSettings({
+            translationColumns: [
+                ["Translation", DEFAULT_COLUMN_WIDTH],
+                ["Translation", DEFAULT_COLUMN_WIDTH],
+            ],
+        });
+        await settings.setProjectPath(".");
+
+        searcher.init(settings);
 
         if (!external) {
-            searcher.addSearchFlag(SearchFlags.OnlyCurrentTab);
+            searcher.enableFlag(SearchFlags.OnlyCurrentTab);
         }
     });
 
@@ -279,7 +283,7 @@ describe.each([
             await searcher.search(
                 external ? null : "tab",
                 tabs,
-                external ? null : (rowsHTML.children as Rows),
+                external ? null : (rowsHTML.children as TabRows),
                 predicate,
                 index,
                 mode,
@@ -296,6 +300,7 @@ describe.each([
                 expect(fs.writeTextFile).lastCalledWith(
                     expect.any(String),
                     expected,
+                    undefined,
                 );
             }
         });
@@ -304,7 +309,7 @@ describe.each([
             const results = await searcher.search(
                 external ? null : "tab",
                 tabs,
-                external ? null : (rowsHTML.children as Rows),
+                external ? null : (rowsHTML.children as TabRows),
                 predicate,
                 index,
                 mode,
@@ -328,7 +333,7 @@ describe.each([
             const results = await searcher.search(
                 external ? null : "tab",
                 tabs,
-                external ? null : (rowsHTML.children as Rows),
+                external ? null : (rowsHTML.children as TabRows),
                 predicate,
                 index,
                 mode,

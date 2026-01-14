@@ -19,7 +19,7 @@ export class Replacer {
     }
 
     public async replaceSingle(
-        rows: Rows,
+        rows: TabRows,
         tabName: string,
         regexp: RegExp,
         replacerText: string,
@@ -80,7 +80,7 @@ export class Replacer {
 
     public async replaceAll(
         results: SearchResults,
-        rows: Rows,
+        rows: TabRows,
         tabName: string,
         replacerText: string,
         searchAction: SearchAction,
@@ -168,7 +168,7 @@ export class Replacer {
     }
 
     #replaceCurrentTab(
-        rows: Rows,
+        rows: TabRows,
         regexp: RegExp,
         replacerText: string,
         filename: string,
@@ -177,7 +177,8 @@ export class Replacer {
         rowIndex: number,
         searchAction: SearchAction,
     ): number {
-        const textarea = rows[rowIndex].children[columnIndex + 2];
+        const textarea =
+            rows[rowIndex].children[columnIndex + 2].querySelector("textarea")!;
 
         let changedCount = 0;
         let newValue: string;
@@ -227,7 +228,7 @@ export class Replacer {
 
         const source = utils.source(parts);
         const translations = utils.translations(parts);
-        const translation = utils.clbtodlb(translations[columnIndex]);
+        const translation = utils.toLF(translations[columnIndex]);
 
         let changedCount = 0;
         let newValue: string;
@@ -244,14 +245,14 @@ export class Replacer {
             }
         }
 
-        translations[columnIndex] = utils.dlbtoclb(newValue);
+        translations[columnIndex] = utils.toCustomLB(newValue);
         contentLines[rowIndex] =
             `${source}${consts.SEPARATOR}${translations.join(consts.SEPARATOR)}`;
 
         this.#addLog(
             filename,
             entry,
-            utils.clbtodlb(source),
+            utils.toLF(source),
             columnIndex,
             translation,
             newValue,

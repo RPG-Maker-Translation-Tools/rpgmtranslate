@@ -1,4 +1,5 @@
 #![allow(clippy::too_many_arguments)]
+use keyring::Entry;
 use language_tokenizer::{
     Algorithm, MatchMode, MatchResult, find_all_matches as find_all_matches_,
     find_match as find_match_, tokenize,
@@ -18,15 +19,14 @@ use rvpacker_lib::{
     get_ini_title, get_system_title,
 };
 use serde::{Deserialize, Serialize, Serializer};
-use serde_json::{from_str, to_string};
+use serde_json::{from_str, to_string, to_vec};
 use std::{
-    cell::UnsafeCell,
     collections::HashMap,
     fs::{self, File, OpenOptions, create_dir_all, read_to_string},
     io::{self, Read, Seek, SeekFrom, Write},
-    mem::take,
     path::{Path, PathBuf},
     str::FromStr,
+    sync::{Arc, LazyLock, Mutex},
     time::Instant,
 };
 use strum_macros::Display;
@@ -54,9 +54,7 @@ pub enum Error {
     #[error("API key is not specified. Input it in settings.")]
     APIKeyNotSpecified,
     #[error(transparent)]
-    Gemini(#[from] gemini_rust::ClientError),
-    #[error(transparent)]
-    Yandex(#[from] yandex_translate::YandexTranslateError),
+    Yandex(#[from] yandex_translate_v2::Error),
     #[error("Yandex folder ID is not specified. Input it in settings.")]
     YandexFolderNotSpecified,
     #[error(transparent)]
@@ -65,6 +63,8 @@ pub enum Error {
     DeepL(#[from] deepl::Error),
     #[error(transparent)]
     DeepLLangConvert(#[from] deepl::LangConvertError),
+    #[error(transparent)]
+    Keyring(#[from] keyring::Error),
 }
 
 #[derive(
@@ -303,15 +303,7 @@ pub async fn get_models(
             LlmClient::openai(api_key)?.models().await?
         }
         TranslationEndpoint::Gemini => {
-            use gemini_rust::*;
-
-            let mut models = Vec::with_capacity(4);
-            models.push(Model::Gemini25Flash.as_str().into());
-            models.push(Model::Gemini25FlashLite.as_str().into());
-            models.push(Model::Gemini25Pro.as_str().into());
-            models.push(Model::Gemini3Pro.as_str().into());
-
-            models
+            LlmClient::google(api_key)?.models().await?
         }
     })
 }
@@ -343,14 +335,173 @@ pub struct Request<'a> {
     files: &'a HashMap<&'a str, HashMap<&'a str, Block<'a>>>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct SingleRequest<'a> {
+    source_language: &'a str,
+    translation_language: &'a str,
+    project_context: &'a str,
+    local_context: &'a str,
+    glossary: &'a [GlossaryEntry<'a>],
+    text: &'a str,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response {
     strings: Vec<String>,
 }
 
 #[command]
+pub async fn translate_single<'a>(
+    endpoint: TranslationEndpoint,
+    model: String,
+    project_context: &str,
+    local_context: &str,
+    text: &str,
+    glossary: Vec<GlossaryEntry<'a>>,
+    source_language: &str,
+    translation_language: &str,
+    api_key: &str,
+    yandex_folder_id: &str,
+    temperature: f32,
+    thinking: bool,
+) -> Result<String, Error> {
+    let translated = match endpoint {
+        TranslationEndpoint::Google => {
+            use translators::{GoogleTranslator, Translator};
+
+            let translator = GoogleTranslator::default();
+            translator
+                .translate_async(text, source_language, translation_language)
+                .await?
+        }
+
+        _ if api_key.is_empty() => return Err(Error::APIKeyNotSpecified),
+
+        TranslationEndpoint::Yandex => {
+            use yandex_translate_v2::{
+                TranslateRequest, YandexTranslateClient,
+            };
+
+            if yandex_folder_id.is_empty() {
+                return Err(Error::YandexFolderNotSpecified);
+            }
+
+            let client = YandexTranslateClient::with_api_key(api_key)?;
+            let response = client.translate(&TranslateRequest {
+                folder_id: yandex_folder_id,
+                texts: &[text],
+                target_language_code: translation_language,
+                source_language_code: Some(source_language),
+            })?;
+
+            response
+                .translations
+                .into_iter()
+                .next()
+                .map(|x| x.text)
+                .unwrap_or_default()
+        }
+
+        TranslationEndpoint::DeepL => {
+            use deepl::*;
+
+            let client = DeepLApi::with(api_key).new();
+            client
+                .translate_text(text, Lang::from_str(translation_language)?)
+                .await?
+                .to_string()
+        }
+
+        _ => {
+            let client = match endpoint {
+                TranslationEndpoint::OpenAI => LlmClient::openai(api_key)?,
+                TranslationEndpoint::Anthropic => {
+                    LlmClient::anthropic(api_key)?
+                }
+                TranslationEndpoint::DeepSeek => LlmClient::deepseek(api_key)?,
+                TranslationEndpoint::Gemini => LlmClient::google(api_key)?,
+                _ => unreachable!(),
+            };
+
+            let prompt = SingleRequest {
+                source_language,
+                translation_language,
+                project_context,
+                local_context,
+                glossary: &glossary,
+                text,
+            };
+
+            let request = ChatRequest {
+                model,
+                messages: vec![
+                    Message::text(Role::System, "Role:
+You are a professional videogame localization expert and linguist. You translate game text with high fidelity, cultural awareness, consistency, and attention to gameplay context, UI constraints, and narrative tone.
+
+Action:
+Translate the provided string from sourceLanguage to translationLanguage. Use all available context to produce a natural, player-facing translation suitable for a shipped videogame.
+
+Context:
+You will receive a single string of text to translate.
+The text belongs to a JRPG/RPG/Visual Novel game, made with RPG Maker.
+
+Use these context signals aggressively when provided externally:
+
+name: Treat this as critical semantic context. It often describes what the string refers to (location/setting).
+
+filename: Indicates file purpose (map, system, items, etc.).
+
+before_string / after_string: Provide neighboring context; use them to resolve ambiguity but do not translate them.
+
+glossary: Mandatory terminology. Always prefer glossary translations and respect notes.
+
+project_context and local_context: High-level and situational guidance; use them to maintain tone, register, and lore consistency.
+
+Special case - map files:
+
+The string may contain a line like <!-- EVENT NAME -->.
+
+This line marks the start of a new event and possibly a new context.
+
+Do not translate the marker itself.
+
+Use the event name to re-evaluate context for the following text.
+
+General rules:
+
+Preserve meaning, intent, emotional tone, and gameplay function.
+
+Prefer concise, idiomatic translations suitable for UI and dialog.
+
+Keep placeholders, variables, tags, markup, and control codes unchanged.
+
+Maintain consistency with previously translated content.
+
+Do not add explanations, comments, or extra text.
+
+Execute:
+Translate the input string.
+
+Return only the translated string.
+No JSON. No additional text. No commentary."),
+                    Message::text(Role::User, to_string(&prompt)?),
+                ],
+                enable_thinking: Some(thinking),
+                temperature: Some(temperature),
+                ..Default::default()
+            };
+
+            let response = client.chat(&request).await?;
+            response.content
+        }
+    };
+
+    Ok(translated)
+}
+
+#[command]
 pub async fn translate<'a>(
-    translation_endpoint: TranslationEndpoint,
+    endpoint: TranslationEndpoint,
     model: String,
     project_context: &str,
     local_context: &str,
@@ -368,7 +519,7 @@ pub async fn translate<'a>(
 ) -> Result<HashMap<String, HashMap<String, Response>>, Error> {
     let mut response = HashMap::with_capacity(files.len());
 
-    let result = match translation_endpoint {
+    let result = match endpoint {
         TranslationEndpoint::Google => {
             use translators::{GoogleTranslator, Translator};
             let translator = GoogleTranslator::default();
@@ -408,7 +559,9 @@ pub async fn translate<'a>(
         _ if api_key.is_empty() => return Err(Error::APIKeyNotSpecified),
 
         TranslationEndpoint::Yandex => {
-            use yandex_translate::*;
+            use yandex_translate_v2::{
+                TranslateRequest, YandexTranslateClient,
+            };
 
             if yandex_folder_id.is_empty() {
                 return Err(Error::YandexFolderNotSpecified);
@@ -423,11 +576,12 @@ pub async fn translate<'a>(
 
                 for (id, block) in blocks {
                     let client = YandexTranslateClient::with_api_key(api_key)?;
-                    let response = client.translate_texts(
-                        yandex_folder_id,
-                        &block.strings,
-                        translation_language,
-                    )?;
+                    let response = client.translate(&TranslateRequest {
+                        folder_id: yandex_folder_id,
+                        texts: &block.strings,
+                        target_language_code: translation_language,
+                        source_language_code: Some(source_language),
+                    })?;
                     let strings = response
                         .translations
                         .into_iter()
@@ -493,7 +647,7 @@ pub async fn translate<'a>(
         }
 
         _ => {
-            let client = match translation_endpoint {
+            let client = match endpoint {
                 TranslationEndpoint::OpenAI => LlmClient::openai(api_key)?,
                 TranslationEndpoint::Anthropic => {
                     LlmClient::anthropic(api_key)?
@@ -707,29 +861,41 @@ pub fn find_all_matches(
     })
 }
 
-thread_local! {
-    static CHECKED_LANGS: UnsafeCell<HashMap<&'static str, f64>> = UnsafeCell::new(HashMap::new());
-}
+static CHECKED_LANGS: LazyLock<Arc<Mutex<HashMap<&'static str, f64>>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
 
 #[command(async)]
 pub fn detect_lang(str: &str) {
     let lang = detect(str);
 
     if let Some(lang) = lang {
-        CHECKED_LANGS.with(|x| {
-            let entry = unsafe {
-                (*x.get()).entry(lang.lang().eng_name()).or_default()
-            };
-            *entry += lang.confidence();
-        });
+        let mut lock = CHECKED_LANGS.lock().unwrap();
+        let entry = lock.entry(lang.lang().eng_name()).or_default();
+        *entry += lang.confidence();
     }
 }
 
 #[command]
 pub fn get_lang() -> Option<&'static str> {
-    CHECKED_LANGS.with(|x| {
-        unsafe { take(&mut *x.get()).into_iter() }
-            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .and_then(|x| Some(x.0))
-    })
+    CHECKED_LANGS
+        .lock()
+        .unwrap()
+        .drain()
+        .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+        .and_then(|x| Some(x.0))
+}
+
+#[command]
+pub fn save_api_keys(keys: Vec<&str>) -> Result<(), Error> {
+    let entry = Entry::new("rpgmtranslate", "api-keys")?;
+    entry.set_secret(&to_vec(&keys)?)?;
+    Ok(())
+}
+
+#[command]
+pub fn get_api_keys() -> Result<Vec<String>, Error> {
+    let entry = Entry::new("rpgmtranslate", "api-keys")?;
+    let secret = entry.get_secret()?;
+    let string = unsafe { str::from_utf8_unchecked(&secret) };
+    Ok(from_str(string).unwrap_or(Vec::new()))
 }

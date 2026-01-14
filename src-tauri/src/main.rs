@@ -9,8 +9,8 @@
 mod commands;
 use crate::commands::{
     detect_lang, expand_scope, extract_archive, find_all_matches, find_match,
-    get_lang, get_models, purge, read, read_last_line, translate, walk_dir,
-    write,
+    get_api_keys, get_lang, get_models, purge, read, read_last_line,
+    save_api_keys, translate, translate_single, walk_dir, write,
 };
 use tauri::{Builder, Manager, generate_context, generate_handler};
 
@@ -50,7 +50,10 @@ fn main() {
             find_all_matches,
             detect_lang,
             get_lang,
-            get_models
+            get_models,
+            translate_single,
+            save_api_keys,
+            get_api_keys
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]

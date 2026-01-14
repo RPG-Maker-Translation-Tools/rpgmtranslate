@@ -52,9 +52,7 @@ export class ThemeEditMenu extends Component {
             const themeName = this.#themeNameInput.value.trim();
 
             if (!/^[a-zA-Z0-9_-]+$/.test(themeName)) {
-                void message(
-                    t`Invalid theme name: Allowed characters: a-z, A-Z, 0-9, -, _.`,
-                );
+                void message(t`Invalid theme name.`);
                 return;
             }
 

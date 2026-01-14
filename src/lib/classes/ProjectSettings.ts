@@ -32,6 +32,8 @@ export interface ProjectSettingsOptions {
     fileContexts: Record<string, string>;
 }
 
+export type ColumnData = [label: string, width: number];
+
 export class ProjectSettings implements ProjectSettingsOptions {
     public engineType = EngineType.New;
     public translationLanguages = {
@@ -47,7 +49,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
     public rowColumnWidth: number = consts.DEFAULT_ROW_COLUMN_WIDTH;
     public sourceColumnWidth: number = consts.DEFAULT_COLUMN_WIDTH;
 
-    public translationColumns: [string, number][] = [
+    public translationColumns: ColumnData[] = [
         ["Translation", consts.DEFAULT_COLUMN_WIDTH],
     ];
     public translationColumnCount = 1;
@@ -121,7 +123,7 @@ export class ProjectSettings implements ProjectSettingsOptions {
     }
 
     public async setEngineType(projectPath: string): Promise<boolean> {
-        const systemFiles: [EngineType, string][] = [
+        const systemFiles: readonly [EngineType, string][] = [
             [EngineType.XP, "System.rxdata"],
             [EngineType.VX, "System.rvdata"],
             [EngineType.VXAce, "System.rvdata2"],

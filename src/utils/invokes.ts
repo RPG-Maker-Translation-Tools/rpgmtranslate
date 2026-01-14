@@ -51,26 +51,33 @@ interface PurgeOptions extends InvokeOptions {
     gameTitle: string;
 }
 
-export interface TranslateArgs {
-    translationEndpoint: TranslationEndpoint;
+export interface TranslateBaseArgs {
+    endpoint: TranslationEndpoint;
     model: string;
+    sourceLanguage: TokenizerAlgorithm | string;
+    translationLanguage: TokenizerAlgorithm | string;
     projectContext: string;
     localContext: string;
-    files: SourceFiles;
     glossary: {
         term: string;
         translation: string;
         note: string;
     }[];
-    sourceLanguage: TokenizerAlgorithm | string;
-    translationLanguage: TokenizerAlgorithm | string;
     apiKey: string;
-    systemPrompt: string;
     yandexFolderId: string;
-    tokenLimit: number;
     temperature: number;
     thinking: boolean;
+}
+
+export interface TranslateArgs extends TranslateBaseArgs {
+    files: SourceFiles;
+    tokenLimit: number;
+    systemPrompt: string;
     normalize: boolean;
+}
+
+export interface TranslateSingleArgs extends TranslateBaseArgs {
+    text: string;
 }
 
 interface MatchArgs {
@@ -158,12 +165,34 @@ export async function translate(
     args: TranslateArgs,
 ): Promise<Result<TranslatedFiles>> {
     args.sourceLanguage =
-        TokenizerAlgorithmBCP47[args.sourceLanguage as TokenizerAlgorithm];
+        TokenizerAlgorithmBCP47[
+            (args.sourceLanguage as TokenizerAlgorithm) + 1
+        ];
     args.translationLanguage =
-        TokenizerAlgorithmBCP47[args.translationLanguage as TokenizerAlgorithm];
+        TokenizerAlgorithmBCP47[
+            (args.translationLanguage as TokenizerAlgorithm) + 1
+        ];
 
     return await fallibleInvoke(
         "translate",
+        args as unknown as Record<string, unknown>,
+    );
+}
+
+export async function translateSingle(
+    args: TranslateSingleArgs,
+): Promise<Result<string>> {
+    args.sourceLanguage =
+        TokenizerAlgorithmBCP47[
+            (args.sourceLanguage as TokenizerAlgorithm) + 1
+        ];
+    args.translationLanguage =
+        TokenizerAlgorithmBCP47[
+            (args.translationLanguage as TokenizerAlgorithm) + 1
+        ];
+
+    return await fallibleInvoke(
+        "translate_single",
         args as unknown as Record<string, unknown>,
     );
 }
@@ -192,11 +221,21 @@ export async function extractArchive(projectPath: string): Promise<boolean> {
     return extracted;
 }
 
+export function saveAPIKeys(keys: string[]): void {
+    void invoke("save_api_keys", { keys });
+}
+
+export async function getAPIKeys(): Promise<Result<string>> {
+    return await fallibleInvoke("get_api_keys");
+}
+
 export async function walkDir(dir: string): Promise<string[]> {
     return await invoke("walk_dir", { dir });
 }
 
-export async function findMatch(args: MatchArgs): Promise<Result<MatchResult>> {
+export async function findMatch(
+    args: MatchArgs,
+): Promise<Result<TermMatchResult>> {
     return await fallibleInvoke(
         "find_match",
         args as unknown as Record<string, unknown>,
@@ -205,7 +244,7 @@ export async function findMatch(args: MatchArgs): Promise<Result<MatchResult>> {
 
 export async function findAllMatches(
     args: MatchArgs,
-): Promise<Result<[MatchResult[], MatchResult[]] | null>> {
+): Promise<Result<[TermMatchResult[], TermMatchResult[]] | null>> {
     return await fallibleInvoke(
         "find_all_matches",
         args as unknown as Record<string, unknown>,

@@ -29,6 +29,7 @@ export class ReadMenu extends Component {
     readonly #disableCustomProcessingCheckbox: HTMLInputElement;
     readonly #ignoreCheckbox: HTMLInputElement;
     readonly #trimCheckbox: HTMLInputElement;
+    readonly #skipObsoleteCheckbox: HTMLInputElement;
 
     readonly #skipFilesSelect: HTMLSelectElement;
     readonly #skipMapsInput: HTMLInputElement;
@@ -64,6 +65,9 @@ export class ReadMenu extends Component {
         )!;
         this.#ignoreCheckbox = this.element.querySelector("#ignore-checkbox")!;
         this.#trimCheckbox = this.element.querySelector("#trim-checkbox")!;
+        this.#skipObsoleteCheckbox = this.element.querySelector(
+            "#skip-obsolete-checkbox",
+        )!;
 
         this.#skipFilesSelect =
             this.element.querySelector("#skip-files-select")!;
@@ -141,6 +145,9 @@ export class ReadMenu extends Component {
                         this.#projectSettings.duplicateMode.toString();
                     this.#changeDuplicateModeDesc();
 
+                    this.#skipObsoleteCheckbox.checked = false;
+                    this.#skipObsoleteCheckbox.disabled = false;
+
                     this.#trimCheckbox.checked = Boolean(
                         this.#projectSettings.flags & BaseFlags.Trim,
                     );
@@ -162,6 +169,9 @@ export class ReadMenu extends Component {
                 case ReadMode.DefaultForce:
                     this.#duplicateModeSelect.value = "1";
                     this.#changeDuplicateModeDesc();
+
+                    this.#skipObsoleteCheckbox.checked = false;
+                    this.#skipObsoleteCheckbox.disabled = true;
 
                     this.#trimCheckbox.checked = false;
                     this.#romanizeCheckbox.checked = false;
@@ -247,7 +257,7 @@ export class ReadMenu extends Component {
                         ? t`Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode.`
                         : "";
 
-                this.#readModeDescription.innerHTML = t`Appends any new text from the game to the translation files, if the text is not already present. Unused lines are removed from translation files, and the lines order is sorted. ${
+                this.#readModeDescription.innerHTML = t`Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. ${
                     post
                 }`;
 
@@ -296,6 +306,10 @@ export class ReadMenu extends Component {
 
             if (this.#ignoreCheckbox.checked) {
                 flags |= BaseFlags.Ignore;
+            }
+
+            if (this.#skipObsoleteCheckbox.checked) {
+                flags |= BaseFlags.SkipObsolete;
             }
 
             const skipMaps: number[] = this.#skipMapsInput.value

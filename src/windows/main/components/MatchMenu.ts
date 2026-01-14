@@ -2,7 +2,7 @@ import { Component } from "./Component";
 
 import { emittery } from "@lib/classes/emittery";
 
-import { AppEvent, MouseButton, TokenizerAlgorithm } from "@lib/enums";
+import { AppEvent, TokenizerAlgorithm } from "@lib/enums";
 
 import { tw } from "@utils/functions";
 import { findAllMatches, isErr } from "@utils/invokes";
@@ -12,9 +12,6 @@ import { t } from "@lingui/core/macro";
 import { error } from "@tauri-apps/plugin-log";
 
 export class MatchMenu extends Component {
-    #startX = 0;
-    #startY = 0;
-
     #tableBody: HTMLDivElement;
 
     public constructor() {
@@ -22,31 +19,7 @@ export class MatchMenu extends Component {
 
         this.#tableBody = this.element.querySelector("#table-body")!;
 
-        this.element.onmousedown = (e): void => {
-            if (
-                ((e.target as HTMLElement).tagName === "THEAD" ||
-                    (e.target as HTMLElement).closest("thead")) &&
-                (e.button as MouseButton) === MouseButton.Left
-            ) {
-                this.element.style.cursor = "grabbing";
-
-                this.#startX = e.clientX - this.x;
-                this.#startY = e.clientY - this.y;
-
-                this.element.onmousemove = (e): void => {
-                    this.x = e.clientX - this.#startX;
-                    this.y = e.clientY - this.#startY;
-
-                    this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-                    this.element.onmouseup = (): void => {
-                        this.element.style.cursor = "auto";
-                        this.element.onmouseup = null;
-                        this.element.onmousemove = null;
-                    };
-                };
-            }
-        };
+        this.setDraggable(true);
 
         this.element.onclick = async (e): Promise<void> => {
             const target = e.target as HTMLElement | null;
@@ -75,14 +48,18 @@ export class MatchMenu extends Component {
             await emittery.emit(AppEvent.ChangeTab, file);
             void emittery.emit(AppEvent.ScrollIntoRow, Number(line) - 1);
         };
-
-        this.element.oncontextmenu = (e): void => {
-            this.#oncontextmenu(e);
-        };
     }
 
     public clear(): void {
         this.#tableBody.innerHTML = "";
+    }
+
+    public showError(error: string): void {
+        if (this.hidden) {
+            return;
+        }
+
+        this.#tableBody.innerHTML = error;
     }
 
     public async appendMatches(
@@ -94,6 +71,10 @@ export class MatchMenu extends Component {
         file: string,
         line: number,
     ): Promise<void> {
+        if (this.hidden) {
+            return;
+        }
+
         const matches = await findAllMatches({
             sourceHaystack: source,
             sourceNeedle: term.source,
@@ -118,7 +99,7 @@ export class MatchMenu extends Component {
             return;
         }
 
-        this.#createMatchContainer(
+        this.#appendMatch(
             term.source,
             term.translation,
             source,
@@ -130,13 +111,13 @@ export class MatchMenu extends Component {
         );
     }
 
-    #createMatchContainer(
+    #appendMatch(
         sourceTerm: string,
         translationTerm: string,
         source: string,
-        sourceMatches: MatchResult[],
+        sourceMatches: TermMatchResult[],
         translation: string,
-        translationMatches: MatchResult[],
+        translationMatches: TermMatchResult[],
         file: string,
         line: number,
     ): void {
@@ -147,7 +128,7 @@ export class MatchMenu extends Component {
 
         const buildHighlightedText = (
             text: string,
-            matches: MatchResult[],
+            matches: TermMatchResult[],
         ): string => {
             const result: string[] = [];
             let pos = 0;
@@ -299,48 +280,5 @@ export class MatchMenu extends Component {
 
         row.append(fileCell, lineCell, termCell, textCell, commentCell);
         this.#tableBody.appendChild(row);
-    }
-
-    #oncontextmenu(e: MouseEvent): void {
-        e.preventDefault();
-
-        const target = e.target as HTMLElement;
-
-        if (
-            target.tagName !== "THEAD" &&
-            !(e.target as HTMLElement).closest("thead")
-        ) {
-            return;
-        }
-
-        this.contextMenu = document.createElement("div");
-        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
-
-        for (const [id, label] of [t`Restore Position`].entries()) {
-            const button = document.createElement("button");
-            button.className = tw`h-fit w-full p-1`;
-            button.innerHTML = label;
-            button.id = id.toString();
-            this.contextMenu.appendChild(button);
-        }
-
-        this.contextMenu.style.top = `${e.y}px`;
-        this.contextMenu.style.left = `${e.x}px`;
-
-        this.contextMenu.onclick = (e): void => {
-            const target = e.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "0") {
-                this.move(0, 0);
-            }
-        };
-
-        document.body.appendChild(this.contextMenu);
-
-        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

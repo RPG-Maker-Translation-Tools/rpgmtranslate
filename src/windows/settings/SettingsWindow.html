@@ -84,7 +84,7 @@
                 <div class="flex flex-row items-center gap-2">
                     <label data-i18n="Row Delete Mode"></label>
 
-                    <select class="rounded-xs" id="row-delete-mode-select">
+                    <select class="rounded-sm" id="row-delete-mode-select">
                         <option data-i18n="Disabled" value="0"></option>
                         <option
                             data-i18n="Ask for confirmation"
@@ -103,10 +103,21 @@
 
             <main class="hidden flex-col gap-2 p-4" id="appearance-settings">
                 <div class="flex flex-row items-center gap-2">
-                    <label data-i18n="Font"></label>
+                    <label data-i18n="UI Font"></label>
 
-                    <select class="rounded-xs" id="font-select">
-                        <option data-i18n="Default" value="default"></option>
+                    <select class="rounded-sm" id="ui-font-select">
+                        <option data-i18n="Default" value=""></option>
+                    </select>
+                </div>
+
+                <div class="flex flex-row items-center gap-2">
+                    <label data-i18n="Translation Table Font"></label>
+
+                    <select
+                        class="rounded-sm"
+                        id="translation-table-font-select"
+                    >
+                        <option data-i18n="Default" value=""></option>
                     </select>
                 </div>
 
@@ -126,7 +137,7 @@
                 <div class="flex flex-row items-center gap-2">
                     <label data-i18n="Translation Endpoint"></label>
 
-                    <select class="rounded-xs" id="translation-endpoint-select">
+                    <select class="rounded-sm" id="translation-endpoint-select">
                         <option value="0">Google</option>
                         <option value="1">Yandex</option>
                         <option value="2">DeepL</option>
@@ -187,7 +198,9 @@
                         <input
                             class="bg-second rounded-sm"
                             id="token-limit-input"
-                            type="text"
+                            type="number"
+                            min="1000"
+                            max="65536"
                         />
                     </div>
 
@@ -199,7 +212,9 @@
                         <input
                             class="bg-second rounded-sm"
                             id="temperature-input"
-                            type="text"
+                            type="number"
+                            min="0.0"
+                            max="2.0"
                         />
                     </div>
 
@@ -232,26 +247,8 @@
                         ></button>
 
                         <div
-                            data-i18n="When writing system prompt, keep in mind that:"
+                            data-i18n="If you want to write your own system prompt, rely on the guidelines default one establishes."
                         ></div>
-
-                        <ul class="list-disc pl-8">
-                            <li
-                                data-i18n="AI response must be an array of strings in the same order as input."
-                            ></li>
-                            <li
-                                data-i18n="AI receives source and translaton languages as BCP-47 tags."
-                            ></li>
-                            <li
-                                data-i18n="You can advise AI to use delimiter comments like ID, because most likely that means a new text source and a new content."
-                            ></li>
-                            <li
-                                data-i18n="If you have glossary enabled, advise AI to use it, because otherwise it won't."
-                            ></li>
-                            <li
-                                data-i18n="Translation is most likely to be better if you will empower AI with the great knowledge about the source material. If it's shitty JRPG with intentionally bad humor and some specific lore, include that in system prompt."
-                            ></li>
-                        </ul>
                     </div>
                 </div>
             </main>
@@ -269,6 +266,8 @@
                         class="w-auto rounded-sm"
                         id="line-length-hint-input"
                         type="number"
+                        min="0"
+                        max="300"
                     />
                 </div>
 

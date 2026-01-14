@@ -18,11 +18,9 @@ import { emit, once } from "@tauri-apps/api/event";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { error } from "@tauri-apps/plugin-log";
 import { platform as getPlatform } from "@tauri-apps/plugin-os";
-const APP_WINDOW = getCurrentWebviewWindow();
+import { open } from "@tauri-apps/plugin-shell";
 
-// TODO: Implement controls
-// TODO: Implement file context input
-// TODO: Validate inputs
+const APP_WINDOW = getCurrentWebviewWindow();
 
 interface SettingsWindowUI {
     coreSettingsButton: HTMLButtonElement;
@@ -41,7 +39,8 @@ interface SettingsWindowUI {
     appearanceSettingsButton: HTMLButtonElement;
     appearanceSettings: HTMLDivElement;
 
-    fontSelect: HTMLSelectElement;
+    translationTableFontSelect: HTMLSelectElement;
+    uiFontSelect: HTMLSelectElement;
 
     controlsSettingsButton: HTMLButtonElement;
     controlsSettings: HTMLDivElement;
@@ -78,355 +77,120 @@ interface SettingsWindowUI {
     projectContextInput: HTMLTextAreaElement;
 }
 
-interface FontObject extends Record<string, string> {
-    font: string;
-    name: string;
-}
+class SettingsWindow {
+    #ui = this.#setupUI();
+    #intevalID: number;
 
-function setupUI(): SettingsWindowUI {
-    const ui = {} as SettingsWindowUI;
-    ui.coreSettingsButton = document.getElementById(
-        "core-settings-button",
-    ) as HTMLButtonElement;
-    ui.coreSettings = document.getElementById(
-        "core-settings",
-    ) as HTMLDivElement;
+    #prevEndpoint = TranslationEndpoint.Google;
+    #prevOption = "";
 
-    ui.backupCheck = document.getElementById(
-        "backup-check",
-    ) as HTMLInputElement;
-    ui.backupSettings = document.getElementById(
-        "backup-settings",
-    ) as HTMLDivElement;
-    ui.backupMaxInput = document.getElementById(
-        "backup-max-input",
-    ) as HTMLInputElement;
-    ui.backupPeriodInput = document.getElementById(
-        "backup-period-input",
-    ) as HTMLInputElement;
+    #settings!: Settings;
+    #projectSettings!: ProjectSettings;
 
-    ui.rowDeleteModeSelect = document.getElementById(
-        "row-delete-mode-select",
-    ) as HTMLSelectElement;
+    public constructor() {
+        this.#intevalID = window.setInterval(() => {
+            void emit("awaiting-settings");
+        }, consts.SECOND_MS / 2);
 
-    ui.displayGhostLinesCheck = document.getElementById(
-        "display-ghost-lines-check",
-    ) as HTMLInputElement;
-    ui.checkForUpdatesCheck = document.getElementById(
-        "check-for-updates-check",
-    ) as HTMLInputElement;
-
-    ui.appearanceSettingsButton = document.getElementById(
-        "appearance-settings-button",
-    ) as HTMLButtonElement;
-    ui.appearanceSettings = document.getElementById(
-        "appearance-settings",
-    ) as HTMLDivElement;
-
-    ui.fontSelect = document.getElementById("font-select") as HTMLSelectElement;
-
-    ui.controlsSettingsButton = document.getElementById(
-        "controls-settings-button",
-    ) as HTMLButtonElement;
-    ui.controlsSettings = document.getElementById(
-        "controls-settings",
-    ) as HTMLDivElement;
-
-    ui.translationSettingsButton = document.getElementById(
-        "translation-settings-button",
-    ) as HTMLButtonElement;
-    ui.translationSettings = document.getElementById(
-        "translation-settings",
-    ) as HTMLDivElement;
-
-    ui.endpointKeyContainer = document.getElementById(
-        "endpoint-key-container",
-    ) as HTMLDivElement;
-    ui.translationEndpointSelect = document.getElementById(
-        "translation-endpoint-select",
-    ) as HTMLSelectElement;
-    ui.APIKeyInput = document.getElementById(
-        "api-key-input",
-    ) as HTMLInputElement;
-    ui.APIKeyDesc = document.getElementById("api-key-desc") as HTMLDivElement;
-    ui.validateKeyButton = document.getElementById(
-        "validate-key-button",
-    ) as HTMLButtonElement;
-
-    ui.aiThings = document.getElementById("ai-things") as HTMLDivElement;
-    ui.yandexFolderIDContainer = document.getElementById(
-        "yandex-folder-id-container",
-    ) as HTMLDivElement;
-    ui.yandexFolderInput = document.getElementById(
-        "yandex-folder-input",
-    ) as HTMLInputElement;
-    ui.modelSelect = document.getElementById(
-        "model-select",
-    ) as HTMLSelectElement;
-    ui.temperatureInput = document.getElementById(
-        "temperature-input",
-    ) as HTMLInputElement;
-    ui.tokenLimitInput = document.getElementById(
-        "token-limit-input",
-    ) as HTMLInputElement;
-    ui.thinkingCheckbox = document.getElementById(
-        "thinking-checkbox",
-    ) as HTMLInputElement;
-    ui.useGlossaryCheckbox = document.getElementById(
-        "use-glossary-checkbox",
-    ) as HTMLInputElement;
-    ui.defaultSystemPromptButton = document.getElementById(
-        "default-system-prompt-button",
-    ) as HTMLButtonElement;
-    ui.systemPromptTextarea = document.getElementById(
-        "system-prompt-textarea",
-    ) as HTMLTextAreaElement;
-
-    ui.projectSettingsButton = document.getElementById(
-        "project-settings-button",
-    ) as HTMLButtonElement;
-    ui.projectSettings = document.getElementById(
-        "project-settings",
-    ) as HTMLDivElement;
-
-    ui.lineLengthHintInput = document.getElementById(
-        "line-length-hint-input",
-    ) as HTMLInputElement;
-    ui.fileContextSelect = document.getElementById(
-        "file-context-select",
-    ) as HTMLSelectElement;
-    ui.fileContextInput = document.getElementById(
-        "file-context-input",
-    ) as HTMLTextAreaElement;
-    ui.projectContextInput = document.getElementById(
-        "project-context-input",
-    ) as HTMLTextAreaElement;
-
-    return ui;
-}
-
-async function fetchFonts(): Promise<FontObject> {
-    const fontsObject = {} as FontObject;
-    const fontPath =
-        getPlatform() === "windows" ? "C:/Windows/Fonts" : "/usr/share/fonts";
-
-    await expandScope(fontPath);
-    const entries = await walkDir(fontPath);
-
-    for (const path of entries) {
-        const extension = path.slice(-3);
-
-        if (["ttf", "otf"].includes(extension)) {
-            fontsObject[path] = path.slice(
-                path.replaceAll("\\", "/").lastIndexOf("/") + 1,
-            );
-        }
-    }
-
-    return fontsObject;
-}
-
-const id = setInterval(() => {
-    void emit("send-settings");
-}, consts.SECOND_MS / 2);
-
-await once<[Settings, Themes, ProjectSettings, Tabs]>(
-    "settings",
-    async (event) => {
-        function toggleTranslationElements(): void {
-            const endpoint = Number(
-                UI.translationEndpointSelect.value,
-            ) as TranslationEndpoint;
-
-            const requiresKey = endpoint > TranslationEndpoint.Google;
-
-            if (requiresKey) {
-                UI.endpointKeyContainer.classList.remove("hidden");
-                UI.yandexFolderIDContainer.classList.add("hidden");
-
-                const aiEndpoint = endpoint > TranslationEndpoint.DeepL;
-
-                if (aiEndpoint) {
-                    UI.aiThings.classList.remove("hidden");
-                } else {
-                    UI.aiThings.classList.add("hidden");
-                }
-
-                switch (endpoint) {
-                    case TranslationEndpoint.Yandex:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from Yandex. Check out <a class="text-third cursor-pointer hover:underline">https://yandex.com/dev/dictionary/keys/get/</a> on how to get it.`;
-                        UI.yandexFolderIDContainer.classList.remove("hidden");
-                        break;
-                    case TranslationEndpoint.DeepL:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from DeepL. Check out <a class="text-third cursor-pointer hover:underline">https://support.deepl.com/hc/en-us/articles/360020695820-API-key-for-DeepL-API</a> on how to get it.`;
-                        break;
-                    case TranslationEndpoint.OpenAI:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from OpenAI. Check out <a class="text-third cursor-pointer hover:underline">https://platform.openai.com/api-keys</a> on how to get it.`;
-                        break;
-                    case TranslationEndpoint.Anthropic:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from Anthropic. Check out <a class="text-third cursor-pointer hover:underline">https://platform.claude.com/settings/keys</a> on how to get it.`;
-                        break;
-                    case TranslationEndpoint.DeepSeek:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from DeepSeek. Check out <a class="text-third cursor-pointer hover:underline">https://platform.deepseek.com/api_keys</a> on how to get it.`;
-                        break;
-                    case TranslationEndpoint.Gemini:
-                        UI.APIKeyDesc.innerHTML = t`You need an API key from Google. Check out <a class="text-third cursor-pointer hover:underline">https://ai.google.dev/gemini-api/docs/api-key</a> on how to get it.`;
-                        break;
-                }
-            } else {
-                UI.endpointKeyContainer.classList.add("hidden");
-                UI.aiThings.classList.add("hidden");
-            }
-        }
-
-        const UI = setupUI();
-        const [settings, themes, projectSettings, tabs] = event.payload;
-
-        clearInterval(id);
-
-        for (const tabName in tabs) {
-            const fileOption = document.createElement("option");
-            fileOption.value = tabName;
-            fileOption.innerHTML = tabName;
-            UI.fileContextSelect.add(fileOption);
-        }
-
-        utils.applyTheme(themes, settings.appearance.theme);
-        await utils.initializeLocalization(
-            "settings",
-            settings.appearance.language,
+        void once<[Settings, Themes, ProjectSettings, Tabs]>(
+            "open-settings",
+            async (event) => {
+                await this.#init(event.payload);
+            },
         );
-        utils.retranslate();
 
-        UI.backupCheck.checked = settings.core.backup.enabled;
-
-        UI.backupPeriodInput.min = consts.MIN_BACKUP_PERIOD.toString();
-        UI.backupPeriodInput.max = settings.core.backup.period.toString();
-
-        UI.backupMaxInput.min = "1";
-        UI.backupMaxInput.max = consts.MAX_BACKUPS.toString();
-
-        UI.backupMaxInput.value = settings.core.backup.max.toString();
-        UI.backupPeriodInput.value = settings.core.backup.period.toString();
-
-        UI.rowDeleteModeSelect.value = settings.core.rowDeleteMode.toString();
-
-        UI.displayGhostLinesCheck.checked =
-            settings.appearance.displayGhostLines;
-        UI.checkForUpdatesCheck.checked = settings.core.updatesEnabled;
-
-        if (settings.core.backup.enabled) {
-            UI.backupSettings.classList.add("flex");
-        } else {
-            UI.backupSettings.classList.add("hidden");
-        }
-
-        UI.translationEndpointSelect.value =
-            settings.translation.translationEndpoint.toString();
-        UI.modelSelect.value = settings.translation.model;
-        UI.yandexFolderInput.value = settings.translation.yandexFolderId;
-        UI.APIKeyInput.value = settings.translation.apiKey;
-        UI.systemPromptTextarea.value = settings.translation.systemPrompt;
-        UI.thinkingCheckbox.checked = settings.translation.thinking;
-        UI.useGlossaryCheckbox.checked = settings.translation.useGlossary;
-        UI.tokenLimitInput.value = settings.translation.tokenLimit.toString();
-        UI.temperatureInput.value = settings.translation.temperature.toString();
-
-        UI.lineLengthHintInput.value =
-            projectSettings.lineLengthHint.toString();
-        UI.projectContextInput.value = projectSettings.projectContext;
-
-        toggleTranslationElements();
-
-        for (const [path, name] of Object.entries(
-            (await fetchFonts()) as Record<string, string>,
-        )) {
-            const optionElement = document.createElement("option");
-
-            optionElement.id = path;
-            optionElement.innerHTML = optionElement.value = name;
-
-            UI.fontSelect.add(optionElement);
-        }
+        const settingsSections = document.querySelectorAll("main");
 
         document.addEventListener("click", async (event) => {
             const target = event.target as HTMLElement;
 
+            if (target.tagName === "A") {
+                await open(target.innerHTML);
+                return;
+            }
+
             switch (target) {
-                case UI.coreSettingsButton: {
-                    const settingsSections = document.querySelectorAll("main");
-
+                case this.#ui.coreSettingsButton: {
                     for (const section of settingsSections) {
                         section.classList.replace("flex", "hidden");
                     }
 
-                    UI.coreSettings.classList.replace("hidden", "flex");
-
+                    this.#ui.coreSettings.classList.replace("hidden", "flex");
                     break;
                 }
-                case UI.appearanceSettingsButton: {
-                    const settingsSections = document.querySelectorAll("main");
-
+                case this.#ui.appearanceSettingsButton: {
                     for (const section of settingsSections) {
                         section.classList.replace("flex", "hidden");
                     }
 
-                    UI.appearanceSettings.classList.replace("hidden", "flex");
+                    this.#ui.appearanceSettings.classList.replace(
+                        "hidden",
+                        "flex",
+                    );
                     break;
                 }
-                case UI.controlsSettingsButton: {
-                    const settingsSections = document.querySelectorAll("main");
-
+                case this.#ui.controlsSettingsButton: {
                     for (const section of settingsSections) {
                         section.classList.replace("flex", "hidden");
                     }
 
-                    UI.controlsSettings.classList.replace("hidden", "flex");
+                    this.#ui.controlsSettings.classList.replace(
+                        "hidden",
+                        "flex",
+                    );
                     break;
                 }
-                case UI.translationSettingsButton: {
-                    const settingsSections = document.querySelectorAll("main");
-
+                case this.#ui.translationSettingsButton: {
                     for (const section of settingsSections) {
                         section.classList.replace("flex", "hidden");
                     }
 
-                    UI.translationSettings.classList.replace("hidden", "flex");
+                    this.#ui.translationSettings.classList.replace(
+                        "hidden",
+                        "flex",
+                    );
                     break;
                 }
-                case UI.projectSettingsButton: {
-                    const settingsSections = document.querySelectorAll("main");
-
+                case this.#ui.projectSettingsButton: {
                     for (const section of settingsSections) {
                         section.classList.replace("flex", "hidden");
                     }
 
-                    UI.projectSettings.classList.replace("hidden", "flex");
+                    this.#ui.projectSettings.classList.replace(
+                        "hidden",
+                        "flex",
+                    );
                     break;
                 }
-                case UI.validateKeyButton: {
-                    UI.modelSelect.innerHTML = "";
+                case this.#ui.validateKeyButton: {
+                    this.#ui.modelSelect.innerHTML = "";
+
+                    if (!this.#ui.APIKeyInput.value) {
+                        alert(t`API key is empty.`);
+                        return;
+                    }
 
                     const models = await getModels(
-                        Number(UI.translationEndpointSelect.value),
-                        UI.APIKeyInput.value,
+                        Number(this.#ui.translationEndpointSelect.value),
+                        this.#ui.APIKeyInput.value,
                     );
 
                     if (isErr(models)) {
-                        void error(models[0]!);
-                        alert(t`Failed to validate key.`);
+                        const err = models[0]!;
+                        void error(err);
+                        alert(t`Failed to validate key: ${err}`);
                     } else {
                         for (const model of models[1]!) {
                             const option = document.createElement("option");
                             option.innerHTML = model;
                             option.value = model;
-                            UI.modelSelect.add(option);
+                            this.#ui.modelSelect.add(option);
                         }
                     }
                     break;
                 }
-                case UI.defaultSystemPromptButton:
-                    UI.systemPromptTextarea.value = t`Role:
+                case this.#ui.defaultSystemPromptButton:
+                    this.#ui.systemPromptTextarea.value = `Role:
 You are a professional videogame localization expert and linguist. You translate game text with high fidelity, cultural awareness, consistency, and attention to gameplay context, UI constraints, and narrative tone.
 
 Action:
@@ -480,32 +244,43 @@ No additional keys, no reordered structure, no commentary.`;
             const target = event.target as HTMLElement;
 
             switch (target) {
-                case UI.checkForUpdatesCheck:
-                    settings.core.updatesEnabled =
-                        UI.checkForUpdatesCheck.checked;
+                case this.#ui.checkForUpdatesCheck:
+                    this.#settings.core.updatesEnabled =
+                        this.#ui.checkForUpdatesCheck.checked;
                     break;
-                case UI.displayGhostLinesCheck:
-                    settings.appearance.displayGhostLines =
-                        UI.displayGhostLinesCheck.checked;
+                case this.#ui.displayGhostLinesCheck:
+                    this.#settings.appearance.displayGhostLines =
+                        this.#ui.displayGhostLinesCheck.checked;
                     break;
-                case UI.backupCheck:
-                    if (UI.backupCheck.checked) {
-                        UI.backupSettings.classList.replace("hidden", "flex");
+                case this.#ui.backupCheck:
+                    if (this.#ui.backupCheck.checked) {
+                        this.#ui.backupSettings.classList.replace(
+                            "hidden",
+                            "flex",
+                        );
                     } else {
-                        UI.backupSettings.classList.replace("flex", "hidden");
+                        this.#ui.backupSettings.classList.replace(
+                            "flex",
+                            "hidden",
+                        );
                     }
                     break;
-                case UI.translationEndpointSelect:
-                    toggleTranslationElements();
+                case this.#ui.translationEndpointSelect:
+                    this.#saveCurrentEndpointSettings();
+                    this.#toggleTranslationElements();
+
+                    this.#prevEndpoint = Number(
+                        this.#ui.translationEndpointSelect.value,
+                    ) as TranslationEndpoint;
                     break;
-                case UI.fontSelect: {
+                case this.#ui.translationTableFontSelect: {
                     const target = event.target as HTMLOptionElement;
 
-                    if (target.value === "default") {
-                        settings.appearance.font = "";
-                        document.body.style.fontFamily = "inherit";
+                    if (target.value === "") {
+                        this.#settings.appearance.translationTableFont = "";
+                        target.style.fontFamily = "initial";
                     } else {
-                        const fontPath = target.id.replaceAll("\\", "/");
+                        const fontPath = target.value.replaceAll("\\", "/");
                         const fontData = await readFile(fontPath);
 
                         if (isErr(fontData)) {
@@ -514,70 +289,435 @@ No additional keys, no reordered structure, no commentary.`;
                         }
 
                         const font = await new FontFace(
-                            "CustomFont",
+                            "CustomTranslationTableFont",
                             fontData[1]!,
                         ).load();
 
                         document.fonts.add(font);
-                        document.body.style.fontFamily = "CustomFont";
-                        settings.appearance.font = fontPath;
+                        target.style.fontFamily = "CustomTranslationTableFont";
+                        this.#settings.appearance.translationTableFont =
+                            fontPath;
                     }
                     break;
                 }
-                case UI.rowDeleteModeSelect: {
+                case this.#ui.uiFontSelect: {
                     const target = event.target as HTMLOptionElement;
-                    settings.core.rowDeleteMode = Number(target);
+
+                    if (target.value === "") {
+                        this.#settings.appearance.uiFont = "";
+                        target.style.fontFamily = "initial";
+                    } else {
+                        const fontPath = target.value.replaceAll("\\", "/");
+                        const fontData = await readFile(fontPath);
+
+                        if (isErr(fontData)) {
+                            void error(fontData[0]!);
+                            return;
+                        }
+
+                        const font = await new FontFace(
+                            "CustomUIFont",
+                            fontData[1]!,
+                        ).load();
+
+                        document.fonts.add(font);
+                        target.style.fontFamily = "CustomUIFont";
+                        this.#settings.appearance.uiFont = fontPath;
+                    }
                     break;
+                }
+                case this.#ui.rowDeleteModeSelect: {
+                    const target = event.target as HTMLOptionElement;
+                    this.#settings.core.rowDeleteMode = Number(target);
+                    break;
+                }
+                case this.#ui.fileContextSelect: {
+                    if (this.#prevOption) {
+                        this.#projectSettings.fileContexts[this.#prevOption] =
+                            this.#ui.fileContextInput.value;
+                    }
+
+                    this.#prevOption = this.#ui.fileContextSelect.value;
+
+                    const context =
+                        (this.#projectSettings.fileContexts[
+                            this.#prevOption
+                        ] as string | undefined) ?? "";
+
+                    this.#ui.fileContextInput.value = context;
                 }
             }
         });
 
-        if (settings.appearance.font) {
-            for (const element of UI.fontSelect
-                .children as HTMLCollectionOf<HTMLOptionElement>) {
-                if (
-                    element.value.includes(
-                        settings.appearance.font.slice(
-                            settings.appearance.font.lastIndexOf("/") + 1,
-                        ),
-                    )
-                ) {
-                    UI.fontSelect.value = element.value;
-                }
+        void APP_WINDOW.onCloseRequested(async () => {
+            this.#settings.core.backup.enabled = this.#ui.backupCheck.checked;
+            this.#settings.core.backup.period =
+                this.#ui.backupPeriodInput.valueAsNumber;
+            this.#settings.core.backup.max =
+                this.#ui.backupMaxInput.valueAsNumber;
+
+            this.#settings.appearance.translationTableFont =
+                this.#ui.translationTableFontSelect.value;
+            this.#settings.appearance.uiFont = this.#ui.uiFontSelect.value;
+
+            this.#saveCurrentEndpointSettings();
+
+            this.#prevEndpoint = Number(
+                this.#ui.translationEndpointSelect.value,
+            );
+
+            this.#projectSettings.lineLengthHint =
+                this.#ui.lineLengthHintInput.valueAsNumber;
+            this.#projectSettings.projectContext =
+                this.#ui.projectContextInput.value;
+
+            await emit<[Settings, ProjectSettings]>("close-settings", [
+                this.#settings,
+                this.#projectSettings,
+            ]);
+        });
+    }
+
+    #setupUI(): SettingsWindowUI {
+        return {
+            coreSettingsButton: document.getElementById(
+                "core-settings-button",
+            ) as HTMLButtonElement,
+            coreSettings: document.getElementById(
+                "core-settings",
+            ) as HTMLDivElement,
+
+            backupCheck: document.getElementById(
+                "backup-check",
+            ) as HTMLInputElement,
+            backupSettings: document.getElementById(
+                "backup-settings",
+            ) as HTMLDivElement,
+            backupMaxInput: document.getElementById(
+                "backup-max-input",
+            ) as HTMLInputElement,
+            backupPeriodInput: document.getElementById(
+                "backup-period-input",
+            ) as HTMLInputElement,
+
+            rowDeleteModeSelect: document.getElementById(
+                "row-delete-mode-select",
+            ) as HTMLSelectElement,
+
+            displayGhostLinesCheck: document.getElementById(
+                "display-ghost-lines-check",
+            ) as HTMLInputElement,
+            checkForUpdatesCheck: document.getElementById(
+                "check-for-updates-check",
+            ) as HTMLInputElement,
+
+            appearanceSettingsButton: document.getElementById(
+                "appearance-settings-button",
+            ) as HTMLButtonElement,
+            appearanceSettings: document.getElementById(
+                "appearance-settings",
+            ) as HTMLDivElement,
+
+            translationTableFontSelect: document.getElementById(
+                "translation-table-select",
+            ) as HTMLSelectElement,
+            uiFontSelect: document.getElementById(
+                "ui-font-select",
+            ) as HTMLSelectElement,
+
+            controlsSettingsButton: document.getElementById(
+                "controls-settings-button",
+            ) as HTMLButtonElement,
+            controlsSettings: document.getElementById(
+                "controls-settings",
+            ) as HTMLDivElement,
+
+            translationSettingsButton: document.getElementById(
+                "translation-settings-button",
+            ) as HTMLButtonElement,
+            translationSettings: document.getElementById(
+                "translation-settings",
+            ) as HTMLDivElement,
+
+            endpointKeyContainer: document.getElementById(
+                "endpoint-key-container",
+            ) as HTMLDivElement,
+            translationEndpointSelect: document.getElementById(
+                "translation-endpoint-select",
+            ) as HTMLSelectElement,
+            APIKeyInput: document.getElementById(
+                "api-key-input",
+            ) as HTMLInputElement,
+            APIKeyDesc: document.getElementById(
+                "api-key-desc",
+            ) as HTMLDivElement,
+            validateKeyButton: document.getElementById(
+                "validate-key-button",
+            ) as HTMLButtonElement,
+
+            aiThings: document.getElementById("ai-things") as HTMLDivElement,
+            yandexFolderIDContainer: document.getElementById(
+                "yandex-folder-id-container",
+            ) as HTMLDivElement,
+            yandexFolderInput: document.getElementById(
+                "yandex-folder-input",
+            ) as HTMLInputElement,
+            modelSelect: document.getElementById(
+                "model-select",
+            ) as HTMLSelectElement,
+            temperatureInput: document.getElementById(
+                "temperature-input",
+            ) as HTMLInputElement,
+            tokenLimitInput: document.getElementById(
+                "token-limit-input",
+            ) as HTMLInputElement,
+            thinkingCheckbox: document.getElementById(
+                "thinking-checkbox",
+            ) as HTMLInputElement,
+            useGlossaryCheckbox: document.getElementById(
+                "use-glossary-checkbox",
+            ) as HTMLInputElement,
+            defaultSystemPromptButton: document.getElementById(
+                "default-system-prompt-button",
+            ) as HTMLButtonElement,
+            systemPromptTextarea: document.getElementById(
+                "system-prompt-textarea",
+            ) as HTMLTextAreaElement,
+
+            projectSettingsButton: document.getElementById(
+                "project-settings-button",
+            ) as HTMLButtonElement,
+            projectSettings: document.getElementById(
+                "project-settings",
+            ) as HTMLDivElement,
+
+            lineLengthHintInput: document.getElementById(
+                "line-length-hint-input",
+            ) as HTMLInputElement,
+            fileContextSelect: document.getElementById(
+                "file-context-select",
+            ) as HTMLSelectElement,
+            fileContextInput: document.getElementById(
+                "file-context-input",
+            ) as HTMLTextAreaElement,
+            projectContextInput: document.getElementById(
+                "project-context-input",
+            ) as HTMLTextAreaElement,
+        };
+    }
+
+    async *#fetchFonts(): AsyncIterableIterator<[string, string]> {
+        const fontPath =
+            getPlatform() === "windows"
+                ? "C:/Windows/Fonts"
+                : "/usr/share/fonts";
+
+        await expandScope(fontPath);
+        const entries = await walkDir(fontPath);
+
+        for (const path of entries) {
+            const extension = path.slice(-3);
+
+            if (["ttf", "otf"].includes(extension)) {
+                yield [
+                    path.slice(path.replaceAll("\\", "/").lastIndexOf("/") + 1),
+                    path,
+                ];
+            }
+        }
+    }
+
+    #toggleTranslationElements(): void {
+        const endpoint = Number(
+            this.#ui.translationEndpointSelect.value,
+        ) as TranslationEndpoint;
+
+        this.#ui.modelSelect.innerHTML = "";
+        const requiresKey = endpoint > TranslationEndpoint.Google;
+
+        if (requiresKey) {
+            this.#ui.endpointKeyContainer.classList.remove("hidden");
+            this.#ui.yandexFolderIDContainer.classList.add("hidden");
+
+            const aiEndpoint = endpoint > TranslationEndpoint.DeepL;
+
+            if (aiEndpoint) {
+                this.#ui.aiThings.classList.remove("hidden");
+            } else {
+                this.#ui.aiThings.classList.add("hidden");
             }
 
-            if (UI.fontSelect.value === "default") {
-                alert(
-                    t`Custom font was not found. Ensure it's installed on your system.`,
-                );
+            let endpointLink!: string;
+
+            switch (endpoint) {
+                case TranslationEndpoint.Yandex:
+                    endpointLink =
+                        "https://yandex.com/dev/dictionary/keys/get/";
+                    this.#ui.yandexFolderIDContainer.classList.remove("hidden");
+                    break;
+                case TranslationEndpoint.DeepL:
+                    endpointLink =
+                        "https://support.deepl.com/hc/en-us/articles/360020695820-API-key-for-DeepL-API";
+                    break;
+                case TranslationEndpoint.OpenAI:
+                    endpointLink = "https://platform.openai.com/api-keys";
+                    break;
+                case TranslationEndpoint.Anthropic:
+                    endpointLink =
+                        "https://console.anthropic.com/settings/keys";
+                    break;
+                case TranslationEndpoint.DeepSeek:
+                    endpointLink = "https://platform.deepseek.com/api_keys";
+                    break;
+                case TranslationEndpoint.Gemini:
+                    endpointLink =
+                        "https://ai.google.dev/gemini-api/docs/api-key";
+                    break;
+            }
+
+            this.#ui.APIKeyDesc.innerHTML = t`You need an API key. Check out <a class="text-third cursor-pointer hover:underline">${endpointLink}</a> on how to get it.`;
+        } else {
+            this.#ui.endpointKeyContainer.classList.add("hidden");
+            this.#ui.aiThings.classList.add("hidden");
+        }
+
+        this.#loadEndpointSettings(endpoint);
+    }
+
+    #loadEndpointSettings(endpoint: TranslationEndpoint): void {
+        const translationSettings =
+            this.#settings.translation.endpoints[endpoint];
+
+        this.#ui.APIKeyInput.value = translationSettings.apiKey;
+        this.#ui.yandexFolderInput.value = translationSettings.yandexFolderId;
+        this.#ui.modelSelect.value = translationSettings.model;
+        this.#ui.systemPromptTextarea.value = translationSettings.systemPrompt;
+        this.#ui.thinkingCheckbox.checked = translationSettings.thinking;
+        this.#ui.useGlossaryCheckbox.checked = translationSettings.useGlossary;
+        this.#ui.tokenLimitInput.value =
+            translationSettings.tokenLimit.toString();
+        this.#ui.temperatureInput.value =
+            translationSettings.temperature.toString();
+    }
+
+    #saveCurrentEndpointSettings(): void {
+        const endpoint = this.#prevEndpoint;
+        const translationSettings =
+            this.#settings.translation.endpoints[endpoint];
+
+        translationSettings.apiKey = this.#ui.APIKeyInput.value;
+        translationSettings.yandexFolderId = this.#ui.yandexFolderInput.value;
+        translationSettings.model = this.#ui.modelSelect.value;
+        translationSettings.systemPrompt = this.#ui.systemPromptTextarea.value;
+        translationSettings.thinking = this.#ui.thinkingCheckbox.checked;
+        translationSettings.useGlossary = this.#ui.useGlossaryCheckbox.checked;
+        translationSettings.tokenLimit = this.#ui.tokenLimitInput.valueAsNumber;
+        translationSettings.temperature =
+            this.#ui.temperatureInput.valueAsNumber;
+    }
+
+    async #init(
+        payload: [Settings, Themes, ProjectSettings, Tabs],
+    ): Promise<void> {
+        clearInterval(this.#intevalID);
+
+        this.#settings = payload[0];
+        this.#projectSettings = payload[2];
+
+        const themes = payload[1];
+        const tabs = payload[3];
+
+        for (const tabName in tabs) {
+            const fileOption = document.createElement("option");
+            fileOption.value = tabName;
+            fileOption.innerHTML = tabName;
+            this.#ui.fileContextSelect.add(fileOption);
+        }
+
+        utils.applyTheme(themes, this.#settings.appearance.theme);
+        await utils.initializeLocalization(
+            "settings",
+            this.#settings.appearance.language,
+        );
+        utils.retranslate();
+
+        this.#ui.backupCheck.checked = this.#settings.core.backup.enabled;
+
+        this.#ui.backupPeriodInput.min = consts.MIN_BACKUP_PERIOD.toString();
+        this.#ui.backupPeriodInput.max =
+            this.#settings.core.backup.period.toString();
+
+        this.#ui.backupMaxInput.min = "1";
+        this.#ui.backupMaxInput.max = consts.MAX_BACKUPS.toString();
+
+        this.#ui.backupMaxInput.value =
+            this.#settings.core.backup.max.toString();
+        this.#ui.backupPeriodInput.value =
+            this.#settings.core.backup.period.toString();
+
+        this.#ui.rowDeleteModeSelect.value =
+            this.#settings.core.rowDeleteMode.toString();
+
+        this.#ui.displayGhostLinesCheck.checked =
+            this.#settings.appearance.displayGhostLines;
+        this.#ui.checkForUpdatesCheck.checked =
+            this.#settings.core.updatesEnabled;
+
+        if (this.#settings.core.backup.enabled) {
+            this.#ui.backupSettings.classList.add("flex");
+        } else {
+            this.#ui.backupSettings.classList.add("hidden");
+        }
+
+        this.#ui.lineLengthHintInput.value =
+            this.#projectSettings.lineLengthHint.toString();
+        this.#ui.projectContextInput.value =
+            this.#projectSettings.projectContext;
+
+        this.#toggleTranslationElements();
+
+        for await (const [name, path] of this.#fetchFonts()) {
+            const option = document.createElement("option");
+            option.innerHTML = name;
+            option.value = path;
+            this.#ui.translationTableFontSelect.add(
+                option.cloneNode(true) as HTMLOptionElement,
+            );
+
+            const normalizedPath = path.replaceAll("\\", "/");
+            if (
+                normalizedPath ===
+                this.#settings.appearance.translationTableFont
+            ) {
+                this.#ui.translationTableFontSelect.value = option.value;
+            }
+
+            this.#ui.uiFontSelect.add(option);
+
+            if (normalizedPath === this.#settings.appearance.uiFont) {
+                this.#ui.uiFontSelect.value = option.value;
             }
         }
 
-        await APP_WINDOW.onCloseRequested(async () => {
-            settings.core.backup.enabled = UI.backupCheck.checked;
-            settings.core.backup.period = UI.backupPeriodInput.valueAsNumber;
-            settings.core.backup.max = UI.backupMaxInput.valueAsNumber;
-
-            settings.translation.translationEndpoint = Number(
-                UI.translationEndpointSelect.value,
+        if (
+            this.#settings.appearance.translationTableFont !== "" &&
+            this.#ui.translationTableFontSelect.value === ""
+        ) {
+            alert(
+                t`Translation table font was not found. Ensure it's installed on your system.`,
             );
-            settings.translation.model = UI.modelSelect.value;
-            settings.translation.thinking = UI.thinkingCheckbox.checked;
-            settings.translation.useGlossary = UI.useGlossaryCheckbox.checked;
-            settings.translation.yandexFolderId = UI.yandexFolderInput.value;
-            settings.translation.systemPrompt = UI.systemPromptTextarea.value;
-            settings.translation.temperature =
-                UI.temperatureInput.valueAsNumber;
-            settings.translation.tokenLimit = UI.tokenLimitInput.valueAsNumber;
+        }
 
-            projectSettings.lineLengthHint =
-                UI.lineLengthHintInput.valueAsNumber;
-            projectSettings.projectContext = UI.projectContextInput.value;
+        if (
+            this.#settings.appearance.uiFont !== "" &&
+            this.#ui.uiFontSelect.value === ""
+        ) {
+            alert(
+                t`UI font was not found. Ensure it's installed on your system.`,
+            );
+        }
+    }
+}
 
-            await emit<[Settings, ProjectSettings]>("get-settings", [
-                settings,
-                projectSettings,
-            ]);
-        });
-    },
-);
+// eslint-disable-next-line sonarjs/constructor-for-side-effects
+new SettingsWindow();

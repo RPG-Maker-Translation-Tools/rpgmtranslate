@@ -1,4 +1,6 @@
 export const enum TokenizerAlgorithm {
+    None = -1,
+
     Arabic,
     Armenian,
     Basque,
@@ -42,10 +44,12 @@ export const enum TokenizerAlgorithm {
     Lao,
     Khmer,
 
-    None,
+    COUNT,
 }
 
 export const TokenizerAlgorithmNames = [
+    "None",
+
     "Arabic",
     "Armenian",
     "Basque",
@@ -88,11 +92,11 @@ export const TokenizerAlgorithmNames = [
     "Burmese",
     "Lao",
     "Khmer",
-
-    "None",
 ] as const;
 
 export const TokenizerAlgorithmBCP47 = [
+    "und", // None / undefined
+
     "ar", // Arabic
     "hy", // Armenian
     "eu", // Basque
@@ -135,6 +139,4 @@ export const TokenizerAlgorithmBCP47 = [
     "my", // Burmese
     "lo", // Lao
     "km", // Khmer
-
-    "und", // None / undefined
 ] as const;

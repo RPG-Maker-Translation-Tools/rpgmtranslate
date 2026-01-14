@@ -21,11 +21,12 @@ export class UtilsPanel extends Component {
     public readonly purgeButton: HTMLButtonElement;
     public readonly bookmarksButton: HTMLButtonElement;
     public readonly tabPanelButton: HTMLButtonElement;
-    public readonly openDirectoryButton: HTMLButtonElement;
+    public readonly openFolderButton: HTMLButtonElement;
     public readonly searchButton: HTMLButtonElement;
     public readonly batchButton: HTMLButtonElement;
     public readonly settingsButton: HTMLButtonElement;
     public readonly glossaryButton: HTMLButtonElement;
+    public readonly translationsButton: HTMLButtonElement;
 
     declare protected readonly element: HTMLDivElement;
 
@@ -63,7 +64,7 @@ export class UtilsPanel extends Component {
             this.#utilsPanelButtons.querySelector("#bookmarks-button")!;
         this.tabPanelButton =
             this.#utilsPanelButtons.querySelector("#tab-panel-button")!;
-        this.openDirectoryButton = this.#utilsPanelButtons.querySelector(
+        this.openFolderButton = this.#utilsPanelButtons.querySelector(
             "#open-directory-button",
         )!;
         this.searchButton =
@@ -74,6 +75,9 @@ export class UtilsPanel extends Component {
             this.#utilsPanelButtons.querySelector("#settings-button")!;
         this.glossaryButton =
             this.#utilsPanelButtons.querySelector("#glossary-button")!;
+        this.translationsButton = this.#utilsPanelButtons.querySelector(
+            "#translations-button",
+        )!;
 
         this.#languageSelects =
             this.element.querySelector("#language-selects")!;
@@ -114,28 +118,24 @@ export class UtilsPanel extends Component {
             await this.#onbuttonclick(e);
         };
 
-        this.element.addEventListener("focusout", (e): void => {
+        this.element.addEventListener("focusout", (e) => {
             this.#onfocusout(e);
         });
 
         for (
-            let i = TokenizerAlgorithm.Arabic;
-            i <= TokenizerAlgorithm.None;
+            let i = TokenizerAlgorithm.None;
+            i < TokenizerAlgorithm.COUNT;
             i++
         ) {
             const option = document.createElement("option");
             option.value = i.toString();
-            option.setAttribute("data-i18n", TokenizerAlgorithmNames[i]);
+            option.setAttribute("data-i18n", TokenizerAlgorithmNames[i + 1]);
 
             this.#sourceLanguageSelect.add(
-                option.cloneNode() as HTMLOptionElement,
+                option.cloneNode(true) as HTMLOptionElement,
             );
             this.#translationLanguageSelect.add(option);
         }
-
-        this.#sourceLanguageSelect.value = TokenizerAlgorithm.None.toString();
-        this.#translationLanguageSelect.value =
-            TokenizerAlgorithm.None.toString();
     }
 
     public get gameEngine(): string {

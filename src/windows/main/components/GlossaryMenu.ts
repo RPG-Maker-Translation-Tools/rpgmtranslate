@@ -2,7 +2,7 @@ import { Component } from "./Component";
 
 import { emittery } from "@lib/classes/emittery";
 
-import { AppEvent, ElementToShow, MatchMode, MouseButton } from "@lib/enums";
+import { AppEvent, ElementToShow, MatchMode } from "@lib/enums";
 
 import { DEFAULT_FUZZY_THRESHOLD } from "@utils/constants";
 import { tw } from "@utils/functions";
@@ -16,14 +16,13 @@ export class GlossaryMenu extends Component {
     #searchInput: HTMLInputElement;
     #tableBody: HTMLTableSectionElement;
 
-    #startX = 0;
-    #startY = 0;
-
     public constructor() {
         super("glossary-menu");
 
         this.#searchInput = this.element.querySelector("#search-input")!;
         this.#tableBody = this.element.querySelector("#table-body")!;
+
+        this.setDraggable(true);
 
         this.element.onchange = (e): void => {
             const target = e.target as
@@ -281,35 +280,6 @@ export class GlossaryMenu extends Component {
                     break;
             }
         };
-
-        this.element.onmousedown = (e): void => {
-            if (
-                (e.target as HTMLElement).tagName === "THEAD" &&
-                (e.button as MouseButton) === MouseButton.Left
-            ) {
-                this.element.style.cursor = "grabbing";
-
-                this.#startX = e.clientX - this.x;
-                this.#startY = e.clientY - this.y;
-
-                this.element.onmousemove = (e): void => {
-                    this.x = e.clientX - this.#startX;
-                    this.y = e.clientY - this.#startY;
-
-                    this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-                    this.element.onmouseup = (): void => {
-                        this.element.style.cursor = "auto";
-                        this.element.onmouseup = null;
-                        this.element.onmousemove = null;
-                    };
-                };
-            }
-        };
-
-        this.element.oncontextmenu = (e): void => {
-            this.#oncontextmenu(e);
-        };
     }
 
     public get terms(): Term[] {
@@ -366,7 +336,9 @@ export class GlossaryMenu extends Component {
             matchModeSelect.disabled = !editable;
 
             const fuzzyThresholdInput = document.createElement("input");
-            fuzzyThresholdInput.type = "text";
+            fuzzyThresholdInput.type = "number";
+            fuzzyThresholdInput.min = "0.0";
+            fuzzyThresholdInput.max = "1.0";
             fuzzyThresholdInput.disabled = !editable;
 
             const permissiveContainer = document.createElement("label");
@@ -458,45 +430,5 @@ export class GlossaryMenu extends Component {
         );
 
         return row;
-    }
-
-    #oncontextmenu(e: MouseEvent): void {
-        e.preventDefault();
-
-        const target = e.target as HTMLElement;
-
-        if (target.tagName !== "HEADER") {
-            return;
-        }
-
-        this.contextMenu = document.createElement("div");
-        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
-
-        for (const [id, label] of [t`Restore Position`].entries()) {
-            const button = document.createElement("button");
-            button.className = tw`h-fit w-full p-1`;
-            button.innerHTML = label;
-            button.id = id.toString();
-            this.contextMenu.appendChild(button);
-        }
-
-        this.contextMenu.style.top = `${e.y}px`;
-        this.contextMenu.style.left = `${e.x}px`;
-
-        this.contextMenu.onclick = (e): void => {
-            const target = e.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "0") {
-                this.move(0, 0);
-            }
-        };
-
-        document.body.appendChild(this.contextMenu);
-
-        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

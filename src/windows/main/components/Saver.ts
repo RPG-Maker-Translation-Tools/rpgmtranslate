@@ -45,18 +45,21 @@ export class Saver {
         this.#sourceTitle = sourceTitle;
     }
 
-    public async saveSingle(tabName: string, rows: Rows): Promise<boolean> {
+    public async saveCurrentTab(
+        tabName: string,
+        rows: TabRows,
+    ): Promise<boolean> {
         const outputArray: string[] = [];
 
-        for (const rowContainer of rows) {
-            const source = utils.source(rowContainer);
-            const translations = utils.translations(rowContainer);
+        for (const row of rows) {
+            const source = utils.source(row);
+            const translations = utils.translations(row);
 
             outputArray.push(
-                utils.dlbtoclb(source) +
+                utils.toCustomLB(source) +
                     consts.SEPARATOR +
                     translations
-                        .map((translation) => utils.dlbtoclb(translation))
+                        .map((translation) => utils.toCustomLB(translation))
                         .join(consts.SEPARATOR),
             );
         }
@@ -105,7 +108,10 @@ export class Saver {
         }, period * consts.SECOND_MS);
     }
 
-    public async saveAll(tabName: string | null, rows: Rows): Promise<boolean> {
+    public async saveAll(
+        tabName: string | null,
+        rows: TabRows,
+    ): Promise<boolean> {
         if (this.#saving) {
             return true;
         }
@@ -115,7 +121,7 @@ export class Saver {
         let saved = true;
 
         if (tabName !== null) {
-            await this.saveSingle(tabName, rows);
+            await this.saveCurrentTab(tabName, rows);
         }
 
         let result: Result<DirEntry[] | undefined> = await readDir(
@@ -145,9 +151,10 @@ export class Saver {
             );
         }
 
-        const outputArray: string[] = [];
+        const outputArray: string[] = new Array(tempMapEntries.length);
 
-        for (const entry of tempMapEntries) {
+        for (let i = 0; i < tempMapEntries.length; i++) {
+            const entry = tempMapEntries[i];
             const result = await readTextFile(
                 utils.join(this.#tempMapsPath, entry.name),
             );
@@ -158,7 +165,7 @@ export class Saver {
                 break;
             }
 
-            outputArray.push(result[1]!);
+            outputArray[i] = result[1]!;
         }
 
         result = (await writeTextFile(

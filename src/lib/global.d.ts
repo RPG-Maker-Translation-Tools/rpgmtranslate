@@ -1,13 +1,13 @@
-type Ok<T> = [err: undefined, result: T];
-type Err = [err: string, result: undefined] | [err: string];
+type Ok<T> = readonly [err: undefined, result: T];
+type Err = readonly [err: string];
 type Result<T> = Ok<T> | Err;
 
-type Either<A, B> = [a: undefined | A, b: undefined | B];
+type Either<A, B> = readonly [a?: A, b?: B];
 
 type Themes = Record<string, Record<string, string>>;
 
 interface TabEntry {
-    index: number;
+    readonly index: number;
     sourceLineCount: number;
     translatedLineCount: number;
 }
@@ -18,23 +18,27 @@ interface TabInfo {
     tabs: Tabs;
 }
 
-type Rows = HTMLCollectionOf<RowContainer>;
-
-interface RowColumns extends HTMLCollectionOf<HTMLTextAreaElement> {
-    0: HTMLDivElement;
-    1: HTMLDivElement;
+interface TabRow extends HTMLTableRowElement {
+    readonly children: HTMLCollectionOf<HTMLTableCellElement>;
 }
 
-interface RowContainer extends HTMLDivElement {
-    children: RowColumns;
-}
+type TabRows = HTMLCollectionOf<TabRow>;
 
 type Bookmarks = Record<string, Record<number, string>>;
 
-type LogEntry = Record<string, [string, number, string, string]>;
+type LogEntryData = readonly [
+    entry: string,
+    columnIndex: number,
+    old: string,
+    new: string,
+];
+type LogEntry = Record<string, LogEntryData>;
 type ReplacementLog = Record<string, LogEntry>;
 
-type MatchObject = [[string, string], [string, string]][];
+type SearchMatchArray = [
+    match: readonly [metadata: string, match: string],
+    matchCounterpart: readonly [metadata: string, match: string],
+][];
 
 interface SearchResults {
     results: Record<string, number[]>;
@@ -43,24 +47,27 @@ interface SearchResults {
 }
 
 interface SearchMatch {
-    text: string;
-    type: import("@enums/MatchType").MatchType;
-    columnName: string;
-    columnNumber: number;
+    readonly text: string;
+    readonly type: import("@enums/MatchType").MatchType;
+    readonly columnName: string;
+    readonly columnNumber: number;
 }
 
-type MatchModeData = [
-    [import("@enums/MatchMode").MatchMode, number],
-    boolean,
-    boolean,
+type MatchModeData = readonly [
+    readonly [
+        mode: import("@enums/MatchMode").MatchMode,
+        fuzzyThreshold: number,
+    ],
+    caseSensitive: boolean,
+    permissive: boolean,
 ];
 
-interface Term extends Record<string, unknown> {
-    source: string;
-    sourceMatchMode: MatchModeData;
-    translation: string;
-    translationMatchMode: MatchModeData;
-    note: string;
+interface Term {
+    readonly source: string;
+    readonly sourceMatchMode: MatchModeData;
+    readonly translation: string;
+    readonly translationMatchMode: MatchModeData;
+    readonly note: string;
 }
 
 type Glossary = Term[];
@@ -70,28 +77,30 @@ interface TranslationLanguages {
     translationLanguage: import("@enums/TokenizerAlgorithm").TokenizerAlgorithm;
 }
 
-type MatchResult = [number, number, number | undefined];
+type TermMatchResult = readonly [start: number, len: number, score?: number];
 
 interface SourceBlock {
-    name: string;
+    readonly name: string;
 
     // For textarea translation
-    beforeStrings?: string;
-    afterStrings?: string;
+    readonly beforeStrings?: string;
+    readonly afterStrings?: string;
 
     strings: string[];
 }
 
-type TranslatedBlocks = Record<string, string[]>;
-type TranslatedFiles = Record<string, TranslatedBlocks>;
+type TranslatedBlocks = Readonly<
+    Record<string, readonly { strings: string[] }>
+>;
+type TranslatedFiles = Readonly<Record<string, TranslatedBlocks>>;
 
 type SourceBlocks = Record<string, SourceBlock>;
 type SourceFiles = Record<string, SourceBlocks>;
 
 interface Metadata {
-    duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
-    romanize: boolean;
-    disableCustomProcessing: boolean;
-    trim: boolean;
-    hashes: string[];
+    readonly duplicateMode: import("@enums/DuplicateMode").DuplicateMode;
+    readonly romanize: boolean;
+    readonly disableCustomProcessing: boolean;
+    readonly trim: boolean;
+    readonly hashes: string[];
 }

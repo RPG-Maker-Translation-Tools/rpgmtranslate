@@ -1,7 +1,12 @@
-import { Language, RowDeleteMode, TranslationEndpoint } from "@lib/enums";
+import {
+    Language,
+    RowDeleteMode,
+    TranslationEndpoint,
+    TranslationEndpointFlags,
+} from "@lib/enums";
 
 import * as consts from "@utils/constants";
-import { isErr, readTextFile, writeTextFile } from "@utils/invokes";
+import { getAPIKeys, isErr, readTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
@@ -30,22 +35,35 @@ export interface CoreSettings {
 export interface AppearanceSettings {
     displayGhostLines: boolean;
     zoom: number;
-    font: string;
+    translationTableFont: string;
     uiFont: string;
     theme: string;
     language: Language;
 }
 
-export interface TranslationSettings {
-    translationEndpoint: TranslationEndpoint;
-    model: string;
+interface EndpointSettings {
+    endpoint: TranslationEndpoint;
     apiKey: string;
     yandexFolderId: string;
+    model: string;
     systemPrompt: string;
     useGlossary: boolean;
     thinking: boolean;
     temperature: number;
     tokenLimit: number;
+}
+
+export interface TranslationSettings {
+    endpoints: readonly [
+        google: EndpointSettings,
+        yandex: EndpointSettings,
+        deepl: EndpointSettings,
+        openai: EndpointSettings,
+        anthropic: EndpointSettings,
+        deepseek: EndpointSettings,
+        gemini: EndpointSettings,
+    ];
+    enabledTranslations: TranslationEndpointFlags;
 }
 
 export interface ControlSettings extends Record<string, string> {
@@ -78,7 +96,7 @@ export class Settings implements SettingsOptions {
     public appearance: AppearanceSettings = {
         displayGhostLines: false,
         zoom: 1,
-        font: "",
+        translationTableFont: "",
         uiFont: "",
         theme: "cool-zinc",
         language: Language.English,
@@ -90,15 +108,86 @@ export class Settings implements SettingsOptions {
     };
 
     public translation: TranslationSettings = {
-        translationEndpoint: TranslationEndpoint.Google,
-        model: "",
-        apiKey: "",
-        yandexFolderId: "",
-        systemPrompt: "",
-        useGlossary: true,
-        thinking: true,
-        temperature: consts.DEFAULT_TEMPERATURE,
-        tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+        endpoints: [
+            {
+                endpoint: TranslationEndpoint.Google,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: false,
+                thinking: false,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.Yandex,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: false,
+                thinking: false,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.DeepL,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: false,
+                thinking: false,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.OpenAI,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: true,
+                thinking: true,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.Anthropic,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: true,
+                thinking: true,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.DeepSeek,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: true,
+                thinking: true,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+            {
+                endpoint: TranslationEndpoint.Gemini,
+                apiKey: "",
+                model: "",
+                systemPrompt: "",
+                yandexFolderId: "",
+                useGlossary: true,
+                thinking: true,
+                temperature: consts.DEFAULT_TEMPERATURE,
+                tokenLimit: consts.DEFAULT_TOKEN_LIMIT,
+            },
+        ],
+        enabledTranslations: TranslationEndpointFlags.Google,
     };
 
     public constructor(options: Partial<SettingsOptions> = {}) {
@@ -121,23 +210,23 @@ export class Settings implements SettingsOptions {
             );
         }
 
-        const written = await writeTextFile(
-            consts.SETTINGS_PATH,
-            JSON.stringify(settings),
-            {
-                baseDir: consts.RESOURCE_DIRECTORY,
-            },
-        );
-
-        if (isErr(written)) {
-            void error(written[0]!);
-            return false;
-        }
-
         deepAssign(
             this as unknown as Record<string, unknown>,
             settings as unknown as Record<string, unknown>,
         );
+
+        const keys = await getAPIKeys();
+
+        if (isErr(keys)) {
+            void error(keys[0]!);
+        } else {
+            const keysArray = keys[1]!;
+
+            for (let i = 0; i < keysArray.length; i++) {
+                this.translation.endpoints[i].apiKey = keysArray[i];
+            }
+        }
+
         return true;
     }
 

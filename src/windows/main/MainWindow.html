@@ -43,8 +43,8 @@
 
                     <button
                         class="font-material size-16 p-4"
-                        id="open-directory-button"
-                        data-i18n-title="Open directory"
+                        id="open-folder-button"
+                        data-i18n-title="Open folder"
                     >
                         folder_open
                     </button>
@@ -112,6 +112,14 @@
                     >
                         book_3
                     </button>
+
+                    <button
+                        class="font-material size-16 p-4"
+                        id="translations-button"
+                        data-i18n-title="Translations menu"
+                    >
+                        subtitles
+                    </button>
                 </div>
 
                 <div
@@ -161,23 +169,24 @@
             </div>
         </header>
 
-        <div
-            class="hidden w-full justify-start overflow-x-hidden p-8 pb-px text-lg whitespace-nowrap"
-            id="tab-content-header"
-        ></div>
-
-        <div class="overflow-x-hidden" id="tab-content-container">
-            <main
-                class="flex min-w-max flex-col justify-start p-8 pt-0 text-lg"
-                id="tab-content"
-            ></main>
-        </div>
-
-        <div
-            class="sticky bottom-0 z-30 hidden h-6 overflow-x-auto"
-            id="bottom-scroll-bar"
-        >
-            <div class="h-px w-auto" id="bottom-scroll-content"></div>
+        <div class="w-full overflow-x-auto p-8 text-lg">
+            <table
+                class="bg-primary border-primary w-full table-fixed border-collapse border-2 text-left whitespace-nowrap"
+                id="translation-table"
+            >
+                <thead class="border-primary border-2">
+                    <th
+                        class="border-primary border-2 p-1"
+                        data-i18n="Row"
+                    ></th>
+                    <th
+                        class="border-primary border-2 p-1"
+                        data-i18n="Source"
+                    ></th>
+                    <th class="w-6 cursor-pointer p-1 text-center">+</th>
+                </thead>
+                <tbody class="border-primary border-2 align-top"></tbody>
+            </table>
         </div>
 
         <div
@@ -331,7 +340,7 @@
             class="bg-primary border-second fixed z-40 flex hidden h-screen w-64 min-w-64 resize flex-col gap-2 overflow-y-auto border-2 p-4"
             id="search-panel"
         >
-            <header class="h-8 min-h-8"></header>
+            <header class="h-8 min-h-8" id="menu-header"></header>
 
             <button
                 class="font-material h-12 w-full content-center text-3xl select-none"
@@ -347,17 +356,13 @@
                 <button class="font-material" id="previous-page-button">
                     chevron_left
                 </button>
-                <label
-                    class="currentPage"
-                    id="search-current-page"
-                    data-i18n=" - "
-                ></label>
+                <label class="currentPage" id="search-current-page"></label>
                 <label
                     class="separator"
                     id="search-separator"
                     data-i18n="of"
                 ></label>
-                <label id="search-total-pages" data-i18n=" - "></label>
+                <label id="search-total-pages"></label>
                 <button class="font-material" id="next-page-button">
                     chevron_right
                 </button>
@@ -378,7 +383,7 @@
             class="bg-primary border-second fixed z-50 hidden h-auto w-96 border-2"
             id="search-menu"
         >
-            <header class="h-8 min-h-8"></header>
+            <header class="h-8 min-h-8" id="menu-header"></header>
 
             <div class="flex h-auto flex-col">
                 <div class="flex h-auto items-center p-4" id="search-field">
@@ -464,15 +469,9 @@
                     data-i18n="Search mode"
                 ></label>
                 <select id="search-mode-select">
-                    <option value="0" data-i18n="Search everywhere"></option>
-                    <option
-                        value="1"
-                        data-i18n="Search only in source text"
-                    ></option>
-                    <option
-                        value="2"
-                        data-i18n="Search only in translation"
-                    ></option>
+                    <option value="0" data-i18n="Everywhere"></option>
+                    <option value="1" data-i18n="Only Source"></option>
+                    <option value="2" data-i18n="Only Translation"></option>
                 </select>
             </div>
 
@@ -505,7 +504,8 @@
         >
             <header
                 class="flex h-8 flex-row items-center justify-center text-lg"
-                data-i18n="Select files (You can hold LMB and drag to select multiple files)"
+                id="menu-header"
+                data-i18n="Hold and drag to select multiple files"
             ></header>
 
             <div
@@ -525,14 +525,11 @@
                         data-i18n-placeholder="Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
                     ></textarea>
 
-                    <div class="flex flex-col gap-2">
-                        <div data-i18n="Use file context"></div>
-                        <select
-                            class="rounded-sm"
-                            id="use-context-select"
-                            multiple
-                        ></select>
-                    </div>
+                    <select
+                        class="rounded-sm"
+                        id="use-context-select"
+                        multiple
+                    ></select>
                 </div>
             </div>
 
@@ -582,6 +579,20 @@
                     type="number"
                     data-i18n-placeholder="Line length for wrapping"
                 />
+
+                <select
+                    class="hidden rounded-md"
+                    id="translation-endpoint-select"
+                >
+                    <option value="">None</option>
+                    <option value="0">Google</option>
+                    <option value="1">Yandex</option>
+                    <option value="2">DeepL</option>
+                    <option value="3">ChatGPT</option>
+                    <option value="4">Claude</option>
+                    <option value="5">DeepSeek</option>
+                    <option value="6">Gemini</option>
+                </select>
             </div>
         </div>
 
@@ -752,6 +763,19 @@
 
                     <span
                         data-i18n="Ignore: Ignore entries from .rvpacker-ignore file"
+                    ></span>
+                </label>
+
+                <label class="custom-checkbox" id="skip-obsolete-container">
+                    <input
+                        class="size-8"
+                        id="skip-obsolete-checkbox"
+                        type="checkbox"
+                        disabled
+                    />
+
+                    <span
+                        data-i18n="Skip Obsolete: Don't preserve obsolete entries from the previous read"
                     ></span>
                 </label>
 
@@ -933,6 +957,7 @@
         >
             <header
                 class="flex h-8 flex-row items-center justify-between gap-2 pr-1"
+                id="menu-header"
             >
                 <span class="p-1" data-i18n="Glossary"></span>
 
@@ -970,7 +995,10 @@
             </header>
 
             <table class="size-full table-auto text-left">
-                <thead class="bg-primary border-second sticky top-0 border-y-4">
+                <thead
+                    class="bg-primary border-second sticky top-0 border-y-4"
+                    id="menu-header"
+                >
                     <tr>
                         <th data-i18n="Source"></th>
                         <th data-i18n="Translation"></th>
@@ -998,10 +1026,11 @@
             <table class="size-full table-auto text-left">
                 <thead
                     class="bg-primary border-second sticky top-0 h-8 min-h-8 border-y-4"
+                    id="menu-header"
                 >
                     <tr>
                         <th data-i18n="File"></th>
-                        <th data-i18n="Line"></th>
+                        <th data-i18n="Row"></th>
                         <th data-i18n="Term"></th>
                         <th data-i18n="Result"></th>
                         <th data-i18n="Info"></th>
@@ -1015,6 +1044,68 @@
 
                 <tbody id="table-body"></tbody>
             </table>
+        </div>
+
+        <div
+            class="border-primary bg-primary fixed z-50 hidden h-auto w-64 border-2 text-base"
+            id="translations-menu"
+        >
+            <header
+                class="flex h-8 items-center p-1"
+                id="menu-header"
+                data-i18n="Translations"
+            ></header>
+            <main class="flex flex-col">
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">Google</span>
+                        <button class="text-third" id="0"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">Yandex</span>
+                        <button class="text-third" id="1"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">DeepL</span>
+                        <button class="text-third" id="2"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">ChatGPT</span>
+                        <button class="text-third" id="3"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">Claude</span>
+                        <button class="text-third" id="4"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">DeepSeek</span>
+                        <button class="text-third" id="5"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+                <div class="bg-second">
+                    <header class="flex items-center gap-2 p-1 text-sm">
+                        <span class="text-third">Gemini</span>
+                        <button class="text-third" id="6"></button>
+                    </header>
+                    <main class="p-1 whitespace-pre-wrap"></main>
+                </div>
+            </main>
         </div>
 
         <div

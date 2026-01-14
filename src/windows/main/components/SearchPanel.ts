@@ -1,6 +1,6 @@
 import { Component } from "./Component";
 
-import { TabContent } from "./";
+import { TranslationTable } from "./";
 
 import { emittery } from "@classes/emittery";
 
@@ -31,12 +31,9 @@ export class SearchPanel extends Component {
     readonly #nextPageButton: HTMLButtonElement;
 
     #tabInfo!: TabInfo;
-    #tabContent!: TabContent;
+    #translationTable!: TranslationTable;
     #projectSettings!: ProjectSettings;
     #replacementLog!: ReplacementLog;
-
-    #startX = 0;
-    #startY = 0;
 
     public constructor() {
         super("search-panel");
@@ -62,6 +59,8 @@ export class SearchPanel extends Component {
         )!;
         this.#nextPageButton = this.element.querySelector("#next-page-button")!;
 
+        this.setDraggable(true);
+
         this.element.onchange = (e): void => {
             this.#onchange(e);
         };
@@ -72,10 +71,6 @@ export class SearchPanel extends Component {
 
         this.element.onclick = (e): void => {
             this.#onclick(e);
-        };
-
-        this.element.oncontextmenu = (e): void => {
-            this.#oncontextmenu(e);
         };
     }
 
@@ -93,12 +88,12 @@ export class SearchPanel extends Component {
 
     public init(
         tabInfo: TabInfo,
-        tabContent: TabContent,
+        translationTable: TranslationTable,
         projectSettings: ProjectSettings,
         replacementLog: ReplacementLog,
     ): void {
         this.#tabInfo = tabInfo;
-        this.#tabContent = tabContent;
+        this.#translationTable = translationTable;
         this.#projectSettings = projectSettings;
         this.#replacementLog = replacementLog;
 
@@ -231,10 +226,10 @@ export class SearchPanel extends Component {
         let rowIndex = -1;
         let found = false;
 
-        for (let i = 0; i < this.#tabContent.childCount - 1; i++) {
-            const rowContainer = this.#tabContent.children[i];
-            const source = utils.source(rowContainer);
-            const translation = utils.translation(rowContainer)[0];
+        for (let i = 0; i < this.#translationTable.childCount - 1; i++) {
+            const row = this.#translationTable.rows[i];
+            const source = utils.source(row);
+            const translation = utils.translation(row)[0];
 
             if (source === consts.ID_COMMENT && translation === entry) {
                 if (found) {
@@ -284,7 +279,7 @@ export class SearchPanel extends Component {
                 }
 
                 found = true;
-            } else if (found && utils.lbcmp(source, logSource)) {
+            } else if (found && utils.compareLB(source, logSource)) {
                 rowIndex = i;
                 break;
             }
@@ -332,8 +327,9 @@ export class SearchPanel extends Component {
                     return;
                 }
 
-                const rowContainer = this.#tabContent.children[rowIndex];
-                const textarea = rowContainer.children[columnIndex + 2];
+                const row = this.#translationTable.rows[rowIndex];
+                const textarea =
+                    row.children[columnIndex + 2].querySelector("textarea")!;
                 textarea.value = logOld;
             } else {
                 const filePath = utils.join(
@@ -365,7 +361,7 @@ export class SearchPanel extends Component {
 
                 const line = translationLines[rowIndex];
                 const parts = utils.parts(line)!;
-                parts[columnIndex + 1] = utils.dlbtoclb(logOld);
+                parts[columnIndex + 1] = utils.toCustomLB(logOld);
                 translationLines[rowIndex] = utils.joinParts(parts);
 
                 const result = await writeTextFile(
@@ -384,7 +380,7 @@ export class SearchPanel extends Component {
         }
     }
 
-    async #loadMatchObject(matchIndex: number): Promise<MatchObject> {
+    async #loadMatchObject(matchIndex: number): Promise<SearchMatchArray> {
         this.#searchCurrentPage.textContent = matchIndex.toString();
         this.#searchPanelContent.innerHTML = "";
 
@@ -397,40 +393,16 @@ export class SearchPanel extends Component {
 
         if (isErr(matchContent)) {
             void error(matchContent[0]!);
-            return {} as MatchObject;
+            return [];
         }
 
-        return JSON.parse(matchContent[1]!) as MatchObject;
+        return JSON.parse(matchContent[1]!) as SearchMatchArray;
     }
 
     async #onmousedown(e: MouseEvent): Promise<void> {
         const target = e.target as HTMLElement | null;
 
         if (!target) {
-            return;
-        }
-
-        if (
-            target.tagName === "HEADER" &&
-            (e.button as MouseButton) === MouseButton.Left
-        ) {
-            this.element.style.cursor = "grabbing";
-
-            this.#startX = e.clientX - this.x;
-            this.#startY = e.clientY - this.y;
-
-            this.element.onmousemove = (e): void => {
-                this.x = e.clientX - this.#startX;
-                this.y = e.clientY - this.#startY;
-
-                this.element.style.transform = `translate(${this.x}px, ${this.y}px)`;
-
-                this.element.onmouseup = (): void => {
-                    this.element.style.cursor = "auto";
-                    this.element.onmouseup = null;
-                    this.element.onmousemove = null;
-                };
-            };
             return;
         }
 
@@ -547,7 +519,7 @@ export class SearchPanel extends Component {
             if (inSpan && input.startsWith("</span>", i)) {
                 inSpan = false;
                 result += "</span>";
-                i += 7;
+                i += "</span>".length;
                 continue;
             }
 
@@ -581,45 +553,5 @@ export class SearchPanel extends Component {
         }
 
         return result;
-    }
-
-    #oncontextmenu(e: MouseEvent): void {
-        e.preventDefault();
-
-        const target = e.target as HTMLElement;
-
-        if (target.tagName !== "HEADER") {
-            return;
-        }
-
-        this.contextMenu = document.createElement("div");
-        this.contextMenu.className = tw`bg-primary outline-third fixed z-50 w-32 rounded-lg text-sm outline-2`;
-
-        for (const [id, label] of [t`Restore Position`].entries()) {
-            const button = document.createElement("button");
-            button.className = tw`h-fit w-full p-1`;
-            button.innerHTML = label;
-            button.id = id.toString();
-            this.contextMenu.appendChild(button);
-        }
-
-        this.contextMenu.style.top = `${e.y}px`;
-        this.contextMenu.style.left = `${e.x}px`;
-
-        this.contextMenu.onclick = (e): void => {
-            const target = e.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "0") {
-                this.move(0, 0);
-            }
-        };
-
-        document.body.appendChild(this.contextMenu);
-
-        void emittery.emit(AppEvent.ContextMenuChanged, this.contextMenu);
     }
 }

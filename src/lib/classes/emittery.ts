@@ -39,7 +39,6 @@ export const emittery = new Emittery<{
     [AppEvent.JumpToTab]: JumpDirection;
     [AppEvent.ApplyTheme]: string;
     [AppEvent.TabAdded]: [string, number, number, number];
-    [AppEvent.TranslateTextareas]: [number[], number];
     [AppEvent.AddLog]: [string, string, [string, number, string, string]];
     [AppEvent.UpdateProgressMeter]: undefined;
     [AppEvent.ColumnRenamed]: [number, string];
@@ -75,4 +74,5 @@ export const emittery = new Emittery<{
     [AppEvent.TermCheck]: [number, Either<boolean, number>];
     [AppEvent.AddTerm]: string;
     [AppEvent.ShowElement]: [ElementToShow, boolean];
+    [AppEvent.ShowTranslations]: string;
 }>();

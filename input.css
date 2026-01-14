@@ -35,6 +35,19 @@
         outline: none;
     }
 
+    /* Disable annoying outline offset for WebKit */
+    * {
+        outline-offset: 0px;
+    }
+
+    body {
+        font-family: var(--ui-font, system-ui);
+    }
+
+    #tab-content-table {
+        font-family: var(--tab-font, system-ui);
+    }
+
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;

@@ -30,6 +30,8 @@ export default defineConfig([
             "@typescript-eslint/no-unsafe-assignment": "off",
             "@typescript-eslint/no-dynamic-delete": "off",
             "@typescript-eslint/no-unused-expressions": "warn",
+            "@typescript-eslint/no-unused-vars": "warn",
+            "sonarjs/no-unused-vars": "warn",
             "no-magic-numbers": [
                 "error",
                 {

@@ -4,6 +4,8 @@
 import { t } from "@lingui/core/macro";
 export function _htmlTranslations() {
     // These calls exist purely so LinguiJS can extract them
+    t`Row`;
+    t`Source`;
     t`Dark background color`;
     t`Primary background color`;
     t`Primary outline color`;
@@ -21,19 +23,16 @@ export function _htmlTranslations() {
     t`Third text color`;
     t`Third background color`;
     t`Create Theme`;
-    t` - `;
     t`of`;
-    t` - `;
     t`-Select File-`;
     t`Search mode`;
-    t`Search everywhere`;
-    t`Search only in source text`;
-    t`Search only in translation`;
+    t`Everywhere`;
+    t`Only Source`;
+    t`Only Translation`;
     t`Select column`;
     t`Rightmost filled`;
-    t`Select files (You can hold LMB and drag to select multiple files)`;
+    t`Hold and drag to select multiple files`;
     t`Context`;
-    t`Use file context`;
     t`Process`;
     t`Cancel`;
     t`Select All`;
@@ -57,6 +56,7 @@ export function _htmlTranslations() {
     t`Trim: Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior`;
     t`Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read`;
     t`Ignore: Ignore entries from .rvpacker-ignore file`;
+    t`Skip Obsolete: Don't preserve obsolete entries from the previous read`;
     t`Skip files:`;
     t`Skip maps:`;
     t`Skip events:`;
@@ -74,14 +74,15 @@ export function _htmlTranslations() {
     t`Translation`;
     t`Note`;
     t`File`;
-    t`Line`;
+    t`Row`;
     t`Term`;
     t`Result`;
     t`Info`;
+    t`Translations`;
     t`Tabs (Tab)`;
     t`Save (Ctrl + S)`;
     t`Write (Alt + C)`;
-    t`Open directory`;
+    t`Open folder`;
     t`Settings`;
     t`Themes`;
     t`Bookmarks (Ctrl + B)`;
@@ -90,6 +91,7 @@ export function _htmlTranslations() {
     t`Read menu`;
     t`Purge menu`;
     t`Glossary`;
+    t`Translations menu`;
     t`Search`;
     t`Replace all matches`;
     t`Put text to translation textarea of matching source text`;
