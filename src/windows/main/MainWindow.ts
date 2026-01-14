@@ -876,7 +876,7 @@ export class MainWindow {
             i <= TranslationEndpoint.Gemini;
             i++
         ) {
-            keys.push(this.#settings.translation.endpoints[i].apiKey);
+            keys.push(this.#settings.translation.endpoints[i as number].apiKey);
             // @ts-expect-error we are doing this for serialization
             delete this.#settings.translation.endpoints[i].apiKey;
         }

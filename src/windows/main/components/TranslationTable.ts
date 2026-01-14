@@ -465,6 +465,7 @@ export class TranslationTable extends Component {
             case RowDeleteMode.Disabled:
                 alert(t`Deleting is disabled in settings.`);
                 return;
+            // @ts-expect-error this fallthrough is allowed
             case RowDeleteMode.Confirmation: {
                 const confirm = await ask(
                     t`Do you really want to delete this row? This action is irreversible!`,

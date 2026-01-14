@@ -586,7 +586,7 @@ No additional keys, no reordered structure, no commentary.`;
 
     #loadEndpointSettings(endpoint: TranslationEndpoint): void {
         const translationSettings =
-            this.#settings.translation.endpoints[endpoint];
+            this.#settings.translation.endpoints[endpoint as number];
 
         this.#ui.APIKeyInput.value = translationSettings.apiKey;
         this.#ui.yandexFolderInput.value = translationSettings.yandexFolderId;
@@ -603,7 +603,7 @@ No additional keys, no reordered structure, no commentary.`;
     #saveCurrentEndpointSettings(): void {
         const endpoint = this.#prevEndpoint;
         const translationSettings =
-            this.#settings.translation.endpoints[endpoint];
+            this.#settings.translation.endpoints[endpoint as number];
 
         translationSettings.apiKey = this.#ui.APIKeyInput.value;
         translationSettings.yandexFolderId = this.#ui.yandexFolderInput.value;
