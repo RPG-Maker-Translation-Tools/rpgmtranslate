@@ -1,7 +1,12 @@
-// @ts-nocheck for now skip errors
-
-import { ProjectSettings } from "@lib/classes";
+import { ProjectSettings, TranslationSettings } from "@lib/classes";
+import {
+    TokenizerAlgorithm,
+    TranslationEndpoint,
+    TranslationEndpointFlags,
+} from "@lib/enums";
 import * as fs from "@tauri-apps/plugin-fs";
+import { DEFAULT_TEMPERATURE, DEFAULT_TOKEN_LIMIT } from "@utils/constants";
+import * as invokes from "@utils/invokes";
 import { BatchMenu } from "@windows/main/components";
 import { describe, expect, Mock, test, vi } from "vitest";
 
@@ -16,10 +21,9 @@ document.body.innerHTML = `
         data-i18n="Hold and drag to select multiple files"
     ></header>
 
-    <div
+    <main
         class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
-        id="body"
-    ></div>
+    ></main>
 
     <div
         class="flex hidden w-full flex-col gap-2"
@@ -107,9 +111,9 @@ document.body.innerHTML = `
 `;
 
 const tabsHTML = document.createElement("div");
-tabsHTML.innerHTML = `<div id="div">
+tabsHTML.innerHTML = `<div>
     <button>
-        <div>aboba</div>
+        <span>aboba</span>
     </button>
 </div>`;
 
@@ -118,11 +122,14 @@ const tabs = tabsHTML.children as HTMLCollectionOf<HTMLButtonElement>;
 const columnSelect = document.querySelector<HTMLSelectElement>(
     "#translation-column-select",
 )!;
-const batchAction = document.querySelector<HTMLSelectElement>(
+const batchActionSelect = document.querySelector<HTMLSelectElement>(
     "#batch-action-select",
 )!;
+const translationEndpointSelect = document.querySelector<HTMLSelectElement>(
+    "#translation-endpoint-select",
+)!;
 const applyButton = document.querySelector<HTMLButtonElement>("#apply-button")!;
-const body = document.querySelector("#body")!;
+const body = document.querySelector("main")!;
 const wrapLimitInput =
     document.querySelector<HTMLInputElement>("#wrap-limit-input")!;
 
@@ -136,85 +143,185 @@ vi.mock(import("@utils/invokes"), async (importOriginal) => {
     return { ...actual, translate: vi.fn(), expandScope: vi.fn() };
 });
 
-// TODO: Mock translate
+(invokes.translate as Mock<typeof invokes.translate>).mockResolvedValue([
+    undefined,
+    { aboba: { 1: { strings: ["примерный текст для перевода"] } } },
+]);
 
 const projectSettings = new ProjectSettings();
 await projectSettings.setProjectPath(".");
+projectSettings.translationLanguages = {
+    sourceLanguage: TokenizerAlgorithm.English,
+    translationLanguage: TokenizerAlgorithm.Russian,
+};
+
+const tabInfo: TabInfo = {
+    tabName: "",
+    tabs: {
+        tab: { index: 0, sourceLineCount: 0, translatedLineCount: 0 },
+    },
+};
+
+const translationSettings: TranslationSettings = {
+    endpoints: [
+        {
+            endpoint: TranslationEndpoint.Google,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: false,
+            thinking: false,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.Yandex,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: false,
+            thinking: false,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.DeepL,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: false,
+            thinking: false,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.OpenAI,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: true,
+            thinking: true,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.Anthropic,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: true,
+            thinking: true,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.DeepSeek,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: true,
+            thinking: true,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+        {
+            endpoint: TranslationEndpoint.Gemini,
+            apiKey: "",
+            model: "",
+            systemPrompt: "",
+            yandexFolderId: "",
+            useGlossary: true,
+            thinking: true,
+            temperature: DEFAULT_TEMPERATURE,
+            tokenLimit: DEFAULT_TOKEN_LIMIT,
+        },
+    ],
+    enabledTranslations: TranslationEndpointFlags.Google,
+};
+
+const batchMenu = new BatchMenu();
+batchMenu.init(tabInfo, projectSettings, translationSettings, [], tabs);
+
+const checkbox = body.querySelector("input")!;
 
 describe.sequential("", () => {
     test("trim", async () => {
         (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
-            "aboba<#>badwkoawdko   ",
+            `<!-- ID --><#>1\n<!-- NAME --><#>name\naboba<#>badwkoawdko   `,
         );
 
-        const batchMenu = new BatchMenu();
-        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
-
         columnSelect.value = "1";
-        batchAction.value = "1";
+        batchActionSelect.value = "1";
 
-        const checkbox = body.firstElementChild!
-            .firstElementChild! as HTMLInputElement;
+        columnSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        batchActionSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
-        checkbox.click();
+        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {
-            expect(fs.writeTextFile).toBeCalledWith(
-                expect.any(String),
-                "aboba<#>badwkoawdko",
+            expect(fs.writeTextFile).lastCalledWith(
+                "./.rpgmtranslate/translation/aboba.txt",
+                "<!-- ID --><#>1\n<!-- NAME --><#>name\naboba<#>badwkoawdko",
+                undefined,
             );
         });
     });
 
     test("translate", async () => {
         (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
-            "example text for translation<#>",
+            `<!-- ID --><#>1\n<!-- NAME --><#>name\nexample text for translation<#>`,
         );
 
-        const batchMenu = new BatchMenu();
-        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
-
         columnSelect.value = "1";
-        batchAction.value = "2";
+        batchActionSelect.value = "2";
+        translationEndpointSelect.value = "0";
 
-        const checkbox = body.firstElementChild!
-            .firstElementChild! as HTMLInputElement;
+        columnSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        batchActionSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        translationEndpointSelect.dispatchEvent(
+            new Event("change", { bubbles: true }),
+        );
 
-        checkbox.click();
+        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {
             expect(fs.writeTextFile).lastCalledWith(
-                expect.any(String),
-                "example text for translation<#>примерный текст для перевода",
+                "./.rpgmtranslate/translation/aboba.txt",
+                "<!-- ID --><#>1\n<!-- NAME --><#>name\nexample text for translation<#>примерный текст для перевода",
+                undefined,
             );
         });
     });
 
     test("wrap", async () => {
         (fs.readTextFile as Mock<typeof fs.readTextFile>).mockResolvedValue(
-            "text<#>text1 text2 text3 text4 text5 text6",
+            "<!-- ID --><#>1\n<!-- NAME --><#>name\ntext<#>text1 text2 text3 text4 text5 text6",
         );
-
-        const batchMenu = new BatchMenu();
-        batchMenu.init({} as TabInfo, projectSettings, {}, {}, tabs);
 
         wrapLimitInput.value = "20";
 
         columnSelect.value = "1";
-        batchAction.value = "3";
+        batchActionSelect.value = "3";
 
-        const checkbox = body.firstElementChild!
-            .firstElementChild! as HTMLInputElement;
+        columnSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        batchActionSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
-        checkbox.click();
+        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {
             expect(fs.writeTextFile).lastCalledWith(
-                expect.any(String),
-                "text<#>text1 text2 text3\\#text4 text5 text6",
+                "./.rpgmtranslate/translation/aboba.txt",
+                "<!-- ID --><#>1\n<!-- NAME --><#>name\ntext<#>text1 text2 text3\\#text4 text5 text6",
+                undefined,
             );
         });
     });

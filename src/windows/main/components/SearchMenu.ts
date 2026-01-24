@@ -6,6 +6,8 @@ import { AppEvent, SearchAction, SearchFlags } from "@lib/enums";
 
 import * as utils from "@utils/functions";
 
+// TODO: Allow to search all columns
+
 export class SearchMenu extends Component {
     declare protected readonly element: HTMLDivElement;
 

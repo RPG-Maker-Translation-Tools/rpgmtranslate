@@ -20,7 +20,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="tab-panel-button"
-                        data-i18n-title="Tabs (Tab)"
+                        data-i18n-title="Tab Panel (Tab)"
                     >
                         menu
                     </button>
@@ -44,7 +44,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="open-folder-button"
-                        data-i18n-title="Open folder"
+                        data-i18n-title="Open Folder"
                     >
                         folder_open
                     </button>
@@ -84,7 +84,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="batch-button"
-                        data-i18n-title="Batch menu"
+                        data-i18n-title="Batch Menu"
                     >
                         construction
                     </button>
@@ -92,7 +92,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="read-button"
-                        data-i18n-title="Read menu"
+                        data-i18n-title="Read Menu"
                     >
                         <div>menu_book</div>
                     </button>
@@ -100,7 +100,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="purge-button"
-                        data-i18n-title="Purge menu"
+                        data-i18n-title="Purge Menu"
                     >
                         mop
                     </button>
@@ -108,7 +108,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="glossary-button"
-                        data-i18n-title="Glossary"
+                        data-i18n-title="Glossary Menu"
                     >
                         book_3
                     </button>
@@ -116,7 +116,7 @@
                     <button
                         class="font-material size-16 p-4"
                         id="translations-button"
-                        data-i18n-title="Translations menu"
+                        data-i18n-title="Translations Menu"
                     >
                         subtitles
                     </button>
@@ -171,7 +171,7 @@
 
         <div class="w-full overflow-x-auto p-8 text-lg">
             <table
-                class="bg-primary border-primary w-full table-fixed border-collapse border-2 text-left whitespace-nowrap"
+                class="bg-primary border-primary hidden w-full table-fixed border-collapse border-2 text-left whitespace-nowrap"
                 id="translation-table"
             >
                 <thead class="border-primary border-2">
@@ -187,6 +187,8 @@
                 </thead>
                 <tbody class="border-primary border-2 align-top"></tbody>
             </table>
+
+            <div id="information-container"></div>
         </div>
 
         <div
@@ -479,7 +481,7 @@
                 <label
                     class="pr-2"
                     for="search-column-select"
-                    data-i18n="Select column"
+                    data-i18n="Search column"
                 ></label>
                 <select id="search-column-select">
                     <option value="-1" data-i18n="Rightmost filled"></option>
@@ -508,9 +510,9 @@
                 data-i18n="Hold and drag to select multiple files"
             ></header>
 
-            <div
+            <main
                 class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
-            ></div>
+            ></main>
 
             <div
                 class="flex hidden w-full flex-col gap-2"
@@ -611,20 +613,6 @@
             class="border-second bg-primary fixed z-50 flex hidden max-w-3xl flex-col gap-2 border-2 p-2 text-base"
             id="write-menu"
         >
-            <button
-                class="bg-second h-8 content-center rounded-sm"
-                id="select-output-path-button"
-                data-i18n="Select Output Path"
-            ></button>
-
-            <input
-                class="w-full rounded-sm"
-                id="output-path-input"
-                autocapitalize="off"
-                autocomplete="off"
-                type="text"
-            />
-
             <div class="flex flex-col gap-2">
                 <div>
                     <div data-i18n="Skip files:"></div>
@@ -779,6 +767,16 @@
                     ></span>
                 </label>
 
+                <label class="custom-checkbox" id="map-events-container">
+                    <input
+                        class="size-8"
+                        id="map-events-checkbox"
+                        type="checkbox"
+                    />
+
+                    <span data-i18n="Parse event metadata from maps"></span>
+                </label>
+
                 <div>
                     <div data-i18n="Skip files:"></div>
                     <select class="rounded-sm" id="skip-files-select" multiple>
@@ -841,16 +839,6 @@
                         />
                     </span>
                 </div>
-
-                <label class="custom-checkbox" id="map-events-container">
-                    <input
-                        class="size-8"
-                        id="map-events-checkbox"
-                        type="checkbox"
-                    />
-
-                    <span data-i18n="Parse event metadata from maps"></span>
-                </label>
             </div>
 
             <div class="flex items-center justify-center">
@@ -867,6 +855,18 @@
             id="purge-menu"
         >
             <div class="flex flex-col gap-2">
+                <label class="custom-checkbox">
+                    <input
+                        class="size-8"
+                        id="create-ignore-checkbox"
+                        type="checkbox"
+                    />
+
+                    <span
+                        data-i18n="Create .rvpacker-ignore file from purged lines to prevent their further appearance"
+                    ></span>
+                </label>
+
                 <div>
                     <div data-i18n="Skip files:"></div>
                     <select class="rounded-sm" id="skip-files-select" multiple>
@@ -885,6 +885,7 @@
                         <option value="4096">Scripts</option>
                     </select>
                 </div>
+
                 <div>
                     <div data-i18n="Skip maps:"></div>
                     <input
@@ -896,6 +897,7 @@
                         data-i18n-placeholder="Map indices, e.g. 5,30,18..."
                     />
                 </div>
+
                 <div>
                     <div data-i18n="Skip events:"></div>
 
@@ -929,17 +931,6 @@
                         />
                     </span>
                 </div>
-
-                <label class="custom-checkbox">
-                    <input
-                        class="size-8"
-                        id="create-ignore-checkbox"
-                        type="checkbox"
-                    />
-                    <span
-                        data-i18n="Create .rvpacker-ignore file from purged lines to prevent their further appearance"
-                    ></span>
-                </label>
             </div>
 
             <div class="flex items-center justify-center">
@@ -1061,49 +1052,63 @@
                         <span class="text-third">Google</span>
                         <button class="text-third" id="0"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">Yandex</span>
                         <button class="text-third" id="1"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">DeepL</span>
                         <button class="text-third" id="2"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">ChatGPT</span>
                         <button class="text-third" id="3"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">Claude</span>
                         <button class="text-third" id="4"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">DeepSeek</span>
                         <button class="text-third" id="5"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
                 <div class="bg-second">
                     <header class="flex items-center gap-2 p-1 text-sm">
                         <span class="text-third">Gemini</span>
                         <button class="text-third" id="6"></button>
                     </header>
-                    <main class="p-1 whitespace-pre-wrap"></main>
+                    <main
+                        class="p-1 whitespace-pre-wrap hover:cursor-pointer"
+                    ></main>
                 </div>
             </main>
         </div>

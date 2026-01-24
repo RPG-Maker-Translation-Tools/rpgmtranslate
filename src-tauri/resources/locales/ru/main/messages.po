@@ -29,13 +29,13 @@ msgstr "-Выберите файл-"
 msgid "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 msgstr "<div id=\"no-results\" class=\"content-center h-full\">Нет совпадений</div>"
 
-#: src/windows/main/MainWindow.ts:301
-#: src/windows/main/MainWindow.ts:305
-#: src/windows/main/MainWindow.ts:473
+#: src/windows/main/MainWindow.ts:303
+#: src/windows/main/MainWindow.ts:307
+#: src/windows/main/MainWindow.ts:475
 msgid "About"
 msgstr "О программе"
 
-#: src/windows/main/MainWindow.ts:868
+#: src/windows/main/MainWindow.ts:867
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {elapsed}"
@@ -43,28 +43,32 @@ msgstr ""
 "Все файлы были успешно записаны.\n"
 "Затрачено: {elapsed}"
 
-#: src/windows/main/html.ts:54
+#: src/windows/main/html.ts:53
 msgid "Allow duplicates"
 msgstr "Разрешить дубликаты"
 
-#: src/windows/main/components/ReadMenu.ts:243
+#: src/windows/main/components/ReadMenu.ts:242
 msgid "Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files."
 msgstr "Разрешить дубликаты в картах и ивентах. Это может раздуть перевод. Этот режим всегда активен для файлов system, scripts и plugins."
 
-#: src/windows/main/components/ReadMenu.ts:216
+#: src/windows/main/components/ReadMenu.ts:215
 msgid "Append"
 msgstr "Добавление"
 
-#: src/windows/main/components/ReadMenu.ts:260
+#: src/windows/main/components/ReadMenu.ts:259
 msgid "Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. {post}"
 msgstr "Добавляет новый текст из игры в файлы перевода, если он отсутствует там. Порядок строк сортируется, неиспользованные строки помещаются в конец карты/ивента."
 
-#: src/windows/main/MainWindow.ts:534
+#: src/windows/main/MainWindow.ts:536
 msgid "Auto-determined language as {determinedLang}."
 msgstr "Автоматически определили язык как {determinedLang}."
 
 #: src/windows/main/html.ts:90
-msgid "Batch menu"
+#~ msgid "Batch menu"
+#~ msgstr "Меню обработки"
+
+#: src/windows/main/html.ts:89
+msgid "Batch Menu"
 msgstr "Меню обработки"
 
 #: src/windows/main/components/TabPanel.ts:351
@@ -79,11 +83,11 @@ msgstr "Обрезать"
 msgid "Batch Wrap"
 msgstr "Перенести"
 
-#: src/windows/main/html.ts:88
+#: src/windows/main/html.ts:87
 msgid "Bookmarks (Ctrl + B)"
 msgstr "Закладки (Ctrl + B)"
 
-#: src/windows/main/components/GlossaryMenu.ts:334
+#: src/windows/main/components/GlossaryMenu.ts:85
 msgid "Both"
 msgstr "Оба"
 
@@ -95,23 +99,23 @@ msgstr "Не удалось найти строку с исходным текс
 msgid "Cancel"
 msgstr "Отменить"
 
-#: src/windows/main/MainWindow.ts:1027
+#: src/windows/main/MainWindow.ts:1026
 msgid "Cannot determine the type of the game's engine."
 msgstr "Не удалось вычислить движок игры."
 
-#: src/windows/main/components/GlossaryMenu.ts:366
+#: src/windows/main/components/GlossaryMenu.ts:117
 msgid "Case Sensitive"
 msgstr "Чувствительность к регистру"
 
-#: src/windows/main/html.ts:72
+#: src/windows/main/html.ts:71
 msgid "Check only current file"
 msgstr "Проверить только текущий файл"
 
-#: src/windows/main/MainWindow.ts:256
+#: src/windows/main/MainWindow.ts:258
 msgid "Close Project"
 msgstr "Закрыть проект"
 
-#: src/windows/main/html.ts:98
+#: src/windows/main/html.ts:97
 msgid "Consider case (Alt + C)"
 msgstr "Учитывать регистр (Alt + C)"
 
@@ -119,15 +123,15 @@ msgstr "Учитывать регистр (Alt + C)"
 msgid "Context"
 msgstr "Контекст"
 
-#: src/windows/main/components/BatchMenu.ts:650
+#: src/windows/main/components/BatchMenu.ts:647
 msgid "Context for this file does not exist. You can set it in Settings > Project."
 msgstr "Контекст для этого файла не существует. Мы можете установить его в настройках > проект."
 
-#: src/windows/main/MainWindow.ts:652
+#: src/windows/main/MainWindow.ts:653
 msgid "Copying translation from root..."
 msgstr "Копируем перевод из корня..."
 
-#: src/windows/main/html.ts:68
+#: src/windows/main/html.ts:64
 msgid "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
 msgstr "Создать файл .rvpacker-ignore из почищенных линий, чтобы предотвратить их повторное появление"
 
@@ -140,15 +144,15 @@ msgstr "Создать тему"
 msgid "Dark background color"
 msgstr "Тёмный цвет фона"
 
-#: src/windows/main/components/ReadMenu.ts:257
+#: src/windows/main/components/ReadMenu.ts:256
 msgid "Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode."
 msgstr "Стандартный режим не делает ничего, если исходные файлы не изменены с момента последнего чтения. Чтобы прочитать принудительно, используйте режим принудительного добавления."
 
-#: src/windows/main/html.ts:105
+#: src/windows/main/html.ts:104
 msgid "Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
 msgstr "Составьте контекст, окружающий выбранные файлы. Возможно, будет лучше напрямую использовать названия файлов, например \"а происходит перед map256\", или что-то типа того."
 
-#: src/windows/main/components/TranslationTable.ts:466
+#: src/windows/main/components/TranslationTable.ts:479
 msgid "Deleting is disabled in settings."
 msgstr "Удаление выключено в настройках."
 
@@ -156,17 +160,17 @@ msgstr "Удаление выключено в настройках."
 msgid "Deselect All"
 msgstr "Убрать всё"
 
-#: src/windows/main/html.ts:57
+#: src/windows/main/html.ts:56
 msgid "Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 msgstr "Выключить индивидуальную обработку: отключает встроенную индивидуальную обработку, имплементированную для некоторых игр. В данный момент имплементирована для следующих игр: LISA: The Painful и игры на базе, Fear & Hunger 2: Termina. Будет автоматически включена, если была использована при чтении"
 
-#: src/windows/main/components/TranslationTable.ts:470
+#: src/windows/main/components/TranslationTable.ts:484
 msgid "Do you really want to delete this row? This action is irreversible!"
 msgstr "Вы действительно хотите удалить этот ряд? Это действие необратимо!"
 
-#: src/windows/main/html.ts:108
-#: src/windows/main/html.ts:110
-#: src/windows/main/html.ts:112
+#: src/windows/main/html.ts:107
+#: src/windows/main/html.ts:109
+#: src/windows/main/html.ts:111
 msgid "Event indices, e.g. 5,30,18..."
 msgstr "Индексы ивентов, например 5,30,18..."
 
@@ -174,24 +178,24 @@ msgstr "Индексы ивентов, например 5,30,18..."
 msgid "Everywhere"
 msgstr "Везде"
 
-#: src/windows/main/components/GlossaryMenu.ts:332
-#: src/windows/main/components/MatchMenu.ts:165
-#: src/windows/main/components/MatchMenu.ts:176
+#: src/windows/main/components/GlossaryMenu.ts:83
+#: src/windows/main/components/MatchMenu.ts:173
+#: src/windows/main/components/MatchMenu.ts:184
 msgid "Exact"
 msgstr "Точный"
 
-#: src/windows/main/MainWindow.ts:647
+#: src/windows/main/MainWindow.ts:648
 msgid "Existing translation folder detected in {rootTranslationPath}. Use it?"
 msgstr "Существующая папка перевода обнаружена в {rootTranslationPath}. Использовать её?"
 
-#: src/windows/main/MainWindow.ts:227
-#: src/windows/main/MainWindow.ts:467
+#: src/windows/main/MainWindow.ts:229
+#: src/windows/main/MainWindow.ts:469
 msgid "Exit"
 msgstr "Выход"
 
-#: src/windows/main/html.ts:76
-#: src/windows/main/MainWindow.ts:223
-#: src/windows/main/MainWindow.ts:452
+#: src/windows/main/html.ts:75
+#: src/windows/main/MainWindow.ts:225
+#: src/windows/main/MainWindow.ts:454
 msgid "File"
 msgstr "Файл"
 
@@ -203,47 +207,50 @@ msgstr "Сфокусированный цвет границ"
 msgid "Focused outline color"
 msgstr "Сфокусированный цвет обводки"
 
-#: src/windows/main/components/ReadMenu.ts:214
+#: src/windows/main/components/ReadMenu.ts:213
 msgid "Force"
 msgstr "Принудительный"
 
-#: src/windows/main/components/ReadMenu.ts:218
+#: src/windows/main/components/ReadMenu.ts:217
 msgid "Force Append"
 msgstr "Принудительное добавление"
 
-#: src/windows/main/components/ReadMenu.ts:267
+#: src/windows/main/components/ReadMenu.ts:266
 msgid "Force rewrites existing translation files."
 msgstr "Принудительный режим перезаписывает существующие файлы перевода."
 
-#: src/windows/main/components/GlossaryMenu.ts:333
+#: src/windows/main/components/GlossaryMenu.ts:84
 msgid "Fuzzy"
 msgstr "Приближённый"
 
-#: src/windows/main/components/MatchMenu.ts:165
-#: src/windows/main/components/MatchMenu.ts:176
+#: src/windows/main/components/MatchMenu.ts:173
+#: src/windows/main/components/MatchMenu.ts:184
 msgid "Fuzzy ({score})"
 msgstr "Приближённый ({score})"
 
-#: src/windows/main/MainWindow.ts:838
-#: src/windows/main/MainWindow.ts:1419
+#: src/windows/main/MainWindow.ts:837
+#: src/windows/main/MainWindow.ts:1422
 msgid "Game files do not exist (no data/Data directory), so it's only possible to edit and save translation."
 msgstr "Файлы игры не существуют (нет директории data/Data), так что возможно лишь редактировать и сохранять перевод."
 
-#: src/windows/main/html.ts:70
-#: src/windows/main/html.ts:93
+#: src/windows/main/html.ts:69
 msgid "Glossary"
 msgstr "Глоссарий"
 
-#: src/windows/main/MainWindow.ts:780
+#: src/windows/main/html.ts:92
+msgid "Glossary Menu"
+msgstr "Меню глоссария"
+
+#: src/windows/main/MainWindow.ts:781
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Перейти к ряду... от 1 до {lastRowNumber}"
 
-#: src/windows/main/MainWindow.ts:297
-#: src/windows/main/MainWindow.ts:328
-#: src/windows/main/MainWindow.ts:333
-#: src/windows/main/MainWindow.ts:458
-#: src/windows/main/MainWindow.ts:476
-#: src/windows/main/MainWindow.ts:488
+#: src/windows/main/MainWindow.ts:299
+#: src/windows/main/MainWindow.ts:330
+#: src/windows/main/MainWindow.ts:335
+#: src/windows/main/MainWindow.ts:460
+#: src/windows/main/MainWindow.ts:478
+#: src/windows/main/MainWindow.ts:490
 msgid "Help"
 msgstr "Помощь"
 
@@ -251,19 +258,19 @@ msgstr "Помощь"
 msgid "Hold and drag to select multiple files"
 msgstr "Удерживайте и перетаскивайте, чтобы выбрать несколько файлов."
 
-#: src/windows/main/html.ts:52
+#: src/windows/main/html.ts:51
 msgid "How to handle duplicates in text."
 msgstr "Что делать с дубликатами в тексте."
 
-#: src/windows/main/html.ts:51
+#: src/windows/main/html.ts:50
 msgid "How to read files."
 msgstr "Как читать файлы."
 
-#: src/windows/main/html.ts:58
+#: src/windows/main/html.ts:57
 msgid "Ignore: Ignore entries from .rvpacker-ignore file"
 msgstr "Игнорирование: Игнорировать строки из файла .rvpacker-ignore"
 
-#: src/windows/main/html.ts:80
+#: src/windows/main/html.ts:79
 msgid "Info"
 msgstr "Информация"
 
@@ -271,22 +278,22 @@ msgstr "Информация"
 msgid "Invalid theme name."
 msgstr "Неправильное название темы."
 
-#: src/windows/main/MainWindow.ts:266
-#: src/windows/main/MainWindow.ts:455
+#: src/windows/main/MainWindow.ts:268
+#: src/windows/main/MainWindow.ts:457
 msgid "Language"
 msgstr "Язык"
 
-#: src/windows/main/html.ts:106
+#: src/windows/main/html.ts:105
 msgid "Line length for wrapping"
 msgstr "Длина строки для переноса"
 
-#: src/windows/main/MainWindow.ts:639
+#: src/windows/main/MainWindow.ts:640
 msgid "Loading project..."
 msgstr "Загрузка проекта..."
 
-#: src/windows/main/html.ts:107
-#: src/windows/main/html.ts:109
-#: src/windows/main/html.ts:111
+#: src/windows/main/html.ts:106
+#: src/windows/main/html.ts:108
+#: src/windows/main/html.ts:110
 msgid "Map indices, e.g. 5,30,18..."
 msgstr "Индексы карт, например 5,30,18..."
 
@@ -294,23 +301,23 @@ msgstr "Индексы карт, например 5,30,18..."
 msgid "Mark Complete"
 msgstr "Отметить завершённой"
 
-#: src/windows/main/html.ts:71
+#: src/windows/main/html.ts:70
 msgid "Match Menu"
 msgstr "Меню совпадений"
 
-#: src/windows/main/components/MatchMenu.ts:269
+#: src/windows/main/components/MatchMenu.ts:277
 msgid "Match."
 msgstr "Совпадение."
 
-#: src/windows/main/MainWindow.ts:1970
+#: src/windows/main/MainWindow.ts:1971
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "Проект не выбран. Выберите директорию проекта, используя кнопку \"открыть папку\" в левой верхней части экрана."
 
-#: src/windows/main/html.ts:75
+#: src/windows/main/html.ts:74
 msgid "Note"
 msgstr "Примечание"
 
-#: src/windows/main/components/MatchMenu.ts:266
+#: src/windows/main/components/MatchMenu.ts:274
 msgid "Number of term occurrences doesn't match the number of translation occurrences."
 msgstr "Число появления термина не совпадает с числом появления его перевода."
 
@@ -327,14 +334,18 @@ msgid "Only Translation"
 msgstr "Лишь перевод"
 
 #: src/windows/main/html.ts:85
-msgid "Open folder"
+#~ msgid "Open folder"
+#~ msgstr "Открыть папку"
+
+#: src/windows/main/html.ts:84
+msgid "Open Folder"
 msgstr "Открыть папку"
 
-#: src/windows/main/html.ts:63
+#: src/windows/main/html.ts:59
 msgid "Parse event metadata from maps"
 msgstr "Читать метаданные событий из карт"
 
-#: src/windows/main/components/GlossaryMenu.ts:353
+#: src/windows/main/components/GlossaryMenu.ts:104
 msgid "Permissive"
 msgstr "Пермиссивный"
 
@@ -362,60 +373,68 @@ msgstr "Основной цвет текста"
 msgid "Process"
 msgstr "Обработать"
 
-#: src/windows/main/html.ts:69
+#: src/windows/main/html.ts:68
 msgid "Purge"
 msgstr "Чистка"
 
 #: src/windows/main/html.ts:92
-msgid "Purge menu"
+#~ msgid "Purge menu"
+#~ msgstr "Меню чистки"
+
+#: src/windows/main/html.ts:91
+msgid "Purge Menu"
 msgstr "Меню чистки"
 
-#: src/windows/main/html.ts:97
+#: src/windows/main/html.ts:96
 msgid "Put text to translation textarea of matching source text"
 msgstr "Поместить текст в поле перевода, если исходный текст совпадает c искомым"
 
-#: src/windows/main/MainWindow.ts:965
+#: src/windows/main/MainWindow.ts:964
 msgid "Quit without saving?"
 msgstr "Выйти без сохранения?"
 
-#: src/windows/main/html.ts:64
+#: src/windows/main/html.ts:63
 msgid "Read"
 msgstr "Чтение"
 
 #: src/windows/main/html.ts:91
-msgid "Read menu"
+#~ msgid "Read menu"
+#~ msgstr "Меню чтения"
+
+#: src/windows/main/html.ts:90
+msgid "Read Menu"
 msgstr "Меню чтения"
 
-#: src/windows/main/MainWindow.ts:1890
+#: src/windows/main/MainWindow.ts:1891
 msgid "Reading game files..."
 msgstr "Читаем файлы игры..."
 
-#: src/windows/main/MainWindow.ts:241
+#: src/windows/main/MainWindow.ts:243
 msgid "Recent Projects"
 msgstr "Недавние проекты"
 
-#: src/windows/main/MainWindow.ts:1975
+#: src/windows/main/MainWindow.ts:1976
 msgid "Recent projects:"
 msgstr "Недавние проекты:"
 
-#: src/windows/main/MainWindow.ts:234
-#: src/windows/main/MainWindow.ts:470
+#: src/windows/main/MainWindow.ts:236
+#: src/windows/main/MainWindow.ts:472
 msgid "Reload"
 msgstr "Перезагрузка"
 
-#: src/windows/main/html.ts:53
+#: src/windows/main/html.ts:52
 msgid "Remove duplicates"
 msgstr "Удалить дубликаты"
 
-#: src/windows/main/components/ReadMenu.ts:245
+#: src/windows/main/components/ReadMenu.ts:244
 msgid "Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode."
 msgstr "Удалить дубликаты в картах и ивентах. Рекомендуется. В файлах system, scripts и plugins этот режим всегда заменён на режим разрешённых дубликатов."
 
-#: src/windows/main/html.ts:96
+#: src/windows/main/html.ts:95
 msgid "Replace all matches"
 msgstr "Заменить все совпадения"
 
-#: src/windows/main/html.ts:104
+#: src/windows/main/html.ts:103
 msgid "Replace input"
 msgstr "Ввод замены"
 
@@ -423,7 +442,7 @@ msgstr "Ввод замены"
 msgid "Restore Position"
 msgstr "Восстановить положение"
 
-#: src/windows/main/html.ts:79
+#: src/windows/main/html.ts:78
 msgid "Result"
 msgstr "Результат"
 
@@ -431,32 +450,36 @@ msgstr "Результат"
 msgid "Rightmost filled"
 msgstr "Крайний заполненный"
 
-#: src/windows/main/html.ts:55
+#: src/windows/main/html.ts:54
 msgid "Romanize: If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
 msgstr "Романизация: если вы читаете текст из японской игры, содержащий символы наподобие 「」, являющиеся стандартными японскими кавычками, они автоматически будут заменены своими западными эквивалентами (в данном случае, '')."
 
 #: src/windows/main/html.ts:7
-#: src/windows/main/html.ts:77
+#: src/windows/main/html.ts:76
 msgid "Row"
 msgstr "Ряд"
 
-#: src/windows/main/html.ts:83
+#: src/windows/main/html.ts:82
 msgid "Save (Ctrl + S)"
 msgstr "Сохранить (Ctrl + S)"
 
-#: src/windows/main/html.ts:95
+#: src/windows/main/html.ts:94
 msgid "Search"
 msgstr "Поиск"
 
-#: src/windows/main/html.ts:89
+#: src/windows/main/html.ts:88
 msgid "Search (Ctrl + F)"
 msgstr "Поиск (Ctrl + F)"
 
-#: src/windows/main/html.ts:100
+#: src/windows/main/html.ts:99
 msgid "Search by regular expressions (Alt + R)"
 msgstr "Поиск по регулярному выражению (Alt + R)"
 
-#: src/windows/main/html.ts:103
+#: src/windows/main/html.ts:32
+msgid "Search column"
+msgstr "Столбец поиска"
+
+#: src/windows/main/html.ts:102
 msgid "Search input"
 msgstr "Ввод поиска"
 
@@ -464,11 +487,11 @@ msgstr "Ввод поиска"
 msgid "Search mode"
 msgstr "Режим поиска"
 
-#: src/windows/main/html.ts:101
+#: src/windows/main/html.ts:100
 msgid "Search only in current tab (Alt + L)"
 msgstr "Искать только в текущей вкладке (Alt + L)"
 
-#: src/windows/main/html.ts:99
+#: src/windows/main/html.ts:98
 msgid "Search the whole text (Alt + W)"
 msgstr "Искать целиком (Alt + W)"
 
@@ -497,61 +520,61 @@ msgid "Select All"
 msgstr "Выбрать всё"
 
 #: src/windows/main/html.ts:32
-msgid "Select column"
-msgstr "Выберите столбец"
+#~ msgid "Select column"
+#~ msgstr "Выберите столбец"
 
 #: src/windows/main/html.ts:46
-msgid "Select Output Path"
-msgstr "Выбрать выходной путь"
+#~ msgid "Select Output Path"
+#~ msgstr "Выбрать выходной путь"
 
-#: src/windows/main/MainWindow.ts:1015
+#: src/windows/main/MainWindow.ts:1014
 msgid "Selected directory does not contain data/Data directory, .rgss archive or translation directory."
 msgstr "Выбранная директория не содержит директорию data/Data, архив .rgss или папку перевода."
 
-#: src/windows/main/MainWindow.ts:1373
+#: src/windows/main/MainWindow.ts:1376
 msgid "Selected directory is already opened in the program."
 msgstr "Выбранная директория уже открыта в программе."
 
-#: src/windows/main/MainWindow.ts:975
+#: src/windows/main/MainWindow.ts:974
 msgid "Selected directory is missing."
 msgstr "Выбранная директория отсутствует."
 
-#: src/windows/main/html.ts:86
-#: src/windows/main/MainWindow.ts:1385
+#: src/windows/main/html.ts:85
+#: src/windows/main/MainWindow.ts:1388
 msgid "Settings"
 msgstr "Настройки"
 
-#: src/windows/main/html.ts:49
+#: src/windows/main/html.ts:48
 #: src/windows/main/html.ts:62
 #: src/windows/main/html.ts:67
 msgid "Skip events:"
 msgstr "Пропустить ивенты"
 
-#: src/windows/main/html.ts:47
+#: src/windows/main/html.ts:46
 #: src/windows/main/html.ts:60
 #: src/windows/main/html.ts:65
 msgid "Skip files:"
 msgstr "Пропустить файлы:"
 
-#: src/windows/main/html.ts:48
+#: src/windows/main/html.ts:47
 #: src/windows/main/html.ts:61
 #: src/windows/main/html.ts:66
 msgid "Skip maps:"
 msgstr "Пропустить карты:"
 
-#: src/windows/main/html.ts:59
+#: src/windows/main/html.ts:58
 msgid "Skip Obsolete: Don't preserve obsolete entries from the previous read"
 msgstr "Пропуск устаревшего: не сохранять устаревшие строки с прошлого чтения"
 
-#: src/windows/main/components/Searcher.ts:281
+#: src/windows/main/components/Searcher.ts:280
 #: src/windows/main/html.ts:8
-#: src/windows/main/html.ts:73
+#: src/windows/main/html.ts:72
 msgid "Source"
 msgstr "Исходный текст"
 
 #: src/windows/main/components/BatchMenu.ts:224
-#: src/windows/main/components/TranslationsMenu.ts:71
-#: src/windows/main/MainWindow.ts:1672
+#: src/windows/main/components/TranslationsMenu.ts:91
+#: src/windows/main/MainWindow.ts:1675
 msgid "Source language is not set."
 msgstr "Исходный язык не установлен."
 
@@ -559,15 +582,19 @@ msgstr "Исходный язык не установлен."
 msgid "Source text cannot be replaced."
 msgstr "Исходный текст нельзя заменить."
 
-#: src/windows/main/html.ts:82
-msgid "Tabs (Tab)"
-msgstr "Вкладки (Tab)"
+#: src/windows/main/html.ts:81
+msgid "Tab Panel (Tab)"
+msgstr "Панель вкладок (Tab)"
 
-#: src/windows/main/html.ts:78
+#: src/windows/main/html.ts:82
+#~ msgid "Tabs (Tab)"
+#~ msgstr "Вкладки (Tab)"
+
+#: src/windows/main/html.ts:77
 msgid "Term"
 msgstr "Термин"
 
-#: src/windows/main/components/MatchMenu.ts:263
+#: src/windows/main/components/MatchMenu.ts:271
 msgid "Term translation is not present."
 msgstr "Перевод термина отсутствует."
 
@@ -575,11 +602,11 @@ msgstr "Перевод термина отсутствует."
 msgid "Text was reverted to the previous state"
 msgstr "Текст был возвращён в предыдущее состояние"
 
-#: src/windows/main/html.ts:102
+#: src/windows/main/html.ts:101
 msgid "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
 msgstr "Название темы. Разрешённые символы: a-z, A-Z, 0-9, -, _."
 
-#: src/windows/main/html.ts:87
+#: src/windows/main/html.ts:86
 msgid "Themes"
 msgstr "Темы"
 
@@ -599,10 +626,10 @@ msgstr "Третий цвет текста"
 msgid "Translate"
 msgstr "Перевести"
 
-#: src/windows/main/components/TranslationTable.ts:316
-#: src/windows/main/html.ts:74
-#: src/windows/main/MainWindow.ts:1262
-#: src/windows/main/MainWindow.ts:1268
+#: src/windows/main/components/TranslationTable.ts:321
+#: src/windows/main/html.ts:73
+#: src/windows/main/MainWindow.ts:1265
+#: src/windows/main/MainWindow.ts:1271
 msgid "Translation"
 msgstr "Перевод"
 
@@ -610,29 +637,33 @@ msgstr "Перевод"
 msgid "Translation endpoint is not selected."
 msgstr "Точка перевода не выбрана."
 
-#: src/windows/main/components/MatchMenu.ts:260
+#: src/windows/main/components/MatchMenu.ts:268
 msgid "Translation is empty."
 msgstr "Перевод пуст."
 
 #: src/windows/main/components/BatchMenu.ts:232
-#: src/windows/main/components/TranslationsMenu.ts:80
-#: src/windows/main/MainWindow.ts:1677
+#: src/windows/main/components/TranslationsMenu.ts:100
+#: src/windows/main/MainWindow.ts:1680
 msgid "Translation language is not set."
 msgstr "Язык перевода не установлен."
 
-#: src/windows/main/html.ts:81
+#: src/windows/main/html.ts:80
 msgid "Translations"
 msgstr "Переводы"
 
 #: src/windows/main/html.ts:94
-msgid "Translations menu"
+#~ msgid "Translations menu"
+#~ msgstr "Меню переводов"
+
+#: src/windows/main/html.ts:93
+msgid "Translations Menu"
 msgstr "Меню переводов"
 
 #: src/windows/main/html.ts:41
 msgid "Trim"
 msgstr "Обрезание"
 
-#: src/windows/main/html.ts:56
+#: src/windows/main/html.ts:55
 msgid "Trim: Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
 msgstr "Обрезание: Обрезает начальные и конечные пробелы из строк. Не используйте эту опцию, если не уверены, что её использованые не вызовет никаких проблем"
 
@@ -640,14 +671,14 @@ msgstr "Обрезание: Обрезает начальные и конечн�
 msgid "Wrap"
 msgstr "Перенос"
 
-#: src/windows/main/html.ts:50
+#: src/windows/main/html.ts:49
 msgid "Write"
 msgstr "Запись"
 
-#: src/windows/main/html.ts:84
+#: src/windows/main/html.ts:83
 msgid "Write (Alt + C)"
 msgstr "Запись (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:955
+#: src/windows/main/MainWindow.ts:954
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "У вас есть несохранённые изменения. Сохранить прогресс и выйти?"

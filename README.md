@@ -2,9 +2,21 @@
 
 [README на русском](README-ru.md)
 
-## General
-
 A fast and light graphical interface, designed for editing and translating games based on RPG Maker XP/VX/VX Ace/MV/MZ engines.
+
+![Interface](./screenshots/interface.png)
+
+## Features
+
+- [x] Hugely customizable interface that we're looking to make even more customizable.
+- [x] Cross-platform, fast and powerful.
+- [x] Fast game files parsing and fast translation writing.
+- [x] Easy plain text format that's manually editable.
+- [x] XP, VX, VX Ace, MV and MZ engines support.
+- [x] Built-in glossary with support for ~40 languages.
+- [x] Convenience features like bookmarks, shortcuts and other mindblowing tricks.
+- [x] Built-in easy batch processing of files.
+- [x] Integrated APIs for Google Translate, Yandex Translate, DeepL, ChatGPT, Claude, DeepSeek and Gemini.
 
 Under the hood, this GUI uses:
 
@@ -13,8 +25,6 @@ Under the hood, this GUI uses:
 - [rpgm-archive-decrypter-lib](https://github.com/RPG-Maker-Translation-Tools/rpgm-archive-decrypter-lib) to decrypt `.rgss` RPG Maker XP/VX/VX Ace archives.
 
 Using these tools, the program parses the text to `.txt` files, allows you to edit them, and then write them back to the original form with translation applied.
-
-![Interface](./screenshots/interface.png)
 
 If you have troubled figuring out the program, check the `Help > Help` top menu option. That will probably help.
 
@@ -26,44 +36,9 @@ If you have troubled figuring out the program, check the `Help > Help` top menu 
 
 Documentation is available at <https://rpg-maker-translation-tools.github.io/rpgmtranslate/>.
 
-## Manual building
+## Development
 
-### Prerequisites
-
-- `rustup` with an installed Rust toolchain.
-- Tauri prerequisites (<https://v2.tauri.app/start/prerequisites>).
-- JavaScript runtime (`nodejs`, `bun`, `deno`).
-
-### Building
-
-Clone the repository:
-
-```bash
-git clone https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate.git
-```
-
-Install JavaScript dependencies:
-
-```bash
-cd rpgmtranslate
-
-# Use your favorite flavor
-npm install # npm
-bun install # bun
-# etc.
-```
-
-Run/build the program:
-
-```bash
-# Run in development mode
-npm run tauri dev
-
-# Build for release
-npm run tauri build
-```
-
-After the build, `target` directory will be created in the `gui/src-tauri` path, containing binary file with program build and distributable bundled packages in the `target/bundle` directory.
+See [Development Documentation](https://rpg-maker-translation-tools.github.io/rpgmtranslate/development)
 
 ## Support
 

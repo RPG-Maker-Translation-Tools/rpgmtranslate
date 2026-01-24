@@ -55,7 +55,7 @@ export class BatchMenu extends Component {
     public constructor() {
         super("batch-menu");
 
-        this.#body = this.element.children[1] as HTMLDivElement;
+        this.#body = this.element.querySelector("main") as HTMLDivElement;
 
         this.#wrapLimitInput = this.element.querySelector("#wrap-limit-input")!;
         this.#translationEndpointSelect = this.element.querySelector(
@@ -122,7 +122,7 @@ export class BatchMenu extends Component {
         this.#body.innerHTML = "";
 
         for (const tab of tabs) {
-            const tabName = tab.firstElementChild!.textContent;
+            const tabName = tab.querySelector("span")!.textContent;
 
             const checkboxContainer = document.createElement("label");
             checkboxContainer.className = tw`custom-checkbox`;
@@ -246,23 +246,22 @@ export class BatchMenu extends Component {
             await this.#processFile(fileData[0], files, originalStrings);
         } else {
             for (const container of this.#body.children) {
-                const label = container.lastElementChild as HTMLLabelElement;
+                const label = container.querySelector("span")!;
                 label.style.color = "inherit";
             }
 
             for (const container of this.#body.children) {
-                const checkbox =
-                    container.firstElementChild as HTMLInputElement;
+                const checkbox = container.querySelector("input")!;
 
                 if (!checkbox.checked) {
                     continue;
                 }
 
-                const label = container.lastElementChild as HTMLLabelElement;
+                const label = container.querySelector("span")!;
                 const filename = label.textContent;
 
                 if (filename === this.#tabInfo.tabName) {
-                    await emittery.emit(AppEvent.ChangeTab, null);
+                    await emittery.emit(AppEvent.ChangeTab, "");
                 }
 
                 await this.#processFile(filename, files, originalStrings);
@@ -572,7 +571,7 @@ export class BatchMenu extends Component {
 
         if (target.tagName === "INPUT") {
             for (const container of this.#body.children) {
-                const label = container.lastElementChild as HTMLLabelElement;
+                const label = container.querySelector("span")!;
                 label.style.color = "inherit";
             }
 
@@ -583,10 +582,8 @@ export class BatchMenu extends Component {
         switch (target) {
             case this.#selectAllButton:
                 for (const container of this.#body.children) {
-                    (container.firstElementChild as HTMLInputElement).checked =
-                        true;
-                    const label =
-                        container.lastElementChild as HTMLLabelElement;
+                    container.querySelector("input")!.checked = true;
+                    const label = container.querySelector("span")!;
                     label.style.color = "inherit";
                 }
                 break;

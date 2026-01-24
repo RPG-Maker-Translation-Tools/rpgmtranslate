@@ -25,260 +25,11 @@ export class GlossaryMenu extends Component {
         this.setDraggable(true);
 
         this.element.onchange = (e): void => {
-            const target = e.target as
-                | HTMLSelectElement
-                | HTMLInputElement
-                | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "check-only-current") {
-                this.#searchOnlyCurrentFile = (
-                    target as HTMLInputElement
-                ).checked;
-                return;
-            }
-
-            if (target.tagName !== "SELECT") {
-                return;
-            }
-
-            const mode = Number(target.value) as MatchMode;
-
-            target.nextElementSibling!.classList.toggle(
-                "hidden",
-                mode === MatchMode.Exact,
-            );
+            this.#onchange(e);
         };
 
         this.element.onclick = (e): void => {
-            const target = e.target as HTMLElement | null;
-
-            if (!target) {
-                return;
-            }
-
-            if (target.id === "match-menu-button") {
-                void emittery.emit(AppEvent.ShowElement, [
-                    ElementToShow.MatchMenu,
-                    true,
-                ]);
-            }
-
-            if (target.id === "search-button") {
-                const predicate = this.#searchInput.value;
-
-                for (const row of this.#tableBody.children) {
-                    const sourceCell = row.firstElementChild!;
-                    const sourceInput =
-                        sourceCell.firstElementChild! as HTMLInputElement;
-
-                    if (predicate === sourceInput.value) {
-                        sourceInput.classList.add(
-                            "outline-primary",
-                            "outline-2",
-                        );
-                        sourceInput.scrollIntoView({
-                            block: "center",
-                            inline: "center",
-                        });
-                    }
-                }
-            } else if (target.id === "qc-button") {
-                void emittery.emit(AppEvent.TermCheck, [
-                    -1,
-                    [this.#searchOnlyCurrentFile, undefined],
-                ]);
-                void emittery.emit(AppEvent.ShowElement, [
-                    ElementToShow.MatchMenu,
-                    false,
-                ]);
-                return;
-            }
-
-            if (target.textContent === "+") {
-                const newTerm: Term = {
-                    source: "",
-                    sourceMatchMode: [
-                        [MatchMode.Exact, DEFAULT_FUZZY_THRESHOLD],
-                        true,
-                        false,
-                    ],
-                    translation: "",
-                    translationMatchMode: [
-                        [MatchMode.Exact, DEFAULT_FUZZY_THRESHOLD],
-                        true,
-                        false,
-                    ],
-                    note: "",
-                };
-
-                const row = this.#createRow(newTerm, true);
-
-                this.#glossary.push(newTerm);
-
-                this.#tableBody.insertBefore(
-                    row,
-                    this.#tableBody.lastElementChild,
-                );
-                return;
-            }
-
-            const row = target.closest("tr");
-            if (!row) {
-                return;
-            }
-
-            const id = Number(row.id);
-
-            switch (target.id) {
-                case "check-button": {
-                    void emittery.emit(AppEvent.TermCheck, [
-                        id,
-                        [this.#searchOnlyCurrentFile, undefined],
-                    ]);
-                    void emittery.emit(AppEvent.ShowElement, [
-                        ElementToShow.MatchMenu,
-                        false,
-                    ]);
-                    break;
-                }
-                case "edit-button": {
-                    const inputs = row.querySelectorAll<
-                        | HTMLInputElement
-                        | HTMLSelectElement
-                        | HTMLTextAreaElement
-                    >("input, select, textarea");
-
-                    const isEditing = !inputs[0].disabled;
-
-                    if (isEditing) {
-                        const rowChildren = row.children;
-
-                        const termInput = rowChildren[0]
-                            .firstElementChild! as HTMLInputElement;
-                        const translationInput = rowChildren[1]
-                            .firstElementChild! as HTMLInputElement;
-
-                        const term = termInput.value.trim();
-                        const translation = translationInput.value.trim();
-
-                        let hasError = false;
-
-                        termInput.classList.remove(
-                            "outline-red-600",
-                            "outline-2",
-                        );
-                        translationInput.classList.remove(
-                            "outline-red-600",
-                            "outline-2",
-                        );
-
-                        if (!term) {
-                            termInput.classList.add(
-                                "outline-red-600",
-                                "outline-2",
-                            );
-                            hasError = true;
-                        }
-
-                        if (!translation) {
-                            translationInput.classList.add(
-                                "outline-red-600",
-                                "outline-2",
-                            );
-                            hasError = true;
-                        }
-
-                        if (hasError) {
-                            return;
-                        }
-
-                        const termMatchMode = rowChildren[0].lastElementChild!
-                            .children as HTMLCollectionOf<HTMLInputElement>;
-
-                        const sourceMode = Number(termMatchMode[0].value);
-                        const sourceThreshold = termMatchMode[1].valueAsNumber;
-                        const sourceCS = (
-                            termMatchMode[2]
-                                .firstElementChild! as HTMLInputElement
-                        ).checked;
-                        const sourcePermissive = (
-                            termMatchMode[3]
-                                .firstElementChild! as HTMLInputElement
-                        ).checked;
-
-                        const translationMatchMode = rowChildren[1]
-                            .lastElementChild!
-                            .children as HTMLCollectionOf<HTMLInputElement>;
-
-                        const translationMode = Number(
-                            translationMatchMode[0].value,
-                        );
-                        const translationThreshold =
-                            translationMatchMode[1].valueAsNumber;
-                        const translationCS = (
-                            translationMatchMode[2]
-                                .firstElementChild! as HTMLInputElement
-                        ).checked;
-                        const translationPermissive = (
-                            translationMatchMode[3]
-                                .firstElementChild! as HTMLInputElement
-                        ).checked;
-
-                        const note = (
-                            rowChildren[2]
-                                .firstElementChild! as HTMLInputElement
-                        ).value;
-
-                        this.#glossary[id] = {
-                            source: term,
-                            sourceMatchMode: [
-                                [
-                                    sourceMode,
-                                    Number.isNaN(sourceThreshold)
-                                        ? DEFAULT_FUZZY_THRESHOLD
-                                        : sourceThreshold,
-                                ],
-                                sourceCS,
-                                sourcePermissive,
-                            ],
-                            translation,
-                            translationMatchMode: [
-                                [
-                                    translationMode,
-                                    Number.isNaN(translationThreshold)
-                                        ? DEFAULT_FUZZY_THRESHOLD
-                                        : translationThreshold,
-                                ],
-                                translationCS,
-                                translationPermissive,
-                            ],
-                            note,
-                        };
-                    }
-
-                    for (const input of inputs) {
-                        input.disabled = isEditing;
-                    }
-
-                    target.textContent = isEditing ? "edit" : "check";
-                    break;
-                }
-                case "remove-button":
-                    this.#glossary.splice(id, 1);
-                    row.remove();
-
-                    for (const row of Array.prototype.slice.call(
-                        this.#tableBody.children,
-                        id,
-                    ) as HTMLElement[]) {
-                        row.id = (Number(row.id) - 1).toString();
-                    }
-                    break;
-            }
+            this.#onclick(e);
         };
     }
 
@@ -300,9 +51,9 @@ export class GlossaryMenu extends Component {
         this.#tableBody.appendChild(addButton);
     }
 
-    public addTerm(term: Term): void {
-        const row = this.#createRow(term);
-        this.#tableBody.appendChild(row);
+    public addTerm(term: Term, editable = false): void {
+        const row = this.#createRow(term, editable);
+        this.#tableBody.insertBefore(row, this.#tableBody.lastElementChild);
         this.#glossary.push(term);
     }
 
@@ -430,5 +181,237 @@ export class GlossaryMenu extends Component {
         );
 
         return row;
+    }
+
+    #onchange(event: Event): void {
+        const target = event.target as
+            | HTMLSelectElement
+            | HTMLInputElement
+            | null;
+
+        if (!target) {
+            return;
+        }
+
+        if (target.id === "check-only-current") {
+            this.#searchOnlyCurrentFile = (target as HTMLInputElement).checked;
+            return;
+        }
+
+        if (target.tagName !== "SELECT") {
+            return;
+        }
+
+        const mode = Number(target.value) as MatchMode;
+
+        target.nextElementSibling!.classList.toggle(
+            "hidden",
+            mode === MatchMode.Exact,
+        );
+    }
+
+    #onclick(event: MouseEvent) {
+        const target = event.target as HTMLElement | null;
+
+        if (!target) {
+            return;
+        }
+
+        if (target.id === "match-menu-button") {
+            void emittery.emit(AppEvent.ShowElement, [
+                ElementToShow.MatchMenu,
+                true,
+            ]);
+        }
+
+        if (target.id === "search-button") {
+            const predicate = this.#searchInput.value;
+
+            for (const row of this.#tableBody.children) {
+                const sourceInput =
+                    row.firstElementChild!.querySelector("input")!;
+
+                if (predicate === sourceInput.value) {
+                    sourceInput.classList.add("outline-primary", "outline-2");
+                    sourceInput.scrollIntoView({
+                        block: "center",
+                        inline: "center",
+                    });
+                }
+            }
+        } else if (target.id === "qc-button") {
+            void emittery.emit(AppEvent.TermCheck, [
+                -1,
+                [this.#searchOnlyCurrentFile, undefined],
+            ]);
+            void emittery.emit(AppEvent.ShowElement, [
+                ElementToShow.MatchMenu,
+                false,
+            ]);
+            return;
+        }
+
+        if (target.textContent === "+") {
+            const newTerm: Term = {
+                source: "",
+                sourceMatchMode: [
+                    [MatchMode.Exact, DEFAULT_FUZZY_THRESHOLD],
+                    true,
+                    false,
+                ],
+                translation: "",
+                translationMatchMode: [
+                    [MatchMode.Exact, DEFAULT_FUZZY_THRESHOLD],
+                    true,
+                    false,
+                ],
+                note: "",
+            };
+
+            this.addTerm(newTerm, true);
+            return;
+        }
+
+        const row = target.closest("tr");
+        if (!row) {
+            return;
+        }
+
+        const id = Number(row.id);
+
+        switch (target.id) {
+            case "check-button": {
+                void emittery.emit(AppEvent.TermCheck, [
+                    id,
+                    [this.#searchOnlyCurrentFile, undefined],
+                ]);
+                void emittery.emit(AppEvent.ShowElement, [
+                    ElementToShow.MatchMenu,
+                    false,
+                ]);
+                break;
+            }
+            case "edit-button": {
+                const inputs = row.querySelectorAll<
+                    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+                >("input, select, textarea");
+
+                const isEditing = !inputs[0].disabled;
+
+                if (isEditing) {
+                    const rowChildren = row.children;
+
+                    const termInput = rowChildren[0].querySelector("input")!;
+                    const translationInput =
+                        rowChildren[1].querySelector("input")!;
+
+                    const term = termInput.value.trim();
+                    const translation = translationInput.value.trim();
+
+                    let hasError = false;
+
+                    termInput.classList.remove("outline-red-600", "outline-2");
+                    translationInput.classList.remove(
+                        "outline-red-600",
+                        "outline-2",
+                    );
+
+                    if (!term) {
+                        termInput.classList.add("outline-red-600", "outline-2");
+                        hasError = true;
+                    }
+
+                    if (!translation) {
+                        translationInput.classList.add(
+                            "outline-red-600",
+                            "outline-2",
+                        );
+                        hasError = true;
+                    }
+
+                    if (hasError) {
+                        return;
+                    }
+
+                    const sourceMode = Number(
+                        rowChildren[0].querySelector("select")!.value,
+                    );
+                    const sourceThreshold =
+                        rowChildren[0].querySelector<HTMLInputElement>(
+                            'input[type="number"]',
+                        )!.valueAsNumber;
+
+                    const sourceCheckboxes =
+                        rowChildren[0].querySelectorAll<HTMLInputElement>(
+                            'input[type="checkbox"]',
+                        );
+                    const sourceCS = sourceCheckboxes[0].checked;
+                    const sourcePermissive = sourceCheckboxes[1].checked;
+
+                    const translationMode = Number(
+                        rowChildren[1].querySelector("select")!.value,
+                    );
+                    const translationThreshold =
+                        rowChildren[1].querySelector<HTMLInputElement>(
+                            'input[type="number"]',
+                        )!.valueAsNumber;
+
+                    const translationCheckboxes =
+                        rowChildren[1].querySelectorAll<HTMLInputElement>(
+                            'input[type="checkbox"]',
+                        );
+                    const translationCS = translationCheckboxes[0].checked;
+                    const translationPermissive =
+                        translationCheckboxes[1].checked;
+
+                    const note =
+                        rowChildren[2].querySelector("textarea")!.value;
+
+                    this.#glossary[id] = {
+                        source: term,
+                        sourceMatchMode: [
+                            [
+                                sourceMode,
+                                Number.isNaN(sourceThreshold)
+                                    ? DEFAULT_FUZZY_THRESHOLD
+                                    : sourceThreshold,
+                            ],
+                            sourceCS,
+                            sourcePermissive,
+                        ],
+                        translation,
+                        translationMatchMode: [
+                            [
+                                translationMode,
+                                Number.isNaN(translationThreshold)
+                                    ? DEFAULT_FUZZY_THRESHOLD
+                                    : translationThreshold,
+                            ],
+                            translationCS,
+                            translationPermissive,
+                        ],
+                        note,
+                    };
+                }
+
+                for (const input of inputs) {
+                    input.disabled = isEditing;
+                }
+
+                target.textContent = isEditing ? "edit" : "check";
+                break;
+            }
+            case "remove-button":
+                this.#glossary.splice(id, 1);
+                row.remove();
+
+                for (const row of Array.prototype.slice.call(
+                    this.#tableBody.children,
+                    id,
+                ) as HTMLElement[]) {
+                    row.id = (Number(row.id) - 1).toString();
+                }
+                break;
+        }
     }
 }

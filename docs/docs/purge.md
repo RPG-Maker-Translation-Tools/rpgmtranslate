@@ -7,3 +7,7 @@ Purge menu allows you to purge lines with empty translation from the files.
 Creates a `.rpgmtranslate/translation/.rvpacker-ignore` file containing purged lines.
 
 It will be used on read with append mode, if ignore checkbox is checked.
+
+## Skip Settings
+
+You can select files, maps and events in the specific files to skip. Those won't be processed.

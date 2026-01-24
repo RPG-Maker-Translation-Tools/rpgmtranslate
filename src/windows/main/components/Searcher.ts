@@ -57,7 +57,7 @@ export class Searcher {
     }
 
     public async search(
-        tabName: string | null,
+        tabName: string,
         tabs: Tabs,
         rows: TabRows | null,
         text: string,
@@ -79,7 +79,7 @@ export class Searcher {
 
         await this.#removeOldMatches();
 
-        if (tabName !== null) {
+        if (tabName !== "") {
             await this.#searchCurrentTab(tabName, columnIndex, rows!);
         }
 
@@ -360,7 +360,7 @@ export class Searcher {
     }
 
     async #searchGlobal(
-        tabName: string | null,
+        tabName: string,
         columnIndex: number,
         tabs: Tabs,
     ): Promise<void> {

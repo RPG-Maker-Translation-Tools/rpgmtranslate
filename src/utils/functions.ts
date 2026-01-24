@@ -346,37 +346,41 @@ export function* parseBlocks(
 }
 
 export function deepAssign(
-    target: Record<string, unknown>,
-    source: Record<string, unknown> | null,
+    dest: Record<string, unknown>,
+    src: Record<string, unknown> | null,
 ): void {
-    if (source == null) {
+    if (src == null) {
         return;
     }
 
-    for (const key in source) {
-        const sourceField = source[key];
-        const targetField = target[key];
+    for (const key in src) {
+        const srcField = src[key];
+        const destField = dest[key];
 
-        if (targetField === undefined) {
-            target[key] = sourceField;
+        if (destField === undefined && srcField !== undefined) {
+            dest[key] = srcField;
             continue;
         }
 
-        if (Array.isArray(sourceField)) {
-            for (let i = 0; i < sourceField.length; i++) {
-                (target[key] as unknown[])[i] = sourceField[i];
+        if (Array.isArray(srcField)) {
+            if (!Array.isArray(destField)) {
+                dest[key] = new Array(srcField.length);
+            }
+
+            for (let i = 0; i < srcField.length; i++) {
+                (dest[key] as unknown[])[i] = srcField[i];
             }
             continue;
         }
 
-        if (typeof sourceField === "object") {
+        if (typeof srcField === "object") {
             deepAssign(
-                target[key] as Record<string, unknown>,
-                sourceField as Record<string, unknown>,
+                dest[key] as Record<string, unknown>,
+                srcField as Record<string, unknown>,
             );
             continue;
         }
 
-        target[key] = sourceField;
+        dest[key] = srcField;
     }
 }

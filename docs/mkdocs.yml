@@ -10,15 +10,19 @@ repo_name: rpg-maker-translation-tools/rpgmtranslate
 copyright: Licensed under WTFPL.
 
 nav:
-    - Home: index.md
-    - User Guide:
-          - Search Features: search.md
-          - Text Editing: text-editing.md
+    - Overview: index.md
+    - Getting Started: getting-started.md
+    - Advanced Features:
+          - Translation Table: translation-table.md
+          - Search, Replace, Put: search.md
           - Batch Processing: batch-processing.md
+          - Glossary: glossary.md
+          - Translations Menu: translations-menu.md
           - Settings: settings.md
           - Read Menu: read.md
           - Purge Menu: purge.md
-          - Building from Source: build.md
+          - Write Menu: write.md
+    - Development: development.md
 
 theme:
     name: material
@@ -56,14 +60,18 @@ plugins:
                 name: Русский
                 build: true
                 nav_translations:
-                    Home: Главная
-                    User Guide: Пользовательское руководство
-                    Search Features: Функции поиска
-                    Text Editing: Редактирование текста
-                    Batch Processing: Массовая обработка
+                    Overview: Обзор
+                    Getting Started: Поехали
+                    Advanced Features: Продвинутые функции
+                    Translation Table: Таблица перевода
+                    Search, Replace, Put: Поиск
+                    Batch Processing: Инструменты обработки
+                    Glossary: Глоссарий
+                    Translations Menu: Меню переводов
                     Settings: Настройки
                     Read Menu: Меню чтения
-                    Purge Menu: Меню чистки
-                    Building from Source: Билдинг из исходного кода
+                    Purge Menu: Меню очистки
+                    Write Menu: Меню записи
+                    Development: Разработка
                 site_name: "Документация для RPGMTranslate"
                 site_description: "Документация для RPGMTranslate"

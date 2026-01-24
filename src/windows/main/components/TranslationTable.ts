@@ -32,6 +32,8 @@ const enum ResizeDirection {
 const EDGE_THRESHOLD = 8;
 const RESIZE_TOOLTIP_PADDING = 12;
 
+// TODO: Make textareas in translation cells expand to the whole height
+
 export class TranslationTable extends Component {
     declare protected readonly element: HTMLTableElement;
 
@@ -39,8 +41,13 @@ export class TranslationTable extends Component {
     readonly #headRow: HTMLTableRowElement;
     readonly #tbody: HTMLTableSectionElement;
 
-    #textareaStatus = TextAreaStatus.None;
-    #currentFocusedElement: readonly [HTMLTextAreaElement, string] | [] = [];
+    #focusedTextArea:
+        | [
+              textarea: HTMLTextAreaElement,
+              initialValue: string,
+              initialStatus: TextAreaStatus,
+          ]
+        | [] = [];
     #multipleTextAreasSelected = false;
     #activeGhostLines: HTMLDivElement[] = [];
 
@@ -87,7 +94,7 @@ export class TranslationTable extends Component {
         super("translation-table");
 
         this.#thead = this.element.querySelector("thead")!;
-        this.#headRow = this.#thead.firstElementChild as HTMLTableRowElement;
+        this.#headRow = this.#thead.querySelector("tr")!;
         this.#tbody = this.element.querySelector("tbody")!;
 
         this.#tbody.onmousedown = (event): void => {
@@ -175,10 +182,6 @@ export class TranslationTable extends Component {
         return this.rows.length;
     }
 
-    public override set innerHTML(html: string) {
-        this.#tbody.innerHTML = html;
-    }
-
     public init(settings: Settings, projectSettings: ProjectSettings): void {
         this.#displayGhostLines = settings.appearance.displayGhostLines;
         this.#rowDeleteMode = settings.core.rowDeleteMode;
@@ -200,6 +203,8 @@ export class TranslationTable extends Component {
         filename: string,
         translationColumnCount: number,
     ): Promise<void> {
+        this.#tbody.innerHTML = "";
+
         const formatted = `${filename}${consts.TXT_EXTENSION}`;
         let contentPath = utils.join(
             this.#projectSettings.translationPath,
@@ -320,6 +325,14 @@ export class TranslationTable extends Component {
             columnElement,
             this.#headRow.lastElementChild,
         );
+    }
+
+    public insertTranslation(translation: string): void {
+        if (this.#focusedTextArea[0]?.value === "") {
+            this.#focusedTextArea[0].value = translation;
+        } else {
+            // TODO: Message
+        }
     }
 
     #getLineLengthHintX(textarea: HTMLTextAreaElement): number {
@@ -614,11 +627,13 @@ export class TranslationTable extends Component {
             document.body.appendChild(this.#hintDiv);
         }
 
-        this.#currentFocusedElement = [target, target.value];
-
-        this.#textareaStatus = target.value
-            ? TextAreaStatus.Translated
-            : TextAreaStatus.Untranslated;
+        this.#focusedTextArea = [
+            target,
+            target.value,
+            target.value
+                ? TextAreaStatus.Translated
+                : TextAreaStatus.Untranslated,
+        ];
     }
 
     #onfocusout(event: FocusEvent): void {
@@ -634,10 +649,7 @@ export class TranslationTable extends Component {
             ghost.remove();
         }
 
-        if (
-            this.#currentFocusedElement[0]?.value !==
-            this.#currentFocusedElement[1]
-        ) {
+        if (this.#focusedTextArea[0]?.value !== this.#focusedTextArea[1]) {
             void emittery.emit(AppEvent.UpdateSaved, false);
         }
 
@@ -650,7 +662,7 @@ export class TranslationTable extends Component {
         let changedCount = 0;
 
         if (!source.textContent.startsWith(consts.COMMENT_PREFIX)) {
-            switch (this.#textareaStatus) {
+            switch (this.#focusedTextArea[2]) {
                 case TextAreaStatus.None:
                     break;
                 case TextAreaStatus.Translated:
@@ -666,7 +678,8 @@ export class TranslationTable extends Component {
             }
         }
 
-        this.#textareaStatus = TextAreaStatus.None;
+        this.#focusedTextArea[2] = TextAreaStatus.None;
+
         void emittery.emit(AppEvent.UpdateTranslatedLineCount, [
             changedCount,
             undefined,
@@ -716,13 +729,22 @@ export class TranslationTable extends Component {
             let changedCount = 0;
 
             for (const textarea of this.#selectedTextareas.keys()) {
+                let source = textarea.closest("td")!.previousElementSibling!;
+
+                while (source.tagName !== "TD") {
+                    source = source.previousElementSibling!;
+                }
+
                 if (textarea.value) {
-                    changedCount -= 1;
+                    if (!source.textContent.startsWith(consts.COMMENT_PREFIX)) {
+                        changedCount -= 1;
+                    }
+
                     textarea.value = "";
                 }
             }
 
-            this.#textareaStatus = TextAreaStatus.None;
+            this.#focusedTextArea[2] = TextAreaStatus.None;
 
             void emittery.emit(AppEvent.UpdateTranslatedLineCount, [
                 changedCount,
@@ -771,7 +793,17 @@ export class TranslationTable extends Component {
                 const cell = row.children[columnIndex];
                 const textarea = cell.querySelector("textarea")!;
 
-                if (!textarea.value && clipboardTextSplit[i]) {
+                let source = textarea.closest("td")!.previousElementSibling!;
+
+                while (source.tagName !== "TD") {
+                    source = source.previousElementSibling!;
+                }
+
+                if (
+                    !source.textContent.startsWith(consts.COMMENT_PREFIX) &&
+                    !textarea.value &&
+                    clipboardTextSplit[i]
+                ) {
                     changedCount++;
                 }
 
@@ -783,7 +815,7 @@ export class TranslationTable extends Component {
                 utils.calculateHeight(textarea);
             }
 
-            this.#textareaStatus = TextAreaStatus.None;
+            this.#focusedTextArea[2] = TextAreaStatus.None;
 
             void emittery.emit(AppEvent.UpdateTranslatedLineCount, [
                 changedCount,
@@ -1305,6 +1337,10 @@ export class TranslationTable extends Component {
         };
 
         document.body.appendChild(this.#widthInput);
+
+        requestAnimationFrame(() => {
+            this.#widthInput!.focus();
+        });
     }
 
     #onHeaderFocusout(event: FocusEvent): void {
@@ -1318,7 +1354,13 @@ export class TranslationTable extends Component {
             return;
         }
 
-        const columnIndex = Number(target.closest("th")!.id);
+        const columnCell = target.closest("th");
+
+        if (!columnCell) {
+            return;
+        }
+
+        const columnIndex = Number(columnCell.id);
         const columnName = target.value;
 
         void emittery.emit(AppEvent.ColumnRenamed, [columnIndex, columnName]);
@@ -1326,7 +1368,7 @@ export class TranslationTable extends Component {
 
     #initHeader(): void {
         const columns = this.#projectSettings.translationColumns;
-        const initialized = this.#thead.children.length > 3;
+        const initialized = this.#headRow.children.length > 3;
 
         (this.#headRow.children[0] as HTMLTableCellElement).style.width =
             `${this.#projectSettings.rowColumnWidth}px`;

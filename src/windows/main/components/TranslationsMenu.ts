@@ -1,7 +1,9 @@
 import { Component } from "./Component";
 
+import { emittery } from "@lib/classes/emittery";
+
 import { ProjectSettings, TranslationSettings } from "@lib/classes";
-import { TokenizerAlgorithm, TranslationEndpoint } from "@lib/enums";
+import { AppEvent, TokenizerAlgorithm, TranslationEndpoint } from "@lib/enums";
 
 import { t } from "@lingui/core/macro";
 
@@ -9,7 +11,7 @@ import { isErr, translateSingle } from "@utils/invokes";
 
 import { error } from "@tauri-apps/plugin-log";
 
-// TODO: Allow to insert translations to the textareas
+// TODO: Make translation cells respective to ID, NAME, ORDER, EVENT ID, EVENT NAME comments uneditable!
 
 export class TranslationsMenu extends Component {
     #projectSettings!: ProjectSettings;
@@ -17,13 +19,17 @@ export class TranslationsMenu extends Component {
     #glossary!: Glossary;
     #tabInfo!: TabInfo;
 
+    #body: HTMLDivElement;
+
     public constructor() {
         super("translations-menu");
 
         this.setDraggable(true);
 
-        this.element.onclick = (e): void => {
-            this.#onclick(e);
+        this.#body = this.element.querySelector("main") as HTMLDivElement;
+
+        this.element.onmousedown = (e): void => {
+            this.#onmousedown(e);
         };
     }
 
@@ -38,32 +44,40 @@ export class TranslationsMenu extends Component {
         this.#glossary = glossary;
         this.#tabInfo = tabInfo;
 
-        const children = this.element.lastElementChild!.children;
+        const children = this.#body.children;
 
         for (
             let i = TranslationEndpoint.Google;
-            i <= TranslationEndpoint.Gemini;
+            i < TranslationEndpoint.COUNT;
             i++
         ) {
             if (this.#translationSettings.enabledTranslations & (1 << i)) {
-                children[i].firstElementChild!.lastElementChild!.innerHTML =
-                    "-";
-                children[i].lastElementChild!.classList.remove("hidden");
+                children[i].querySelector("button")!.innerHTML = "-";
+                children[i].querySelector("main")!.classList.remove("hidden");
             } else {
-                children[i].firstElementChild!.lastElementChild!.innerHTML =
-                    "+";
-                children[i].lastElementChild!.classList.add("hidden");
+                children[i].querySelector("button")!.innerHTML = "+";
+                children[i].querySelector("main")!.classList.add("hidden");
             }
         }
     }
 
-    public async showTranslations(text: string): Promise<void> {
+    public async showTranslations(sourceText: string): Promise<void> {
         if (this.hidden) {
             return;
         }
 
-        const children = this.element.lastElementChild!.children;
+        const children = this.#body.children;
         const buttons = this.element.querySelectorAll("button");
+
+        const glossary = [];
+
+        for (const term of this.#glossary) {
+            glossary.push({
+                term: term.source,
+                translation: term.translation,
+                note: term.note,
+            });
+        }
 
         for (const button of buttons) {
             if (button.innerHTML === "-") {
@@ -73,7 +87,7 @@ export class TranslationsMenu extends Component {
                     this.#projectSettings.translationLanguages
                         .sourceLanguage === TokenizerAlgorithm.None
                 ) {
-                    children[id].lastElementChild!.innerHTML =
+                    children[id].querySelector("main")!.innerHTML =
                         t`Source language is not set.`;
                     return;
                 }
@@ -82,21 +96,9 @@ export class TranslationsMenu extends Component {
                     this.#projectSettings.translationLanguages
                         .translationLanguage === TokenizerAlgorithm.None
                 ) {
-                    children[id].lastElementChild!.innerHTML =
+                    children[id].querySelector("main")!.innerHTML =
                         t`Translation language is not set.`;
                     return;
-                }
-
-                const glossary = [];
-
-                if (this.#translationSettings.endpoints[id].useGlossary) {
-                    for (const term of this.#glossary) {
-                        glossary.push({
-                            term: term.source,
-                            translation: term.translation,
-                            note: term.note,
-                        });
-                    }
                 }
 
                 const args = {
@@ -109,8 +111,11 @@ export class TranslationsMenu extends Component {
                                   this.#tabInfo.tabName
                               ] ?? ""),
                     projectContext: this.#projectSettings.projectContext,
-                    glossary,
-                    text,
+                    glossary: this.#translationSettings.endpoints[id]
+                        .useGlossary
+                        ? glossary
+                        : [],
+                    text: sourceText,
                     normalize: false,
                 };
 
@@ -121,28 +126,32 @@ export class TranslationsMenu extends Component {
                     continue;
                 }
 
-                children[id].lastElementChild!.innerHTML = translation[1]!;
+                children[id].querySelector("main")!.textContent =
+                    translation[1]!;
             }
         }
     }
 
-    #onclick(e: MouseEvent): void {
+    #onmousedown(e: MouseEvent): void {
         const target = e.target as HTMLElement;
 
         if (target.tagName === "BUTTON") {
             const id = Number(target.id) as TranslationEndpoint;
-            const children = this.element.lastElementChild!.children;
+            const children = this.#body.children;
 
             if (target.innerHTML === "+") {
                 target.innerHTML = "-";
-                children[id].lastElementChild!.classList.remove("hidden");
+                children[id].querySelector("main")!.classList.remove("hidden");
             } else {
                 target.innerHTML = "+";
-                children[id].lastElementChild!.classList.add("hidden");
-                children[id].lastElementChild!.innerHTML = "";
+                children[id].querySelector("main")!.classList.add("hidden");
+                children[id].querySelector("main")!.innerHTML = "";
             }
 
             this.#translationSettings.enabledTranslations ^= 1 << id;
+        } else if (target.tagName === "MAIN") {
+            e.preventDefault();
+            void emittery.emit(AppEvent.InsertTranslation, target.textContent);
         }
     }
 }

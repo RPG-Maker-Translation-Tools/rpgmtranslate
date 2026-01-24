@@ -21,7 +21,7 @@ export const emittery = new Emittery<{
     ];
     [AppEvent.UpdateSourceLineCount]: [number, string | undefined];
     [AppEvent.UpdateSaved]: boolean;
-    [AppEvent.ChangeTab]: string | null;
+    [AppEvent.ChangeTab]: string;
     [AppEvent.ColumnResized]: [number, number];
     [AppEvent.InvokeWrite]: [FileFlags, number[], [RPGMFileType, number[]][]];
     [AppEvent.ScrollIntoRow]: number;
@@ -75,4 +75,5 @@ export const emittery = new Emittery<{
     [AppEvent.AddTerm]: string;
     [AppEvent.ShowElement]: [ElementToShow, boolean];
     [AppEvent.ShowTranslations]: string;
+    [AppEvent.InsertTranslation]: string;
 }>();

@@ -65,7 +65,7 @@ export class UtilsPanel extends Component {
         this.tabPanelButton =
             this.#utilsPanelButtons.querySelector("#tab-panel-button")!;
         this.openFolderButton = this.#utilsPanelButtons.querySelector(
-            "#open-directory-button",
+            "#open-folder-button",
         )!;
         this.searchButton =
             this.#utilsPanelButtons.querySelector("#search-button")!;

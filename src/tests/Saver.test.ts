@@ -2,20 +2,30 @@ import { ProjectSettings } from "@lib/classes";
 import { Saver } from "@windows/main/components";
 import { expect, Mock, test, vi } from "vitest";
 
-document.body.innerHTML = `
-<div>
-    <div id="row-container">
-        <div></div>
-        <div>source text 1</div>
-        <textarea>translation 1</textarea>
-    </div>
-    <div id="row-container">
-        <div></div>
-        <div>source text 2</div>
-        <textarea>translation 2</textarea>
-    </div>
-</div>
-`;
+const firstRow = {
+    source: "source 1",
+    firstTranslation: "translation 1",
+};
+
+const secondRow = {
+    source: "source 2",
+    firstTranslation: "translation 2",
+};
+
+const rowsData = [firstRow, secondRow];
+
+const rowsHTML = document.createElement("tbody");
+rowsHTML.innerHTML = rowsData
+    .map(
+        (row) => `
+            <tr>
+                <td></td>
+                <td>${row.source}</td>
+                <td><textarea>${row.firstTranslation}</textarea></td>
+            </tr>
+        `,
+    )
+    .join("");
 
 vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
     const actual = await importOriginal();
@@ -38,14 +48,11 @@ test("saveSingle", async () => {
     const saver = new Saver();
     saver.init({} as ProjectSettings, "");
 
-    await saver.saveCurrentTab(
-        "whatever",
-        document.body.firstElementChild!.children as TabRows,
-    );
+    await saver.saveCurrentTab("whatever", rowsHTML.children as TabRows);
 
     expect(writeTextFile).lastCalledWith(
         expect.any(String),
-        "source text 1<#>translation 1\nsource text 2<#>translation 2",
+        "source 1<#>translation 1\nsource 2<#>translation 2",
         undefined,
     );
 });
@@ -58,23 +65,20 @@ test("saveAll", async () => {
 
     (readTextFile as Mock<typeof readTextFile>).mockImplementation((path) => {
         if (path === "/1") {
-            return Promise.resolve("source text 1<#>translation 1");
+            return Promise.resolve("source 1<#>translation 1");
         } else {
-            return Promise.resolve("source text 2<#>translation 2");
+            return Promise.resolve("source 2<#>translation 2");
         }
     });
 
     const saver = new Saver();
     saver.init({ tempMapsPath: "" } as ProjectSettings, "");
 
-    await saver.saveAll(
-        null,
-        document.body.firstElementChild!.children as TabRows,
-    );
+    await saver.saveAll("", rowsHTML.children as TabRows);
 
     expect(writeTextFile).lastCalledWith(
         expect.any(String),
-        "source text 1<#>translation 1\nsource text 2<#>translation 2",
+        "source 1<#>translation 1\nsource 2<#>translation 2",
         undefined,
     );
 });

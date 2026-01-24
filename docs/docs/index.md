@@ -1,17 +1,20 @@
-# First Launch
+# Overview
 
-RPGMTranslate is an open source and simple translation tool for RPG Maker games. Its main strength lies in maintaining a simple file structure and using plain text translation files.
+RPGMTranslate is an open source and simple translation tool for RPG Maker games. Its main strength lies in maintaining a simple file structure and using plain text translation files, but at the same time it provides powerful tools for translation.
 
-For advanced usage, refer to:
+**Help us improve [the docs](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/tree/main/docs/docs/en)!**
 
-- [Search Features](search.md)
-- [Text Editing](text-editing.md)
-    - [Batch Processing](batch-processing.md)
-- [Settings](settings.md)
-- [Read](read.md)
-- [Purge](purge.md)
+## Features
 
-**Also, help us improve [the docs](https://github.com/RPG-Maker-Translation-Tools/rpgmtranslate/tree/main/docs/docs/en)!**
+- Hugely customizable interface that we're looking to make even more customizable.
+- Cross-platform, fast and powerful.
+- Fast game files parsing and fast translation writing.
+- Easy plain text format that's manually editable.
+- XP, VX, VX Ace, MV and MZ engines support.
+- Built-in glossary with support for ~40 languages.
+- Convenience features like bookmarks, shortcuts and other mindblowing tricks.
+- Built-in easy batch processing of files.
+- Integrated APIs for Google Translate, Yandex Translate, DeepL, ChatGPT, Claude, DeepSeek and Gemini.
 
 ## Installation
 
@@ -30,17 +33,11 @@ Note: If the interface doesn't load, press F12 to open the console for error mes
 
 ## Interface Layout
 
-![Interface layout](assets/layout.png)
+Interface of the program is designed to be quite predictable. You won't find nested series of the menus or some unexplained options, we're always trying to keep the application clear for all kinds of dumbasses.
 
-The screenshot shows the program layout with opened project and tab.
+At the top of the screen you'll see a menu bar and utils bar, that contains buttons, project language inputs, current tab name, global translation progress meter, editable game title, and current RPG Maker engine. Each button provides "What's This?" information when it's hovered.
 
-Quick run over it:
-
-1. Menu bar. Contains `File`, `Help` and `Language` menus.
-2. Utilities panel buttons. Buttons in order: Tab panel, Save, Write, Open, Settings, Themes, Bookmarks, Search, Batch processing, Read, Purge.
-3. Machine translation language inputs.
-4. Right-top section of utilities panel. Contains current tab name display, global progress meter, editable game title and game engine.
-5. Tab content area. That's were all translation is done. It includes row column, source column, and translation columns, where each additional translation column can be created with `+` button. Translation columns names are changeable.
+Upon opening a tab you'll be greeted with simple translation table, when you can start translating the game.
 
 Important terms:
 
@@ -49,25 +46,6 @@ Important terms:
 - "Project" is a directory containing an RPG Maker game, that can be opened in RPGMTranslate.
 - "Tab" is an entry from the tab panel that opens a specific file.
 
-Hotkeys:
+## Getting Started
 
-- Ctrl and +: Zoom in
-- Ctrl and -: Zoom out
-
-## Opening a Project
-
-1.  Click the Open directory button
-2.  Select your RPG Maker game directory (the program handles encrypted `.rgss` archives)
-3.  The program creates an `.rpgmtranslate` directory containing:
-    - Translation files in plain text format at `.rpgmtranslate/translation`
-    - Backup directory at `.rpgmtranslate/backups`
-    - Output files when writing at `.rpgmtranslate/output`
-4.  Optional, but recommended: Initialize git repository and periodically commit changes.
-
-If the game directory already has `translation` directory, its contents will be copied to `.rpgmtranslate/translation`, but not vice versa. To bring the translation back to `GAME_FOLDER/translation` you'll have to manually copy it. This is implemented that way to be as secure as possible, and not accidentally overwrite any translation.
-
-The game's title, engine, current opened tab and translation progress will be displayed in the top-right corner of the UI.
-
-Title is editable, it will be saved and written correctly.
-
-Note: The program, by default, creates backups every 60 seconds and stores up to 99 backups.
+See [Getting Started](./getting-started.md).

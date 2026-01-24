@@ -17,7 +17,7 @@ msgstr ""
 msgid "Allowed"
 msgstr "Разрешено"
 
-#: src/windows/settings/SettingsWindow.ts:169
+#: src/windows/settings/SettingsWindow.ts:171
 msgid "API key is empty."
 msgstr "Ключ API пуст."
 
@@ -66,7 +66,7 @@ msgstr "Выключено"
 msgid "Display lines breaks in text areas"
 msgstr "Отображать переносы строк в текстовых полях"
 
-#: src/windows/settings/SettingsWindow.ts:181
+#: src/windows/settings/SettingsWindow.ts:183
 msgid "Failed to validate key: {err}"
 msgstr "Не удалось проверить ключ: {err}"
 
@@ -126,7 +126,7 @@ msgstr "Точка перевода"
 msgid "Translation Table Font"
 msgstr "Шрифт в таблице перевода"
 
-#: src/windows/settings/SettingsWindow.ts:707
+#: src/windows/settings/SettingsWindow.ts:709
 msgid "Translation table font was not found. Ensure it's installed on your system."
 msgstr "Шрифт таблицы перевода не был найден. Убедитесь, что он установлен в вашей системе."
 
@@ -134,7 +134,7 @@ msgstr "Шрифт таблицы перевода не был найден. У�
 msgid "UI Font"
 msgstr "Шрифт интерфейса"
 
-#: src/windows/settings/SettingsWindow.ts:716
+#: src/windows/settings/SettingsWindow.ts:718
 msgid "UI font was not found. Ensure it's installed on your system."
 msgstr "Шрифт интерфейса не был найден. Убедитесь, что он установлен в вашей системе."
 
@@ -154,6 +154,6 @@ msgstr "Проверка ключа"
 msgid "You also need a folder ID from Yandex. You can find it in the same link."
 msgstr "Вам также нужен номер папки от Яндекса. Вы можете найти его по той же ссылке."
 
-#: src/windows/settings/SettingsWindow.ts:578
+#: src/windows/settings/SettingsWindow.ts:580
 msgid "You need an API key. Check out <a class=\"text-third cursor-pointer hover:underline\">{endpointLink}</a> on how to get it."
 msgstr "Вам нужен ключ от API. Прочитайте <a class=\"text-third cursor-pointer hover:underline\">{endpointLink}</a> чтобы узнать, как его получить."

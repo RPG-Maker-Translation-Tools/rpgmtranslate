@@ -37,6 +37,7 @@ export const enum AppEvent {
     AddTerm,
     ShowElement,
     ShowTranslations,
+    InsertTranslation,
 }
 
 export const enum ElementToShow {

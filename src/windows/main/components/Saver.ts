@@ -49,20 +49,24 @@ export class Saver {
         tabName: string,
         rows: TabRows,
     ): Promise<boolean> {
-        const outputArray: string[] = [];
+        const outputArray: string[] = new Array(rows.length + 1);
 
-        for (const row of rows) {
+        let i;
+
+        for (i = 0; i < rows.length; i++) {
+            const row = rows[i];
             const source = utils.source(row);
             const translations = utils.translations(row);
 
-            outputArray.push(
+            outputArray[i] =
                 utils.toCustomLB(source) +
-                    consts.SEPARATOR +
-                    translations
-                        .map((translation) => utils.toCustomLB(translation))
-                        .join(consts.SEPARATOR),
-            );
+                consts.SEPARATOR +
+                translations
+                    .map((translation) => utils.toCustomLB(translation))
+                    .join(consts.SEPARATOR);
         }
+
+        i++;
 
         if (tabName === "system") {
             const title =
@@ -72,7 +76,9 @@ export class Saver {
                     ? ""
                     : this.#translationTitle);
 
-            outputArray.push(title);
+            outputArray[i] = title;
+        } else {
+            outputArray.pop();
         }
 
         const filePath = `${tabName}${consts.TXT_EXTENSION}`;
@@ -108,10 +114,7 @@ export class Saver {
         }, period * consts.SECOND_MS);
     }
 
-    public async saveAll(
-        tabName: string | null,
-        rows: TabRows,
-    ): Promise<boolean> {
+    public async saveAll(tabName: string, rows: TabRows): Promise<boolean> {
         if (this.#saving) {
             return true;
         }
@@ -120,7 +123,7 @@ export class Saver {
         this.#saving = true;
         let saved = true;
 
-        if (tabName !== null) {
+        if (tabName !== "") {
             await this.saveCurrentTab(tabName, rows);
         }
 

@@ -2,7 +2,7 @@ import { Component } from "./Component";
 
 import { emittery } from "@classes/emittery";
 
-import { AppEvent, FileFlags, RPGMFileType } from "@lib/enums";
+import { AppEvent, FileFlags } from "@lib/enums";
 
 export class PurgeMenu extends Component {
     declare protected readonly element: HTMLDivElement;
@@ -93,7 +93,7 @@ export class PurgeMenu extends Component {
             .split(",")
             .map((x) => Number(x));
 
-        const skipEvents: [RPGMFileType, number[]][] = [];
+        const skipEvents: SkipEvents = [];
 
         for (const key in this.#skipEvents) {
             skipEvents.push([

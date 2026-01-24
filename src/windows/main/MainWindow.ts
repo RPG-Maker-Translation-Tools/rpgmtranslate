@@ -14,7 +14,6 @@ import {
     Language,
     MatchMode,
     ReadMode,
-    RPGMFileType,
     SearchAction,
     TokenizerAlgorithm,
     TokenizerAlgorithmNames,
@@ -126,6 +125,9 @@ export class MainWindow {
     readonly #debugOutput: HTMLDivElement = document.getElementById(
         "debug-output",
     ) as HTMLDivElement;
+    readonly #informationContainer: HTMLDivElement = document.getElementById(
+        "information-container",
+    )! as HTMLDivElement;
 
     #activeContextMenu: HTMLDivElement | null = null;
 
@@ -551,7 +553,6 @@ export class MainWindow {
             this.#projectSettings,
             this.#replacementLog,
         );
-        this.#writeMenu.init(this.#projectSettings.programDataPath);
         this.#translationTable.init(this.#settings, this.#projectSettings);
         this.#saver.init(this.#projectSettings, this.#utilsPanel.sourceTitle);
         this.#searcher.init(this.#projectSettings);
@@ -564,7 +565,7 @@ export class MainWindow {
             this.#tabInfo,
         );
 
-        this.#translationTable.innerHTML = "";
+        this.#informationContainer.classList.add("hidden");
         this.#updateProgressMeter();
 
         if (
@@ -627,7 +628,7 @@ export class MainWindow {
         }
 
         if (this.#settings.core.projectPath) {
-            await this.#changeTab(null);
+            await this.#changeTab("");
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
                 this.#translationTable.rows,
@@ -636,7 +637,7 @@ export class MainWindow {
             this.#tabPanel.clear();
         }
 
-        this.#translationTable.innerHTML = t`Loading project...`;
+        this.#informationContainer.innerHTML = t`Loading project...`;
 
         this.#settings.core.projectPath = projectPath;
         this.#projectSettings = projectSettings;
@@ -649,7 +650,7 @@ export class MainWindow {
 
                 if (proceed) {
                     await this.#copyTranslationFromRoot(rootTranslationPath);
-                    this.#translationTable.innerHTML = t`Copying translation from root...`;
+                    this.#informationContainer.innerHTML = t`Copying translation from root...`;
                 }
 
                 await this.#loadProject();
@@ -668,12 +669,12 @@ export class MainWindow {
         }
     }
 
-    async #changeTab(filename: string | null): Promise<void> {
+    async #changeTab(filename: string): Promise<void> {
         if (this.#tabInfo.tabName === filename || this.#changeTabTimer !== -1) {
             return;
         }
 
-        if (filename !== null && !(filename in this.#tabInfo.tabs)) {
+        if (filename === "" && !(filename in this.#tabInfo.tabs)) {
             return;
         }
 
@@ -690,9 +691,9 @@ export class MainWindow {
             activeTab.classList.remove("bg-third");
         }
 
-        this.#translationTable.innerHTML = "";
+        this.#informationContainer.innerHTML = "";
 
-        if (filename === null) {
+        if (filename === "") {
             this.#translationTable.hide();
             this.#tabInfo.tabName = this.#utilsPanel.tabName = "";
         } else {
@@ -812,17 +813,15 @@ export class MainWindow {
                 case "Tab":
                     event.preventDefault();
 
-                    if (
-                        this.#tabPanel.hidden &&
-                        this.#settings.core.projectPath
-                    ) {
+                    if (!this.#settings.core.projectPath) {
+                        return;
+                    }
+
+                    if (this.#tabPanel.hidden) {
                         this.#tabPanel.show();
                     } else {
                         this.#tabPanel.hide();
                     }
-                    break;
-                case "Escape":
-                    await this.#changeTab(null);
                     break;
             }
         }
@@ -831,7 +830,7 @@ export class MainWindow {
     async #invokeWrite(
         skipFiles: FileFlags,
         skipMaps: number[] = [],
-        skipEvents: [RPGMFileType, number[]][] = [],
+        skipEvents: SkipEvents = [],
     ): Promise<void> {
         if (!this.#settings.core.projectPath) {
             alert(
@@ -1203,7 +1202,9 @@ export class MainWindow {
                     const tab = this.#tabPanel.tab(
                         this.#tabInfo.tabs[this.#tabInfo.tabName].index,
                     );
-                    await this.#changeTab(tab.firstElementChild!.textContent);
+                    await this.#changeTab(
+                        tab.querySelector("span")!.textContent,
+                    );
                 }
             } else {
                 const newTabIndex =
@@ -1213,7 +1214,9 @@ export class MainWindow {
                     const tab = this.#tabPanel.tab(
                         this.#tabInfo.tabs[this.#tabInfo.tabName].index,
                     );
-                    await this.#changeTab(tab.firstElementChild!.textContent);
+                    await this.#changeTab(
+                        tab.querySelector("span")!.textContent,
+                    );
                 }
             }
         });
@@ -1243,7 +1246,7 @@ export class MainWindow {
         });
 
         emittery.on(AppEvent.ColumnRenamed, ([columnIndex, columnName]) => {
-            this.#projectSettings.translationColumns[columnIndex][0] =
+            this.#projectSettings.translationColumns[columnIndex - 2][0] =
                 columnName;
             this.#searchMenu.updateColumn(columnIndex, columnName);
             this.#batchMenu.updateColumn(columnIndex, columnName);
@@ -1291,7 +1294,7 @@ export class MainWindow {
                     this.#tabInfo.tabName,
                     this.#translationTable.rows,
                 );
-                await this.#changeTab(null);
+                await this.#changeTab("");
 
                 this.#utilsPanel.togglePurgeAnimation();
 
@@ -1727,7 +1730,7 @@ export class MainWindow {
 
             for (const filename in this.#tabInfo.tabs) {
                 if (filename === this.#tabInfo.tabName) {
-                    await this.#changeTab(null);
+                    await this.#changeTab("");
                 }
 
                 const contentPath = utils.join(
@@ -1781,8 +1784,12 @@ export class MainWindow {
             }
         });
 
-        emittery.on(AppEvent.ShowTranslations, async (text) => {
-            await this.#translationsMenu.showTranslations(text);
+        emittery.on(AppEvent.ShowTranslations, async (sourceText) => {
+            await this.#translationsMenu.showTranslations(sourceText);
+        });
+
+        emittery.on(AppEvent.InsertTranslation, (translation) => {
+            this.#translationTable.insertTranslation(translation);
         });
 
         emittery.on(AppEvent.AddTerm, (source) => {
@@ -1803,12 +1810,6 @@ export class MainWindow {
             };
 
             this.#glossaryMenu.addTerm(term);
-        });
-
-        document.addEventListener("keydown", (event) => {
-            if (event.code === "Tab") {
-                event.preventDefault();
-            }
         });
 
         document.addEventListener("keyup", async (event) => {
@@ -1863,7 +1864,7 @@ export class MainWindow {
             return;
         }
 
-        await this.#changeTab(null);
+        await this.#changeTab("");
         await this.#saver.saveAll(
             this.#tabInfo.tabName,
             this.#translationTable.rows,
@@ -1883,15 +1884,15 @@ export class MainWindow {
         duplicateMode: DuplicateMode,
         flags: BaseFlags,
         skipMaps: number[],
-        skipEvents: [RPGMFileType, number[]][],
+        skipEvents: SkipEvents,
         mapEvents: boolean,
     ): Promise<void> {
         if (this.#pendingRead) {
-            this.#translationTable.innerHTML = t`Reading game files...`;
+            this.#informationContainer.innerHTML = t`Reading game files...`;
         }
 
         this.#utilsPanel.toggleReadAnimation();
-        await this.#changeTab(null);
+        await this.#changeTab("");
         await mkdir(this.#projectSettings.translationPath, { recursive: true });
 
         if (
@@ -1964,11 +1965,11 @@ export class MainWindow {
     }
 
     #resetTable(): void {
-        this.#translationTable.innerHTML = "";
+        this.#translationTable.hide();
 
         const noProjectContainer = document.createElement("div");
         noProjectContainer.innerHTML = t`No project selected. Select the project directory, using 'open folder' button in the left-top corner.`;
-        this.#translationTable.append(noProjectContainer);
+        this.#informationContainer.appendChild(noProjectContainer);
 
         if (this.#settings.core.recentProjects.length !== 0) {
             const recentProjectsContainer = document.createElement("div");
@@ -1981,7 +1982,7 @@ export class MainWindow {
                 recentProjectsContainer.appendChild(projectLink);
             }
 
-            this.#translationTable.append(recentProjectsContainer);
+            this.#informationContainer.appendChild(recentProjectsContainer);
             recentProjectsContainer.onclick = async (e): Promise<void> => {
                 const target = e.target as HTMLElement;
 

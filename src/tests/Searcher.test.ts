@@ -281,7 +281,7 @@ describe.each([
     describe.each(scenarios)("$label", ({ mode, index }) => {
         test("search", async () => {
             await searcher.search(
-                external ? null : "tab",
+                external ? "" : "tab",
                 tabs,
                 external ? null : (rowsHTML.children as TabRows),
                 predicate,
@@ -307,7 +307,7 @@ describe.each([
 
         test("replace", async () => {
             const results = await searcher.search(
-                external ? null : "tab",
+                external ? "" : "tab",
                 tabs,
                 external ? null : (rowsHTML.children as TabRows),
                 predicate,
@@ -331,7 +331,7 @@ describe.each([
             const predicate = "source 1";
 
             const results = await searcher.search(
-                external ? null : "tab",
+                external ? "" : "tab",
                 tabs,
                 external ? null : (rowsHTML.children as TabRows),
                 predicate,

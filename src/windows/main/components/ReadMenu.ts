@@ -9,7 +9,6 @@ import {
     DuplicateMode,
     FileFlags,
     ReadMode,
-    RPGMFileType,
 } from "@lib/enums";
 
 import { t } from "@lingui/core/macro";
@@ -316,7 +315,7 @@ export class ReadMenu extends Component {
                 .split(",")
                 .map((x) => Number(x));
 
-            const skipEvents: [RPGMFileType, number[]][] = [];
+            const skipEvents: SkipEvents = [];
 
             for (const key in this.#skipEvents) {
                 skipEvents.push([

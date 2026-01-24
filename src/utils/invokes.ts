@@ -32,7 +32,7 @@ interface InvokeOptions {
     skipFiles: import("@enums/FileFlags").FileFlags;
     flags: import("@enums/BaseFlags").BaseFlags;
     skipMaps: number[];
-    skipEvents: [import("@enums/RPGMFileType").RPGMFileType, number[]][];
+    skipEvents: SkipEvents;
     hashes: string[];
 }
 

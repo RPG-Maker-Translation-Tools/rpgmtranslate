@@ -104,3 +104,8 @@ interface Metadata {
     readonly trim: boolean;
     readonly hashes: string[];
 }
+
+type SkipEvents = [
+    fileType: import("@enums/RPGMFileType").RPGMFileType,
+    eventIndices: number[],
+][];

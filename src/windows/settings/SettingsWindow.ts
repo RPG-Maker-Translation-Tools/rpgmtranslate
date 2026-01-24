@@ -77,6 +77,8 @@ interface SettingsWindowUI {
     projectContextInput: HTMLTextAreaElement;
 }
 
+// TODO: Allow selecting custom location for .rpgmtranslate directory
+
 class SettingsWindow {
     #ui = this.#setupUI();
     #intevalID: number;
@@ -419,7 +421,7 @@ No additional keys, no reordered structure, no commentary.`;
             ) as HTMLDivElement,
 
             translationTableFontSelect: document.getElementById(
-                "translation-table-select",
+                "translation-table-font-select",
             ) as HTMLSelectElement,
             uiFontSelect: document.getElementById(
                 "ui-font-select",

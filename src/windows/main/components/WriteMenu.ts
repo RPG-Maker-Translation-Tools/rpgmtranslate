@@ -2,15 +2,10 @@ import { Component } from "./Component";
 
 import { emittery } from "@classes/emittery";
 
-import { AppEvent, FileFlags, RPGMFileType } from "@lib/enums";
-
-import { open } from "@tauri-apps/plugin-dialog";
+import { AppEvent, FileFlags } from "@lib/enums";
 
 export class WriteMenu extends Component {
     declare protected readonly element: HTMLDivElement;
-
-    readonly #selectOutputPathButton: HTMLButtonElement;
-    readonly #outputPathInput: HTMLInputElement;
 
     readonly #skipFilesSelect: HTMLSelectElement;
     readonly #skipMapsInput: HTMLInputElement;
@@ -21,16 +16,8 @@ export class WriteMenu extends Component {
 
     readonly #applyButton: HTMLButtonElement;
 
-    #programDataPath = "";
-
     public constructor() {
         super("write-menu");
-
-        this.#selectOutputPathButton = this.element.querySelector(
-            "#select-output-path-button",
-        )!;
-        this.#outputPathInput =
-            this.element.querySelector("#output-path-input")!;
 
         this.#skipFilesSelect =
             this.element.querySelector("#skip-files-select")!;
@@ -87,29 +74,10 @@ export class WriteMenu extends Component {
         };
     }
 
-    public init(programDataPath: string): void {
-        this.#programDataPath = programDataPath;
-    }
-
-    public override show(x: number, y: number): void {
-        super.show(x, y);
-
-        this.#outputPathInput.value = this.#programDataPath;
-    }
-
     async #onclick(event: MouseEvent): Promise<void> {
         const target = event.target as HTMLElement | null;
 
-        if (target === this.#selectOutputPathButton) {
-            const directory = (await open({
-                directory: true,
-                multiple: false,
-            }))!;
-
-            if (directory) {
-                this.#outputPathInput.value = directory;
-            }
-        } else if (target === this.#applyButton) {
+        if (target === this.#applyButton) {
             let skipFiles = FileFlags.None;
 
             for (const option of this.#skipFilesSelect.selectedOptions) {
@@ -120,7 +88,7 @@ export class WriteMenu extends Component {
                 .split(",")
                 .map((x) => Number(x));
 
-            const skipEvents: [RPGMFileType, number[]][] = [];
+            const skipEvents: SkipEvents = [];
 
             for (const key in this.#skipEvents) {
                 skipEvents.push([
