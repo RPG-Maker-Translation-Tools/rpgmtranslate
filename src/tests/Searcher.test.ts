@@ -1,5 +1,5 @@
 import { ProjectSettings } from "@lib/classes";
-import { SearchAction, SearchFlags, SearchMode } from "@lib/enums";
+import { SearchAction, SearchMode } from "@lib/enums";
 import { i18n } from "@lingui/core";
 import * as fs from "@tauri-apps/plugin-fs";
 import { DEFAULT_COLUMN_WIDTH } from "@utils/constants";
@@ -24,27 +24,13 @@ const thirdRow = {
     secondTranslation: "translation 3 3",
 };
 
+const rows = [firstRow, secondRow, thirdRow];
+
 const predicate = "1";
-
-const rowsData = [firstRow, secondRow, thirdRow];
-
-const rowsHTML = document.createElement("tbody");
-rowsHTML.innerHTML = rowsData
-    .map(
-        (row) => `
-            <tr>
-                <td></td>
-                <td>${row.source}</td>
-                <td><textarea>${row.firstTranslation}</textarea></td>
-                <td><textarea>${row.secondTranslation}</textarea></td>
-            </tr>
-        `,
-    )
-    .join("");
 
 vi.mock(import("@utils/invokes"), async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, expandScope: vi.fn() };
+    return { ...actual };
 });
 
 vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
@@ -123,19 +109,14 @@ function buildExpected(
     replace: Record<string, number[]>;
     put: Record<string, number[]>;
 } {
-    const rows = rowsHTML.children as TabRows;
     const results: string[][][] = [];
     const replace: Record<string, number[]> = {};
     const put: Record<string, number[]> = {};
 
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
         const row = rows[rowIndex];
-        const cells = row.children;
-        const source = cells[1].textContent;
-        const translations = [
-            cells[2].querySelector("textarea")!.value,
-            cells[3].querySelector("textarea")!.value,
-        ];
+        const source = row.source;
+        const translations = [row.firstTranslation, row.secondTranslation];
 
         if (action === SearchAction.Put) {
             if (mode === SearchMode.Translation) {
@@ -260,7 +241,6 @@ describe.each([
     i18n.activate("en");
 
     const searcher = new Searcher();
-    const tabs = { one: {} as TabEntry };
 
     beforeEach(async () => {
         const settings = new ProjectSettings({
@@ -272,18 +252,13 @@ describe.each([
         await settings.setProjectPath(".");
 
         searcher.init(settings);
-
-        if (!external) {
-            searcher.enableFlag(SearchFlags.OnlyCurrentTab);
-        }
     });
 
     describe.each(scenarios)("$label", ({ mode, index }) => {
         test("search", async () => {
             await searcher.search(
-                external ? "" : "tab",
-                tabs,
-                external ? null : (rowsHTML.children as TabRows),
+                "",
+                [],
                 predicate,
                 index,
                 mode,
@@ -307,9 +282,8 @@ describe.each([
 
         test("replace", async () => {
             const results = await searcher.search(
-                external ? "" : "tab",
-                tabs,
-                external ? null : (rowsHTML.children as TabRows),
+                "",
+                [],
                 predicate,
                 index,
                 mode,
@@ -331,9 +305,8 @@ describe.each([
             const predicate = "source 1";
 
             const results = await searcher.search(
-                external ? "" : "tab",
-                tabs,
-                external ? null : (rowsHTML.children as TabRows),
+                "",
+                [],
                 predicate,
                 index,
                 mode,

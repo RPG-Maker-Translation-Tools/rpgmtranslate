@@ -26,15 +26,6 @@ type TabRows = HTMLCollectionOf<TabRow>;
 
 type Bookmarks = Record<string, Record<number, string>>;
 
-type LogEntryData = readonly [
-    entry: string,
-    columnIndex: number,
-    old: string,
-    new: string,
-];
-type LogEntry = Record<string, LogEntryData>;
-type ReplacementLog = Record<string, LogEntry>;
-
 type SearchMatchArray = [
     match: readonly [metadata: string, match: string],
     matchCounterpart: readonly [metadata: string, match: string],
@@ -109,3 +100,8 @@ type SkipEvents = [
     fileType: import("@enums/RPGMFileType").RPGMFileType,
     eventIndices: number[],
 ][];
+
+type SingleRange = [start: number, end: number];
+type FileRange = SingleRange[];
+
+type SelectedFiles = [filename: string, range: FileRange][];

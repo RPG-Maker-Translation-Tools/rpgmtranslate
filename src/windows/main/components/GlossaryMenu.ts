@@ -1,4 +1,5 @@
 import { Component } from "./Component";
+import { FileSelectMenu } from "./FileSelectMenu";
 
 import { emittery } from "@lib/classes/emittery";
 
@@ -12,13 +13,20 @@ import { t } from "@lingui/core/macro";
 export class GlossaryMenu extends Component {
     #glossary!: Glossary;
 
-    #searchOnlyCurrentFile = false;
+    readonly #fileSelectMenu: FileSelectMenu;
+
+    #filesToCheckButton: HTMLButtonElement;
     #searchInput: HTMLInputElement;
     #tableBody: HTMLTableSectionElement;
 
-    public constructor() {
+    public constructor(fileSelectMenu: FileSelectMenu) {
         super("glossary-menu");
 
+        this.#fileSelectMenu = fileSelectMenu;
+
+        this.#filesToCheckButton = this.element.querySelector(
+            "#files-to-check-button",
+        )!;
         this.#searchInput = this.element.querySelector("#search-input")!;
         this.#tableBody = this.element.querySelector("#table-body")!;
 
@@ -37,18 +45,26 @@ export class GlossaryMenu extends Component {
         return this.#glossary;
     }
 
+    public override show(x?: number, y?: number): void {
+        super.show(x, y);
+        this.#fileSelectMenu.selectAll();
+    }
+
     public init(glossary: Glossary): void {
         this.#glossary = glossary;
 
-        for (const term of this.#glossary) {
-            const row = this.#createRow(term);
-            this.#tableBody.appendChild(row);
+        for (const child of this.#tableBody.children) {
+            if (child == this.#tableBody.lastElementChild) {
+                break;
+            }
+
+            child.remove();
         }
 
-        const addButton = document.createElement("tr");
-        addButton.innerHTML =
-            '<td class="text-center"><button class="bg-second w-8 rounded-sm text-xl">+</button></td>';
-        this.#tableBody.appendChild(addButton);
+        for (const term of this.#glossary) {
+            const row = this.#createRow(term);
+            this.#tableBody.insertBefore(row, this.#tableBody.lastElementChild);
+        }
     }
 
     public addTerm(term: Term, editable = false): void {
@@ -193,11 +209,6 @@ export class GlossaryMenu extends Component {
             return;
         }
 
-        if (target.id === "check-only-current") {
-            this.#searchOnlyCurrentFile = (target as HTMLInputElement).checked;
-            return;
-        }
-
         if (target.tagName !== "SELECT") {
             return;
         }
@@ -210,21 +221,26 @@ export class GlossaryMenu extends Component {
         );
     }
 
-    #onclick(event: MouseEvent) {
+    #onclick(event: MouseEvent): void {
         const target = event.target as HTMLElement | null;
 
         if (!target) {
             return;
         }
 
-        if (target.id === "match-menu-button") {
+        if (target.id === "files-to-check-button") {
+            if (this.#fileSelectMenu.hidden) {
+                const rect = this.#filesToCheckButton.getBoundingClientRect();
+                this.#fileSelectMenu.show(rect.x + rect.width, rect.y);
+            } else {
+                this.#fileSelectMenu.hide();
+            }
+        } else if (target.id === "match-menu-button") {
             void emittery.emit(AppEvent.ShowElement, [
                 ElementToShow.MatchMenu,
                 true,
             ]);
-        }
-
-        if (target.id === "search-button") {
+        } else if (target.id === "search-button") {
             const predicate = this.#searchInput.value;
 
             for (const row of this.#tableBody.children) {
@@ -240,10 +256,13 @@ export class GlossaryMenu extends Component {
                 }
             }
         } else if (target.id === "qc-button") {
-            void emittery.emit(AppEvent.TermCheck, [
-                -1,
-                [this.#searchOnlyCurrentFile, undefined],
-            ]);
+            const selected = this.#fileSelectMenu.selected;
+
+            if (!selected) {
+                return;
+            }
+
+            void emittery.emit(AppEvent.TermCheck, [-1, [selected, undefined]]);
             void emittery.emit(AppEvent.ShowElement, [
                 ElementToShow.MatchMenu,
                 false,
@@ -281,9 +300,15 @@ export class GlossaryMenu extends Component {
 
         switch (target.id) {
             case "check-button": {
+                const selected = this.#fileSelectMenu.selected;
+
+                if (!selected) {
+                    return;
+                }
+
                 void emittery.emit(AppEvent.TermCheck, [
                     id,
-                    [this.#searchOnlyCurrentFile, undefined],
+                    [selected, undefined],
                 ]);
                 void emittery.emit(AppEvent.ShowElement, [
                     ElementToShow.MatchMenu,

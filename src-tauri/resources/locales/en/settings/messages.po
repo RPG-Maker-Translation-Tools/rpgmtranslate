@@ -17,7 +17,7 @@ msgstr ""
 msgid "Allowed"
 msgstr "Allowed"
 
-#: src/windows/settings/SettingsWindow.ts:171
+#: src/windows/settings/SettingsWindow.ts:169
 msgid "API key is empty."
 msgstr "API key is empty."
 
@@ -66,7 +66,7 @@ msgstr "Disabled"
 msgid "Display lines breaks in text areas"
 msgstr "Display lines breaks in text areas"
 
-#: src/windows/settings/SettingsWindow.ts:183
+#: src/windows/settings/SettingsWindow.ts:181
 msgid "Failed to validate key: {err}"
 msgstr "Failed to validate key: {err}"
 
@@ -126,7 +126,7 @@ msgstr "Translation Endpoint"
 msgid "Translation Table Font"
 msgstr "Translation Table Font"
 
-#: src/windows/settings/SettingsWindow.ts:709
+#: src/windows/settings/SettingsWindow.ts:707
 msgid "Translation table font was not found. Ensure it's installed on your system."
 msgstr "Translation table font was not found. Ensure it's installed on your system."
 
@@ -134,7 +134,7 @@ msgstr "Translation table font was not found. Ensure it's installed on your syst
 msgid "UI Font"
 msgstr "UI Font"
 
-#: src/windows/settings/SettingsWindow.ts:718
+#: src/windows/settings/SettingsWindow.ts:716
 msgid "UI font was not found. Ensure it's installed on your system."
 msgstr "UI font was not found. Ensure it's installed on your system."
 
@@ -154,6 +154,6 @@ msgstr "Validate Key"
 msgid "You also need a folder ID from Yandex. You can find it in the same link."
 msgstr "You also need a folder ID from Yandex. You can find it in the same link."
 
-#: src/windows/settings/SettingsWindow.ts:580
+#: src/windows/settings/SettingsWindow.ts:578
 msgid "You need an API key. Check out <a class=\"text-third cursor-pointer hover:underline\">{endpointLink}</a> on how to get it."
 msgstr "You need an API key. Check out <a class=\"text-third cursor-pointer hover:underline\">{endpointLink}</a> on how to get it."

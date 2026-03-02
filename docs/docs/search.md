@@ -32,8 +32,6 @@ The search functionality is optimized with:
 
 Search Results Panel displays match in a compact way, providing you with the matched text, corresponding translation, and metadata.
 
-// TODO: Mention log
-
 Interaction:
 
 - R: Open and close the panel

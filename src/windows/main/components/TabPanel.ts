@@ -3,30 +3,17 @@ import { Component } from "./Component";
 import { emittery } from "@classes/emittery";
 
 import { ProjectSettings } from "@lib/classes";
-import { AppEvent, BatchAction, TokenizerAlgorithm } from "@lib/enums";
+import { AppEvent, BatchAction } from "@lib/enums";
 
 import * as consts from "@utils/constants";
-import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
-import {
-    detectLang,
-    getLang,
-    isErr,
-    readDir,
-    readTextFile,
-    writeTextFile,
-} from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
-
-import { error, info } from "@tauri-apps/plugin-log";
 
 export class TabPanel extends Component {
     declare protected readonly element: HTMLDivElement;
 
     #projectSettings!: ProjectSettings;
-    #tempMapsPath = "";
-    #completed: string[] = [];
 
     #submenu: HTMLDivElement | null = null;
 
@@ -63,67 +50,8 @@ export class TabPanel extends Component {
         return this.element.classList.contains("-translate-x-full");
     }
 
-    public async init(
-        projectSettings: ProjectSettings,
-    ): Promise<string | undefined> {
+    public init(projectSettings: ProjectSettings): void {
         this.#projectSettings = projectSettings;
-        this.#tempMapsPath = projectSettings.tempMapsPath;
-        this.#completed = projectSettings.completed;
-
-        const translationFiles = await readDir(projectSettings.translationPath);
-
-        if (isErr(translationFiles)) {
-            void error(translationFiles[0]!);
-            return;
-        }
-
-        for (const file of translationFiles[1]!) {
-            if (!file.name.endsWith(consts.TXT_EXTENSION)) {
-                continue;
-            }
-
-            const content = await readTextFile(
-                utils.join(projectSettings.translationPath, file.name),
-            );
-
-            if (isErr(content)) {
-                void error(content[0]!);
-                continue;
-            }
-
-            const lines = utils.lines(content[1]!);
-
-            if (lines.length === 1) {
-                continue;
-            }
-
-            const basename = file.name.slice(0, file.name.lastIndexOf("."));
-
-            if (basename.startsWith("map")) {
-                await this.#parseMap(
-                    lines,
-                    basename,
-                    projectSettings.translationLanguages.sourceLanguage,
-                );
-            } else {
-                this.addTab(
-                    basename,
-                    lines,
-                    projectSettings.translationLanguages.sourceLanguage,
-                );
-            }
-
-            void info(`${file.name}: Successfully read.`);
-        }
-
-        if (
-            projectSettings.translationLanguages.sourceLanguage ===
-            TokenizerAlgorithm.None
-        ) {
-            return await getLang();
-        } else {
-            return undefined;
-        }
     }
 
     public tab(index: number): HTMLButtonElement {
@@ -142,68 +70,22 @@ export class TabPanel extends Component {
         this.element.innerHTML = "";
     }
 
-    public addTab(
-        name: string,
-        rows: string[],
-        sourceLanguage: TokenizerAlgorithm,
-    ): void {
-        if (name === "system") {
-            // Remove the game title row
-            rows = rows.slice(0, -1);
-        }
+    public updateTabProgress(tabIndex: number, percentage: number): void {
+        const progressBar = this.tab(tabIndex).lastElementChild
+            ?.firstElementChild as HTMLElement | null;
 
-        let total = rows.length;
-        let translated = 0;
+        if (progressBar) {
+            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
 
-        if (total <= 0) {
-            return;
-        }
-
-        for (let l = 0; l < rows.length; l++) {
-            const line = rows[l];
-            const parts = utils.parts(line);
-
-            if (!parts) {
-                utils.logSplitError(name, l);
-                continue;
-            }
-
-            const source = utils.source(parts);
-            const translation = utils.translation(parts)[0];
-
-            if (source === consts.BOOKMARK_COMMENT) {
-                void emittery.emit(AppEvent.AddBookmark, [
-                    name,
-                    translation,
-                    l + 1,
-                ]);
-            }
-
-            if (line.startsWith(consts.COMMENT_PREFIX)) {
-                total--;
+            if (percentage === consts.PERCENT_MULTIPLIER) {
+                progressBar.classList.replace("bg-third", "bg-green-600");
             } else {
-                if (
-                    sourceLanguage === TokenizerAlgorithm.None &&
-                    name !== "scripts" &&
-                    name !== "plugins"
-                ) {
-                    detectLang(source);
-                }
-
-                if (translation) {
-                    translated++;
-                }
+                progressBar.classList.replace("bg-green-600", "bg-third");
             }
         }
+    }
 
-        if (total <= 0) {
-            return;
-        }
-
-        const percentage = Math.floor(
-            (translated / total) * consts.PERCENT_MULTIPLIER,
-        );
-
+    public addTab(name: string, percentage: number): number {
         const tabIndex = this.tabCount;
 
         const tabButton = document.createElement("button");
@@ -231,84 +113,11 @@ export class TabPanel extends Component {
         tabButton.appendChild(progressBar);
         this.element.appendChild(tabButton);
 
-        if (this.#completed.includes(name)) {
+        if (this.#projectSettings.completed.includes(name)) {
             tabButton.style.color = "lime";
         }
 
-        void emittery.emit(AppEvent.TabAdded, [
-            name,
-            tabIndex,
-            total,
-            translated,
-        ]);
-    }
-
-    public updateTabProgress(tabIndex: number, percentage: number): void {
-        const progressBar = this.tab(tabIndex).lastElementChild
-            ?.firstElementChild as HTMLElement | null;
-
-        if (progressBar) {
-            progressBar.style.width = progressBar.innerHTML = `${percentage}%`;
-
-            if (percentage === consts.PERCENT_MULTIPLIER) {
-                progressBar.classList.replace("bg-third", "bg-green-600");
-            } else {
-                progressBar.classList.replace("bg-green-600", "bg-third");
-            }
-        }
-    }
-
-    async #parseMap(
-        lines: string[],
-        filename: string,
-        sourceLanguage: TokenizerAlgorithm,
-    ): Promise<void> {
-        const result: string[] = [];
-        const mapIndices: number[] = [];
-
-        const parseMapComment = async (): Promise<void> => {
-            const mapID = mapIndices.shift();
-            const tempMapPath = utils.join(
-                this.#tempMapsPath,
-                `map${mapID}${consts.TXT_EXTENSION}`,
-            );
-
-            const res = await writeTextFile(tempMapPath, result.join("\n"));
-
-            if (isErr(res)) {
-                void error(res[0]!);
-            } else {
-                this.addTab(`map${mapID}`, result, sourceLanguage);
-            }
-
-            result.length = 0;
-        };
-
-        for (let l = 0; l < lines.length; l++) {
-            const line = lines[l];
-
-            if (line.startsWith(consts.BOOKMARK_COMMENT)) {
-                continue;
-            } else if (line.startsWith(consts.ID_COMMENT)) {
-                const parts = utils.parts(line);
-
-                if (!parts) {
-                    utils.logSplitError(filename, l);
-                    continue;
-                }
-
-                const translation = utils.translation(parts)[0];
-                mapIndices.push(Number(translation));
-
-                if (result.length > 0) {
-                    await parseMapComment();
-                }
-            }
-
-            result.push(line);
-        }
-
-        await parseMapComment();
+        return tabIndex;
     }
 
     async #onclick(event: MouseEvent): Promise<void> {
@@ -426,7 +235,7 @@ export class TabPanel extends Component {
             }
 
             if (target.id === "0") {
-                this.#completed.push(tabName);
+                this.#projectSettings.completed.push(tabName);
                 tab.style.color = "lime";
             }
         };

@@ -28,7 +28,6 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             let window =
                 unsafe { app.get_webview_window("main").unwrap_unchecked() };

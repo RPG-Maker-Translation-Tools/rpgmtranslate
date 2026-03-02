@@ -13,8 +13,6 @@ import {
 
 import { t } from "@lingui/core/macro";
 
-// TODO: Implement generic files support introduced in rvpacker-txt-rs-lib v11.1.0
-
 export class ReadMenu extends Component {
     declare protected readonly element: HTMLDivElement;
 
@@ -83,7 +81,6 @@ export class ReadMenu extends Component {
         this.#applyReadButton = this.element.querySelector("#apply-button")!;
 
         const defaultOption = document.createElement("option");
-        // TODO: This is possibly untranslated?
         defaultOption.setAttribute("data-i18n", "Default");
         defaultOption.value = ReadMode.Default.toString();
         this.#readModeSelect.add(defaultOption);

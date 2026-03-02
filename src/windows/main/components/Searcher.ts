@@ -1,12 +1,18 @@
 import { ProjectSettings } from "@lib/classes";
-import { MatchType, SearchAction, SearchFlags, SearchMode } from "@lib/enums";
+import { emittery } from "@lib/classes/emittery";
+import {
+    AppEvent,
+    MatchType,
+    SearchAction,
+    SearchFlags,
+    SearchMode,
+} from "@lib/enums";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import {
     isErr,
     mkdir,
-    readDir,
     readTextFile,
     remove as removePath,
     writeTextFile,
@@ -17,7 +23,7 @@ import { t } from "@lingui/core/macro";
 import XRegExp from "xregexp";
 
 import { message } from "@tauri-apps/plugin-dialog";
-import { error } from "@tauri-apps/plugin-log";
+import { error, info } from "@tauri-apps/plugin-log";
 
 interface Match {
     text: string;
@@ -58,8 +64,7 @@ export class Searcher {
 
     public async search(
         tabName: string,
-        tabs: Tabs,
-        rows: TabRows | null,
+        files: SelectedFiles,
         text: string,
         columnIndex: number,
         searchMode: SearchMode,
@@ -79,12 +84,29 @@ export class Searcher {
 
         await this.#removeOldMatches();
 
-        if (tabName !== "") {
-            await this.#searchCurrentTab(tabName, columnIndex, rows!);
-        }
+        for (const [file, range] of files) {
+            if (file == tabName) {
+                await emittery.emit(AppEvent.ChangeTab, "");
+            }
 
-        if (!(this.#searchFlags & SearchFlags.OnlyCurrentTab)) {
-            await this.#searchGlobal(tabName, columnIndex, tabs);
+            const filePath = utils.join(
+                file.startsWith("map")
+                    ? this.#projectSettings.tempMapsPath
+                    : this.#projectSettings.translationPath,
+                file + consts.TXT_EXTENSION,
+            );
+
+            const content = await readTextFile(filePath);
+
+            if (isErr(content)) {
+                void error(content[0]!);
+                continue;
+            }
+
+            const rows = utils.lines(content[1]!);
+            this.#searchRows(file, rows, columnIndex, range);
+
+            await this.#writeMatches();
         }
 
         await this.#writeMatches(true);
@@ -158,10 +180,6 @@ export class Searcher {
         }
 
         if (this.#searchAction === SearchAction.Search) {
-            if (filename.endsWith(consts.TXT_EXTENSION)) {
-                filename = filename.slice(0, -consts.TXT_EXTENSION_LENGTH);
-            }
-
             const matchKey = `${filename} - ${entry} - ${match.type} - ${match.columnName} (${match.columnNumber}) - ${rowNumber}`;
             const matchCounterpartKey = `${filename} - ${entry} - ${matchCounterpart.type} - ${matchCounterpart.columnName} (${matchCounterpart.columnNumber}) - ${rowNumber}`;
 
@@ -228,12 +246,10 @@ export class Searcher {
 
     #searchRows(
         filename: string,
-        rows: string[] | TabRows,
+        rows: string[],
         columnIndex: number,
-        tabs?: Tabs,
+        range: FileRange,
     ): void {
-        const isArray = Array.isArray(rows);
-
         const searchSource =
             this.#searchMode !== SearchMode.Translation &&
             this.#searchAction !== SearchAction.Replace;
@@ -242,40 +258,72 @@ export class Searcher {
             this.#searchAction !== SearchAction.Put;
 
         let entryIndex!: string;
+        let lineIdx = 1;
 
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            let parts!: string[];
 
-            if (isArray) {
-                const _parts = utils.parts(row as string);
-
-                if (!_parts) {
-                    utils.logSplitError(filename, i + 1);
-                    continue;
+            if (row.startsWith(consts.COMMENT_PREFIX)) {
+                if (row.startsWith(consts.ID_COMMENT)) {
+                    entryIndex = row.slice(
+                        consts.ID_COMMENT.length + consts.SEPARATOR.length,
+                    );
                 }
 
-                parts = _parts;
-            }
+                if (this.#searchFlags & SearchFlags.Comment) {
+                    const sourceMatch: Match = {
+                        text: row.slice(0, consts.NAME_COMMENT.length),
+                        type: MatchType.Source,
+                        columnName: "N/A",
+                        columnNumber: 0,
+                    };
 
-            const source = utils.source(isArray ? parts : (row as TabRow));
+                    const translationMatch: Match = {
+                        text: row.slice(
+                            consts.NAME_COMMENT.length +
+                                consts.SEPARATOR.length,
+                        ),
+                        type: MatchType.Translation,
+                        columnName: "N/A",
+                        columnNumber: 0,
+                    };
 
-            if (source === consts.ID_COMMENT) {
-                entryIndex = utils.translations(
-                    isArray ? parts : (row as TabRow),
-                )[0];
+                    this.#appendSearchMatch(
+                        sourceMatch,
+                        translationMatch,
+                        filename,
+                        entryIndex,
+                        lineIdx,
+                    );
 
-                if (
-                    tabs &&
-                    filename.startsWith("map") &&
-                    !(`map${entryIndex}` in tabs)
-                ) {
-                    break;
+                    this.#appendSearchMatch(
+                        translationMatch,
+                        sourceMatch,
+                        filename,
+                        entryIndex,
+                        lineIdx,
+                    );
                 }
+
+                continue;
             }
+
+            const split = utils.parts(row);
+
+            if (!split) {
+                utils.logSplitError(filename, i + 1);
+                continue;
+            }
+
+            if (!utils.rangeContains(range, lineIdx++)) {
+                void info(`Skipped index ${lineIdx} in file ${filename}`);
+                continue;
+            }
+
+            const source = utils.source(split);
 
             const sourceMatch: Match = {
-                text: isArray ? utils.toLF(source) : source,
+                text: utils.toLF(source),
                 type: MatchType.Source,
                 columnName: t`Source`,
                 columnNumber: 0,
@@ -286,19 +334,13 @@ export class Searcher {
                 let column = columnIndex;
 
                 if (columnIndex === -1) {
-                    [translation, column] = utils.translation(
-                        isArray ? parts : (row as TabRow),
-                    );
+                    [translation, column] = utils.translation(split);
                 } else {
-                    const translations = utils.translations(
-                        isArray ? parts : (row as TabRow),
-                    );
-
-                    translation = translations[columnIndex];
+                    translation = utils.translations(split)[columnIndex];
                 }
 
                 const translationMatch: Match = {
-                    text: isArray ? utils.toLF(translation) : translation,
+                    text: utils.toLF(translation),
                     type: MatchType.Translation,
                     columnName:
                         this.#projectSettings.translationColumns[column][0],
@@ -310,14 +352,12 @@ export class Searcher {
                     translationMatch,
                     filename,
                     entryIndex,
-                    i + 1,
+                    lineIdx - 1,
                 );
             }
 
             if (searchTranslation) {
-                const translations = utils.translations(
-                    isArray ? parts : (row as TabRow),
-                );
+                const translations = utils.translations(split);
 
                 const start = columnIndex === -1 ? 0 : columnIndex;
                 const end =
@@ -331,7 +371,7 @@ export class Searcher {
                     }
 
                     const translationMatch: Match = {
-                        text: isArray ? utils.toLF(translation) : translation,
+                        text: utils.toLF(translation),
                         type: MatchType.Translation,
                         columnName:
                             this.#projectSettings.translationColumns[j][0],
@@ -343,76 +383,10 @@ export class Searcher {
                         sourceMatch,
                         filename,
                         entryIndex,
-                        i + 1,
+                        lineIdx - 1,
                     );
                 }
             }
-        }
-    }
-
-    async #searchCurrentTab(
-        tabName: string,
-        columnIndex: number,
-        rows: TabRows,
-    ): Promise<void> {
-        this.#searchRows(tabName, rows, columnIndex);
-        await this.#writeMatches(true);
-    }
-
-    async #searchGlobal(
-        tabName: string,
-        columnIndex: number,
-        tabs: Tabs,
-    ): Promise<void> {
-        const mapsEntries = await readDir(this.#projectSettings.tempMapsPath);
-
-        if (isErr(mapsEntries)) {
-            void error(mapsEntries[0]!);
-            return;
-        }
-
-        const maps = mapsEntries[1]!.sort(
-            (a, b) => Number(a.name.slice(3, -4)) - Number(b.name.slice(3, -4)),
-        );
-
-        const other = await readDir(this.#projectSettings.translationPath);
-
-        if (isErr(other)) {
-            void error(other[0]!);
-            return;
-        }
-
-        for (let f = 0; f < maps.length + other.length - 1; f++) {
-            const name = (
-                f >= maps.length ? other[1]![f - maps.length] : maps[f]
-            ).name;
-
-            if (
-                !name.endsWith(consts.TXT_EXTENSION) ||
-                name.slice(0, -consts.TXT_EXTENSION_LENGTH) === tabName ||
-                name === "maps.txt"
-            ) {
-                continue;
-            }
-
-            const filePath = utils.join(
-                name.startsWith("map")
-                    ? this.#projectSettings.tempMapsPath
-                    : this.#projectSettings.translationPath,
-                name,
-            );
-
-            const content = await readTextFile(filePath);
-
-            if (isErr(content)) {
-                void error(content[0]!);
-                continue;
-            }
-
-            const lines = utils.lines(content[1]!);
-            this.#searchRows(name, lines, columnIndex, tabs);
-
-            await this.#writeMatches();
         }
     }
 

@@ -49,24 +49,38 @@ export class Saver {
         tabName: string,
         rows: TabRows,
     ): Promise<boolean> {
-        const outputArray: string[] = new Array(rows.length + 1);
+        const outputArray: string[] = [];
 
-        let i;
+        for (const row of rows) {
+            if (row.id === "comment-block") {
+                const container = row.querySelector("div")!;
 
-        for (i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const source = utils.source(row);
-            const translations = utils.translations(row);
+                for (const commentContainer of container.children) {
+                    const [source, translation] = commentContainer.children;
 
-            outputArray[i] =
-                utils.toCustomLB(source) +
-                consts.SEPARATOR +
-                translations
-                    .map((translation) => utils.toCustomLB(translation))
-                    .join(consts.SEPARATOR);
+                    outputArray.push(
+                        utils.toCustomLB(source.textContent) +
+                            consts.SEPARATOR +
+                            utils.toCustomLB(
+                                translation.tagName === "INPUT"
+                                    ? (translation as HTMLInputElement).value
+                                    : translation.textContent,
+                            ),
+                    );
+                }
+            } else {
+                const source = utils.source(row);
+                const translations = utils.translations(row);
+
+                outputArray.push(
+                    utils.toCustomLB(source) +
+                        consts.SEPARATOR +
+                        translations
+                            .map((translation) => utils.toCustomLB(translation))
+                            .join(consts.SEPARATOR),
+                );
+            }
         }
-
-        i++;
 
         if (tabName === "system") {
             const title =
@@ -76,9 +90,7 @@ export class Saver {
                     ? ""
                     : this.#translationTitle);
 
-            outputArray[i] = title;
-        } else {
-            outputArray.pop();
+            outputArray.push(title);
         }
 
         const filePath = `${tabName}${consts.TXT_EXTENSION}`;

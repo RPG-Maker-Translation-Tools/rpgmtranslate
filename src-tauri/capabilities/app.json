@@ -1,7 +1,7 @@
 {
-    "identifier": "main",
+    "identifier": "app",
     "permissions": [
-        { "allow": ["$RESOURCE/**"], "identifier": "fs:scope" },
+        { "allow": ["**", "**/*", "/**/*"], "identifier": "fs:scope" },
         "core:default",
         "core:webview:allow-set-webview-zoom",
         "core:webview:allow-create-webview-window",
@@ -9,7 +9,8 @@
         "core:window:allow-close",
         "dialog:default",
         "fs:default",
-        "fs:allow-write-text-file",
+        "fs:read-all",
+        "fs:write-all",
         "fs:allow-remove",
         "fs:allow-copy-file",
         "fs:allow-exists",
@@ -19,7 +20,8 @@
         "clipboard-manager:allow-read-text",
         "clipboard-manager:allow-write-text",
         "updater:default",
-        "log:default"
+        "log:default",
+        "shell:default"
     ],
-    "windows": ["main"]
+    "windows": ["main", "settings", "about"]
 }

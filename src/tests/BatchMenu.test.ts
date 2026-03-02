@@ -7,24 +7,14 @@ import {
 import * as fs from "@tauri-apps/plugin-fs";
 import { DEFAULT_TEMPERATURE, DEFAULT_TOKEN_LIMIT } from "@utils/constants";
 import * as invokes from "@utils/invokes";
-import { BatchMenu } from "@windows/main/components";
+import { BatchMenu, FileSelectMenu } from "@windows/main/components";
 import { describe, expect, Mock, test, vi } from "vitest";
 
 document.body.innerHTML = `
 <div
-    class="bg-primary outline-primary border-second @container fixed z-50 flex hidden size-3/6 resize flex-col justify-around gap-2 overflow-hidden border-2 p-2 text-base"
+    class="bg-primary border-second fixed z-50 flex hidden flex-col justify-around gap-2 border-2 p-2 text-base"
     id="batch-menu"
 >
-    <header
-        class="flex h-8 flex-row items-center justify-center text-lg"
-        id="menu-header"
-        data-i18n="Hold and drag to select multiple files"
-    ></header>
-
-    <main
-        class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
-    ></main>
-
     <div
         class="flex hidden w-full flex-col gap-2"
         id="context-container"
@@ -53,21 +43,6 @@ document.body.innerHTML = `
             class="border-primary flex items-center justify-center rounded-md border-2"
             id="apply-button"
             data-i18n="Process"
-        ></button>
-        <button
-            class="border-primary flex items-center justify-center rounded-md border-2"
-            id="cancel-button"
-            data-i18n="Cancel"
-        ></button>
-        <button
-            class="border-primary flex items-center justify-center rounded-md border-2"
-            id="select-all-button"
-            data-i18n="Select All"
-        ></button>
-        <button
-            class="border-primary flex items-center justify-center rounded-md border-2"
-            id="deselect-all-button"
-            data-i18n="Deselect All"
         ></button>
     </div>
 
@@ -108,16 +83,29 @@ document.body.innerHTML = `
         </select>
     </div>
 </div>
+
+<div
+    class="bg-primary fixed z-50 flex hidden h-auto max-h-4/6 w-auto max-w-2/6 flex-col gap-2 p-2 text-sm"
+    id="file-select-menu"
+>
+    <header class="h-8" id="menu-header">
+        Hold and drag to select multiple files.
+    </header>
+
+    <main
+        class="grid grid-cols-3 items-start gap-2 overflow-x-hidden overflow-y-auto"
+    ></main>
+
+    <div class="flex flex-row items-center justify-center gap-2">
+        <button class="bg-second rounded-sm" id="select-all-button">
+            Select All
+        </button>
+        <button class="bg-second rounded-sm" id="deselect-all-button">
+            Deselect All
+        </button>
+    </div>
+</div>
 `;
-
-const tabsHTML = document.createElement("div");
-tabsHTML.innerHTML = `<div>
-    <button>
-        <span>aboba</span>
-    </button>
-</div>`;
-
-const tabs = tabsHTML.children as HTMLCollectionOf<HTMLButtonElement>;
 
 const columnSelect = document.querySelector<HTMLSelectElement>(
     "#translation-column-select",
@@ -129,7 +117,6 @@ const translationEndpointSelect = document.querySelector<HTMLSelectElement>(
     "#translation-endpoint-select",
 )!;
 const applyButton = document.querySelector<HTMLButtonElement>("#apply-button")!;
-const body = document.querySelector("main")!;
 const wrapLimitInput =
     document.querySelector<HTMLInputElement>("#wrap-limit-input")!;
 
@@ -140,7 +127,7 @@ vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
 
 vi.mock(import("@utils/invokes"), async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, translate: vi.fn(), expandScope: vi.fn() };
+    return { ...actual, translate: vi.fn() };
 });
 
 (invokes.translate as Mock<typeof invokes.translate>).mockResolvedValue([
@@ -245,10 +232,11 @@ const translationSettings: TranslationSettings = {
     enabledTranslations: TranslationEndpointFlags.Google,
 };
 
-const batchMenu = new BatchMenu();
-batchMenu.init(tabInfo, projectSettings, translationSettings, [], tabs);
+const fileSelectMenu = new FileSelectMenu();
+const batchMenu = new BatchMenu(fileSelectMenu);
 
-const checkbox = body.querySelector("input")!;
+fileSelectMenu.init(tabInfo.tabs);
+batchMenu.init(tabInfo, projectSettings, translationSettings, []);
 
 describe.sequential("", () => {
     test("trim", async () => {
@@ -262,7 +250,6 @@ describe.sequential("", () => {
         columnSelect.dispatchEvent(new Event("change", { bubbles: true }));
         batchActionSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
-        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {
@@ -289,7 +276,6 @@ describe.sequential("", () => {
             new Event("change", { bubbles: true }),
         );
 
-        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {
@@ -314,7 +300,6 @@ describe.sequential("", () => {
         columnSelect.dispatchEvent(new Event("change", { bubbles: true }));
         batchActionSelect.dispatchEvent(new Event("change", { bubbles: true }));
 
-        checkbox.checked = true;
         applyButton.click();
 
         await vi.waitFor(() => {

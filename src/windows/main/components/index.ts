@@ -1,6 +1,7 @@
 export * from "./BatchMenu";
 export * from "./BookmarkMenu";
 export * from "./Component";
+export * from "./FileSelectMenu";
 export * from "./GlossaryMenu";
 export * from "./GoToRowInput";
 export * from "./MatchMenu";

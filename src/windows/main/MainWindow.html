@@ -183,7 +183,11 @@
                         class="border-primary border-2 p-1"
                         data-i18n="Source"
                     ></th>
-                    <th class="w-6 cursor-pointer p-1 text-center">+</th>
+                    <th
+                        class="border-primary w-6 cursor-pointer border-2 p-1 text-center"
+                    >
+                        +
+                    </th>
                 </thead>
                 <tbody class="border-primary border-2 align-top"></tbody>
             </table>
@@ -342,14 +346,11 @@
             class="bg-primary border-second fixed z-40 flex hidden h-screen w-64 min-w-64 resize flex-col gap-2 overflow-y-auto border-2 p-4"
             id="search-panel"
         >
-            <header class="h-8 min-h-8" id="menu-header"></header>
-
-            <button
-                class="font-material h-12 w-full content-center text-3xl select-none"
-                id="switch-panel-button"
-            >
-                search
-            </button>
+            <header
+                class="h-8 min-h-8"
+                id="menu-header"
+                data-i18n="Search Panel"
+            ></header>
 
             <div
                 class="flex h-12 w-full items-center justify-evenly"
@@ -369,14 +370,6 @@
                     chevron_right
                 </button>
             </div>
-
-            <select
-                class="hidden h-8 w-full items-center justify-evenly text-sm"
-                id="log-file-select"
-                name="file-select"
-            >
-                <option data-i18n="-Select File-" value=""></option>
-            </select>
 
             <div class="w-full text-base" id="search-panel-content"></div>
         </div>
@@ -437,28 +430,35 @@
                 <button
                     class="font-material size-16 p-2"
                     id="case-button"
-                    data-i18n-title="Consider case (Alt + C)"
+                    data-i18n-title="Consider case"
                 >
                     match_case
                 </button>
                 <button
                     class="font-material size-16 p-2"
                     id="whole-button"
-                    data-i18n-title="Search the whole text (Alt + W)"
+                    data-i18n-title="Search the whole text"
                 >
                     match_word
                 </button>
                 <button
                     class="font-material size-16 p-2"
                     id="regex-button"
-                    data-i18n-title="Search by regular expressions (Alt + R)"
+                    data-i18n-title="Search by regular expressions"
                 >
                     regular_expression
                 </button>
                 <button
                     class="font-material size-16 p-2"
-                    id="location-button"
-                    data-i18n-title="Search only in current tab (Alt + L)"
+                    id="comment-button"
+                    data-i18n-title="Search also in comments"
+                >
+                    comment
+                </button>
+                <button
+                    class="font-material size-16 p-2"
+                    id="files-to-search-button"
+                    data-i18n-title="Select files to search"
                 >
                     location_on
                 </button>
@@ -501,19 +501,9 @@
         />
 
         <div
-            class="bg-primary outline-primary border-second @container fixed z-50 flex hidden size-3/6 resize flex-col justify-around gap-2 overflow-hidden border-2 p-2 text-base"
+            class="bg-primary border-second fixed z-50 flex hidden flex-col justify-around gap-2 border-2 p-2 text-base"
             id="batch-menu"
         >
-            <header
-                class="flex h-8 flex-row items-center justify-center text-lg"
-                id="menu-header"
-                data-i18n="Hold and drag to select multiple files"
-            ></header>
-
-            <main
-                class="grid max-h-4/6 items-start overflow-x-hidden overflow-y-auto @sm:grid-cols-3 @3xl:grid-cols-5 @5xl:grid-cols-7"
-            ></main>
-
             <div
                 class="flex hidden w-full flex-col gap-2"
                 id="context-container"
@@ -542,21 +532,6 @@
                     class="border-primary flex items-center justify-center rounded-md border-2"
                     id="apply-button"
                     data-i18n="Process"
-                ></button>
-                <button
-                    class="border-primary flex items-center justify-center rounded-md border-2"
-                    id="cancel-button"
-                    data-i18n="Cancel"
-                ></button>
-                <button
-                    class="border-primary flex items-center justify-center rounded-md border-2"
-                    id="select-all-button"
-                    data-i18n="Select All"
-                ></button>
-                <button
-                    class="border-primary flex items-center justify-center rounded-md border-2"
-                    id="deselect-all-button"
-                    data-i18n="Deselect All"
                 ></button>
             </div>
 
@@ -972,10 +947,12 @@
                     </button>
                 </span>
 
-                <label class="custom-checkbox">
-                    <input id="check-only-current" type="checkbox" />
-                    <span data-i18n="Check only current file"></span>
-                </label>
+                <button
+                    class="font-material bg-second flex h-6 w-6 items-center justify-center rounded-sm"
+                    id="files-to-check-button"
+                >
+                    location_on
+                </button>
 
                 <button
                     class="bg-second flex h-6 items-center justify-center rounded-sm"
@@ -1006,7 +983,15 @@
                     </tr>
                 </thead>
 
-                <tbody id="table-body"></tbody>
+                <tbody id="table-body">
+                    <tr>
+                        <td class="text-center">
+                            <button class="bg-second w-8 rounded-sm text-xl">
+                                +
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
             </table>
         </div>
 
@@ -1117,5 +1102,29 @@
             class="pointer-events-none fixed bottom-16 z-50 flex w-full items-center justify-center text-xl"
             id="debug-output"
         ></div>
+
+        <div
+            class="bg-primary fixed z-50 flex hidden h-auto max-h-4/6 w-auto max-w-2/6 flex-col gap-2 p-2 text-sm"
+            id="file-select-menu"
+        >
+            <header
+                class="h-8"
+                id="menu-header"
+                data-i18n="Hold and drag to select multiple files."
+            ></header>
+
+            <main
+                class="grid grid-cols-3 items-start gap-2 overflow-x-hidden overflow-y-auto"
+            ></main>
+
+            <div class="flex flex-row items-center justify-center gap-2">
+                <button class="bg-second rounded-sm" id="select-all-button">
+                    Select All
+                </button>
+                <button class="bg-second rounded-sm" id="deselect-all-button">
+                    Deselect All
+                </button>
+            </div>
+        </div>
     </body>
 </html>

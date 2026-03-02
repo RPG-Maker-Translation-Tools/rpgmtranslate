@@ -22,21 +22,7 @@ const thirdRow = {
     secondTranslation: "translation 3 3",
 };
 
-const rowsData = [firstRow, secondRow, thirdRow];
-
-const rowsHTML = document.createElement("tbody");
-rowsHTML.innerHTML = rowsData
-    .map(
-        (row) => `
-            <tr>
-                <td></td>
-                <td>${row.source}</td>
-                <td><textarea>${row.firstTranslation}</textarea></td>
-                <td><textarea>${row.secondTranslation}</textarea></td>
-            </tr>
-        `,
-    )
-    .join("");
+const rows = [firstRow, secondRow, thirdRow];
 
 const replacer = new Replacer();
 replacer.init(new ProjectSettings({}));
@@ -53,7 +39,7 @@ vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
 
 (fs.readTextFile as Mock<typeof fs.readTextFile>).mockImplementation(() =>
     Promise.resolve(
-        rowsData
+        rows
             .map(
                 (r) =>
                     `${r.source}<#>${r.firstTranslation}<#>${r.secondTranslation}`,
@@ -61,8 +47,6 @@ vi.mock(import("@tauri-apps/plugin-fs"), async (importOriginal) => {
             .join("\n"),
     ),
 );
-
-const rows = rowsHTML.children as TabRows;
 
 interface Scenario {
     name: string;
@@ -89,10 +73,7 @@ const scenarios: Scenario[] = [
         action: SearchAction.Replace,
         expectFn: (): void => {
             expect(rows[0].children[2].querySelector("textarea")?.value).toBe(
-                rowsData[0].firstTranslation.replace(
-                    "translation",
-                    replaceText,
-                ),
+                rows[0].firstTranslation.replace("translation", replaceText),
             );
         },
     },
@@ -107,9 +88,9 @@ const scenarios: Scenario[] = [
         expectFn: (): void => {
             expect(fs.writeTextFile).lastCalledWith(
                 expect.any(String),
-                `${rowsData[0].source}<#>${rowsData[0].firstTranslation.replace("translation", replaceText)}<#>${rowsData[0].secondTranslation}
-${rowsData[1].source}<#>${rowsData[1].firstTranslation}<#>${rowsData[1].secondTranslation}
-${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTranslation}`,
+                `${rows[0].source}<#>${rows[0].firstTranslation.replace("translation", replaceText)}<#>${rows[0].secondTranslation}
+${rows[1].source}<#>${rows[1].firstTranslation}<#>${rows[1].secondTranslation}
+${rows[2].source}<#>${rows[2].firstTranslation}<#>${rows[2].secondTranslation}`,
                 undefined,
             );
         },
@@ -117,7 +98,7 @@ ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTr
     {
         name: "put in current tab",
         replaceText,
-        regexp: new RegExp(`^${rowsData[targetRow].firstTranslation}$`),
+        regexp: new RegExp(`^${rows[targetRow].firstTranslation}$`),
         tabName: "tab",
         columnIndex: 0,
         rowIndex: 0,
@@ -131,7 +112,7 @@ ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTr
     {
         name: "put in external file",
         replaceText,
-        regexp: new RegExp(`^${rowsData[targetRow].firstTranslation}$`),
+        regexp: new RegExp(`^${rows[targetRow].firstTranslation}$`),
         tabName: "",
         columnIndex: 0,
         rowIndex: 0,
@@ -139,9 +120,9 @@ ${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTr
         expectFn: (): void => {
             expect(fs.writeTextFile).lastCalledWith(
                 expect.any(String),
-                `${rowsData[0].source}<#>${replaceText}<#>${rowsData[0].secondTranslation}
-${rowsData[1].source}<#>${rowsData[1].firstTranslation}<#>${rowsData[1].secondTranslation}
-${rowsData[2].source}<#>${rowsData[2].firstTranslation}<#>${rowsData[2].secondTranslation}`,
+                `${rows[0].source}<#>${replaceText}<#>${rows[0].secondTranslation}
+${rows[1].source}<#>${rows[1].firstTranslation}<#>${rows[1].secondTranslation}
+${rows[2].source}<#>${rows[2].firstTranslation}<#>${rows[2].secondTranslation}`,
                 undefined,
             );
         },

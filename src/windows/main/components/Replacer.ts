@@ -152,21 +152,6 @@ export class Replacer {
         await emittery.emit(AppEvent.UpdateSaved, false);
     }
 
-    #addLog(
-        filename: string,
-        entry: string,
-        source: string,
-        columnIndex: number,
-        old: string,
-        new_: string,
-    ): void {
-        void emittery.emit(AppEvent.AddLog, [
-            filename,
-            source,
-            [entry, columnIndex, old, new_],
-        ]);
-    }
-
     #replaceCurrentTab(
         rows: TabRows,
         regexp: RegExp,
@@ -196,15 +181,6 @@ export class Replacer {
         }
 
         textarea.value = newValue;
-
-        this.#addLog(
-            filename,
-            entry,
-            utils.source(rows[rowIndex]),
-            columnIndex,
-            textarea.value,
-            newValue,
-        );
 
         return changedCount;
     }
@@ -248,15 +224,6 @@ export class Replacer {
         translations[columnIndex] = utils.toCustomLB(newValue);
         contentLines[rowIndex] =
             `${source}${consts.SEPARATOR}${translations.join(consts.SEPARATOR)}`;
-
-        this.#addLog(
-            filename,
-            entry,
-            utils.toLF(source),
-            columnIndex,
-            translation,
-            newValue,
-        );
 
         return changedCount;
     }

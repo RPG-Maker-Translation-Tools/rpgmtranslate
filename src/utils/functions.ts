@@ -299,52 +299,6 @@ export function retranslate(): void {
     }
 }
 
-export function* parseBlocks(
-    lines: string[],
-): IterableIterator<[string, SourceBlock]> {
-    let currentID: string | null = null;
-    let currentName: string | null = null;
-    let content: string[] = [];
-
-    for (const line of lines) {
-        if (line.startsWith("<!-- ID --><#>")) {
-            if (currentID !== null && currentName !== null) {
-                yield [
-                    currentID,
-                    {
-                        name: currentName,
-                        strings: content,
-                    },
-                ];
-            }
-
-            currentID = line.slice("<!-- ID --><#>".length).trim();
-            currentName = null;
-            content = [];
-            continue;
-        }
-
-        if (line.startsWith("<!-- NAME --><#>")) {
-            currentName = line.slice("<!-- NAME --><#>".length).trim();
-            continue;
-        }
-
-        if (currentID !== null && currentName !== null) {
-            content.push(line);
-        }
-    }
-
-    if (currentID !== null && currentName !== null) {
-        yield [
-            currentID,
-            {
-                name: currentName,
-                strings: content,
-            },
-        ];
-    }
-}
-
 export function deepAssign(
     dest: Record<string, unknown>,
     src: Record<string, unknown> | null,
@@ -383,4 +337,29 @@ export function deepAssign(
 
         dest[key] = srcField;
     }
+}
+
+export function rangeContains(ranges: FileRange, value: number): boolean {
+    // Edge case: if range is empty, all values are valid
+    if (ranges.length === 0) {
+        return true;
+    }
+
+    let left = 0;
+    let right = ranges.length - 1;
+
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const range = ranges[mid];
+
+        if (value < range[0]) {
+            right = mid - 1;
+        } else if (value > range[1]) {
+            left = mid + 1;
+        } else {
+            return true;
+        }
+    }
+
+    return false;
 }

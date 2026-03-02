@@ -9,6 +9,7 @@ import {
     BaseFlags,
     DuplicateMode,
     ElementToShow,
+    EngineType,
     FileFlags,
     JumpDirection,
     Language,
@@ -23,13 +24,13 @@ import {
     applyTheme,
     initializeLocalization,
     join,
-    objectIsEmpty,
     retranslate,
     rowNumber,
 } from "@utils/functions";
 import {
-    expandScope,
+    detectLang,
     extractArchive,
+    getLang,
     isErr,
     mkdir,
     purge,
@@ -44,6 +45,7 @@ import {
 import {
     BatchMenu,
     BookmarkMenu,
+    FileSelectMenu,
     GlossaryMenu,
     GoToRowInput,
     MatchMenu,
@@ -78,7 +80,12 @@ import {
 } from "@tauri-apps/api/webviewWindow";
 import { ask, message, open } from "@tauri-apps/plugin-dialog";
 import { copyFile, exists, remove as removePath } from "@tauri-apps/plugin-fs";
-import { attachConsole, attachLogger, error } from "@tauri-apps/plugin-log";
+import {
+    attachConsole,
+    attachLogger,
+    error,
+    info,
+} from "@tauri-apps/plugin-log";
 
 const enum FontPlace {
     Tab,
@@ -96,7 +103,6 @@ export class MainWindow {
     #settings: Settings;
     #projectSettings: ProjectSettings;
     #glossary: Glossary;
-    #replacementLog: ReplacementLog;
     #themes: Themes;
     #menu: Menu | null;
 
@@ -119,8 +125,9 @@ export class MainWindow {
     readonly #glossaryMenu: GlossaryMenu;
     readonly #matchMenu: MatchMenu;
     readonly #translationsMenu: TranslationsMenu;
-
+    readonly #fileSelectMenu: FileSelectMenu;
     readonly #translationTable: TranslationTable;
+
     readonly #goToRowInput: GoToRowInput;
     readonly #debugOutput: HTMLDivElement = document.getElementById(
         "debug-output",
@@ -141,20 +148,21 @@ export class MainWindow {
         this.#themes = {};
         this.#projectSettings = new ProjectSettings();
         this.#glossary = [];
-        this.#replacementLog = {};
         this.#menu = null;
 
         this.#tabPanel = new TabPanel();
 
+        this.#fileSelectMenu = new FileSelectMenu();
+
         this.#utilsPanel = new UtilsPanel();
-        this.#batchMenu = new BatchMenu();
+        this.#batchMenu = new BatchMenu(this.#fileSelectMenu);
         this.#readMenu = new ReadMenu();
         this.#themeMenu = new ThemeMenu();
         this.#themeEditMenu = new ThemeEditMenu();
         this.#writeMenu = new WriteMenu();
         this.#purgeMenu = new PurgeMenu();
         this.#bookmarkMenu = new BookmarkMenu();
-        this.#glossaryMenu = new GlossaryMenu();
+        this.#glossaryMenu = new GlossaryMenu(this.#fileSelectMenu);
         this.#matchMenu = new MatchMenu();
         this.#translationsMenu = new TranslationsMenu();
 
@@ -166,7 +174,7 @@ export class MainWindow {
         this.#searcher = new Searcher();
         this.#replacer = new Replacer();
 
-        this.#searchMenu = new SearchMenu();
+        this.#searchMenu = new SearchMenu(this.#fileSelectMenu);
 
         this.#searchPanel = new SearchPanel();
     }
@@ -199,6 +207,8 @@ export class MainWindow {
         this.#attachListeners();
 
         let initialized = await this.#settings.new();
+
+        this.#settings.translation.endpoints[0].apiKey = "aboba";
 
         if (!initialized) {
             void error("Failed to initialize settings");
@@ -391,8 +401,6 @@ export class MainWindow {
             return true;
         }
 
-        await expandScope(fontPath);
-
         const fontData = await readFile(fontPath);
 
         if (isErr(fontData)) {
@@ -503,8 +511,6 @@ export class MainWindow {
             this.#saver.disableBackup();
         }
 
-        this.#replacementLog = await this.#loadReplacementLog();
-
         this.#tabInfo.tabs = {};
         this.#tabInfo.tabName = "";
 
@@ -519,7 +525,16 @@ export class MainWindow {
             this.#glossary = glossary;
         }
 
-        const determinedLang = await this.#tabPanel.init(this.#projectSettings);
+        await this.#parseFiles();
+
+        let determinedLang: undefined | string;
+
+        if (
+            this.#projectSettings.translationLanguages.sourceLanguage ===
+            TokenizerAlgorithm.None
+        ) {
+            determinedLang = await getLang();
+        }
 
         if (
             this.#projectSettings.translationLanguages.sourceLanguage ===
@@ -538,21 +553,16 @@ export class MainWindow {
         }
 
         await this.#utilsPanel.init(this.#projectSettings);
+
         this.#batchMenu.init(
             this.#tabInfo,
             this.#projectSettings,
             this.#settings.translation,
             this.#glossary,
-            this.#tabPanel.tabs,
         );
         this.#searchMenu.init(this.#projectSettings.translationColumns);
         this.#readMenu.init(this.#projectSettings);
-        this.#searchPanel.init(
-            this.#tabInfo,
-            this.#translationTable,
-            this.#projectSettings,
-            this.#replacementLog,
-        );
+        this.#searchPanel.init(this.#projectSettings);
         this.#translationTable.init(this.#settings, this.#projectSettings);
         this.#saver.init(this.#projectSettings, this.#utilsPanel.sourceTitle);
         this.#searcher.init(this.#projectSettings);
@@ -564,6 +574,7 @@ export class MainWindow {
             this.#glossary,
             this.#tabInfo,
         );
+        this.#fileSelectMenu.init(this.#tabInfo.tabs);
 
         this.#informationContainer.classList.add("hidden");
         this.#updateProgressMeter();
@@ -611,35 +622,116 @@ export class MainWindow {
             return;
         }
 
-        await expandScope(projectPath);
-
         const rootTranslationPath = join(
             projectPath,
             consts.TRANSLATION_DIRECTORY,
         );
 
-        const projectSettings = await this.#tryOpenProject(
-            projectPath,
-            rootTranslationPath,
-        );
-
-        if (!projectSettings) {
+        if (!(await exists(projectPath))) {
+            await message(t`Selected directory is missing.`);
             return;
         }
 
-        if (this.#settings.core.projectPath) {
+        const projectSettingsPath = join(
+            projectPath,
+            consts.PROGRAM_DATA_DIRECTORY,
+            consts.PROJECT_SETTINGS_FILE,
+        );
+
+        const result = await readTextFile(projectSettingsPath);
+        let projectSettings: ProjectSettings;
+        let translationExists = false;
+
+        if (isErr(result)) {
+            void error(result[0]!);
+            projectSettings = new ProjectSettings();
+            translationExists = await exists(rootTranslationPath);
+        } else {
+            const json = JSON.parse(result[1]!) as ProjectSettingsOptions;
+            projectSettings = new ProjectSettings(json);
+        }
+
+        let sourceDirectoryFound = false;
+
+        if (await exists(utils.join(projectPath, "Data"))) {
+            projectSettings.sourceDirectory = "Data";
+            sourceDirectoryFound = true;
+        }
+
+        if (await exists(utils.join(projectPath, "data"))) {
+            projectSettings.sourceDirectory = "data";
+            sourceDirectoryFound = true;
+        }
+
+        await mkdir(projectSettings.programDataPath, { recursive: true });
+        await mkdir(projectSettings.tempMapsPath, { recursive: true });
+        await mkdir(projectSettings.backupPath, { recursive: true });
+
+        if (!isErr(result)) {
+            translationExists = await exists(projectSettings.translationPath);
+        }
+
+        if (!sourceDirectoryFound) {
+            const extracted = await extractArchive(projectPath);
+
+            if (extracted) {
+                if (await exists(utils.join(projectPath, "Data"))) {
+                    projectSettings.sourceDirectory = "Data";
+                }
+
+                if (await exists(utils.join(projectPath, "data"))) {
+                    projectSettings.sourceDirectory = "data";
+                }
+            } else if (!translationExists) {
+                await message(
+                    t`Selected directory does not contain data/Data directory, .rgss archive or translation directory.`,
+                );
+                return;
+            }
+        }
+
+        let engineTypeFound = false;
+
+        for (const [type, file] of [
+            [EngineType.XP, "System.rxdata"],
+            [EngineType.VX, "System.rvdata"],
+            [EngineType.VXAce, "System.rvdata2"],
+            [EngineType.New, "System.json"],
+        ]) {
+            if (
+                await exists(
+                    utils.join(
+                        projectPath,
+                        projectSettings.sourceDirectory,
+                        file as string,
+                    ),
+                )
+            ) {
+                projectSettings.engineType = type as EngineType;
+                engineTypeFound = true;
+                break;
+            }
+        }
+
+        if (!engineTypeFound) {
+            await message(t`Cannot determine the type of the game's engine.`);
+            return;
+        }
+
+        if (this.#projectSettings.sourcePath !== "") {
             await this.#changeTab("");
             await this.#saver.saveAll(
                 this.#tabInfo.tabName,
                 this.#translationTable.rows,
             );
             await this.#saveProject();
-            this.#tabPanel.clear();
         }
 
         this.#informationContainer.innerHTML = t`Loading project...`;
 
+        projectSettings.projectPath = projectPath;
         this.#settings.core.projectPath = projectPath;
+
         this.#projectSettings = projectSettings;
 
         if (!(await exists(this.#projectSettings.translationPath))) {
@@ -652,8 +744,6 @@ export class MainWindow {
                     await this.#copyTranslationFromRoot(rootTranslationPath);
                     this.#informationContainer.innerHTML = t`Copying translation from root...`;
                 }
-
-                await this.#loadProject();
             } else {
                 this.#readMenu.show(
                     this.#utilsPanel.readButton.offsetLeft,
@@ -664,17 +754,13 @@ export class MainWindow {
                 this.#pendingRead = true;
                 return;
             }
-        } else {
-            await this.#loadProject();
         }
+
+        await this.#loadProject();
     }
 
     async #changeTab(filename: string): Promise<void> {
         if (this.#tabInfo.tabName === filename || this.#changeTabTimer !== -1) {
-            return;
-        }
-
-        if (filename === "" && !(filename in this.#tabInfo.tabs)) {
             return;
         }
 
@@ -890,6 +976,14 @@ export class MainWindow {
             },
         );
 
+        for (
+            let i = TranslationEndpoint.Google;
+            i <= TranslationEndpoint.Gemini;
+            i++
+        ) {
+            this.#settings.translation.endpoints[i as number].apiKey = keys[i];
+        }
+
         if (isErr(writeResult)) {
             void error(writeResult[0]!);
         }
@@ -905,11 +999,6 @@ export class MainWindow {
         await removePath(this.#projectSettings.tempMapsPath, {
             recursive: true,
         }).catch(error);
-
-        writeResult = await writeTextFile(
-            this.#projectSettings.logPath,
-            JSON.stringify(this.#replacementLog),
-        );
 
         if (isErr(writeResult)) {
             void error(writeResult[0]!);
@@ -934,17 +1023,6 @@ export class MainWindow {
         }
     }
 
-    async #loadReplacementLog(): Promise<ReplacementLog> {
-        const result = await readTextFile(this.#projectSettings.logPath);
-
-        if (isErr(result)) {
-            void error(result[0]!);
-            return {};
-        }
-
-        return JSON.parse(result[1]!) as ReplacementLog;
-    }
-
     async #confirmExit(): Promise<boolean> {
         if (this.#saver.saved) {
             return true;
@@ -964,75 +1042,6 @@ export class MainWindow {
             const exitUnsaved = await ask(t`Quit without saving?`);
             return exitUnsaved;
         }
-    }
-
-    async #tryOpenProject(
-        projectPath: string,
-        rootTranslationPath: string,
-    ): Promise<ProjectSettings | null> {
-        if (!(await exists(projectPath))) {
-            await message(t`Selected directory is missing.`);
-            return null;
-        }
-
-        const projectSettingsPath = join(
-            projectPath,
-            consts.PROGRAM_DATA_DIRECTORY,
-            consts.PROJECT_SETTINGS_FILE,
-        );
-
-        const result = await readTextFile(projectSettingsPath);
-        let projectSettings: ProjectSettings;
-        let translationExists = false;
-
-        if (isErr(result)) {
-            void error(result[0]!);
-            projectSettings = new ProjectSettings();
-            translationExists = await exists(rootTranslationPath);
-        } else {
-            const json = JSON.parse(result[1]!) as ProjectSettingsOptions;
-            projectSettings = new ProjectSettings(json);
-        }
-
-        let sourceDirectoryFound =
-            await projectSettings.findSourceDirectory(projectPath);
-
-        await projectSettings.setProjectPath(projectPath);
-
-        if (!isErr(result)) {
-            translationExists = await exists(projectSettings.translationPath);
-        }
-
-        if (!sourceDirectoryFound) {
-            const extracted = await extractArchive(projectPath);
-
-            if (extracted) {
-                sourceDirectoryFound =
-                    await projectSettings.findSourceDirectory(projectPath);
-            } else if (!translationExists) {
-                await message(
-                    t`Selected directory does not contain data/Data directory, .rgss archive or translation directory.`,
-                );
-                return null;
-            }
-        }
-
-        if (sourceDirectoryFound) {
-            const engineTypeFound =
-                await projectSettings.setEngineType(projectPath);
-
-            if (!engineTypeFound) {
-                await message(
-                    t`Cannot determine the type of the game's engine.`,
-                );
-
-                return null;
-            }
-        } else {
-            projectSettings.sourceDirectory = "";
-        }
-
-        return projectSettings;
     }
 
     async #copyTranslationFromRoot(translationPath: string): Promise<boolean> {
@@ -1101,41 +1110,14 @@ export class MainWindow {
     }
 
     #attachListeners(): void {
-        emittery.on(AppEvent.AddLog, ([filename, source, data]) => {
-            if (!(filename in this.#replacementLog)) {
-                this.#replacementLog[filename] = {};
-                this.#searchPanel.addLog(filename);
-            }
-
-            this.#replacementLog[filename][source] = data;
-        });
-
-        emittery.on(AppEvent.LogEntryReverted, ([filename, source]) => {
-            delete this.#replacementLog[filename][source];
-
-            if (objectIsEmpty(this.#replacementLog[filename])) {
-                delete this.#replacementLog[filename];
-                this.#searchPanel.removeLog(filename);
-            }
-        });
-
-        emittery.on(AppEvent.ScrollIntoRow, (row) => {
-            this.#translationTable.rows[row].scrollIntoView({
+        emittery.on(AppEvent.ScrollIntoRow, (rowNumber) => {
+            this.#translationTable.rowsWithoutComments[
+                rowNumber - 1
+            ].scrollIntoView({
                 inline: "center",
                 block: "center",
             });
         });
-
-        emittery.on(
-            AppEvent.TabAdded,
-            ([filename, index, total, translated]) => {
-                this.#tabInfo.tabs[filename] = {
-                    index,
-                    sourceLineCount: total,
-                    translatedLineCount: translated,
-                };
-            },
-        );
 
         emittery.on(AppEvent.AddTheme, ([name, theme]) => {
             this.#themes[name] = theme;
@@ -1183,7 +1165,7 @@ export class MainWindow {
         });
 
         emittery.on(AppEvent.ColumnResized, ([columnIndex, width]) => {
-            for (const row of this.#translationTable.rows) {
+            for (const row of this.#translationTable.rowsWithoutComments) {
                 const element = row.children[columnIndex];
                 element.style.minWidth = element.style.width = `${width}px`;
             }
@@ -1255,7 +1237,7 @@ export class MainWindow {
         emittery.on(AppEvent.ColumnAdded, () => {
             this.#projectSettings.addColumn();
 
-            for (const row of this.#translationTable.rows) {
+            for (const row of this.#translationTable.rowsWithoutComments) {
                 this.#translationTable.addTextAreaCell(row, "");
             }
 
@@ -1321,7 +1303,8 @@ export class MainWindow {
                     recursive: true,
                 });
                 this.#tabPanel.clear();
-                await this.#tabPanel.init(this.#projectSettings);
+
+                await this.#parseFiles();
             },
         );
 
@@ -1574,13 +1557,13 @@ export class MainWindow {
                 predicate,
                 replacerText,
                 columnIndex,
+                selectedFiles,
                 searchMode,
                 searchAction,
             ]) => {
                 const results = await this.#searcher.search(
                     this.#tabInfo.tabName,
-                    this.#tabInfo.tabs,
-                    this.#translationTable.rows,
+                    selectedFiles,
                     predicate,
                     columnIndex,
                     searchMode,
@@ -1603,11 +1586,16 @@ export class MainWindow {
 
         emittery.on(
             AppEvent.SearchText,
-            async ([predicate, columnIndex, searchMode, searchAction]) => {
+            async ([
+                predicate,
+                columnIndex,
+                selectedFiles,
+                searchMode,
+                searchAction,
+            ]) => {
                 const results = await this.#searcher.search(
                     this.#tabInfo.tabName,
-                    this.#tabInfo.tabs,
-                    this.#translationTable.rows,
+                    selectedFiles,
                     predicate,
                     columnIndex,
                     searchMode,
@@ -1664,7 +1652,7 @@ export class MainWindow {
 
         emittery.on(AppEvent.TermCheck, async ([id, mode]) => {
             const checkSpecificRow = mode[1] !== undefined;
-            const checkOnlyCurrentFile = Boolean(mode[0]);
+            const filesToCheck = mode[0] ?? [[this.#tabInfo.tabName, []]];
 
             const {
                 sourceLanguage: sourceAlgorithm,
@@ -1705,30 +1693,20 @@ export class MainWindow {
                 }
             };
 
-            if (checkSpecificRow || checkOnlyCurrentFile) {
-                const rowsToCheck = checkSpecificRow
-                    ? [this.#translationTable.row(mode[1])]
-                    : this.#translationTable.rows;
+            if (checkSpecificRow) {
+                const row = this.#translationTable.row(mode[1]);
 
-                for (const row of rowsToCheck) {
-                    const source = utils.source(row);
-
-                    if (source.startsWith(consts.COMMENT_PREFIX)) {
-                        continue;
-                    }
-
-                    await processRow(
-                        source,
-                        utils.translation(row)[0],
-                        this.#tabInfo.tabName,
-                        utils.rowNumber(row),
-                    );
-                }
+                await processRow(
+                    utils.source(row),
+                    utils.translation(row)[0],
+                    this.#tabInfo.tabName,
+                    utils.rowNumber(row),
+                );
 
                 return;
             }
 
-            for (const filename in this.#tabInfo.tabs) {
+            for (const [filename, range] of filesToCheck) {
                 if (filename === this.#tabInfo.tabName) {
                     await this.#changeTab("");
                 }
@@ -1747,6 +1725,7 @@ export class MainWindow {
                 }
 
                 const lines = utils.lines(content[1]!);
+                let lineIdx = 1;
 
                 for (let l = 0; l < lines.length; l++) {
                     const line = lines[l];
@@ -1757,6 +1736,13 @@ export class MainWindow {
                     const split = utils.parts(line);
                     if (!split) {
                         utils.logSplitError(filename, l + 1);
+                        continue;
+                    }
+
+                    if (!utils.rangeContains(range, lineIdx++)) {
+                        void info(
+                            `Skipped index ${lineIdx} in file ${filename}`,
+                        );
                         continue;
                     }
 
@@ -1955,8 +1941,7 @@ export class MainWindow {
             await removePath(this.#projectSettings.tempMapsPath, {
                 recursive: true,
             });
-            this.#tabPanel.clear();
-            await this.#tabPanel.init(this.#projectSettings);
+            await this.#parseFiles();
         } else {
             this.#readMenu.hide();
             this.#pendingRead = false;
@@ -1992,6 +1977,126 @@ export class MainWindow {
 
                 await this.#openProject(target.innerHTML);
             };
+        }
+    }
+
+    async #parseFiles(): Promise<void> {
+        this.#tabPanel.clear();
+
+        const translationFiles = await readDir(
+            this.#projectSettings.translationPath,
+        );
+
+        if (isErr(translationFiles)) {
+            void error(translationFiles[0]!);
+            return;
+        }
+
+        for (const file of translationFiles[1]!) {
+            if (!file.name.endsWith(consts.TXT_EXTENSION)) {
+                continue;
+            }
+
+            const content = await readTextFile(
+                utils.join(this.#projectSettings.translationPath, file.name),
+            );
+
+            if (isErr(content)) {
+                void error(content[0]!);
+                continue;
+            }
+
+            let lines = utils.lines(content[1]!);
+
+            if (lines.length === 1) {
+                continue;
+            }
+
+            const basename = file.name.slice(0, file.name.lastIndexOf("."));
+
+            if (basename === "system") {
+                lines = lines.slice(0, -1);
+            }
+
+            const isMap = basename.startsWith("map");
+
+            let total = 0;
+            let translated = 0;
+
+            if (total <= 0) {
+                return;
+            }
+
+            for (let l = 0; l < lines.length; l++) {
+                const line = lines[l];
+
+                if (line.startsWith(consts.BOOKMARK_COMMENT)) {
+                    // TODO
+                    void emittery.emit(AppEvent.AddBookmark, [
+                        basename,
+                        translation,
+                        l + 1,
+                    ]);
+                    continue;
+                }
+
+                if (!line.startsWith(consts.COMMENT_PREFIX)) {
+                    total++;
+
+                    const parts = utils.parts(line);
+
+                    if (!parts) {
+                        utils.logSplitError(basename, l);
+                        continue;
+                    }
+
+                    const source = utils.source(parts);
+                    const translation = utils.translation(parts)[0];
+
+                    if (
+                        this.#projectSettings.translationLanguages
+                            .sourceLanguage === TokenizerAlgorithm.None &&
+                        basename !== "scripts" &&
+                        basename !== "plugins"
+                    ) {
+                        detectLang(source);
+                    }
+
+                    if (translation) {
+                        translated++;
+                    }
+                } else if (isMap && line.startsWith(consts.ID_COMMENT)) {
+                    if (total <= 0) {
+                        continue;
+                    }
+
+                    const percentage = Math.floor(
+                        (translated / total) * consts.PERCENT_MULTIPLIER,
+                    );
+
+                    this.#tabPanel.addTab(basename, percentage);
+                    total = 0;
+                    translated = 0;
+                }
+            }
+
+            if (total <= 0) {
+                return;
+            }
+
+            const percentage = Math.floor(
+                (translated / total) * consts.PERCENT_MULTIPLIER,
+            );
+
+            const tabIndex = this.#tabPanel.addTab(basename, percentage);
+
+            this.#tabInfo.tabs[basename] = {
+                index: tabIndex,
+                sourceLineCount: total,
+                translatedLineCount: translated,
+            };
+
+            void info(`${file.name}: Successfully read.`);
         }
     }
 }

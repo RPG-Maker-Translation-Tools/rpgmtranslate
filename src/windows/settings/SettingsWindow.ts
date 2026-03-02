@@ -1,10 +1,4 @@
-import {
-    expandScope,
-    getModels,
-    isErr,
-    readFile,
-    walkDir,
-} from "@utils/invokes";
+import { getModels, isErr, readFile, walkDir } from "@utils/invokes";
 
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
@@ -76,8 +70,6 @@ interface SettingsWindowUI {
     fileContextInput: HTMLTextAreaElement;
     projectContextInput: HTMLTextAreaElement;
 }
-
-// TODO: Allow selecting custom location for .rpgmtranslate directory
 
 class SettingsWindow {
     #ui = this.#setupUI();
@@ -514,7 +506,6 @@ No additional keys, no reordered structure, no commentary.`;
                 ? "C:/Windows/Fonts"
                 : "/usr/share/fonts";
 
-        await expandScope(fontPath);
         const entries = await walkDir(fontPath);
 
         for (const path of entries) {

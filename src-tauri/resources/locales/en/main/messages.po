@@ -13,29 +13,29 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/windows/main/html.ts:40
+#: src/windows/main/html.ts:36
 msgid "-Select Action-"
 msgstr "-Select Action-"
 
-#: src/windows/main/html.ts:44
+#: src/windows/main/html.ts:40
 msgid "-Select Column-"
 msgstr "-Select Column-"
 
 #: src/windows/main/html.ts:27
-msgid "-Select File-"
-msgstr "-Select File-"
+#~ msgid "-Select File-"
+#~ msgstr "-Select File-"
 
-#: src/windows/main/components/SearchPanel.ts:81
+#: src/windows/main/components/SearchPanel.ts:62
 msgid "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 msgstr "<div id=\"no-results\" class=\"content-center h-full\">No matches</div>"
 
-#: src/windows/main/MainWindow.ts:303
-#: src/windows/main/MainWindow.ts:307
-#: src/windows/main/MainWindow.ts:475
+#: src/windows/main/MainWindow.ts:313
+#: src/windows/main/MainWindow.ts:317
+#: src/windows/main/MainWindow.ts:485
 msgid "About"
 msgstr "About"
 
-#: src/windows/main/MainWindow.ts:867
+#: src/windows/main/MainWindow.ts:869
 msgid ""
 "All files were written successfully.\n"
 "Elapsed: {elapsed}"
@@ -43,23 +43,23 @@ msgstr ""
 "All files were written successfully.\n"
 "Elapsed: {elapsed}"
 
-#: src/windows/main/html.ts:53
+#: src/windows/main/html.ts:49
 msgid "Allow duplicates"
 msgstr "Allow duplicates"
 
-#: src/windows/main/components/ReadMenu.ts:242
+#: src/windows/main/components/ReadMenu.ts:239
 msgid "Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files."
 msgstr "Allow duplicates across maps and events. This may bloat your translation. This mode is always set for system, scripts, and plugins files."
 
-#: src/windows/main/components/ReadMenu.ts:215
+#: src/windows/main/components/ReadMenu.ts:212
 msgid "Append"
 msgstr "Append"
 
-#: src/windows/main/components/ReadMenu.ts:259
+#: src/windows/main/components/ReadMenu.ts:256
 msgid "Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. {post}"
 msgstr "Appends any new text from the game to the translation files, if the text is not already present. Lines order is sorted, unused lines go to the bottom of the map/event. {post}"
 
-#: src/windows/main/MainWindow.ts:536
+#: src/windows/main/MainWindow.ts:546
 msgid "Auto-determined language as {determinedLang}."
 msgstr "Auto-determined language as {determinedLang}."
 
@@ -67,7 +67,7 @@ msgstr "Auto-determined language as {determinedLang}."
 #~ msgid "Batch menu"
 #~ msgstr "Batch menu"
 
-#: src/windows/main/html.ts:89
+#: src/windows/main/html.ts:85
 msgid "Batch Menu"
 msgstr "Batch Menu"
 
@@ -83,60 +83,64 @@ msgstr "Batch Trim"
 msgid "Batch Wrap"
 msgstr "Batch Wrap"
 
-#: src/windows/main/html.ts:87
+#: src/windows/main/html.ts:83
 msgid "Bookmarks (Ctrl + B)"
 msgstr "Bookmarks (Ctrl + B)"
 
-#: src/windows/main/components/GlossaryMenu.ts:85
+#: src/windows/main/components/GlossaryMenu.ts:101
 msgid "Both"
 msgstr "Both"
 
-#: src/windows/main/components/SearchPanel.ts:248
-msgid "Can't found row with {logSource} source text in file {filename} and entry {entry}."
-msgstr "Can't found row with {logSource} source text in file {filename} and entry {entry}."
+#: src/windows/main/components/SearchPanel.ts:245
+#~ msgid "Can't found row with {logSource} source text in file {filename} and entry {entry}."
+#~ msgstr "Can't found row with {logSource} source text in file {filename} and entry {entry}."
 
-#: src/windows/main/html.ts:37
-msgid "Cancel"
-msgstr "Cancel"
+#: src/windows/main/html.ts:36
+#~ msgid "Cancel"
+#~ msgstr "Cancel"
 
-#: src/windows/main/MainWindow.ts:1026
+#: src/windows/main/MainWindow.ts:1036
 msgid "Cannot determine the type of the game's engine."
 msgstr "Cannot determine the type of the game's engine."
 
-#: src/windows/main/components/GlossaryMenu.ts:117
+#: src/windows/main/components/GlossaryMenu.ts:133
 msgid "Case Sensitive"
 msgstr "Case Sensitive"
 
 #: src/windows/main/html.ts:71
-msgid "Check only current file"
-msgstr "Check only current file"
+#~ msgid "Check only current file"
+#~ msgstr "Check only current file"
 
-#: src/windows/main/MainWindow.ts:258
+#: src/windows/main/MainWindow.ts:268
 msgid "Close Project"
 msgstr "Close Project"
 
-#: src/windows/main/html.ts:97
-msgid "Consider case (Alt + C)"
-msgstr "Consider case (Alt + C)"
+#: src/windows/main/html.ts:93
+msgid "Consider case"
+msgstr "Consider case"
 
-#: src/windows/main/html.ts:35
+#: src/windows/main/html.ts:97
+#~ msgid "Consider case (Alt + C)"
+#~ msgstr "Consider case (Alt + C)"
+
+#: src/windows/main/html.ts:34
 msgid "Context"
 msgstr "Context"
 
-#: src/windows/main/components/BatchMenu.ts:647
+#: src/windows/main/components/BatchMenu.ts:608
 msgid "Context for this file does not exist. You can set it in Settings > Project."
 msgstr "Context for this file does not exist. You can set it in Settings > Project."
 
-#: src/windows/main/MainWindow.ts:653
+#: src/windows/main/MainWindow.ts:659
 msgid "Copying translation from root..."
 msgstr "Copying translation from root..."
 
-#: src/windows/main/html.ts:64
+#: src/windows/main/html.ts:60
 msgid "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
 msgstr "Create .rvpacker-ignore file from purged lines to prevent their further appearance"
 
 #: src/windows/main/html.ts:25
-#: src/windows/main/html.ts:45
+#: src/windows/main/html.ts:41
 msgid "Create Theme"
 msgstr "Create Theme"
 
@@ -144,33 +148,33 @@ msgstr "Create Theme"
 msgid "Dark background color"
 msgstr "Dark background color"
 
-#: src/windows/main/components/ReadMenu.ts:256
+#: src/windows/main/components/ReadMenu.ts:253
 msgid "Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode."
 msgstr "Default mode does nothing, when the source files are unchanged since the last read - in this case use force append mode."
 
-#: src/windows/main/html.ts:104
+#: src/windows/main/html.ts:101
 msgid "Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
 msgstr "Define a context, surrounding selected files. It might be better to use filenames explicitly, like 'a happens before map256', or something like that."
 
-#: src/windows/main/components/TranslationTable.ts:479
+#: src/windows/main/components/TranslationTable.ts:572
 msgid "Deleting is disabled in settings."
 msgstr "Deleting is disabled in settings."
 
 #: src/windows/main/html.ts:39
-msgid "Deselect All"
-msgstr "Deselect All"
+#~ msgid "Deselect All"
+#~ msgstr "Deselect All"
 
-#: src/windows/main/html.ts:56
+#: src/windows/main/html.ts:52
 msgid "Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 msgstr "Disable Custom Processing: Disables built-in custom processing, implemented for some games. Right now, implemented for the following titles: LISA: The Painful and its derivatives, Fear & Hunger 2: Termina. Will be automatically set if it was used in read"
 
-#: src/windows/main/components/TranslationTable.ts:484
+#: src/windows/main/components/TranslationTable.ts:577
 msgid "Do you really want to delete this row? This action is irreversible!"
 msgstr "Do you really want to delete this row? This action is irreversible!"
 
-#: src/windows/main/html.ts:107
-#: src/windows/main/html.ts:109
-#: src/windows/main/html.ts:111
+#: src/windows/main/html.ts:104
+#: src/windows/main/html.ts:106
+#: src/windows/main/html.ts:108
 msgid "Event indices, e.g. 5,30,18..."
 msgstr "Event indices, e.g. 5,30,18..."
 
@@ -178,24 +182,24 @@ msgstr "Event indices, e.g. 5,30,18..."
 msgid "Everywhere"
 msgstr "Everywhere"
 
-#: src/windows/main/components/GlossaryMenu.ts:83
+#: src/windows/main/components/GlossaryMenu.ts:99
 #: src/windows/main/components/MatchMenu.ts:173
 #: src/windows/main/components/MatchMenu.ts:184
 msgid "Exact"
 msgstr "Exact"
 
-#: src/windows/main/MainWindow.ts:648
+#: src/windows/main/MainWindow.ts:654
 msgid "Existing translation folder detected in {rootTranslationPath}. Use it?"
 msgstr "Existing translation folder detected in {rootTranslationPath}. Use it?"
 
-#: src/windows/main/MainWindow.ts:229
-#: src/windows/main/MainWindow.ts:469
+#: src/windows/main/MainWindow.ts:239
+#: src/windows/main/MainWindow.ts:479
 msgid "Exit"
 msgstr "Exit"
 
-#: src/windows/main/html.ts:75
-#: src/windows/main/MainWindow.ts:225
-#: src/windows/main/MainWindow.ts:454
+#: src/windows/main/html.ts:70
+#: src/windows/main/MainWindow.ts:235
+#: src/windows/main/MainWindow.ts:464
 msgid "File"
 msgstr "File"
 
@@ -207,19 +211,19 @@ msgstr "Focus border color"
 msgid "Focused outline color"
 msgstr "Focused outline color"
 
-#: src/windows/main/components/ReadMenu.ts:213
+#: src/windows/main/components/ReadMenu.ts:210
 msgid "Force"
 msgstr "Force"
 
-#: src/windows/main/components/ReadMenu.ts:217
+#: src/windows/main/components/ReadMenu.ts:214
 msgid "Force Append"
 msgstr "Force Append"
 
-#: src/windows/main/components/ReadMenu.ts:266
+#: src/windows/main/components/ReadMenu.ts:263
 msgid "Force rewrites existing translation files."
 msgstr "Force rewrites existing translation files."
 
-#: src/windows/main/components/GlossaryMenu.ts:84
+#: src/windows/main/components/GlossaryMenu.ts:100
 msgid "Fuzzy"
 msgstr "Fuzzy"
 
@@ -228,49 +232,57 @@ msgstr "Fuzzy"
 msgid "Fuzzy ({score})"
 msgstr "Fuzzy ({score})"
 
-#: src/windows/main/MainWindow.ts:837
-#: src/windows/main/MainWindow.ts:1422
+#: src/windows/main/MainWindow.ts:839
+#: src/windows/main/MainWindow.ts:1416
 msgid "Game files do not exist (no data/Data directory), so it's only possible to edit and save translation."
 msgstr "Game files do not exist (no data/Data directory), so it's only possible to edit and save translation."
 
-#: src/windows/main/html.ts:69
+#: src/windows/main/html.ts:65
 msgid "Glossary"
 msgstr "Glossary"
 
-#: src/windows/main/html.ts:92
+#: src/windows/main/html.ts:88
 msgid "Glossary Menu"
 msgstr "Glossary Menu"
 
-#: src/windows/main/MainWindow.ts:781
+#: src/windows/main/MainWindow.ts:783
 msgid "Go to row... from 1 to {lastRowNumber}"
 msgstr "Go to row... from 1 to {lastRowNumber}"
 
-#: src/windows/main/MainWindow.ts:299
-#: src/windows/main/MainWindow.ts:330
-#: src/windows/main/MainWindow.ts:335
-#: src/windows/main/MainWindow.ts:460
-#: src/windows/main/MainWindow.ts:478
-#: src/windows/main/MainWindow.ts:490
+#: src/windows/main/MainWindow.ts:309
+#: src/windows/main/MainWindow.ts:340
+#: src/windows/main/MainWindow.ts:345
+#: src/windows/main/MainWindow.ts:470
+#: src/windows/main/MainWindow.ts:488
+#: src/windows/main/MainWindow.ts:500
 msgid "Help"
 msgstr "Help"
 
 #: src/windows/main/html.ts:34
-msgid "Hold and drag to select multiple files"
-msgstr "Hold and drag to select multiple files"
+#~ msgid "Hold and drag to select multiple files"
+#~ msgstr "Hold and drag to select multiple files"
 
-#: src/windows/main/html.ts:51
+#: src/windows/main/html.ts:76
+msgid "Hold and drag to select multiple files."
+msgstr "Hold and drag to select multiple files."
+
+#: src/windows/main/html.ts:47
 msgid "How to handle duplicates in text."
 msgstr "How to handle duplicates in text."
 
-#: src/windows/main/html.ts:50
+#: src/windows/main/html.ts:46
 msgid "How to read files."
 msgstr "How to read files."
 
-#: src/windows/main/html.ts:57
+#: src/windows/main/html.ts:53
 msgid "Ignore: Ignore entries from .rvpacker-ignore file"
 msgstr "Ignore: Ignore entries from .rvpacker-ignore file"
 
-#: src/windows/main/html.ts:79
+#: src/windows/main/components/FileSelectMenu.ts:70
+msgid "Incorrect range value. Allowed syntax is: comma-separated list of complete ranges (e.g. 1-5), single numbers (e.g. 9)."
+msgstr "Incorrect range value. Allowed syntax is: comma-separated list of complete ranges (e.g. 1-5), single numbers (e.g. 9)."
+
+#: src/windows/main/html.ts:74
 msgid "Info"
 msgstr "Info"
 
@@ -278,22 +290,22 @@ msgstr "Info"
 msgid "Invalid theme name."
 msgstr "Invalid theme name."
 
-#: src/windows/main/MainWindow.ts:268
-#: src/windows/main/MainWindow.ts:457
+#: src/windows/main/MainWindow.ts:278
+#: src/windows/main/MainWindow.ts:467
 msgid "Language"
 msgstr "Language"
 
-#: src/windows/main/html.ts:105
+#: src/windows/main/html.ts:102
 msgid "Line length for wrapping"
 msgstr "Line length for wrapping"
 
-#: src/windows/main/MainWindow.ts:640
+#: src/windows/main/MainWindow.ts:646
 msgid "Loading project..."
 msgstr "Loading project..."
 
-#: src/windows/main/html.ts:106
-#: src/windows/main/html.ts:108
-#: src/windows/main/html.ts:110
+#: src/windows/main/html.ts:103
+#: src/windows/main/html.ts:105
+#: src/windows/main/html.ts:107
 msgid "Map indices, e.g. 5,30,18..."
 msgstr "Map indices, e.g. 5,30,18..."
 
@@ -301,7 +313,7 @@ msgstr "Map indices, e.g. 5,30,18..."
 msgid "Mark Complete"
 msgstr "Mark Complete"
 
-#: src/windows/main/html.ts:70
+#: src/windows/main/html.ts:66
 msgid "Match Menu"
 msgstr "Match Menu"
 
@@ -309,11 +321,11 @@ msgstr "Match Menu"
 msgid "Match."
 msgstr "Match."
 
-#: src/windows/main/MainWindow.ts:1971
+#: src/windows/main/MainWindow.ts:1968
 msgid "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 msgstr "No project selected. Select the project directory, using 'open folder' button in the left-top corner."
 
-#: src/windows/main/html.ts:74
+#: src/windows/main/html.ts:69
 msgid "Note"
 msgstr "Note"
 
@@ -321,7 +333,7 @@ msgstr "Note"
 msgid "Number of term occurrences doesn't match the number of translation occurrences."
 msgstr "Number of term occurrences doesn't match the number of translation occurrences."
 
-#: src/windows/main/html.ts:26
+#: src/windows/main/html.ts:27
 msgid "of"
 msgstr "of"
 
@@ -337,15 +349,15 @@ msgstr "Only Translation"
 #~ msgid "Open folder"
 #~ msgstr "Open folder"
 
-#: src/windows/main/html.ts:84
+#: src/windows/main/html.ts:80
 msgid "Open Folder"
 msgstr "Open Folder"
 
-#: src/windows/main/html.ts:59
+#: src/windows/main/html.ts:55
 msgid "Parse event metadata from maps"
 msgstr "Parse event metadata from maps"
 
-#: src/windows/main/components/GlossaryMenu.ts:104
+#: src/windows/main/components/GlossaryMenu.ts:120
 msgid "Permissive"
 msgstr "Permissive"
 
@@ -369,11 +381,11 @@ msgstr "Primary outline color"
 msgid "Primary text color"
 msgstr "Primary text color"
 
-#: src/windows/main/html.ts:36
+#: src/windows/main/html.ts:35
 msgid "Process"
 msgstr "Process"
 
-#: src/windows/main/html.ts:68
+#: src/windows/main/html.ts:64
 msgid "Purge"
 msgstr "Purge"
 
@@ -381,19 +393,19 @@ msgstr "Purge"
 #~ msgid "Purge menu"
 #~ msgstr "Purge menu"
 
-#: src/windows/main/html.ts:91
+#: src/windows/main/html.ts:87
 msgid "Purge Menu"
 msgstr "Purge Menu"
 
-#: src/windows/main/html.ts:96
+#: src/windows/main/html.ts:92
 msgid "Put text to translation textarea of matching source text"
 msgstr "Put text to translation textarea of matching source text"
 
-#: src/windows/main/MainWindow.ts:964
+#: src/windows/main/MainWindow.ts:974
 msgid "Quit without saving?"
 msgstr "Quit without saving?"
 
-#: src/windows/main/html.ts:63
+#: src/windows/main/html.ts:59
 msgid "Read"
 msgstr "Read"
 
@@ -401,40 +413,40 @@ msgstr "Read"
 #~ msgid "Read menu"
 #~ msgstr "Read menu"
 
-#: src/windows/main/html.ts:90
+#: src/windows/main/html.ts:86
 msgid "Read Menu"
 msgstr "Read Menu"
 
-#: src/windows/main/MainWindow.ts:1891
+#: src/windows/main/MainWindow.ts:1888
 msgid "Reading game files..."
 msgstr "Reading game files..."
 
-#: src/windows/main/MainWindow.ts:243
+#: src/windows/main/MainWindow.ts:253
 msgid "Recent Projects"
 msgstr "Recent Projects"
 
-#: src/windows/main/MainWindow.ts:1976
+#: src/windows/main/MainWindow.ts:1973
 msgid "Recent projects:"
 msgstr "Recent projects:"
 
-#: src/windows/main/MainWindow.ts:236
-#: src/windows/main/MainWindow.ts:472
+#: src/windows/main/MainWindow.ts:246
+#: src/windows/main/MainWindow.ts:482
 msgid "Reload"
 msgstr "Reload"
 
-#: src/windows/main/html.ts:52
+#: src/windows/main/html.ts:48
 msgid "Remove duplicates"
 msgstr "Remove duplicates"
 
-#: src/windows/main/components/ReadMenu.ts:244
+#: src/windows/main/components/ReadMenu.ts:241
 msgid "Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode."
 msgstr "Remove duplicates across maps and events. Recommended. In system, scripts and plugins files this mode is always overridden by allow mode."
 
-#: src/windows/main/html.ts:95
+#: src/windows/main/html.ts:91
 msgid "Replace all matches"
 msgstr "Replace all matches"
 
-#: src/windows/main/html.ts:103
+#: src/windows/main/html.ts:100
 msgid "Replace input"
 msgstr "Replace input"
 
@@ -442,7 +454,7 @@ msgstr "Replace input"
 msgid "Restore Position"
 msgstr "Restore Position"
 
-#: src/windows/main/html.ts:78
+#: src/windows/main/html.ts:73
 msgid "Result"
 msgstr "Result"
 
@@ -450,36 +462,44 @@ msgstr "Result"
 msgid "Rightmost filled"
 msgstr "Rightmost filled"
 
-#: src/windows/main/html.ts:54
+#: src/windows/main/html.ts:50
 msgid "Romanize: If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
 msgstr "Romanize: If you parsing text from a Japanese game, that contains symbols like 「」, which are just the Japanese quotation marks, it automatically replaces these symbols by their western equivalents (in this case, '')."
 
 #: src/windows/main/html.ts:7
-#: src/windows/main/html.ts:76
+#: src/windows/main/html.ts:71
 msgid "Row"
 msgstr "Row"
 
-#: src/windows/main/html.ts:82
+#: src/windows/main/html.ts:78
 msgid "Save (Ctrl + S)"
 msgstr "Save (Ctrl + S)"
 
-#: src/windows/main/html.ts:94
+#: src/windows/main/html.ts:90
 msgid "Search"
 msgstr "Search"
 
-#: src/windows/main/html.ts:88
+#: src/windows/main/html.ts:84
 msgid "Search (Ctrl + F)"
 msgstr "Search (Ctrl + F)"
 
+#: src/windows/main/html.ts:96
+msgid "Search also in comments"
+msgstr "Search also in comments"
+
+#: src/windows/main/html.ts:95
+msgid "Search by regular expressions"
+msgstr "Search by regular expressions"
+
 #: src/windows/main/html.ts:99
-msgid "Search by regular expressions (Alt + R)"
-msgstr "Search by regular expressions (Alt + R)"
+#~ msgid "Search by regular expressions (Alt + R)"
+#~ msgstr "Search by regular expressions (Alt + R)"
 
 #: src/windows/main/html.ts:32
 msgid "Search column"
 msgstr "Search column"
 
-#: src/windows/main/html.ts:102
+#: src/windows/main/html.ts:99
 msgid "Search input"
 msgstr "Search input"
 
@@ -488,12 +508,24 @@ msgid "Search mode"
 msgstr "Search mode"
 
 #: src/windows/main/html.ts:100
-msgid "Search only in current tab (Alt + L)"
-msgstr "Search only in current tab (Alt + L)"
+#~ msgid "Search only in current tab"
+#~ msgstr "Search only in current tab"
+
+#: src/windows/main/html.ts:100
+#~ msgid "Search only in current tab (Alt + L)"
+#~ msgstr "Search only in current tab (Alt + L)"
+
+#: src/windows/main/html.ts:26
+msgid "Search Panel"
+msgstr "Search Panel"
+
+#: src/windows/main/html.ts:94
+msgid "Search the whole text"
+msgstr "Search the whole text"
 
 #: src/windows/main/html.ts:98
-msgid "Search the whole text (Alt + W)"
-msgstr "Search the whole text (Alt + W)"
+#~ msgid "Search the whole text (Alt + W)"
+#~ msgstr "Search the whole text (Alt + W)"
 
 #: src/windows/main/html.ts:18
 msgid "Second background color"
@@ -516,73 +548,77 @@ msgid "Second text color"
 msgstr "Second text color"
 
 #: src/windows/main/html.ts:38
-msgid "Select All"
-msgstr "Select All"
+#~ msgid "Select All"
+#~ msgstr "Select All"
 
 #: src/windows/main/html.ts:32
 #~ msgid "Select column"
 #~ msgstr "Select column"
 
+#: src/windows/main/html.ts:97
+msgid "Select files to search"
+msgstr "Select files to search"
+
 #: src/windows/main/html.ts:46
 #~ msgid "Select Output Path"
 #~ msgstr "Select Output Path"
 
-#: src/windows/main/MainWindow.ts:1014
+#: src/windows/main/MainWindow.ts:1024
 msgid "Selected directory does not contain data/Data directory, .rgss archive or translation directory."
 msgstr "Selected directory does not contain data/Data directory, .rgss archive or translation directory."
 
-#: src/windows/main/MainWindow.ts:1376
+#: src/windows/main/MainWindow.ts:1370
 msgid "Selected directory is already opened in the program."
 msgstr "Selected directory is already opened in the program."
 
-#: src/windows/main/MainWindow.ts:974
+#: src/windows/main/MainWindow.ts:984
 msgid "Selected directory is missing."
 msgstr "Selected directory is missing."
 
-#: src/windows/main/html.ts:85
-#: src/windows/main/MainWindow.ts:1388
+#: src/windows/main/html.ts:81
+#: src/windows/main/MainWindow.ts:1382
 msgid "Settings"
 msgstr "Settings"
 
-#: src/windows/main/html.ts:48
-#: src/windows/main/html.ts:62
-#: src/windows/main/html.ts:67
+#: src/windows/main/html.ts:44
+#: src/windows/main/html.ts:58
+#: src/windows/main/html.ts:63
 msgid "Skip events:"
 msgstr "Skip events:"
 
-#: src/windows/main/html.ts:46
-#: src/windows/main/html.ts:60
-#: src/windows/main/html.ts:65
+#: src/windows/main/html.ts:42
+#: src/windows/main/html.ts:56
+#: src/windows/main/html.ts:61
 msgid "Skip files:"
 msgstr "Skip files:"
 
-#: src/windows/main/html.ts:47
-#: src/windows/main/html.ts:61
-#: src/windows/main/html.ts:66
+#: src/windows/main/html.ts:43
+#: src/windows/main/html.ts:57
+#: src/windows/main/html.ts:62
 msgid "Skip maps:"
 msgstr "Skip maps:"
 
-#: src/windows/main/html.ts:58
+#: src/windows/main/html.ts:54
 msgid "Skip Obsolete: Don't preserve obsolete entries from the previous read"
 msgstr "Skip Obsolete: Don't preserve obsolete entries from the previous read"
 
-#: src/windows/main/components/Searcher.ts:280
+#: src/windows/main/components/Searcher.ts:328
 #: src/windows/main/html.ts:8
-#: src/windows/main/html.ts:72
+#: src/windows/main/html.ts:67
 msgid "Source"
 msgstr "Source"
 
-#: src/windows/main/components/BatchMenu.ts:224
-#: src/windows/main/components/TranslationsMenu.ts:91
-#: src/windows/main/MainWindow.ts:1675
+#: src/windows/main/components/BatchMenu.ts:194
+#: src/windows/main/components/TranslationsMenu.ts:89
+#: src/windows/main/MainWindow.ts:1674
 msgid "Source language is not set."
 msgstr "Source language is not set."
 
-#: src/windows/main/components/SearchPanel.ts:206
+#: src/windows/main/components/SearchPanel.ts:154
 msgid "Source text cannot be replaced."
 msgstr "Source text cannot be replaced."
 
-#: src/windows/main/html.ts:81
+#: src/windows/main/html.ts:77
 msgid "Tab Panel (Tab)"
 msgstr "Tab Panel (Tab)"
 
@@ -590,7 +626,7 @@ msgstr "Tab Panel (Tab)"
 #~ msgid "Tabs (Tab)"
 #~ msgstr "Tabs (Tab)"
 
-#: src/windows/main/html.ts:77
+#: src/windows/main/html.ts:72
 msgid "Term"
 msgstr "Term"
 
@@ -598,15 +634,19 @@ msgstr "Term"
 msgid "Term translation is not present."
 msgstr "Term translation is not present."
 
-#: src/windows/main/components/SearchPanel.ts:378
-msgid "Text was reverted to the previous state"
-msgstr "Text was reverted to the previous state"
+#: src/windows/main/components/SearchPanel.ts:377
+#~ msgid "Text was reverted to the previous state"
+#~ msgstr "Text was reverted to the previous state"
 
-#: src/windows/main/html.ts:101
+#: src/windows/main/components/TranslationTable.ts:377
+msgid "Textarea is not empty, cannot insert translation."
+msgstr "Textarea is not empty, cannot insert translation."
+
+#: src/windows/main/html.ts:98
 msgid "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
 msgstr "Theme name. Allowed characters: a-z, A-Z, 0-9, -, _."
 
-#: src/windows/main/html.ts:86
+#: src/windows/main/html.ts:82
 msgid "Themes"
 msgstr "Themes"
 
@@ -622,18 +662,18 @@ msgstr "Third outline color"
 msgid "Third text color"
 msgstr "Third text color"
 
-#: src/windows/main/html.ts:42
+#: src/windows/main/html.ts:38
 msgid "Translate"
 msgstr "Translate"
 
-#: src/windows/main/components/TranslationTable.ts:321
-#: src/windows/main/html.ts:73
+#: src/windows/main/components/TranslationTable.ts:364
+#: src/windows/main/html.ts:68
+#: src/windows/main/MainWindow.ts:1259
 #: src/windows/main/MainWindow.ts:1265
-#: src/windows/main/MainWindow.ts:1271
 msgid "Translation"
 msgstr "Translation"
 
-#: src/windows/main/components/BatchMenu.ts:237
+#: src/windows/main/components/BatchMenu.ts:207
 msgid "Translation endpoint is not selected."
 msgstr "Translation endpoint is not selected."
 
@@ -641,13 +681,13 @@ msgstr "Translation endpoint is not selected."
 msgid "Translation is empty."
 msgstr "Translation is empty."
 
-#: src/windows/main/components/BatchMenu.ts:232
-#: src/windows/main/components/TranslationsMenu.ts:100
-#: src/windows/main/MainWindow.ts:1680
+#: src/windows/main/components/BatchMenu.ts:202
+#: src/windows/main/components/TranslationsMenu.ts:98
+#: src/windows/main/MainWindow.ts:1679
 msgid "Translation language is not set."
 msgstr "Translation language is not set."
 
-#: src/windows/main/html.ts:80
+#: src/windows/main/html.ts:75
 msgid "Translations"
 msgstr "Translations"
 
@@ -655,30 +695,30 @@ msgstr "Translations"
 #~ msgid "Translations menu"
 #~ msgstr "Translations menu"
 
-#: src/windows/main/html.ts:93
+#: src/windows/main/html.ts:89
 msgid "Translations Menu"
 msgstr "Translations Menu"
 
-#: src/windows/main/html.ts:41
+#: src/windows/main/html.ts:37
 msgid "Trim"
 msgstr "Trim"
 
-#: src/windows/main/html.ts:55
+#: src/windows/main/html.ts:51
 msgid "Trim: Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
 msgstr "Trim: Removes the leading and trailing whitespace from extracted strings. Don't use this option unless you know that trimming the text won't cause any incorrect behavior"
 
-#: src/windows/main/html.ts:43
+#: src/windows/main/html.ts:39
 msgid "Wrap"
 msgstr "Wrap"
 
-#: src/windows/main/html.ts:49
+#: src/windows/main/html.ts:45
 msgid "Write"
 msgstr "Write"
 
-#: src/windows/main/html.ts:83
+#: src/windows/main/html.ts:79
 msgid "Write (Alt + C)"
 msgstr "Write (Alt + C)"
 
-#: src/windows/main/MainWindow.ts:954
+#: src/windows/main/MainWindow.ts:964
 msgid "You have unsaved changes. Save progress and quit?"
 msgstr "You have unsaved changes. Save progress and quit?"

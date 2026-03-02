@@ -1,4 +1,5 @@
 import { Component } from "./Component";
+import { FileSelectMenu } from "./FileSelectMenu";
 
 import { emittery } from "@classes/emittery";
 
@@ -11,13 +12,16 @@ import * as utils from "@utils/functions";
 export class SearchMenu extends Component {
     declare protected readonly element: HTMLDivElement;
 
+    readonly #fileSelectMenu: FileSelectMenu;
+
     readonly #searchInput: HTMLTextAreaElement;
     readonly #replaceInput: HTMLTextAreaElement;
 
     readonly #searchCaseButton: HTMLButtonElement;
     readonly #searchWholeButton: HTMLButtonElement;
     readonly #searchRegexButton: HTMLButtonElement;
-    readonly #searchLocationButton: HTMLButtonElement;
+    readonly #searchCommentButton: HTMLButtonElement;
+    readonly #filesToSearchButton: HTMLButtonElement;
 
     readonly #searchModeSelect: HTMLSelectElement;
     readonly #searchColumnSelect: HTMLSelectElement;
@@ -26,8 +30,10 @@ export class SearchMenu extends Component {
     readonly #replaceButton: HTMLButtonElement;
     readonly #putButton: HTMLButtonElement;
 
-    public constructor() {
+    public constructor(fileSelectMenu: FileSelectMenu) {
         super("search-menu");
+
+        this.#fileSelectMenu = fileSelectMenu;
 
         this.#searchInput = this.element.querySelector("#search-input")!;
         this.#replaceInput = this.element.querySelector("#replace-input")!;
@@ -35,8 +41,11 @@ export class SearchMenu extends Component {
         this.#searchCaseButton = this.element.querySelector("#case-button")!;
         this.#searchWholeButton = this.element.querySelector("#whole-button")!;
         this.#searchRegexButton = this.element.querySelector("#regex-button")!;
-        this.#searchLocationButton =
-            this.element.querySelector("#location-button")!;
+        this.#searchCommentButton =
+            this.element.querySelector("#comment-button")!;
+        this.#filesToSearchButton = this.element.querySelector(
+            "#files-to-search-button",
+        )!;
 
         this.#searchButton = this.element.querySelector("#search-button")!;
         this.#replaceButton = this.element.querySelector("#replace-button")!;
@@ -70,6 +79,11 @@ export class SearchMenu extends Component {
 
     public get replaceText(): string {
         return this.#replaceInput.value;
+    }
+
+    public override show(x?: number, y?: number): void {
+        super.show(x, y);
+        this.#fileSelectMenu.selectAll();
     }
 
     public updateColumn(columnIndex: number, columnName: string): void {
@@ -151,9 +165,16 @@ export class SearchMenu extends Component {
                 const predicate = this.#searchInput.value;
 
                 if (predicate.trim()) {
+                    const selected = this.#fileSelectMenu.selected;
+
+                    if (!selected) {
+                        return;
+                    }
+
                     await emittery.emit(AppEvent.SearchText, [
                         predicate,
                         Number(this.#searchColumnSelect.value),
+                        selected,
                         Number(this.#searchModeSelect.value),
                         SearchAction.Search,
                     ]);
@@ -167,10 +188,17 @@ export class SearchMenu extends Component {
                 if (predicate.trim()) {
                     const replacer = this.#replaceInput.value;
 
+                    const selected = this.#fileSelectMenu.selected;
+
+                    if (!selected) {
+                        return;
+                    }
+
                     await emittery.emit(AppEvent.ReplaceText, [
                         predicate,
                         replacer,
                         Number(this.#searchColumnSelect.value),
+                        selected,
                         Number(this.#searchModeSelect.value),
                         target === this.#replaceButton
                             ? SearchAction.Replace
@@ -188,8 +216,11 @@ export class SearchMenu extends Component {
             case this.#searchRegexButton:
                 this.#toggleRegExpSearch();
                 break;
-            case this.#searchLocationButton:
-                this.#toggleLocalSearch();
+            case this.#filesToSearchButton:
+                this.#showFileSelectMenu();
+                break;
+            case this.#searchCommentButton:
+                this.#toggleCommentSearch();
                 break;
         }
     }
@@ -207,27 +238,19 @@ export class SearchMenu extends Component {
             const predicate = this.#searchInput.value;
 
             if (predicate.trim()) {
+                const selected = this.#fileSelectMenu.selected;
+
+                if (!selected) {
+                    return;
+                }
+
                 await emittery.emit(AppEvent.SearchText, [
                     predicate,
                     Number(this.#searchModeSelect.value),
+                    selected,
                     Number(this.#searchColumnSelect.value),
                     SearchAction.Search,
                 ]);
-            }
-        } else if (event.altKey) {
-            switch (event.code) {
-                case "KeyC":
-                    this.#toggleCaseSensitive();
-                    break;
-                case "KeyW":
-                    this.#toggleWholeWordSearch();
-                    break;
-                case "KeyR":
-                    this.#toggleRegExpSearch();
-                    break;
-                case "KeyL":
-                    this.#toggleLocalSearch();
-                    break;
             }
         }
 
@@ -269,11 +292,17 @@ export class SearchMenu extends Component {
         void emittery.emit(AppEvent.SearchFlagChanged, SearchFlags.RegExp);
     }
 
-    #toggleLocalSearch(): void {
-        this.#searchLocationButton.classList.toggle("bg-third");
-        void emittery.emit(
-            AppEvent.SearchFlagChanged,
-            SearchFlags.OnlyCurrentTab,
-        );
+    #toggleCommentSearch(): void {
+        this.#searchCommentButton.classList.toggle("bg-third");
+        void emittery.emit(AppEvent.SearchFlagChanged, SearchFlags.Comment);
+    }
+
+    #showFileSelectMenu(): void {
+        if (this.#fileSelectMenu.hidden) {
+            const rect = this.#filesToSearchButton.getBoundingClientRect();
+            this.#fileSelectMenu.show(rect.x + rect.width, rect.y);
+        } else {
+            this.#fileSelectMenu.hide();
+        }
     }
 }

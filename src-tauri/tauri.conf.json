@@ -55,11 +55,7 @@
     "app": {
         "security": {
             "assetProtocol": {
-                "scope": [
-                    "/usr/share/fonts/**/*",
-                    "C:/Windows/Fonts/**/*",
-                    "$RESOURCE/**/*.json"
-                ],
+                "scope": ["**", "**/*", "/**/*"],
                 "enable": true
             },
             "csp": {

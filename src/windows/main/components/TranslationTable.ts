@@ -14,7 +14,6 @@ import {
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
-
 import { isErr, readTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
@@ -31,8 +30,6 @@ const enum ResizeDirection {
 
 const EDGE_THRESHOLD = 8;
 const RESIZE_TOOLTIP_PADDING = 12;
-
-// TODO: Make textareas in translation cells expand to the whole height
 
 export class TranslationTable extends Component {
     declare protected readonly element: HTMLTableElement;
@@ -182,6 +179,22 @@ export class TranslationTable extends Component {
         return this.rows.length;
     }
 
+    public get rowsWithoutComments(): NodeListOf<TabRow> {
+        return this.#tbody.querySelectorAll("tr:not(#comment-block)");
+    }
+
+    public get rowWithoutCommentsCount(): number {
+        return this.rowsWithoutComments.length;
+    }
+
+    public get commentRows(): NodeListOf<TabRow> {
+        return this.#tbody.querySelectorAll("#comment-block");
+    }
+
+    public get commentRowCount(): number {
+        return this.commentRows.length;
+    }
+
     public init(settings: Settings, projectSettings: ProjectSettings): void {
         this.#displayGhostLines = settings.appearance.displayGhostLines;
         this.#rowDeleteMode = settings.core.rowDeleteMode;
@@ -191,7 +204,7 @@ export class TranslationTable extends Component {
     }
 
     public row(index: number): TabRow {
-        return this.rows[index];
+        return this.rowsWithoutComments[index];
     }
 
     public clearTextAreaHistory(): void {
@@ -252,6 +265,11 @@ export class TranslationTable extends Component {
             maxColumns = Math.max(maxColumns, columnCount);
         }
 
+        let insideCommentBlock = false;
+        let rowNumber = 0;
+        const comments: string[] = [];
+        const commentsTranslations: string[] = [];
+
         for (let rowIndex = 0; rowIndex < contentLines.length; rowIndex++) {
             const line = contentLines[rowIndex];
 
@@ -269,17 +287,42 @@ export class TranslationTable extends Component {
             const source = utils.source(parts);
             const translations = utils.translations(parts);
 
-            while (maxColumns > translationColumnCount) {
-                await emittery.emit(AppEvent.AdditionalColumnRequired);
-                translationColumnCount++;
+            if (source.startsWith(consts.COMMENT_PREFIX)) {
+                insideCommentBlock = true;
             }
 
-            while (translations.length < translationColumnCount) {
-                translations.push("");
+            if (insideCommentBlock) {
+                if (!source.startsWith(consts.COMMENT_PREFIX)) {
+                    insideCommentBlock = false;
+
+                    const row = this.#createCommentRow(
+                        comments,
+                        commentsTranslations,
+                    );
+                    this.#tbody.appendChild(row);
+
+                    comments.length = 0;
+                    commentsTranslations.length = 0;
+                } else {
+                    comments.push(source);
+                    commentsTranslations.push(translations[0]);
+                }
             }
 
-            const row = this.#createRow(source, translations, rowIndex);
-            this.#tbody.appendChild(row);
+            if (!insideCommentBlock) {
+                while (maxColumns > translationColumnCount) {
+                    await emittery.emit(AppEvent.AdditionalColumnRequired);
+                    translationColumnCount++;
+                }
+
+                while (translations.length < translationColumnCount) {
+                    translations.push("");
+                }
+
+                const row = this.#createRow(source, translations, rowNumber);
+                rowNumber++;
+                this.#tbody.appendChild(row);
+            }
         }
     }
 
@@ -331,7 +374,7 @@ export class TranslationTable extends Component {
         if (this.#focusedTextArea[0]?.value === "") {
             this.#focusedTextArea[0].value = translation;
         } else {
-            // TODO: Message
+            alert(t`Textarea is not empty, cannot insert translation.`);
         }
     }
 
@@ -381,13 +424,62 @@ export class TranslationTable extends Component {
     }
 
     #updateRowIds(startIndex: number): void {
-        const rows = this.rows;
+        const rows = this.rowsWithoutComments;
 
         for (let i = startIndex; i < rows.length; i++) {
             const row = rows[i];
             const newRowNumber = (i + 1).toString();
             utils.rowNumberElement(row).textContent = newRowNumber;
         }
+    }
+
+    #createCommentRow(comments: string[], translations: string[]): TabRow {
+        const row = document.createElement("tr") as TabRow;
+        row.id = "comment-block";
+        row.className = tw`border-primary border-2`;
+
+        const cell = document.createElement("td");
+        cell.colSpan = 3;
+
+        const container = document.createElement("div");
+        container.className = "flex flex-col items-center justify-center";
+
+        for (let i = 0; i < comments.length; i++) {
+            const commentContainer = document.createElement("div");
+            commentContainer.className =
+                "flex flex-row gap-2 items-center justify-start";
+
+            const sourceContainer = document.createElement("span");
+            sourceContainer.textContent = comments[i];
+
+            commentContainer.appendChild(sourceContainer);
+
+            if (
+                comments[i].startsWith(
+                    consts.MAP_DISPLAY_NAME_COMMENT_PREFIX,
+                ) ||
+                comments[i] == consts.BOOKMARK_COMMENT
+            ) {
+                const translationInput = document.createElement("textarea");
+                translationInput.className =
+                    "rounded-sm h-6 resize-none overflow-y-hidden flex items-center";
+                translationInput.value = translations[i];
+
+                commentContainer.appendChild(translationInput);
+            } else {
+                const translationContainer = document.createElement("span");
+                translationContainer.textContent = translations[i];
+
+                commentContainer.appendChild(translationContainer);
+            }
+
+            container.appendChild(commentContainer);
+        }
+
+        cell.appendChild(container);
+        row.appendChild(cell);
+
+        return row;
     }
 
     #createRow(
@@ -445,7 +537,8 @@ export class TranslationTable extends Component {
 
         if (
             (rowNumber === 1 && direction === JumpDirection.Up) ||
-            (rowNumber === this.rowCount && direction === JumpDirection.Down)
+            (rowNumber === this.rowWithoutCommentsCount &&
+                direction === JumpDirection.Down)
         ) {
             return;
         }
@@ -458,12 +551,12 @@ export class TranslationTable extends Component {
         const step = direction === JumpDirection.Down ? 1 : -1;
         const rowIndex = rowNumber - 1 + step;
 
-        const childrenCount = this.rowCount;
+        const childrenCount = this.rowWithoutCommentsCount;
         if (childrenCount - 1 < rowIndex || rowIndex < 0) {
             return;
         }
 
-        const nextRow = this.rows[rowIndex];
+        const nextRow = this.rowsWithoutComments[rowIndex];
         const nextTextArea =
             nextRow.children[columnIndex].querySelector("textarea")!;
 
@@ -540,15 +633,12 @@ export class TranslationTable extends Component {
                 const description = bookmarkDescInput.value;
                 bookmarkDescInput.remove();
 
-                const bookmarkRow = this.#createRow(
-                    consts.BOOKMARK_COMMENT,
+                const bookmarkRow = this.#createCommentRow(
+                    [consts.BOOKMARK_COMMENT],
                     [description],
-                    rowNumber,
                 );
 
-                this.#tbody.insertBefore(bookmarkRow, target.closest("tr"));
-
-                this.#updateRowIds(rowNumber - 1);
+                this.#tbody.insertBefore(bookmarkRow, row);
 
                 void emittery.emit(AppEvent.AddBookmark, [
                     undefined,
@@ -594,7 +684,7 @@ export class TranslationTable extends Component {
     #onfocusin(event: FocusEvent): void {
         const target = event.target as HTMLTextAreaElement;
 
-        if (target.tagName !== "TEXTAREA") {
+        if (target.tagName !== "TEXTAREA" || target.closest("#comment-block")) {
             return;
         }
 
@@ -639,7 +729,7 @@ export class TranslationTable extends Component {
     #onfocusout(event: FocusEvent): void {
         const target = event.target as HTMLTextAreaElement;
 
-        if (target.tagName !== "TEXTAREA") {
+        if (target.tagName !== "TEXTAREA" || target.closest("#comment-block")) {
             return;
         }
 
@@ -785,11 +875,11 @@ export class TranslationTable extends Component {
             for (let i = 0; i < textRows; i++) {
                 const rowIndex = startIndex + i - 1;
 
-                if (rowIndex >= this.rows.length) {
+                if (rowIndex >= this.rowsWithoutComments.length) {
                     return;
                 }
 
-                const row = this.rows[rowIndex];
+                const row = this.rowsWithoutComments[rowIndex];
                 const cell = row.children[columnIndex];
                 const textarea = cell.querySelector("textarea")!;
 
@@ -902,7 +992,7 @@ export class TranslationTable extends Component {
                     for (let i = 0; i <= rowsToSelect; i++) {
                         const rowIndex = targetRowNumber + direction * i - 1;
 
-                        const nextRow = this.rows[rowIndex];
+                        const nextRow = this.rowsWithoutComments[rowIndex];
                         const nextCell = nextRow.children[columnIndex];
                         const nextTextArea =
                             nextCell.querySelector("textarea")!;
@@ -1227,7 +1317,8 @@ export class TranslationTable extends Component {
         const adjacentColumn = (
             onLeft
                 ? target.previousElementSibling
-                : onRight
+                : // eslint-disable-next-line sonarjs/no-nested-conditional
+                  onRight
                   ? target.nextElementSibling
                   : null
         ) as HTMLTableCellElement | null;

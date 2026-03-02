@@ -13,6 +13,7 @@ export const LOG_FILE = "replacement-log.json";
 export const PROJECT_SETTINGS_FILE = "project-settings.json";
 export const BACKUP_DIRECTORY = "backups";
 export const GLOSSARY_FILE = "glossary.json";
+export const OUTPUT_DIRECTORY = "output";
 
 export const CHARACTER_SUBSTITUTIONS = {
     "<<": "«",
@@ -64,6 +65,7 @@ export const JSON_EXTENSION_LENGTH = 5;
 
 export const BOOKMARK_COMMENT = "<!-- Bookmark -->";
 export const ID_COMMENT = "<!-- ID -->";
+export const NAME_COMMENT = "<!-- NAME -->";
 
 export const RVPACKER_METADATA_FILE = ".rvpacker-metadata";
 

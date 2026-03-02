@@ -147,10 +147,6 @@ export async function readLastLine(filePath: string): Promise<string> {
     return await invoke("read_last_line", { filePath });
 }
 
-export async function expandScope(dir: string): Promise<void> {
-    await invoke("expand_scope", { dir });
-}
-
 export async function getModels(
     endpoint: TranslationEndpoint,
     apiKey: string,

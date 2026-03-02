@@ -1,7 +1,5 @@
 import { Component } from "./Component";
 
-import { TranslationTable } from "./";
-
 import { emittery } from "@classes/emittery";
 
 import { ProjectSettings } from "@lib/classes";
@@ -10,7 +8,7 @@ import { AppEvent, MouseButton, SearchAction } from "@lib/enums";
 import * as consts from "@utils/constants";
 import * as utils from "@utils/functions";
 import { tw } from "@utils/functions";
-import { isErr, readTextFile, writeTextFile } from "@utils/invokes";
+import { isErr, readTextFile } from "@utils/invokes";
 
 import { t } from "@lingui/core/macro";
 
@@ -24,16 +22,10 @@ export class SearchPanel extends Component {
     readonly #searchCurrentPage: HTMLSpanElement;
     readonly #searchTotalPages: HTMLSpanElement;
 
-    readonly #logFileSelect: HTMLSelectElement;
-    readonly #switchPanelButton: HTMLButtonElement;
-    readonly #pageSelectContainer: HTMLDivElement;
     readonly #previousPageButton: HTMLButtonElement;
     readonly #nextPageButton: HTMLButtonElement;
 
-    #tabInfo!: TabInfo;
-    #translationTable!: TranslationTable;
     #projectSettings!: ProjectSettings;
-    #replacementLog!: ReplacementLog;
 
     public constructor() {
         super("search-panel");
@@ -41,15 +33,8 @@ export class SearchPanel extends Component {
         this.#searchPanelContent = this.element.querySelector(
             "#search-panel-content",
         )!;
-        this.#switchPanelButton = this.element.querySelector(
-            "#switch-panel-button",
-        )!;
-        this.#logFileSelect = this.element.querySelector("#log-file-select")!;
         this.#searchCurrentPage = this.element.querySelector(
             "#search-current-page",
-        )!;
-        this.#pageSelectContainer = this.element.querySelector(
-            "#page-select-container",
         )!;
         this.#searchTotalPages = this.element.querySelector(
             "#search-total-pages",
@@ -60,10 +45,6 @@ export class SearchPanel extends Component {
         this.#nextPageButton = this.element.querySelector("#next-page-button")!;
 
         this.setDraggable(true);
-
-        this.element.onchange = (e): void => {
-            this.#onchange(e);
-        };
 
         this.element.onmousedown = async (e): Promise<void> => {
             await this.#onmousedown(e);
@@ -86,41 +67,8 @@ export class SearchPanel extends Component {
         }
     }
 
-    public init(
-        tabInfo: TabInfo,
-        translationTable: TranslationTable,
-        projectSettings: ProjectSettings,
-        replacementLog: ReplacementLog,
-    ): void {
-        this.#tabInfo = tabInfo;
-        this.#translationTable = translationTable;
+    public init(projectSettings: ProjectSettings): void {
         this.#projectSettings = projectSettings;
-        this.#replacementLog = replacementLog;
-
-        this.#logFileSelect.innerHTML =
-            this.#logFileSelect.firstElementChild!.outerHTML;
-
-        for (const filename in this.#replacementLog) {
-            const option = document.createElement("option");
-            option.innerHTML = filename;
-            option.value = filename;
-            this.#logFileSelect.add(option);
-        }
-    }
-
-    public addLog(filename: string): void {
-        const option = document.createElement("option");
-        option.innerHTML = filename;
-        option.value = filename;
-        this.#logFileSelect.add(option);
-    }
-
-    public removeLog(filename: string): void {
-        for (const option of this.#logFileSelect.children) {
-            if (option.innerHTML === filename) {
-                option.remove();
-            }
-        }
     }
 
     public async loadSearchMatch(matchIndex: number): Promise<void> {
@@ -218,168 +166,6 @@ export class SearchPanel extends Component {
         }
     }
 
-    #findRequiredRow(
-        filename: string,
-        entry: string,
-        logSource: string,
-    ): number {
-        let rowIndex = -1;
-        let found = false;
-
-        for (let i = 0; i < this.#translationTable.childCount - 1; i++) {
-            const row = this.#translationTable.rows[i];
-            const source = utils.source(row);
-            const translation = utils.translation(row)[0];
-
-            if (source === consts.ID_COMMENT && translation === entry) {
-                if (found) {
-                    break;
-                }
-
-                found = true;
-            } else if (found && source === logSource) {
-                rowIndex = i;
-                break;
-            }
-        }
-
-        if (rowIndex === -1) {
-            alert(
-                t`Can't found row with ${logSource} source text in file ${filename} and entry ${entry}.`,
-            );
-        }
-
-        return rowIndex;
-    }
-
-    #findExternalRequiredRow(
-        filename: string,
-        entry: string,
-        logSource: string,
-        translationLines: string[],
-    ): number {
-        let rowIndex = -1;
-        let found = false;
-
-        for (let i = 0; i < translationLines.length; i++) {
-            const line = translationLines[i];
-            const parts = utils.parts(line);
-
-            if (!parts) {
-                utils.logSplitError(filename, i + 1);
-                continue;
-            }
-
-            const source = utils.source(parts);
-            const translation = utils.translation(parts)[0];
-
-            if (source === consts.ID_COMMENT && translation === entry) {
-                if (found) {
-                    break;
-                }
-
-                found = true;
-            } else if (found && utils.compareLB(source, logSource)) {
-                rowIndex = i;
-                break;
-            }
-        }
-
-        return rowIndex;
-    }
-
-    async #handleLogRecordClick(event: MouseEvent): Promise<void> {
-        const target = (event.target as HTMLElement).closest<HTMLDivElement>(
-            ".cursor-pointer",
-        )!;
-
-        if (target.hasAttribute("reverted")) {
-            return;
-        }
-
-        const button = event.button as MouseButton;
-
-        const logSource = target.firstElementChild!.textContent;
-        const logOld = target.children[1].textContent;
-
-        const [filename, entry, columnString] =
-            target.lastElementChild!.innerHTML.split(" - ");
-        const columnIndex = Number(columnString[columnString.length - 2]) - 1;
-
-        if (button === MouseButton.Left) {
-            await emittery.emit(AppEvent.ChangeTab, filename);
-            const rowIndex = this.#findRequiredRow(filename, entry, logSource);
-
-            if (rowIndex === -1) {
-                return;
-            }
-
-            await emittery.emit(AppEvent.ScrollIntoRow, rowIndex);
-        } else if (button === MouseButton.Right) {
-            if (this.#tabInfo.tabName === filename) {
-                const rowIndex = this.#findRequiredRow(
-                    filename,
-                    entry,
-                    logSource,
-                );
-
-                if (rowIndex === -1) {
-                    return;
-                }
-
-                const row = this.#translationTable.rows[rowIndex];
-                const textarea =
-                    row.children[columnIndex + 2].querySelector("textarea")!;
-                textarea.value = logOld;
-            } else {
-                const filePath = utils.join(
-                    filename.startsWith("map")
-                        ? this.#projectSettings.tempMapsPath
-                        : this.#projectSettings.translationPath,
-                    `${filename}${consts.TXT_EXTENSION}`,
-                );
-
-                const fileContent = await readTextFile(filePath);
-
-                if (isErr(fileContent)) {
-                    void error(fileContent[0]!);
-                    return;
-                }
-
-                const translationLines = utils.lines(fileContent[1]!);
-
-                const rowIndex = this.#findExternalRequiredRow(
-                    filename,
-                    entry,
-                    logSource,
-                    translationLines,
-                );
-
-                if (rowIndex === -1) {
-                    return;
-                }
-
-                const line = translationLines[rowIndex];
-                const parts = utils.parts(line)!;
-                parts[columnIndex + 1] = utils.toCustomLB(logOld);
-                translationLines[rowIndex] = utils.joinParts(parts);
-
-                const result = await writeTextFile(
-                    filePath,
-                    translationLines.join("\n"),
-                );
-
-                if (isErr(result)) {
-                    void error(result[0]!);
-                }
-            }
-
-            await emittery.emit(AppEvent.LogEntryReverted, [filename, logOld]);
-            target.innerHTML = t`Text was reverted to the previous state`;
-            target.setAttribute("reverted", "");
-        }
-    }
-
     async #loadMatchObject(matchIndex: number): Promise<SearchMatchArray> {
         this.#searchCurrentPage.textContent = matchIndex.toString();
         this.#searchPanelContent.innerHTML = "";
@@ -407,11 +193,7 @@ export class SearchPanel extends Component {
         }
 
         if (this.#searchPanelContent.contains(target)) {
-            if (this.#switchPanelButton.innerHTML === "menu_book") {
-                await this.#handleLogRecordClick(e);
-            } else {
-                await this.#handleSearchMatchClick(e);
-            }
+            await this.#handleSearchMatchClick(e);
         }
     }
 
@@ -423,22 +205,6 @@ export class SearchPanel extends Component {
         }
 
         switch (target) {
-            case this.#switchPanelButton: {
-                this.#searchPanelContent.innerHTML = "";
-                utils.toggleMultiple(
-                    this.#pageSelectContainer,
-                    "hidden",
-                    "flex",
-                );
-                this.#logFileSelect.classList.toggle("hidden");
-
-                if (target.innerHTML.trim() === "search") {
-                    target.innerHTML = "menu_book";
-                } else {
-                    target.innerHTML = "search";
-                }
-                break;
-            }
             case this.#previousPageButton: {
                 const page = Number(this.#searchCurrentPage.textContent);
 
@@ -455,50 +221,6 @@ export class SearchPanel extends Component {
                 }
                 break;
             }
-        }
-    }
-
-    #onchange(event: Event): void {
-        if (event.target !== this.#logFileSelect) {
-            return;
-        }
-
-        const filename = this.#logFileSelect.value;
-
-        for (const source in this.#replacementLog[filename]) {
-            const [entry, columnIndex, old, new_] =
-                this.#replacementLog[filename][source];
-
-            const entryContainer = document.createElement("div");
-            entryContainer.className = tw`text-second border-primary bg-second my-1 cursor-pointer border-2 p-1`;
-
-            entryContainer.append("Source:");
-
-            const sourceDiv = document.createElement("div");
-            sourceDiv.textContent = source;
-            sourceDiv.className = tw`whitespace-pre-wrap`;
-            entryContainer.appendChild(sourceDiv);
-
-            entryContainer.append("Old:");
-
-            const oldDiv = document.createElement("div");
-            oldDiv.textContent = old;
-            oldDiv.className = tw`whitespace-pre-wrap`;
-            entryContainer.appendChild(oldDiv);
-
-            entryContainer.append("New:");
-
-            const newDiv = document.createElement("div");
-            newDiv.textContent = new_;
-            newDiv.className = tw`whitespace-pre-wrap`;
-            entryContainer.appendChild(newDiv);
-
-            const entryInfo = document.createElement("div");
-            entryInfo.className = tw`text-third text-xs`;
-            entryInfo.innerHTML = `${filename} - ${entry} - ${this.#projectSettings.columnName(columnIndex)} (${columnIndex + 1})`;
-            entryContainer.appendChild(entryInfo);
-
-            this.#searchPanelContent.appendChild(entryContainer);
         }
     }
 

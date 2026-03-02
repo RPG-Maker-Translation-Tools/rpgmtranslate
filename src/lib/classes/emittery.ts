@@ -7,7 +7,6 @@ import {
     FileFlags,
     JumpDirection,
     ReadMode,
-    RPGMFileType,
     SearchAction,
     SearchFlags,
     SearchMode,
@@ -23,11 +22,24 @@ export const emittery = new Emittery<{
     [AppEvent.UpdateSaved]: boolean;
     [AppEvent.ChangeTab]: string;
     [AppEvent.ColumnResized]: [number, number];
-    [AppEvent.InvokeWrite]: [FileFlags, number[], [RPGMFileType, number[]][]];
+    [AppEvent.InvokeWrite]: [FileFlags, number[], SkipEvents];
     [AppEvent.ScrollIntoRow]: number;
     [AppEvent.UtilsButtonClick]: HTMLButtonElement;
-    [AppEvent.ReplaceText]: [string, string, number, SearchMode, SearchAction];
-    [AppEvent.SearchText]: [string, number, SearchMode, SearchAction];
+    [AppEvent.ReplaceText]: [
+        string,
+        string,
+        number,
+        SelectedFiles,
+        SearchMode,
+        SearchAction,
+    ];
+    [AppEvent.SearchText]: [
+        string,
+        number,
+        SelectedFiles,
+        SearchMode,
+        SearchAction,
+    ];
     [AppEvent.AddBookmark]: [string | undefined, string, number];
     [AppEvent.TogglePurgeAnimation]: undefined;
     [AppEvent.Reload]: undefined;
@@ -39,7 +51,6 @@ export const emittery = new Emittery<{
     [AppEvent.JumpToTab]: JumpDirection;
     [AppEvent.ApplyTheme]: string;
     [AppEvent.TabAdded]: [string, number, number, number];
-    [AppEvent.AddLog]: [string, string, [string, number, string, string]];
     [AppEvent.UpdateProgressMeter]: undefined;
     [AppEvent.ColumnRenamed]: [number, string];
     [AppEvent.TitleTranslationChanged]: string;
@@ -49,10 +60,9 @@ export const emittery = new Emittery<{
         DuplicateMode,
         BaseFlags,
         number[],
-        [RPGMFileType, number[]][],
+        SkipEvents,
         boolean,
     ];
-    [AppEvent.LogEntryReverted]: [string, string];
     [AppEvent.AdditionalColumnRequired]: undefined;
     [AppEvent.SearchFlagChanged]: SearchFlags;
     [AppEvent.ReplaceSingle]: [
@@ -63,15 +73,10 @@ export const emittery = new Emittery<{
         number,
         SearchAction,
     ];
-    [AppEvent.InvokePurge]: [
-        FileFlags,
-        boolean,
-        number[],
-        [RPGMFileType, number[]][],
-    ];
+    [AppEvent.InvokePurge]: [FileFlags, boolean, number[], SkipEvents];
     [AppEvent.ContextMenuChanged]: HTMLDivElement | null;
     [AppEvent.BatchAction]: [string, BatchAction, number];
-    [AppEvent.TermCheck]: [number, Either<boolean, number>];
+    [AppEvent.TermCheck]: [number, Either<SelectedFiles, number>];
     [AppEvent.AddTerm]: string;
     [AppEvent.ShowElement]: [ElementToShow, boolean];
     [AppEvent.ShowTranslations]: string;

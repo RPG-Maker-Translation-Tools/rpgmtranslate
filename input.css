@@ -54,7 +54,7 @@
         margin: 0;
     }
 
-    .custom-checkbox > input {
+    .custom-checkbox > input[type="checkbox"] {
         position: absolute;
         z-index: -1;
         opacity: 0;
@@ -81,17 +81,19 @@
         background-size: 100%;
     }
 
-    .custom-checkbox > input:not(:disabled):not(:checked) + span:hover::before {
+    .custom-checkbox
+        > input[type="checkbox"]:not(:disabled):not(:checked)
+        + span:hover::before {
         border-color: #b3d7ff;
     }
 
-    .custom-checkbox > input:checked + span::before {
+    .custom-checkbox > input[type="checkbox"]:checked + span::before {
         border-color: oklch(44.2% 0.017 285.786);
         background-color: oklch(44.2% 0.017 285.786);
         background-image: url("./check.svg");
     }
 
-    .custom-checkbox > input:disabled + span::before {
+    .custom-checkbox > input[type="checkbox"]:disabled + span::before {
         background-color: black;
     }
 

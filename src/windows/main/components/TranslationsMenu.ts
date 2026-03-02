@@ -11,8 +11,6 @@ import { isErr, translateSingle } from "@utils/invokes";
 
 import { error } from "@tauri-apps/plugin-log";
 
-// TODO: Make translation cells respective to ID, NAME, ORDER, EVENT ID, EVENT NAME comments uneditable!
-
 export class TranslationsMenu extends Component {
     #projectSettings!: ProjectSettings;
     #translationSettings!: TranslationSettings;
